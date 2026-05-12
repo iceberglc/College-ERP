@@ -232,19 +232,16 @@ class StudentResult(models.Model):
 
 @receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
+    """Create the matching role-profile row on first save of a CustomUser.
+
+    Previously this app had TWO post_save receivers (this one and a
+    `save_user_profile` twin without the `created` guard) both calling
+    get_or_create. The twin fired on every password change / profile
+    edit, so every save round-tripped the DB once for the role table
+    even though no new row was ever created. Audit fix #4.
+    """
     if not created:
         return
-    user_type = str(instance.user_type)
-    if user_type == '1':
-        Admin.objects.get_or_create(admin=instance)
-    elif user_type == '2':
-        Staff.objects.get_or_create(admin=instance)
-    elif user_type == '3':
-        Student.objects.get_or_create(admin=instance)
-
-
-@receiver(post_save, sender=CustomUser)
-def save_user_profile(sender, instance, **kwargs):
     user_type = str(instance.user_type)
     if user_type == '1':
         Admin.objects.get_or_create(admin=instance)
