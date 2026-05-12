@@ -5,7 +5,6 @@ from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import (HttpResponseRedirect, get_object_or_404,redirect, render)
 from django.urls import reverse
-from django.views.decorators.csrf import csrf_exempt
 
 from .decorators import staff_only
 from .forms import *
@@ -56,7 +55,6 @@ def staff_take_attendance(request):
     return render(request, 'staff_template/staff_take_attendance.html', context)
 
 
-@csrf_exempt
 def get_students(request):
     group_id = request.POST.get('group')
     try:
@@ -83,7 +81,6 @@ _STATUS_LABELS = {
 }
 
 
-@csrf_exempt
 def save_attendance(request):
     student_data = request.POST.get('student_ids')
     att_date = request.POST.get('date')
@@ -118,7 +115,6 @@ def staff_update_attendance(request):
     return render(request, 'staff_template/staff_update_attendance.html', context)
 
 
-@csrf_exempt
 def get_student_attendance(request):
     attendance_date_id = request.POST.get('attendance_date_id')
     try:
@@ -139,7 +135,6 @@ def get_student_attendance(request):
         return JsonResponse({'error': 'Unable to fetch student attendance.'}, status=400)
 
 
-@csrf_exempt
 def update_attendance(request):
     student_data = request.POST.get('student_ids')
     attendance_id = request.POST.get('date')
@@ -254,7 +249,6 @@ def staff_view_profile(request):
     return render(request, "staff_template/staff_view_profile.html", context)
 
 
-@csrf_exempt
 def staff_fcmtoken(request):
     token = request.POST.get('token')
     try:
@@ -308,7 +302,6 @@ def staff_add_result(request):
     return render(request, "staff_template/staff_add_result.html", context)
 
 
-@csrf_exempt
 def fetch_student_result(request):
     try:
         group_id = request.POST.get('group')
@@ -546,7 +539,6 @@ def delete_result_file(request, file_id):
     return redirect(reverse('staff_result_files'))
 
 
-@csrf_exempt
 @staff_only
 def staff_get_teachers_for_course(request):
     """Return active staff members for a given course (for AJAX cascade in staff views)."""
@@ -563,7 +555,6 @@ def staff_get_teachers_for_course(request):
     return JsonResponse({'teachers': teachers})
 
 
-@csrf_exempt
 @staff_only
 def staff_get_groups_for_teacher(request):
     """Return active groups for a given teacher (for AJAX cascade in staff views)."""

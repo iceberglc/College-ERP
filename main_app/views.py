@@ -9,7 +9,6 @@ from django.db import DatabaseError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.urls import reverse_lazy
-from django.views.decorators.csrf import csrf_exempt
 
 from .EmailBackend import EmailBackend
 from .apps import create_recovery_admin_access
@@ -183,8 +182,9 @@ class SafePasswordResetView(PasswordResetView):
 # Shared AJAX / utility views
 # ---------------------------------------------------------------------------
 
-@csrf_exempt
 def get_attendance(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required.'}, status=401)
     group_id = request.POST.get('group')
     try:
         from .models import Group
