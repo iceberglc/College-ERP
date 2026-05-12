@@ -149,6 +149,10 @@ class Attendance(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        # Audit #13: prevent the same group/subject/date being marked twice.
+        unique_together = ('group', 'subject', 'date')
+
     def __str__(self):
         group_name = self.group.name if self.group else "—"
         return f"{group_name} · {self.date}"
@@ -169,7 +173,7 @@ class AttendanceReport(models.Model):
 
 class LeaveReportStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    date = models.CharField(max_length=60)
+    date = models.DateField(null=True, blank=True)   # was CharField (audit #12)
     message = models.TextField()
     status = models.SmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -178,7 +182,7 @@ class LeaveReportStudent(models.Model):
 
 class LeaveReportStaff(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
-    date = models.CharField(max_length=60)
+    date = models.DateField(null=True, blank=True)   # was CharField (audit #12)
     message = models.TextField()
     status = models.SmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
