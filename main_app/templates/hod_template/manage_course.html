@@ -3,86 +3,68 @@
 {% block page_title %}{{ page_title }}{% endblock %}
 
 {% block content %}
-<section class="content">
-  <div class="container-fluid">
-
-    {% if messages %}
-    <div class="row">
-      <div class="col-12">
-        {% for m in messages %}
-        <div class="alert alert-{{ m.tags|default:'info' }} alert-dismissible">
-          {{ m }} <button type="button" class="close" data-dismiss="alert">&times;</button>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    <div class="row">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 class="card-title">{{ page_title }}</h3>
-            <a href="{% url 'add_course' %}" class="btn btn-sm btn-primary">
-              <i class="fas fa-plus mr-1"></i> Add Course
-            </a>
-          </div>
-          <div class="card-body">
-            <table id="example2" class="table table-bordered table-hover">
-              <thead class="thead-dark">
-                <tr>
-                  <th>#</th>
-                  <th>Course</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for course in courses %}
-                <tr>
-                  <td>{{ forloop.counter }}</td>
-                  <td>{{ course.name }}</td>
-                  <td>
-                    {% if course.is_active %}
-                    <span class="badge badge-success px-2 py-1">Active</span>
-                    {% else %}
-                    <span class="badge badge-secondary px-2 py-1">Inactive</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <a href="{% url 'edit_course' course.id %}" class="btn btn-sm btn-info mr-1">
-                      <i class="fas fa-edit"></i> Edit
-                    </a>
-                    {% if course.is_active %}
-                    <a href="{% url 'toggle_course_active' course.id %}"
-                       onclick="return confirm('Deactivate course \'{{ course.name }}\'? It will be hidden from dropdowns.')"
-                       class="btn btn-sm btn-warning mr-1">
-                      <i class="fas fa-ban"></i> Deactivate
-                    </a>
-                    {% else %}
-                    <a href="{% url 'toggle_course_active' course.id %}"
-                       class="btn btn-sm btn-success mr-1">
-                      <i class="fas fa-check"></i> Activate
-                    </a>
-                    {% endif %}
-                    <a href="{% url 'delete_course' course.id %}"
-                       onclick="return confirm('Permanently delete course \'{{ course.name }}\'? This cannot be undone.')"
-                       class="btn btn-sm btn-danger">
-                      <i class="fas fa-trash"></i> Delete
-                    </a>
-                  </td>
-                </tr>
-                {% empty %}
-                <tr>
-                  <td colspan="4" class="text-center text-muted">No courses found. <a href="{% url 'add_course' %}">Add one</a>.</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+<div class="dt-card">
+  <div class="dt-header">
+    <div class="dt-title"><i class="fas fa-graduation-cap"></i> {{ page_title }} <span class="dt-count">{{ courses|length }} courses</span></div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <input type="text" id="search_input" class="dt-search" placeholder="Search…">
+      <a href="{% url 'add_course' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> Add Course</a>
     </div>
   </div>
-</section>
+  <div style="overflow-x:auto;">
+    <table class="dt" id="course_table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Course Name</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for course in courses %}
+        <tr>
+          <td style="color:var(--ice-muted); width:40px;">{{ forloop.counter }}</td>
+          <td style="font-weight:600;">{{ course.name }}</td>
+          <td>
+            {% if course.is_active %}
+              <span class="sb sb-success"><i class="fas fa-circle me-1" style="font-size:7px;"></i>Active</span>
+            {% else %}
+              <span class="sb sb-muted">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="ab-row">
+              <a href="{% url 'edit_course' course.id %}" class="ab-edit"><i class="fas fa-edit"></i> Edit</a>
+              {% if course.is_active %}
+              <a href="{% url 'toggle_course_active' course.id %}"
+                 onclick="return confirm('Deactivate {{ course.name }}?')"
+                 class="ab-warn"><i class="fas fa-ban"></i> Deactivate</a>
+              {% else %}
+              <a href="{% url 'toggle_course_active' course.id %}" class="ab-success"><i class="fas fa-check"></i> Activate</a>
+              {% endif %}
+              <a href="{% url 'delete_course' course.id %}"
+                 onclick="return confirm('Permanently delete {{ course.name }}?')"
+                 class="ab-danger"><i class="fas fa-trash"></i> Delete</a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center; padding:48px; color:var(--ice-muted);">No courses yet. <a href="{% url 'add_course' %}">Add one</a>.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block custom_js %}
+<script>
+document.getElementById('search_input').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#course_table tbody tr').forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
 {% endblock %}

@@ -1,153 +1,128 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{page_title}}{% endblock page_title %}
+{% block page_title %}{{ page_title }}{% endblock %}
 
 {% block content %}
-
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-12">
-                <!-- general form elements -->
-                <div class="card card-dark">
-                    <div class="card-header">
-                        <h3 class="card-title">{{page_title}}</h3>
-                    </div>
-
-                    <div class="table card-body">
-                        <table class="table table-bordered table-hover">
-                            <tr>
-                                <th>#</th>
-                                <th>Staff</th>
-                                <th>Course</th>
-                                <th>Message</th>
-                                <th>Sent On</th>
-                                <th>Replied On</th>
-                                <th>Action</th>
-                            </tr>
-                            {% for feedback in  feedbacks %}
-                              <tr>
-                                  <td>{{forloop.counter}}</td>
-                                  <td>{{feedback.staff}}</td>
-                                  <td>{{feedback.staff.course}}</td>
-                                  <td>{{feedback.feedback}}</td>
-                                      
-                                            
-                                    {% if feedback.reply == "" %}
-                                    <td>{{feedback.created_at}}</td>
-                                    <td><span  class='badge badge-warning'>Pending Response</span></td>
-                                         <td> <button data-bs-toggle="modal" data-bs-target="#reply_modal" value="{{feedback.id}}" class="btn btn-success reply_open_modal">Reply</button>
-                                        {% else %}
-                                        <td>{{feedback.created_at}}</td>
-                                        <td>{{feedback.updated_at}}</td>
-                                          <td>{{feedback.reply}}</td>
-                                    {% endif %}
-                                  </td>
-                       
-                              </tr>
-                            {% endfor %}
-                        </table>
-                    </div>
-                    </div>
-                <!-- /.card -->
-
-            </div>
+<div class="dt-card">
+  <div class="dt-header">
+    <div class="dt-title"><i class="fas fa-comments me-2"></i>{{ page_title }} <span class="dt-count">{{ feedbacks|length }}</span></div>
+  </div>
+  {% if feedbacks %}
+  <div style="padding:16px 20px; display:grid; gap:12px;">
+    {% for feedback in feedbacks %}
+    <div style="background:var(--ice-surface2); border:1px solid var(--ice-border); border-radius:10px; padding:14px 18px;">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+        <div>
+          <div style="font-weight:600; font-size:13px; color:var(--ice-text);">{{ feedback.staff }}</div>
+          <div style="font-size:11px; color:var(--ice-muted);">{{ feedback.staff.course }}</div>
         </div>
+        <div style="font-size:11px; color:var(--ice-muted);"><i class="fas fa-clock me-1"></i>{{ feedback.created_at|date:"d M Y, H:i" }}</div>
+      </div>
+      <div style="font-size:13px; color:var(--ice-text); line-height:1.6; margin-bottom:10px;">{{ feedback.feedback }}</div>
+      {% if feedback.reply %}
+      <div style="background:rgba(6,182,212,.07); border-left:3px solid var(--ice-cyan); border-radius:0 8px 8px 0; padding:10px 14px; font-size:12px; line-height:1.5;">
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--ice-cyan); margin-bottom:4px;">
+          <i class="fas fa-reply me-1"></i>Your Reply · {{ feedback.updated_at|date:"d M Y, H:i" }}
+        </div>
+        {{ feedback.reply }}
+      </div>
+      {% else %}
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="sb sb-warning"><i class="fas fa-clock me-1"></i>Pending Reply</span>
+        <button class="btn btn-success btn-sm reply-btn" data-id="{{ feedback.id }}" data-name="{{ feedback.staff }}">
+          <i class="fas fa-reply me-1"></i>Reply
+        </button>
+      </div>
+      {% endif %}
     </div>
-</section>
-<div class = "modal fade" id = "reply_modal" tabindex = "-1" role = "dialog" 
-   aria-labelledby = "myModalLabel" aria-hidden = "true">
-   
-   <div class = "modal-dialog">
-      <div class = "modal-content">
-         
-         <div class = "modal-header">
-            <button type = "button" class = "btn-close" data-bs-dismiss = "modal" aria-hidden = "true">
-            </button>
-            
-            <h4 class = "modal-title" id = "myModalLabel">
-               
-            </h4>
-         </div>
-         
-         <div class = "modal-body">
-             <input type="hidden"  id="id">
-           <p> Reply <span id="reply_name"></span></p>  
-           <textarea name="reply_message" id="reply_message" cols="30" rows="10" class="form-control"></textarea>
-        </div>
-        
-        <div class = "modal-footer">
-            <button type = "button" class = "btn btn-danger" data-bs-dismiss = "modal">
-                Close
-            </button>
-            
-            <button id="reply_btn" class="btn btn-success btn-block">Reply</button>
-         
-         </div>
-         
-      </div><!-- /.modal-content -->
-   </div><!-- /.modal-dialog -->
-  
-</div><!-- /.modal -->
-{% endblock content %}
-{% block custom_js %}
-  <script>
-      // Get CSRF token
-      function getCookie(name) {
-          let cookieValue = null;
-          if (document.cookie && document.cookie !== '') {
-              const cookies = document.cookie.split(';');
-              for (let i = 0; i < cookies.length; i++) {
-                  const cookie = cookies[i].trim();
-                  if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                      cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                      break;
-                  }
-              }
-          }
-          return cookieValue;
-      }
-      const csrftoken = getCookie('csrftoken');
-      
-      $(document).ready(function(){
-          $(".reply_open_modal").click(function(){
-              var id = $(this).val()
-              var name = $(this).parents("tr").children("td:eq(1)").text()
-              $("#reply_name").text(name)
-              $("#id").val(id)
-              
-              
-            })
-            
-            $("#reply_btn").on("click", function(){
-                var id = $("#id").val()
-                var reply = $("#reply_message").val()
-                if (reply.trim() === '') {
-                    alert("Please enter a reply message.");
-                    return;
-                }
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center; padding:48px; color:var(--ice-muted);">
+    <i class="fas fa-comments" style="font-size:36px; opacity:.2; display:block; margin-bottom:12px;"></i>
+    No feedback from teachers yet.
+  </div>
+  {% endif %}
+</div>
 
-                $.ajax({
-                    url: "{% url 'staff_feedback_message' %}",
-                    type:'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken
-                    },
-                    data:{
-                          id:id,
-                          reply:reply
-                    }
-                }).done(function(response){
-                    if (response == "True"){
-                        alert("Reply Sent")
-                        location.reload()
-                    }else{
-                        alert("Reply Could Not Be Sent")
-                    }
-                }).fail(function(response){
-                    alert("Error Occured. ")
-                })
-          })
-      })
-  </script>
-{% endblock custom_js %}
+<!-- Reply Modal -->
+<div class="ice-modal-overlay" id="reply_modal" onclick="if(event.target===this)closeModal()">
+  <div class="ice-modal">
+    <div class="ice-modal-header">
+      <h5><i class="fas fa-reply me-2" style="color:var(--ice-cyan);"></i>Reply to Feedback</h5>
+      <button class="ice-modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="ice-modal-body">
+      <p style="font-size:13px; color:var(--ice-muted); margin-bottom:16px;">
+        Replying to feedback from <strong id="reply_name"></strong>
+      </p>
+      <input type="hidden" id="reply_id">
+      <label class="pf-label">Your Reply</label>
+      <textarea id="reply_message" rows="5" class="form-control" style="border-radius:9px; border:1.5px solid var(--ice-border); padding:10px 14px; font-size:14px;" placeholder="Write your reply…"></textarea>
+      <div id="modal_status" class="mt-3" style="display:none;"></div>
+    </div>
+    <div class="ice-modal-footer">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-success btn-sm" id="reply_btn" onclick="submitReply()">
+        <i class="fas fa-check me-1"></i> Send Reply
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block custom_js %}
+<script>
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? '';
+
+document.querySelectorAll('.reply-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    document.getElementById('reply_id').value = this.dataset.id;
+    document.getElementById('reply_name').textContent = this.dataset.name;
+    document.getElementById('reply_message').value = '';
+    document.getElementById('modal_status').style.display = 'none';
+    document.getElementById('reply_btn').disabled = false;
+    document.getElementById('reply_btn').innerHTML = '<i class="fas fa-check me-1"></i> Send Reply';
+    document.getElementById('reply_modal').classList.add('open');
+  });
+});
+
+function closeModal() { document.getElementById('reply_modal').classList.remove('open'); }
+
+function submitReply() {
+  const id = document.getElementById('reply_id').value;
+  const reply = document.getElementById('reply_message').value.trim();
+  if (!reply) { alert('Please enter a reply.'); return; }
+
+  const btn = document.getElementById('reply_btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending…';
+
+  fetch("{% url 'staff_feedback_message' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ id, reply })
+  })
+  .then(r => r.text())
+  .then(resp => {
+    if (resp === 'True') {
+      document.getElementById('modal_status').innerHTML =
+        '<div class="alert alert-success mb-0"><i class="fas fa-check-circle me-1"></i> Reply sent.</div>';
+      document.getElementById('modal_status').style.display = 'block';
+      setTimeout(() => { closeModal(); location.reload(); }, 1200);
+    } else {
+      document.getElementById('modal_status').innerHTML =
+        '<div class="alert alert-danger mb-0">Failed to send reply. Try again.</div>';
+      document.getElementById('modal_status').style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-check me-1"></i> Send Reply';
+    }
+  })
+  .catch(() => {
+    alert('Network error.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check me-1"></i> Send Reply';
+  });
+}
+</script>
+{% endblock %}

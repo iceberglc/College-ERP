@@ -1,49 +1,59 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{page_title}}{% endblock page_title %}
+{% block page_title %}{{ page_title }}{% endblock %}
 
 {% block content %}
-
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">{{page_title}}</h3>
-                    </div>
-                    <!-- /.card-header -->
-                    <div class="card-body">
-                        <table id="example2" class="table table-bordered table-hover">
-                            <thead class="thead-dark">
-                                <tr>
-                                    <th>#</th>
-                                    <th>Subject</th>
-                                    <th>Teacher</th>
-                                    <th>Program</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for subject in subjects %}
-                                <tr>
-                                    <td>{{ forloop.counter }}</td>
-                                    <td>{{subject.name}}</td>
-                                    <td>{{subject.staff.admin}}</td>
-                                    <td>{{subject.course.name}}</td>
-                                    <td>
-                                        <a href="{% url 'edit_subject' subject.id %}" class="btn btn-info">Edit</a> -
-                                        <a href="{% url 'delete_subject' subject.id %}" onclick="return confirm('Are you sure you want to delete this ?')" class="btn btn-danger">Delete</a> 
-
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="dt-card">
+  <div class="dt-header">
+    <div class="dt-title"><i class="fas fa-book-open"></i> {{ page_title }} <span class="dt-count">{{ subjects|length }} subjects</span></div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <input type="text" id="search_input" class="dt-search" placeholder="Search…">
+      <a href="{% url 'add_subject' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> Add Subject</a>
     </div>
-</section>
-{% endblock content %}
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="dt" id="subject_table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Subject Name</th>
+          <th>Teacher</th>
+          <th>Program</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for subject in subjects %}
+        <tr>
+          <td style="color:var(--ice-muted); width:40px;">{{ forloop.counter }}</td>
+          <td style="font-weight:600;">{{ subject.name }}</td>
+          <td style="color:var(--ice-muted);">{{ subject.staff.admin|default:"—" }}</td>
+          <td style="color:var(--ice-muted); font-size:12px;">{{ subject.course.name }}</td>
+          <td>
+            <div class="ab-row">
+              <a href="{% url 'edit_subject' subject.id %}" class="ab-edit"><i class="fas fa-edit"></i> Edit</a>
+              <a href="{% url 'delete_subject' subject.id %}"
+                 onclick="return confirm('Delete this subject?')"
+                 class="ab-danger"><i class="fas fa-trash"></i> Delete</a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center; padding:48px; color:var(--ice-muted);">No subjects yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block custom_js %}
+<script>
+document.getElementById('search_input').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#subject_table tbody tr').forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}
