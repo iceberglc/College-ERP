@@ -4,6 +4,7 @@ import os
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordResetView
 from django.core.exceptions import PermissionDenied
 from django.db import DatabaseError
@@ -192,9 +193,8 @@ class SafePasswordResetView(PasswordResetView):
 # Shared AJAX / utility views
 # ---------------------------------------------------------------------------
 
+@login_required
 def get_attendance(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({'error': 'Authentication required.'}, status=401)
     group_id = request.POST.get('group')
     try:
         from .models import Group

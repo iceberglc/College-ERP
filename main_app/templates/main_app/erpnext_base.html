@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>{% block title %}College ERP - {% block page_title %}Dashboard{% endblock page_title %}{% endblock title %}</title>
+    <title>{% block title %}ICEBERG — {% block page_title %}Dashboard{% endblock page_title %}{% endblock title %}</title>
     
     <!-- Favicon -->
     <link rel="shortcut icon" href="{% static 'image/favicon1.ico' %}">
@@ -32,8 +32,8 @@
             <button class="navbar-toggle" onclick="toggleSidebar()">
                 <i class="fas fa-bars"></i>
             </button>
-            <a href="{% if user.user_type == '1' %}{% url 'admin_home' %}{% elif user.user_type == '2' %}{% url 'staff_home' %}{% else %}{% url 'student_home' %}{% endif %}" class="navbar-brand">
-                College ERP
+            <a href="{% if user.user_type == '1' %}{% url 'admin_home' %}{% elif user.user_type == '2' %}{% url 'staff_home' %}{% else %}{% url 'student_home' %}{% endif %}" class="navbar-brand" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;">
+                <img src="{% static 'dist/img/iceberg-wordmark.png' %}" alt="ICEBERG" style="height:30px;width:auto;display:block;">
             </a>
         </div>
         
@@ -41,13 +41,11 @@
             <!-- Dark Mode Toggle -->
             <label class="theme-toggle" for="theme-switch">
                 <input type="checkbox" id="theme-switch" />
-                <p>jfef</p>
                 <span class="slider">
                     <i class="fas fa-sun icon-light"></i>
                     <i class="fas fa-moon icon-dark"></i>
                 </span>
             </label>
-            <p>gygy</p>
             
             <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
             {% if user.profile_pic %}

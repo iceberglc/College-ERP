@@ -280,6 +280,18 @@ class SubmissionForm(FormSettings):
         fields = ['file', 'note']
 
 
+class BookForm(forms.ModelForm):
+    class Meta:
+        model = models.Book
+        fields = ['name', 'author', 'isbn', 'category']
+        widgets = {
+            'name':     TextInput(attrs={'class': 'form-control', 'placeholder': 'Book title'}),
+            'author':   TextInput(attrs={'class': 'form-control', 'placeholder': 'Author name'}),
+            'isbn':     TextInput(attrs={'class': 'form-control', 'placeholder': 'ISBN number'}),
+            'category': TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Science'}),
+        }
+
+
 class IssueBookForm(forms.Form):
     """Form for creating a new Loan (book lending).
 

@@ -17,6 +17,11 @@ def _default_loan_due_date():
     return timezone.now().date() + timedelta(days=_LOAN_PERIOD_DAYS)
 
 
+def expiry():
+    # Retained for historical migration compatibility (0001_initial.py references this)
+    return datetime.today() + timedelta(days=14)
+
+
 
 
 class CustomUserManager(UserManager):
@@ -59,9 +64,9 @@ class CustomUser(AbstractUser):
     username = None  # Removed username, using email instead
     email = models.EmailField(unique=True)
     user_type = models.CharField(default='1', choices=USER_TYPE, max_length=1)
-    gender = models.CharField(max_length=1, choices=GENDER)
-    profile_pic = models.ImageField()
-    address = models.TextField()
+    gender = models.CharField(max_length=1, choices=GENDER, blank=True, default='')
+    profile_pic = models.ImageField(blank=True, null=True)
+    address = models.TextField(blank=True, default='')
     fcm_token = models.TextField(default="")  # For firebase notifications
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -90,7 +95,7 @@ class Course(models.Model):
 class Book(models.Model):
     name = models.CharField(max_length=200)
     author = models.CharField(max_length=200)
-    isbn = models.PositiveIntegerField()
+    isbn = models.PositiveIntegerField(unique=True)
     category = models.CharField(max_length=50)
 
     def __str__(self):
@@ -105,22 +110,6 @@ class Student(models.Model):
     def __str__(self):
         return self.admin.last_name + ", " + self.admin.first_name
 
-class Library(models.Model):
-    student = models.ForeignKey(Student,  on_delete=models.CASCADE, null=True, blank=False)
-    book = models.ForeignKey(Book,  on_delete=models.CASCADE, null=True, blank=False)
-    def __str__(self):
-        return str(self.student)
-
-def expiry():
-    return datetime.today() + timedelta(days=14)
-class IssuedBook(models.Model):
-    student_id = models.CharField(max_length=100, blank=True)
-    isbn = models.PositiveIntegerField()
-    issued_date = models.DateField(auto_now=True)
-    expiry_date = models.DateField(default=expiry)
-
-
-
 class Staff(models.Model):
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=False)
     admin = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
@@ -132,10 +121,16 @@ class Staff(models.Model):
 
 class Subject(models.Model):
     name = models.CharField(max_length=120)
-    staff = models.ForeignKey(Staff,on_delete=models.CASCADE,)
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['course']),
+            models.Index(fields=['staff']),
+        ]
 
     def __str__(self):
         return self.name
@@ -170,21 +165,37 @@ class AttendanceReport(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['student']),
+            models.Index(fields=['attendance']),
+        ]
+
 
 class LeaveReportStudent(models.Model):
+    PENDING = 0
+    APPROVED = 1
+    REJECTED = -1
+    LEAVE_STATUS = ((PENDING, 'Pending'), (APPROVED, 'Approved'), (REJECTED, 'Rejected'))
+
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    date = models.DateField(null=True, blank=True)   # was CharField (audit #12)
+    date = models.DateField(null=True, blank=True)
     message = models.TextField()
-    status = models.SmallIntegerField(default=0)
+    status = models.SmallIntegerField(default=PENDING, choices=LEAVE_STATUS)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
 
 class LeaveReportStaff(models.Model):
+    PENDING = 0
+    APPROVED = 1
+    REJECTED = -1
+    LEAVE_STATUS = ((PENDING, 'Pending'), (APPROVED, 'Approved'), (REJECTED, 'Rejected'))
+
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
-    date = models.DateField(null=True, blank=True)   # was CharField (audit #12)
+    date = models.DateField(null=True, blank=True)
     message = models.TextField()
-    status = models.SmallIntegerField(default=0)
+    status = models.SmallIntegerField(default=PENDING, choices=LEAVE_STATUS)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -292,6 +303,10 @@ class Enrollment(models.Model):
 
     class Meta:
         unique_together = ('student', 'group')
+        indexes = [
+            models.Index(fields=['student']),
+            models.Index(fields=['group']),
+        ]
 
     def __str__(self):
         return f"{self.student} → {self.group}"
@@ -387,6 +402,10 @@ class Loan(models.Model):
 
     class Meta:
         ordering = ['-issued_on']
+        indexes = [
+            models.Index(fields=['student']),
+            models.Index(fields=['returned_on']),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=['student', 'book'],

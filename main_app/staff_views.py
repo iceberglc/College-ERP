@@ -331,6 +331,7 @@ def staff_view_profile(request):
     return render(request, "staff_template/staff_view_profile.html", context)
 
 
+@staff_only
 def staff_fcmtoken(request):
     token = request.POST.get('token')
     try:
@@ -357,7 +358,8 @@ def staff_view_notification(request):
 @staff_only
 def staff_add_result(request):
     staff = get_object_or_404(Staff, admin=request.user)
-    groups = Group.objects.filter(is_archived=False).select_related('course')
+    # Only allow the teacher to add results for groups they teach.
+    groups = Group.objects.filter(teacher=staff, is_archived=False).select_related('course')
     context = {
         'page_title': 'Result Upload',
         'groups': groups,
@@ -366,19 +368,26 @@ def staff_add_result(request):
         try:
             student_id = request.POST.get('student_list')
             group_id = request.POST.get('group')
-            test = request.POST.get('test')
-            exam = request.POST.get('exam')
+            test = float(request.POST.get('test') or 0)
+            exam = float(request.POST.get('exam') or 0)
+            # Ownership: group must belong to this teacher.
+            group = get_object_or_404(Group, id=group_id, teacher=staff)
             student = get_object_or_404(Student, id=student_id)
-            group = get_object_or_404(Group, id=group_id)
-            result, created = StudentResult.objects.get_or_create(
-                student=student, group=group,
-                defaults={'test': test, 'exam': exam},
-            )
-            if not created:
-                result.test = test
-                result.exam = exam
-                result.save()
-            messages.success(request, "Scores " + ("Saved" if created else "Updated"))
+            # Integrity: student must be enrolled in this group.
+            if not Enrollment.objects.filter(student=student, group=group, is_active=True).exists():
+                messages.warning(request, "That student is not enrolled in the selected group.")
+            else:
+                result, created = StudentResult.objects.get_or_create(
+                    student=student, group=group,
+                    defaults={'test': test, 'exam': exam},
+                )
+                if not created:
+                    result.test = test
+                    result.exam = exam
+                    result.save()
+                messages.success(request, "Scores " + ("Saved" if created else "Updated"))
+        except ValueError:
+            messages.warning(request, "Test and exam scores must be numbers.")
         except Exception as e:
             messages.warning(request, "Error processing form: " + str(e))
     return render(request, "staff_template/staff_add_result.html", context)
@@ -397,24 +406,22 @@ def fetch_student_result(request):
     except Exception:
         return HttpResponse('False')
 
-#library
+# ── Library ───────────────────────────────────────────────────────────────────
+
 @staff_only
 def add_book(request):
-    if request.method == "POST":
-        name = request.POST['name']
-        author = request.POST['author']
-        isbn = request.POST['isbn']
-        category = request.POST['category']
-
-
-        books = Book.objects.create(name=name, author=author, isbn=isbn, category=category )
-        books.save()
-        alert = True
-        return render(request, "staff_template/add_book.html", {'alert':alert})
-    context = {
-        'page_title': "Add Book"
-    }
-    return render(request, "staff_template/add_book.html",context)
+    form = BookForm(request.POST or None)
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Book added successfully.")
+            form = BookForm()
+        else:
+            messages.warning(request, "Please correct the errors below.")
+    return render(request, "staff_template/add_book.html", {
+        'form': form,
+        'page_title': "Add Book",
+    })
 
 # ── Lending (issue / return) ───────────────────────────────────────────────────
 

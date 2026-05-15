@@ -13,8 +13,6 @@ admin.site.register(Staff)
 admin.site.register(Student)
 admin.site.register(Course)
 admin.site.register(Book)
-admin.site.register(IssuedBook)   # legacy, retained for one release; superseded by Loan
-admin.site.register(Library)      # legacy, unused; superseded by Loan
 admin.site.register(Loan)
 admin.site.register(Subject)
 admin.site.register(Session)

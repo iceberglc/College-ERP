@@ -207,6 +207,7 @@ def student_view_profile(request):
     return render(request, "student_template/student_view_profile.html", context)
 
 
+@student_only
 def student_fcmtoken(request):
     token = request.POST.get('token')
     student_user = get_object_or_404(CustomUser, id=request.user.id)
@@ -233,7 +234,12 @@ def student_view_notification(request):
 @student_only
 def student_view_result(request):
     student = get_object_or_404(Student, admin=request.user)
-    results = StudentResult.objects.filter(student=student).select_related('group')
+    enrolled_group_ids = Enrollment.objects.filter(
+        student=student, is_active=True
+    ).values_list('group_id', flat=True)
+    results = StudentResult.objects.filter(
+        student=student, group_id__in=enrolled_group_ids
+    ).select_related('group', 'subject')
     context = {
         'results': results,
         'page_title': "View Results",
