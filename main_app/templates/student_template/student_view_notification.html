@@ -1,59 +1,161 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{page_title}}{% endblock page_title %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block custom_css %}
+<style>
+  .notif-wrap { max-width: 720px; margin: 0 auto; }
+
+  .notif-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px;
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    transition: box-shadow .18s, transform .18s;
+    position: relative;
+  }
+  .notif-item:hover {
+    box-shadow: 0 4px 16px rgba(27,63,122,.10);
+    transform: translateY(-1px);
+  }
+  .notif-item.unread {
+    border-left: 3px solid var(--ice-cyan);
+    background: var(--ice-surface2);
+  }
+  .notif-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .notif-icon.attendance { background: rgba(245,158,11,.12); color: var(--ice-warning); }
+  .notif-icon.result     { background: rgba(16,185,129,.12); color: var(--ice-success); }
+  .notif-icon.homework   { background: rgba(59,130,246,.12); color: var(--ice-info); }
+  .notif-icon.general    { background: rgba(100,116,139,.12); color: var(--ice-muted); }
+
+  .notif-body { flex: 1; min-width: 0; }
+  .notif-message {
+    font-size: 14px;
+    color: var(--ice-text);
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+  .notif-meta {
+    font-size: 11px;
+    color: var(--ice-muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .notif-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+  }
+  .nb-attendance { background: rgba(245,158,11,.12); color: var(--ice-warning); }
+  .nb-result     { background: rgba(16,185,129,.12); color: var(--ice-success); }
+  .nb-homework   { background: rgba(59,130,246,.12); color: var(--ice-info); }
+  .nb-general    { background: rgba(100,116,139,.12); color: var(--ice-muted); }
+
+  .unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ice-cyan);
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+
+  .notif-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .notif-count-chip {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ice-muted);
+  }
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ice-muted);
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 12px;
+  }
+  .empty-state i { font-size: 48px; opacity: .2; display: block; margin-bottom: 16px; }
+  .empty-state p { font-size: 14px; margin: 0; }
+</style>
+{% endblock custom_css %}
+
 {% block content %}
+<div class="notif-wrap">
 
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-12">
-                <!-- general form elements -->
-                <div class="card card-dark">
-                    <div class="card-header">
-                        <h3 class="card-title">{{page_title}}</h3>
-                    </div>
-
-
-                    <!-- /.card-header -->
-                    <!-- form start -->
-                    <div class="card-body">
-
-
-
-                       
-
-
-                        <div class="form-group table">
-              <table class="table table-bordered">
-                  <tr>
-                      <th>#</th>
-                      <th>Date</th>
-                      <th>Type</th>
-                      <th>Message</th>
-                  </tr>
-                  {% for notification in notifications %}
-                    <tr {% if not notification.is_read %}class="table-active"{% endif %}>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ notification.created_at|date:"M d, Y H:i" }}</td>
-                        <td>
-                          <span class="badge badge-{% if notification.category == 'attendance' %}warning{% elif notification.category == 'result' %}success{% elif notification.category == 'homework' %}info{% else %}secondary{% endif %}">
-                            {{ notification.get_category_display }}
-                          </span>
-                        </td>
-                        <td>{{ notification.message }}</td>
-                    </tr>
-                  {% endfor %}
-              </table>
-                        </div>
-                   
-                    </div>
-                    <!-- /.card-body -->
-
-                <!-- /.card -->
-
-            </div>
-        </div>
+  <div class="notif-header-bar">
+    <div style="font-size:13px; color: var(--ice-muted);">
+      <i class="fas fa-bell me-1"></i>
+      {% with total=notifications|length %}
+        {{ total }} notification{{ total|pluralize }}
+      {% endwith %}
     </div>
-</section>
-{% endblock content %}
+    {% if notifications %}
+    <span class="notif-count-chip">
+      <i class="fas fa-circle me-1" style="font-size:7px; color: var(--ice-cyan);"></i>
+      {{ notifications|length }} total
+    </span>
+    {% endif %}
+  </div>
 
+  {% if notifications %}
+    {% for n in notifications %}
+    <div class="notif-item {% if not n.is_read %}unread{% endif %}">
+      <div class="notif-icon {{ n.category|default:'general' }}">
+        {% if n.category == 'attendance' %}<i class="fas fa-calendar-check"></i>
+        {% elif n.category == 'result' %}<i class="fas fa-chart-bar"></i>
+        {% elif n.category == 'homework' %}<i class="fas fa-tasks"></i>
+        {% else %}<i class="fas fa-bell"></i>{% endif %}
+      </div>
+      <div class="notif-body">
+        <div class="notif-message">{{ n.message }}</div>
+        <div class="notif-meta">
+          <span><i class="fas fa-clock me-1"></i>{{ n.created_at|date:"M d, Y · H:i" }}</span>
+          <span class="notif-badge nb-{{ n.category|default:'general' }}">
+            {{ n.get_category_display|default:"General" }}
+          </span>
+        </div>
+      </div>
+      {% if not n.is_read %}<div class="unread-dot"></div>{% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-bell-slash"></i>
+    <p style="font-size:16px; font-weight:600; color: var(--ice-text); margin-bottom:8px;">No Notifications Yet</p>
+    <p>You'll see attendance updates, results, and announcements here.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

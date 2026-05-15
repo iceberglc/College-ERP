@@ -1,76 +1,142 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock %}
+
+{% block custom_css %}
+<style>
+  .table-card {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(27,63,122,.06);
+  }
+  .table-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--ice-surface2);
+    border-bottom: 1px solid var(--ice-border);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .table-card-title { font-size: 14px; font-weight: 600; color: var(--ice-text); display: flex; align-items: center; gap: 8px; }
+  .table-card-title i { color: var(--ice-cyan); }
+
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    padding: 11px 16px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--ice-muted);
+    background: var(--ice-surface2);
+    border-bottom: 1px solid var(--ice-border);
+    white-space: nowrap;
+  }
+  .data-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--ice-text);
+    border-bottom: 1px solid var(--ice-border);
+    vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tbody tr { transition: background .12s; }
+  .data-table tbody tr:hover { background: var(--ice-surface2); }
+  .data-table tbody tr.archived { opacity: .6; }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .status-active   { background: rgba(16,185,129,.10); color: var(--ice-success); }
+  .status-archived { background: rgba(100,116,139,.10); color: var(--ice-muted); }
+
+  .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .btn-edit    { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(59,130,246,.10); color: var(--ice-info); border: 1px solid rgba(59,130,246,.2); text-decoration: none; transition: all .15s; }
+  .btn-archive { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(245,158,11,.10); color: var(--ice-warning); border: 1px solid rgba(245,158,11,.2); text-decoration: none; transition: all .15s; }
+  .btn-delete  { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(239,68,68,.10); color: var(--ice-danger); border: 1px solid rgba(239,68,68,.2); text-decoration: none; transition: all .15s; }
+  .btn-edit:hover    { background: rgba(59,130,246,.18); text-decoration: none; color: var(--ice-info); }
+  .btn-archive:hover { background: rgba(245,158,11,.18); text-decoration: none; color: var(--ice-warning); }
+  .btn-delete:hover  { background: rgba(239,68,68,.18); text-decoration: none; color: var(--ice-danger); }
+
+  .group-name { font-weight: 600; }
+  .empty-row td { text-align: center; padding: 48px 20px; color: var(--ice-muted); font-size: 13px; }
+</style>
+{% endblock custom_css %}
+
 {% block content %}
-<section class="content">
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h3 class="card-title">{{ page_title }}</h3>
-            <a href="{% url 'add_group' %}" class="btn btn-primary btn-sm">
-              <i class="fas fa-plus"></i> Add Group
-            </a>
-          </div>
-          <div class="card-body" style="overflow-x:auto;">
-            <table class="table table-bordered table-hover">
-              <thead class="thead-dark">
-                <tr>
-                  <th>#</th>
-                  <th>Group Name</th>
-                  <th>Program</th>
-                  <th>Teacher</th>
-                  <th>Branch</th>
-                  <th>Schedule</th>
-                  <th>Cap.</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for group in groups %}
-                <tr {% if group.is_archived %}class="table-secondary text-muted"{% endif %}>
-                  <td>{{ forloop.counter }}</td>
-                  <td>
-                    {{ group.name }}
-                    {% if group.is_archived %}<span class="badge badge-secondary ml-1">Archived</span>{% endif %}
-                  </td>
-                  <td>{{ group.course.name }}</td>
-                  <td>{{ group.teacher|default:"—" }}</td>
-                  <td>{{ group.branch|default:"—" }}</td>
-                  <td>{{ group.schedule|default:"—" }}</td>
-                  <td>{{ group.capacity }}</td>
-                  <td>
-                    {% if group.is_archived %}
-                      <span class="badge badge-secondary">Archived</span>
-                    {% else %}
-                      <span class="badge badge-success">Active</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <a href="{% url 'edit_group' group.id %}" class="btn btn-info btn-sm">Edit</a>
-                    <a href="{% url 'archive_group' group.id %}"
-                       class="btn btn-warning btn-sm"
-                       onclick="return confirm('{% if group.is_archived %}Restore{% else %}Archive{% endif %} this group?')">
-                      {% if group.is_archived %}Restore{% else %}Archive{% endif %}
-                    </a>
-                    <a href="{% url 'delete_group' group.id %}"
-                       class="btn btn-danger btn-sm"
-                       onclick="return confirm('Permanently delete this group? This only works if it has no students or records.')">
-                      Delete
-                    </a>
-                  </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="9" class="text-center text-muted">No groups yet. <a href="{% url 'add_group' %}">Add one</a>.</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+<div class="table-card">
+  <div class="table-card-header">
+    <div class="table-card-title">
+      <i class="fas fa-layer-group"></i> {{ page_title }}
+      <span style="font-size:12px; color:var(--ice-muted); font-weight:400;">{{ groups|length }} groups</span>
     </div>
+    <a href="{% url 'add_group' %}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus me-1"></i> Add Group
+    </a>
   </div>
-</section>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Group Name</th>
+          <th>Program</th>
+          <th>Teacher</th>
+          <th>Branch</th>
+          <th>Schedule</th>
+          <th>Cap.</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for group in groups %}
+        <tr {% if group.is_archived %}class="archived"{% endif %}>
+          <td style="color:var(--ice-muted); width:40px;">{{ forloop.counter }}</td>
+          <td>
+            <div class="group-name">{{ group.name }}</div>
+          </td>
+          <td style="color:var(--ice-muted);">{{ group.course.name }}</td>
+          <td style="color:var(--ice-muted);">{{ group.teacher|default:"—" }}</td>
+          <td style="color:var(--ice-muted);">{{ group.branch|default:"—" }}</td>
+          <td style="color:var(--ice-muted); font-size:12px;">{{ group.schedule|default:"—" }}</td>
+          <td style="color:var(--ice-muted);">{{ group.capacity }}</td>
+          <td>
+            {% if group.is_archived %}
+              <span class="status-badge status-archived"><i class="fas fa-archive me-1"></i>Archived</span>
+            {% else %}
+              <span class="status-badge status-active"><i class="fas fa-circle me-1" style="font-size:7px;"></i>Active</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="action-btns">
+              <a href="{% url 'edit_group' group.id %}" class="btn-edit"><i class="fas fa-edit me-1"></i>Edit</a>
+              <a href="{% url 'archive_group' group.id %}" class="btn-archive"
+                 onclick="return confirm('{% if group.is_archived %}Restore{% else %}Archive{% endif %} this group?')">
+                {% if group.is_archived %}Restore{% else %}Archive{% endif %}
+              </a>
+              <a href="{% url 'delete_group' group.id %}" class="btn-delete"
+                 onclick="return confirm('Permanently delete this group?')">
+                <i class="fas fa-trash me-1"></i>Delete
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="9"><i class="fas fa-layer-group" style="font-size:32px; opacity:.2; display:block; margin-bottom:10px;"></i>No groups yet. <a href="{% url 'add_group' %}">Add one</a>.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

@@ -1,61 +1,246 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock %}
+
+{% block custom_css %}
+<style>
+  .results-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  .result-card {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(27,63,122,.05);
+    transition: box-shadow .18s, transform .18s;
+  }
+  .result-card:hover {
+    box-shadow: 0 4px 16px rgba(27,63,122,.10);
+    transform: translateY(-1px);
+  }
+  .result-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--ice-border);
+    background: var(--ice-surface2);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .result-group-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ice-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .result-group-name i { color: var(--ice-cyan); }
+
+  .grade-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -.5px;
+    flex-shrink: 0;
+  }
+  .grade-A { background: rgba(16,185,129,.12); color: var(--ice-success); }
+  .grade-B { background: rgba(6,182,212,.12);  color: var(--ice-cyan-dk); }
+  .grade-C { background: rgba(245,158,11,.12); color: var(--ice-warning); }
+  .grade-D { background: rgba(100,116,139,.12);color: var(--ice-muted);   }
+  .grade-F { background: rgba(239,68,68,.12);  color: var(--ice-danger);  }
+
+  .result-card-body {
+    padding: 16px 20px;
+  }
+  .score-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .score-item { flex: 1; min-width: 120px; }
+  .score-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--ice-muted);
+    margin-bottom: 6px;
+  }
+  .score-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ice-text);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .score-bar-track {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--ice-border);
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width .4s ease;
+  }
+  .fill-test  { background: var(--ice-info); }
+  .fill-exam  { background: var(--ice-cyan); }
+  .fill-total { background: var(--ice-success); }
+  .fill-total-warn { background: var(--ice-warning); }
+  .fill-total-bad  { background: var(--ice-danger);  }
+
+  .score-max {
+    font-size: 10px;
+    color: var(--ice-muted);
+    margin-top: 3px;
+  }
+  .divider-v {
+    width: 1px;
+    background: var(--ice-border);
+    align-self: stretch;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ice-muted);
+  }
+  .empty-state i {
+    font-size: 48px;
+    opacity: .25;
+    margin-bottom: 16px;
+    display: block;
+  }
+  .empty-state p { font-size: 14px; margin: 0; }
+
+  .results-summary {
+    background: linear-gradient(135deg, var(--ice-navy), #1340A8);
+    border-radius: 12px;
+    padding: 20px 24px;
+    color: white;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .summary-stat { text-align: center; }
+  .summary-stat .num { font-size: 24px; font-weight: 700; line-height: 1; }
+  .summary-stat .lbl { font-size: 11px; opacity: .75; font-weight: 500; margin-top: 3px; }
+  .summary-divider { width: 1px; height: 40px; background: rgba(255,255,255,.2); }
+
+  .dark-mode .result-card { background: var(--ice-surface); border-color: var(--ice-border); }
+  .dark-mode .result-card-header { background: var(--ice-surface2); }
+</style>
+{% endblock custom_css %}
+
 {% block content %}
-<section class="content">
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-md-8 offset-md-2">
-        <div class="card card-dark">
-          <div class="card-header">
-            <h3 class="card-title">{{ page_title }}</h3>
+<div class="results-wrap">
+
+  {% if results %}
+  <!-- Summary Banner -->
+  <div class="results-summary">
+    <div style="flex:1; min-width:150px;">
+      <div style="font-size:13px; opacity:.8; font-weight:500; margin-bottom:4px;">
+        <i class="fas fa-chart-bar me-1"></i> Academic Results
+      </div>
+      <div style="font-size:20px; font-weight:700;">{{ page_title }}</div>
+    </div>
+    <div class="summary-divider d-none d-sm-block"></div>
+    <div class="summary-stat">
+      <div class="num">{{ results|length }}</div>
+      <div class="lbl">Subjects</div>
+    </div>
+    <div class="summary-divider d-none d-sm-block"></div>
+    <div class="summary-stat">
+      <div class="num">
+        {% with pass_count=0 %}
+          {% for r in results %}{% with t=r.test|add:r.exam %}{% if t >= 45 %}{{ forloop.counter|add:"0" }}{% endif %}{% endwith %}{% endfor %}
+        {% endwith %}
+        —
+      </div>
+      <div class="lbl">Results</div>
+    </div>
+  </div>
+
+  <!-- Result Cards -->
+  {% for r in results %}
+  {% with total=r.test|add:r.exam %}
+  <div class="result-card">
+    <div class="result-card-header">
+      <div class="result-group-name">
+        <i class="fas fa-layer-group"></i>
+        {% if r.group %}{{ r.group.name }}{% else %}General{% endif %}
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span style="font-size:12px; color: var(--ice-muted);">Total</span>
+        <span style="font-size:18px; font-weight:700; color: var(--ice-text);">{{ total }}<span style="font-size:11px; color: var(--ice-muted);">/100</span></span>
+        <div class="grade-badge {% if total >= 90 %}grade-A{% elif total >= 75 %}grade-B{% elif total >= 60 %}grade-C{% elif total >= 45 %}grade-D{% else %}grade-F{% endif %}">
+          {% if total >= 90 %}A{% elif total >= 75 %}B{% elif total >= 60 %}C{% elif total >= 45 %}D{% else %}F{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="result-card-body">
+      <div class="score-row">
+        <!-- Test Score -->
+        <div class="score-item">
+          <div class="score-label"><i class="fas fa-pencil-alt me-1"></i> Test Score</div>
+          <div class="score-value">{{ r.test }}</div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill fill-test" style="width: {% widthratio r.test 40 100 %}%"></div>
           </div>
-          <div class="card-body p-0">
-            {% if results %}
-            <div class="table-responsive">
-              <table class="table table-bordered table-hover mb-0">
-                <thead class="thead-dark">
-                  <tr>
-                    <th>#</th>
-                    <th>Group</th>
-                    <th>Test <small class="text-muted">/40</small></th>
-                    <th>Exam <small class="text-muted">/60</small></th>
-                    <th>Total <small class="text-muted">/100</small></th>
-                    <th>Grade</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for r in results %}
-                  {% with total=r.test|add:r.exam %}
-                  <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{% if r.group %}{{ r.group.name }}{% else %}—{% endif %}</td>
-                    <td>{{ r.test }}</td>
-                    <td>{{ r.exam }}</td>
-                    <td><strong>{{ total }}</strong></td>
-                    <td>
-                      {% if total >= 90 %}<span class="badge badge-success">A</span>
-                      {% elif total >= 75 %}<span class="badge badge-primary">B</span>
-                      {% elif total >= 60 %}<span class="badge badge-warning">C</span>
-                      {% elif total >= 45 %}<span class="badge badge-secondary">D</span>
-                      {% else %}<span class="badge badge-danger">F</span>{% endif %}
-                    </td>
-                  </tr>
-                  {% endwith %}
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-            {% else %}
-            <div class="p-4 text-center text-muted">
-              <i class="fas fa-chart-bar fa-2x mb-2 d-block"></i>
-              No results have been recorded yet.
-            </div>
-            {% endif %}
+          <div class="score-max">out of 40</div>
+        </div>
+
+        <div class="divider-v d-none d-sm-block"></div>
+
+        <!-- Exam Score -->
+        <div class="score-item">
+          <div class="score-label"><i class="fas fa-file-alt me-1"></i> Exam Score</div>
+          <div class="score-value">{{ r.exam }}</div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill fill-exam" style="width: {% widthratio r.exam 60 100 %}%"></div>
           </div>
+          <div class="score-max">out of 60</div>
+        </div>
+
+        <div class="divider-v d-none d-sm-block"></div>
+
+        <!-- Total Score -->
+        <div class="score-item">
+          <div class="score-label"><i class="fas fa-star me-1"></i> Final Total</div>
+          <div class="score-value" style="color: {% if total >= 75 %}var(--ice-success){% elif total >= 45 %}var(--ice-warning){% else %}var(--ice-danger){% endif %};">{{ total }}</div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill {% if total >= 75 %}fill-total{% elif total >= 45 %}fill-total-warn{% else %}fill-total-bad{% endif %}" style="width: {{ total }}%"></div>
+          </div>
+          <div class="score-max">out of 100</div>
         </div>
       </div>
     </div>
   </div>
-</section>
+  {% endwith %}
+  {% endfor %}
+
+  {% else %}
+  <div class="result-card">
+    <div class="empty-state">
+      <i class="fas fa-chart-bar"></i>
+      <p style="font-size:15px; font-weight:600; color: var(--ice-text); margin-bottom:8px;">No Results Yet</p>
+      <p>Your results will appear here once your teachers have entered scores.</p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
 {% endblock %}

@@ -1,56 +1,201 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{page_title}}{% endblock page_title %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block custom_css %}
+<style>
+  .assign-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .assign-card {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(27,63,122,.05);
+    transition: box-shadow .18s, transform .18s;
+    display: flex;
+    flex-direction: column;
+  }
+  .assign-card:hover {
+    box-shadow: 0 4px 16px rgba(27,63,122,.10);
+    transform: translateY(-2px);
+  }
+  .assign-card-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--ice-border);
+    background: var(--ice-surface2);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .assign-title { font-size: 15px; font-weight: 700; color: var(--ice-text); margin-bottom: 4px; }
+  .assign-meta  { font-size: 11px; color: var(--ice-muted); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .status-submitted { background: rgba(16,185,129,.12); color: var(--ice-success); }
+  .status-pending   { background: rgba(245,158,11,.12);  color: var(--ice-warning); }
+
+  .assign-card-body { padding: 14px 18px; flex: 1; }
+  .assign-desc { font-size: 13px; color: var(--ice-muted); line-height: 1.5; }
+
+  .assign-card-footer {
+    padding: 12px 18px;
+    border-top: 1px solid var(--ice-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .due-chip {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(245,158,11,.10);
+    color: var(--ice-warning);
+  }
+  .due-chip.overdue { background: rgba(239,68,68,.10); color: var(--ice-danger); }
+  .due-chip.done    { background: rgba(16,185,129,.10); color: var(--ice-success); }
+
+  .btn-submit {
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-submit-new    { background: var(--ice-navy); color: white; }
+  .btn-submit-update { background: rgba(59,130,246,.10); color: var(--ice-info); border: 1px solid rgba(59,130,246,.2); }
+  .btn-submit-new:hover    { background: var(--ice-navy-mid); color: white; text-decoration: none; }
+  .btn-submit-update:hover { background: rgba(59,130,246,.18); text-decoration: none; color: var(--ice-info); }
+
+  .page-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .page-count { font-size: 13px; color: var(--ice-muted); }
+  .filter-tabs { display: flex; gap: 6px; }
+  .ftab {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--ice-border);
+    background: var(--ice-surface);
+    color: var(--ice-muted);
+    transition: all .15s;
+  }
+  .ftab.active, .ftab:hover { background: var(--ice-navy); color: white; border-color: var(--ice-navy); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ice-muted);
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 14px;
+  }
+  .empty-state i { font-size: 48px; opacity: .2; display: block; margin-bottom: 16px; }
+</style>
+{% endblock custom_css %}
+
 {% block content %}
-<section class="content">
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">{{page_title}}</h3>
-          </div>
-          <div class="card-body" style="overflow-x:auto;">
-            <table class="table table-bordered table-hover">
-              <thead class="thead-dark">
-                <tr>
-                  <th>#</th>
-                  <th>Assignment</th>
-                  <th>Group</th>
-                  <th>Due Date</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for a in assignments %}
-                <tr>
-                  <td>{{ forloop.counter }}</td>
-                  <td>{{ a.title }}</td>
-                  <td>{{ a.group|default:"—" }}</td>
-                  <td>{{ a.due_date }}</td>
-                  <td>
-                    {% if a.id in submitted_ids %}
-                    <span class="badge badge-success">Submitted</span>
-                    {% else %}
-                    <span class="badge badge-warning">Pending</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <a href="{% url 'submit_assignment' a.id %}" class="btn btn-sm btn-primary">
-                      {% if a.id in submitted_ids %}Update{% else %}Submit{% endif %}
-                    </a>
-                  </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="6" class="text-center text-muted">No assignments assigned to your groups.</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
+
+<div class="page-toolbar">
+  <div class="page-count">
+    <i class="fas fa-tasks me-1" style="color:var(--ice-cyan);"></i>
+    {{ assignments|length }} assignment{{ assignments|length|pluralize }}
+  </div>
+  <div class="filter-tabs">
+    <button class="ftab active" onclick="filterAssignments('all', this)">All</button>
+    <button class="ftab" onclick="filterAssignments('pending', this)">Pending</button>
+    <button class="ftab" onclick="filterAssignments('submitted', this)">Submitted</button>
+  </div>
+</div>
+
+{% if assignments %}
+<div class="assign-grid" id="assign_grid">
+  {% for a in assignments %}
+  <div class="assign-card" data-status="{% if a.id in submitted_ids %}submitted{% else %}pending{% endif %}">
+    <div class="assign-card-header">
+      <div>
+        <div class="assign-title">{{ a.title }}</div>
+        <div class="assign-meta">
+          <span><i class="fas fa-layer-group me-1"></i>{{ a.group|default:"—" }}</span>
         </div>
       </div>
+      {% if a.id in submitted_ids %}
+        <span class="status-badge status-submitted"><i class="fas fa-check me-1"></i>Submitted</span>
+      {% else %}
+        <span class="status-badge status-pending"><i class="fas fa-clock me-1"></i>Pending</span>
+      {% endif %}
+    </div>
+    {% if a.description %}
+    <div class="assign-card-body">
+      <div class="assign-desc">{{ a.description|truncatewords:20 }}</div>
+    </div>
+    {% endif %}
+    <div class="assign-card-footer">
+      <span class="due-chip {% if a.id in submitted_ids %}done{% endif %}">
+        <i class="fas fa-calendar-alt me-1"></i>Due {{ a.due_date }}
+      </span>
+      <a href="{% url 'submit_assignment' a.id %}"
+         class="btn-submit {% if a.id in submitted_ids %}btn-submit-update{% else %}btn-submit-new{% endif %}">
+        {% if a.id in submitted_ids %}
+          <i class="fas fa-edit"></i> Update
+        {% else %}
+          <i class="fas fa-paper-plane"></i> Submit
+        {% endif %}
+      </a>
     </div>
   </div>
-</section>
-{% endblock content %}
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="fas fa-tasks"></i>
+  <p style="font-size:16px; font-weight:600; color:var(--ice-text); margin-bottom:8px;">No Assignments</p>
+  <p>Your teachers haven't assigned any homework yet.</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block custom_js %}
+<script>
+function filterAssignments(type, btn) {
+  document.querySelectorAll('.ftab').forEach(function (b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+
+  document.querySelectorAll('.assign-card').forEach(function (card) {
+    if (type === 'all') {
+      card.style.display = '';
+    } else {
+      card.style.display = card.dataset.status === type ? '' : 'none';
+    }
+  });
+}
+</script>
+{% endblock %}

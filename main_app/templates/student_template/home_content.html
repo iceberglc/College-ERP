@@ -1,201 +1,306 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{page_title}}{% endblock page_title %}
+{% block page_title %}{{ page_title }}{% endblock page_title %}
+
+{% block custom_css %}
+<style>
+  .donut-wrapper {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+  }
+  .donut-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+  }
+  .donut-center .donut-pct {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ice-text);
+  }
+  .donut-center .donut-sub {
+    font-size: 11px;
+    color: var(--ice-muted);
+    font-weight: 500;
+  }
+  .chart-card {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(27,63,122,.06);
+    height: 100%;
+  }
+  .chart-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ice-text);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-card-title i {
+    color: var(--ice-cyan);
+  }
+  .stat-trend {
+    font-size: 11px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-top: 4px;
+  }
+  .trend-up   { background: rgba(16,185,129,.10); color: var(--ice-success); }
+  .trend-down { background: rgba(239,68,68,.10);  color: var(--ice-danger);  }
+  .trend-mid  { background: rgba(245,158,11,.10); color: var(--ice-warning); }
+
+  .quick-action-btn span {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ice-muted);
+  }
+  .quick-action-btn:hover span { color: var(--ice-navy); }
+
+  .dark-mode .chart-card {
+    background: var(--ice-surface);
+    border-color: var(--ice-border);
+  }
+  .dark-mode .donut-center .donut-pct { color: var(--ice-text); }
+</style>
+{% endblock custom_css %}
+
 {% block content %}
-<section class="content">
-    <div class="container-fluid">
-        <!-- Small boxes (Stat box) -->
-        <div class="row">
-            <div class="col-lg-3 col-6">
-                <!-- small box -->
-                <div class="small-box bg-info">
-                    <div class="inner">
-                        <h3>{{total_attendance}}</h3>
+<div class="container-fluid px-0">
 
-                        <p>Total Attendance</p>
-                    </div>
-                    <div class="icon">
-                      <i class="nav-icon fas fa-calendar-alt"></i>
-                    </div>
-                    {# <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a> #}
-                </div>
-            </div>
-            <!-- ./col -->
-            <div class="col-lg-3 col-6">
-                <!-- small box -->
-                <div class="small-box bg-success">
-                    <div class="inner">
-                        <h3>{{ percent_present }}<sup style="font-size: 20px">%</sup></h3>
+  <!-- Stat Cards -->
+  <div class="stats-grid mb-4">
 
-                        <p>Percentage Present</p>
-                    </div>
-                    <div class="icon">
-                      <i class="nav-icon fas fa-calendar-check"></i>
-                    </div>
-                    {# <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a> #}
-                </div>
-            </div>
-            <!-- ./col -->
-            <div class="col-lg-3 col-6">
-                <!-- small box -->
-                <div class="small-box bg-danger">
-                    <div class="inner">
-                        <h3>{{percent_absent}}<sup style="font-size: 20px">%</sup></h3>
+    <div class="stat-card">
+      <div class="stat-icon info">
+        <i class="fas fa-calendar-alt"></i>
+      </div>
+      <div class="stat-number">{{ total_attendance }}</div>
+      <div class="stat-label">Total Sessions</div>
+      <span class="stat-trend trend-up"><i class="fas fa-calendar-check"></i> All time</span>
+    </div>
 
-                        <p>Percentage Absent</p>
-                    </div>
-                    <div class="icon">
-                      <i class="nav-icon fas fa-calendar-minus"></i>
-                    </div>
-                    {# <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a> #}
-                </div>
-            </div>
-            <!-- ./col -->
-            <div class="col-lg-3 col-6">
-                <!-- small box -->
-                <div class="small-box bg-primary">
-                    <div class="inner">
-                        <h3>{{total_subject}}</h3>
+    <div class="stat-card">
+      <div class="stat-icon {% if percent_present >= 80 %}success{% elif percent_present >= 60 %}warning{% else %}danger{% endif %}">
+        <i class="fas fa-user-check"></i>
+      </div>
+      <div class="stat-number" style="color: {% if percent_present >= 80 %}var(--ice-success){% elif percent_present >= 60 %}var(--ice-warning){% else %}var(--ice-danger){% endif %}">
+        {{ percent_present }}<span style="font-size:16px;font-weight:500">%</span>
+      </div>
+      <div class="stat-label">Attendance Rate</div>
+      <span class="stat-trend {% if percent_present >= 80 %}trend-up{% elif percent_present >= 60 %}trend-mid{% else %}trend-down{% endif %}">
+        <i class="fas fa-{% if percent_present >= 80 %}check-circle{% elif percent_present >= 60 %}exclamation-circle{% else %}times-circle{% endif %}"></i>
+        {% if percent_present >= 80 %}Good standing{% elif percent_present >= 60 %}Needs attention{% else %}Critical{% endif %}
+      </span>
+    </div>
 
-                        <p>Total Subject</p>
-                    </div>
-                    <div class="icon">
-                      <i class="nav-icon fas fa-book"></i>
-                    </div>
-                    {# <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a> #}
-                </div>
-            </div>
-            <!-- ./col -->
+    <div class="stat-card">
+      <div class="stat-icon danger">
+        <i class="fas fa-user-times"></i>
+      </div>
+      <div class="stat-number" style="color: var(--ice-danger);">
+        {{ percent_absent }}<span style="font-size:16px;font-weight:500">%</span>
+      </div>
+      <div class="stat-label">Absence Rate</div>
+      <span class="stat-trend {% if percent_absent <= 20 %}trend-up{% elif percent_absent <= 40 %}trend-mid{% else %}trend-down{% endif %}">
+        <i class="fas fa-calendar-minus"></i> Missed sessions
+      </span>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon primary">
+        <i class="fas fa-book-open"></i>
+      </div>
+      <div class="stat-number">{{ total_subject }}</div>
+      <div class="stat-label">Enrolled Subjects</div>
+      <span class="stat-trend trend-up"><i class="fas fa-layer-group"></i> Active groups</span>
+    </div>
+
+  </div>
+
+  <!-- Charts Row -->
+  <div class="row g-3 mb-4">
+
+    <!-- Attendance Donut -->
+    <div class="col-lg-5">
+      <div class="chart-card">
+        <div class="chart-card-title">
+          <i class="fas fa-chart-pie"></i> Overall Attendance
         </div>
-        <div class="row">
-            <div class="col-lg-6">
-           
-                        <!-- DONUT CHART -->
-                        <div class="card card-secondary">
-                          <div class="card-header">
-                            <h3 class="card-title">{{page_title}}</h3>
-            
-                            <div class="card-tools">
-                              <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i>
-                              </button>
-                              <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-times"></i></button>
-                            </div>
-                          </div>
-                          <div class="card-body">
-                            <canvas id="attendanceData" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
-                          </div>
-                          <!-- /.card-body -->
-                        </div>
-                        <!-- /.card -->
-            </div>
-                  
-            <div class="col-lg-6">
-            
-                        <div class="card card-secondary">
-                          <div class="card-header">
-                            <h3 class="card-title">{{page_title}}</h3>
-            
-                            <div class="card-tools">
-                              <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i>
-                              </button>
-                              <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-times"></i></button>
-                            </div>
-                          </div>
-                          <div class="card-body">
-                            <div class="chart">
-                              <canvas id="attendanceStatistics" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
-                          <!-- /.card-body -->
-                        <!-- /.card -->
-                        </div> 
-                        </div>
-                        </div>
-                        </div>
-                        </div>
-                        </div>  
-                        </section>
+        <div class="donut-wrapper">
+          <canvas id="attendanceData"></canvas>
+          <div class="donut-center">
+            <div class="donut-pct">{{ percent_present }}%</div>
+            <div class="donut-sub">Present</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center gap-3 mt-3">
+          <span style="font-size:12px; color: var(--ice-muted);">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ice-success);margin-right:5px;"></span>
+            Present {{ percent_present }}%
+          </span>
+          <span style="font-size:12px; color: var(--ice-muted);">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ice-danger);margin-right:5px;"></span>
+            Absent {{ percent_absent }}%
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Per-Subject Bar Chart -->
+    <div class="col-lg-7">
+      <div class="chart-card">
+        <div class="chart-card-title">
+          <i class="fas fa-chart-bar"></i> Attendance by Subject
+        </div>
+        {% if total_subject %}
+        <canvas id="attendanceStatistics" style="max-height:240px;"></canvas>
+        {% else %}
+        <div class="d-flex flex-column align-items-center justify-content-center" style="height:200px; color: var(--ice-muted);">
+          <i class="fas fa-book fa-2x mb-3" style="opacity:.35;"></i>
+          <p class="mb-0" style="font-size:13px;">No subjects enrolled yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="chart-card mb-0">
+    <div class="chart-card-title">
+      <i class="fas fa-bolt"></i> Quick Actions
+    </div>
+    <div class="quick-action-grid">
+      <a href="{% url 'student_view_attendance' %}" class="quick-action-btn">
+        <i class="fas fa-calendar-check" style="color: var(--ice-info);"></i>
+        <span>View Attendance</span>
+      </a>
+      <a href="{% url 'student_view_result' %}" class="quick-action-btn">
+        <i class="fas fa-chart-bar" style="color: var(--ice-success);"></i>
+        <span>View Results</span>
+      </a>
+      <a href="{% url 'student_assignments' %}" class="quick-action-btn">
+        <i class="fas fa-tasks" style="color: var(--ice-warning);"></i>
+        <span>Assignments</span>
+      </a>
+      <a href="{% url 'student_view_notification' %}" class="quick-action-btn">
+        <i class="fas fa-bell" style="color: var(--ice-cyan);"></i>
+        <span>Notifications</span>
+      </a>
+    </div>
+  </div>
+
+</div>
 {% endblock content %}
 
 {% block custom_js %}
-  <script>
-$(document).ready(function(){
+<script>
+(function () {
+  var subjects    = {{ data_name|safe }};
+  var dataPresent = {{ data_present }};
+  var dataAbsent  = {{ data_absent }};
 
-    //Dataset
-    var subjects = {{data_name|safe}}
-    var data_present = {{data_present}}
-    var data_absent = {{data_absent}}
-
-    //-------------
-    //- DONUT CHART -
-    var attendanceDataCanvas = $('#attendanceData').get(0).getContext('2d')
-    var donutData        = {
-      labels: [
-         'Present', 'Absent'
-      ],
-      datasets: [
-        {
-          data: [{{percent_present}}, {{percent_absent}}],
-          backgroundColor : ['#00a65a','#f56954'],
-        }
-      ]
-    }
-    var donutOptions     = {
-      maintainAspectRatio : false,
-      responsive : true,
-    }
-    var attendanceData = new Chart(attendanceDataCanvas, {
+  // ── Donut Chart ─────────────────────────────────────────────────────────
+  function makeDonut() {
+    var ctx = document.getElementById('attendanceData');
+    if (!ctx) return;
+    var chart = new Chart(ctx.getContext('2d'), {
       type: 'doughnut',
-      data: donutData,
-      options: donutOptions      
+      data: {
+        labels: ['Present', 'Absent'],
+        datasets: [{
+          data: [{{ percent_present }}, {{ percent_absent }}],
+          backgroundColor: ['#10B981', '#EF4444'],
+          borderWidth: 0,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        maintainAspectRatio: true,
+        responsive: true,
+        cutout: '72%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) { return ' ' + ctx.label + ': ' + ctx.parsed + '%'; }
+            }
+          }
+        }
+      }
     });
-
-    //attendanceStatistics
-//Bar Chart
-var areaChartData = {
-    labels  : subjects,
-    datasets: [
-    {
-        label               : 'Present In Class',
-        backgroundColor     : 'rgba(60,141,188,0.9)',
-        borderColor         : 'rgba(60,141,188,0.8)',
-        pointRadius          : false,
-        pointColor          : '#3b8bba',
-        pointStrokeColor    : 'rgba(60,141,188,1)',
-        pointHighlightFill  : '#fff',
-        pointHighlightStroke: 'rgba(60,141,188,1)',
-        data                : data_present
-      },
-
-      {
-        label               : 'Absent In Class',
-        backgroundColor     : 'rgba(210, 214, 222, 1)',
-        borderColor         : 'rgba(210, 214, 222, 1)',
-        pointRadius         : false,
-        pointColor          : 'rgba(210, 214, 222, 1)',
-        pointStrokeColor    : '#c1c7d1',
-        pointHighlightFill  : '#fff',
-        pointHighlightStroke: 'rgba(220,220,220,1)',
-        data                : data_absent
-      },
-    ]
+    window.chartInstances = window.chartInstances || [];
+    window.chartInstances.push(chart);
+    return chart;
   }
-var barChartCanvas = $('#attendanceStatistics').get(0).getContext('2d')
-var barChartData = jQuery.extend(true, {}, areaChartData)
-var temp = areaChartData.datasets[0]
-barChartData.datasets[0] = temp
-var barChartOptions = {
-  responsive              : true,
-  maintainAspectRatio     : false,
-  datasetFill             : false
-}
 
-var barChart = new Chart(barChartCanvas, {
-  type: 'bar', 
-  data: barChartData,
-  options: barChartOptions
-})
+  // ── Bar Chart ────────────────────────────────────────────────────────────
+  function makeBar() {
+    var ctx = document.getElementById('attendanceStatistics');
+    if (!ctx) return;
+    var chart = new Chart(ctx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: subjects,
+        datasets: [
+          {
+            label: 'Present',
+            backgroundColor: 'rgba(6,182,212,0.85)',
+            borderRadius: 5,
+            data: dataPresent
+          },
+          {
+            label: 'Absent',
+            backgroundColor: 'rgba(239,68,68,0.65)',
+            borderRadius: 5,
+            data: dataAbsent
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { font: { size: 12 }, padding: 16 }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+          y: {
+            beginAtZero: true,
+            ticks: { font: { size: 11 }, precision: 0 },
+            grid: { color: 'rgba(0,0,0,.06)' }
+          }
+        }
+      }
+    });
+    window.chartInstances = window.chartInstances || [];
+    window.chartInstances.push(chart);
+    return chart;
+  }
 
- 
-})
+  // Register recreators for dark-mode toggle
+  window.registerChartRecreation && window.registerChartRecreation(makeDonut);
+  window.registerChartRecreation && window.registerChartRecreation(makeBar);
 
-  </script>
+  makeDonut();
+  makeBar();
+})();
+</script>
 {% endblock custom_js %}

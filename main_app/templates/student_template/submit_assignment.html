@@ -1,38 +1,134 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{page_title}}{% endblock page_title %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block custom_css %}
+<style>
+  .submit-wrap { max-width: 640px; margin: 0 auto; }
+
+  .assign-info {
+    background: linear-gradient(135deg, var(--ice-navy) 0%, #1340A8 100%);
+    border-radius: 14px;
+    padding: 22px 26px;
+    color: white;
+    margin-bottom: 20px;
+  }
+  .assign-info h2 { font-size: 18px; font-weight: 700; margin: 0 0 6px; }
+  .assign-info-meta { font-size: 12px; opacity: .8; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .assign-info-desc { margin-top: 10px; font-size: 13px; opacity: .9; line-height: 1.5; }
+
+  .existing-banner {
+    background: rgba(16,185,129,.08);
+    border: 1px solid rgba(16,185,129,.2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--ice-success);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pcard {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(27,63,122,.06);
+    margin-bottom: 16px;
+  }
+  .pcard-header {
+    padding: 16px 24px;
+    background: var(--ice-surface2);
+    border-bottom: 1px solid var(--ice-border);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ice-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pcard-header i { color: var(--ice-cyan); }
+  .pcard-body { padding: 24px; }
+  .field-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--ice-muted); margin-bottom: 6px; display: block; }
+  .form-control { border-color: var(--ice-border); color: var(--ice-text); background: var(--ice-surface); }
+  .form-control:focus { border-color: var(--ice-cyan); box-shadow: 0 0 0 3px rgba(6,182,212,.12); }
+</style>
+{% endblock custom_css %}
+
 {% block content %}
-<section class="content">
-  <div class="container-fluid">
-    <div class="row justify-content-center">
-      <div class="col-md-7">
-        <div class="card mb-3">
-          <div class="card-body">
-            <h5>{{ assignment.title }}</h5>
-            <p class="text-muted mb-1">
-              <strong>Subject:</strong> {{ assignment.subject.name }} &nbsp;|&nbsp;
-              <strong>Due:</strong> {{ assignment.due_date }}
-            </p>
-            {% if assignment.description %}
-            <p>{{ assignment.description }}</p>
-            {% endif %}
-            {% if existing %}
-            <div class="alert alert-info mb-0">
-              Already submitted on {{ existing.submitted_at|date:"d M Y H:i" }}.
-              {% if existing.grade is not None %}Grade: <strong>{{ existing.grade }}</strong>{% endif %}
-            </div>
-            {% endif %}
-          </div>
-        </div>
-        <div class="card card-dark">
-          <div class="card-header">
-            <h3 class="card-title">{% if existing %}Update Submission{% else %}Submit Work{% endif %}</h3>
-          </div>
-          {% include "main_app/form_template.html" with messages=messages form=form button_text="Submit" %}
-        </div>
-        <a href="{% url 'student_assignments' %}" class="btn btn-secondary mt-2">← Back</a>
-      </div>
+<div class="submit-wrap">
+
+  <!-- Assignment Info -->
+  <div class="assign-info">
+    <h2>{{ assignment.title }}</h2>
+    <div class="assign-info-meta">
+      <span><i class="fas fa-layer-group me-1"></i>{{ assignment.group|default:"General" }}</span>
+      <span><i class="fas fa-calendar-alt me-1"></i>Due {{ assignment.due_date }}</span>
+    </div>
+    {% if assignment.description %}
+    <div class="assign-info-desc">{{ assignment.description }}</div>
+    {% endif %}
+  </div>
+
+  {% if existing %}
+  <div class="existing-banner">
+    <i class="fas fa-check-circle" style="font-size:18px;"></i>
+    <div>
+      Submitted on {{ existing.submitted_at|date:"d M Y H:i" }}
+      {% if existing.grade is not None %}
+        &nbsp;·&nbsp; Grade: <strong>{{ existing.grade }}</strong>
+      {% endif %}
     </div>
   </div>
-</section>
-{% endblock content %}
+  {% endif %}
+
+  <!-- Submission Form -->
+  <div class="pcard">
+    <div class="pcard-header">
+      <i class="fas fa-paper-plane"></i>
+      {% if existing %}Update Submission{% else %}Submit Work{% endif %}
+    </div>
+    <div class="pcard-body">
+      <form role="form" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger mb-4">
+          {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+        </div>
+        {% endif %}
+
+        {% for field in form %}
+        <div class="mb-4">
+          <label class="field-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+          <div class="invalid-feedback d-block mt-1">
+            {% for error in field.errors %}
+            <span><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if field.help_text %}
+          <small class="form-text text-muted">{{ field.help_text }}</small>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="d-flex gap-2 mt-2">
+          <button type="submit" class="btn btn-success flex-grow-1">
+            <i class="fas fa-paper-plane me-1"></i>
+            {% if existing %}Update Submission{% else %}Submit{% endif %}
+          </button>
+          <a href="{% url 'student_assignments' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

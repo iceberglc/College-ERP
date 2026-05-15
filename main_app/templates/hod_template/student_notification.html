@@ -1,152 +1,239 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{page_title}}{% endblock page_title %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block custom_css %}
+<style>
+  .table-card {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(27,63,122,.06);
+  }
+  .table-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--ice-surface2);
+    border-bottom: 1px solid var(--ice-border);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .table-card-title { font-size: 14px; font-weight: 600; color: var(--ice-text); display: flex; align-items: center; gap: 8px; }
+  .table-card-title i { color: var(--ice-cyan); }
+
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    padding: 11px 16px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--ice-muted);
+    background: var(--ice-surface2);
+    border-bottom: 1px solid var(--ice-border);
+    white-space: nowrap;
+  }
+  .data-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--ice-text);
+    border-bottom: 1px solid var(--ice-border);
+    vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover { background: var(--ice-surface2); }
+
+  .student-cell { display: flex; align-items: center; gap: 10px; }
+  .student-ava {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--ice-navy), #1340A8);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0; overflow: hidden;
+  }
+  .student-ava img { width: 100%; height: 100%; object-fit: cover; }
+  .student-name  { font-weight: 600; font-size: 13px; color: var(--ice-text); }
+  .student-email { font-size: 11px; color: var(--ice-muted); }
+
+  /* Modal */
+  .ice-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(12,31,69,.4);
+    z-index: 1050;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .ice-modal-overlay.open { display: flex; }
+  .ice-modal {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 20px 60px rgba(12,31,69,.25);
+    animation: modalIn .2s ease;
+  }
+  @keyframes modalIn { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:none; } }
+  .ice-modal-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--ice-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ice-modal-header h5 { font-size: 15px; font-weight: 700; color: var(--ice-text); margin: 0; }
+  .ice-modal-close {
+    width: 30px; height: 30px; border-radius: 6px; border: none;
+    background: var(--ice-surface2); color: var(--ice-muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+    transition: background .15s;
+  }
+  .ice-modal-close:hover { background: var(--ice-border); }
+  .ice-modal-body { padding: 24px; }
+  .ice-modal-footer { padding: 16px 24px; border-top: 1px solid var(--ice-border); display: flex; justify-content: flex-end; gap: 10px; }
+</style>
+{% endblock custom_css %}
 
 {% block content %}
 
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">{{page_title}}</h3>
-                    </div>
-                    <!-- /.card-header -->
-                    <div class="card-body">
-                        <table id="example2" class="table table-bordered table-hover">
-                            <thead class="thead-dark">
-                                <tr>
-                                    <th>#</th>
-                                    <th>Full Name</th>
-                                    <th>Email</th>
-                                    <th>Gender</th>
-                                    <th>Course</th>
-                                    <th>Avatar</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for student in students %}
-                                <tr>
-                                    <td>{{ forloop.counter }}</td>
-                                    <td>{{student.last_name}}, {{student.first_name}}</td>
-                                    <td>{{student.email}}</td>
-                                    <td>{{student.gender}}</td>
-                                    <td>{{student.student.course.name}}</td>
-                                    <td>
-                                        {% if student.profile_pic == ""  %}
-                                        No Image
-                                        {% else %}
-                                        <img class="img img-fluid mb-2" height="56" width="56"
-                                            src="{{student.profile_pic}}" alt="">
-                                        {% endif %}
-                                    </td>
-                                    <td><button data-bs-toggle="modal" data-bs-target="#myModal" class="btn btn-primary show_notification" value="{{student.id}}">Send Notification</button> 
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="table-card">
+  <div class="table-card-header">
+    <div class="table-card-title">
+      <i class="fas fa-bullhorn"></i> {{ page_title }}
     </div>
-</section>
-<div class = "modal fade" id = "myModal" tabindex = "-1" role = "dialog" 
-   aria-labelledby = "myModalLabel" aria-hidden = "true">
-   
-   <div class = "modal-dialog">
-      <div class = "modal-content">
-         
-         <div class = "modal-header">Send Notification
-            <button type = "button" class = "btn-close" data-bs-dismiss = "modal" aria-hidden = "true">
-            </button>
-            
-           
-         </div>
-         
-         <div class = "modal-body">
-            <div class="form-group">
-                <input type="text" id="message" class='form-control'>
-                <input type="hidden"  id="student_id" class='form-control'>
+    <span style="font-size:12px; color:var(--ice-muted);">{{ students|length }} students</span>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Student</th>
+          <th>Gender</th>
+          <th>Program</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for student in students %}
+        <tr>
+          <td style="color:var(--ice-muted);">{{ forloop.counter }}</td>
+          <td>
+            <div class="student-cell">
+              <div class="student-ava">
+                {% if student.profile_pic %}
+                  <img src="{{ student.profile_pic }}" alt="">
+                {% else %}
+                  {{ student.first_name|first|upper }}{{ student.last_name|first|upper }}
+                {% endif %}
+              </div>
+              <div>
+                <div class="student-name">{{ student.last_name }}, {{ student.first_name }}</div>
+                <div class="student-email">{{ student.email }}</div>
+              </div>
             </div>
-         </div>
-         
-         <div class = "modal-footer">
-            <button type = "button" class = "btn btn-danger" data-bs-dismiss = "modal">
-               Close
+          </td>
+          <td style="color:var(--ice-muted);">{{ student.gender|default:"—" }}</td>
+          <td style="color:var(--ice-muted); font-size:12px;">{{ student.student.course.name|default:"—" }}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="openModal('{{ student.id }}', '{{ student.first_name }} {{ student.last_name }}')">
+              <i class="fas fa-bell me-1"></i> Send Notification
             </button>
-            
-            <button type = "button" id='send' class = "btn btn-success send_notification">
-               Send Notification
-            </button>
-         </div>
-         
-      </div><!-- /.modal-content -->
-   </div><!-- /.modal-dialog -->
-  
-</div><!-- /.modal -->
-{% endblock content %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center; padding:48px; color:var(--ice-muted);">No students found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="ice-modal-overlay" id="notif_modal" onclick="closeModalOnOverlay(event)">
+  <div class="ice-modal">
+    <div class="ice-modal-header">
+      <h5 id="modal_title"><i class="fas fa-bell me-2" style="color:var(--ice-cyan);"></i>Send Notification</h5>
+      <button class="ice-modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="ice-modal-body">
+      <input type="hidden" id="student_id">
+      <label style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--ice-muted); margin-bottom:6px; display:block;">Message</label>
+      <textarea id="message" class="form-control" rows="4" placeholder="Type your message here…"></textarea>
+      <div id="modal_status" class="mt-3" style="display:none;"></div>
+    </div>
+    <div class="ice-modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-success" id="send_btn" onclick="sendNotification()">
+        <i class="fas fa-paper-plane me-1"></i> Send
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
 {% block custom_js %}
-  <script>
-      // Get CSRF token
-      function getCookie(name) {
-          let cookieValue = null;
-          if (document.cookie && document.cookie !== '') {
-              const cookies = document.cookie.split(';');
-              for (let i = 0; i < cookies.length; i++) {
-                  const cookie = cookies[i].trim();
-                  if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                      cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                      break;
-                  }
-              }
-          }
-          return cookieValue;
-      }
-      const csrftoken = getCookie('csrftoken');
-      
-      $(".show_notification").click(function(){
-          $("#student_id").val($(this).val())
-      })
-      $(".send_notification").click(function(){
-          var id = $("#student_id").val()
-          var message = $("#message").val()
-          if (message.trim() === '') {
-              alert("Please enter a message before sending.");
-              return;
-          }
-          sendNotification(id,message);
-      })
-    function sendNotification(id,message){
-        $.ajax({
-            url: "{% url 'send_student_notification' %}",
-            type: 'POST',
-            headers: {
-                'X-CSRFToken': csrftoken
-            },
-            data: {
-                id: id,
-                message:message
-            }
-        }).done(function (response) {
-           
-                
-            if (response == 'True'){
-                alert("Notification Sent");
-                location.reload();
-              }else{
-                alert("Notification could not be saved. Please try again.");
-              }
-               
-           
-        }).fail(function (response) {
-            alert("Error in sending notification")
-        })
+<script>
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? '';
 
+function openModal(id, name) {
+  document.getElementById('student_id').value = id;
+  document.getElementById('modal_title').innerHTML = `<i class="fas fa-bell me-2" style="color:var(--ice-cyan);"></i>Notify ${name}`;
+  document.getElementById('message').value = '';
+  document.getElementById('modal_status').style.display = 'none';
+  document.getElementById('send_btn').disabled = false;
+  document.getElementById('notif_modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('notif_modal').classList.remove('open');
+}
+
+function closeModalOnOverlay(e) {
+  if (e.target === document.getElementById('notif_modal')) closeModal();
+}
+
+function sendNotification() {
+  const id      = document.getElementById('student_id').value;
+  const message = document.getElementById('message').value.trim();
+  if (!message) { alert('Please enter a message.'); return; }
+
+  const btn = document.getElementById('send_btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending…';
+
+  fetch("{% url 'send_student_notification' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ id, message })
+  })
+  .then(r => r.text())
+  .then(resp => {
+    const status = document.getElementById('modal_status');
+    if (resp === 'True') {
+      status.innerHTML = '<div class="alert alert-success mb-0"><i class="fas fa-check-circle me-1"></i> Notification sent successfully.</div>';
+      status.style.display = 'block';
+      btn.innerHTML = '<i class="fas fa-check me-1"></i> Sent';
+      setTimeout(closeModal, 1600);
+    } else {
+      status.innerHTML = '<div class="alert alert-danger mb-0">Failed to send notification. Try again.</div>';
+      status.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Send';
     }
-
-  </script>
-{% endblock custom_js %}
+  })
+  .catch(() => {
+    alert('Network error.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Send';
+  });
+}
+</script>
+{% endblock %}

@@ -1,52 +1,134 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{page_title}}{% endblock page_title %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block custom_css %}
+<style>
+  .assign-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .assign-card {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(27,63,122,.05);
+    transition: box-shadow .18s, transform .18s;
+    display: flex;
+    flex-direction: column;
+  }
+  .assign-card:hover {
+    box-shadow: 0 4px 16px rgba(27,63,122,.10);
+    transform: translateY(-2px);
+  }
+  .assign-card-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--ice-border);
+    background: var(--ice-surface2);
+  }
+  .assign-title { font-size: 15px; font-weight: 700; color: var(--ice-text); margin-bottom: 4px; }
+  .assign-meta  { font-size: 11px; color: var(--ice-muted); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .assign-card-body { padding: 14px 18px; flex: 1; }
+  .assign-desc { font-size: 13px; color: var(--ice-muted); line-height: 1.5; }
+
+  .assign-card-footer {
+    padding: 12px 18px;
+    border-top: 1px solid var(--ice-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .due-chip {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(245,158,11,.10);
+    color: var(--ice-warning);
+  }
+  .due-chip.overdue {
+    background: rgba(239,68,68,.10);
+    color: var(--ice-danger);
+  }
+  .action-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .btn-view   { padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 600; background: rgba(16,185,129,.10); color: var(--ice-success); border: 1px solid rgba(16,185,129,.2); text-decoration: none; transition: all .15s; }
+  .btn-edit   { padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 600; background: rgba(59,130,246,.10); color: var(--ice-info); border: 1px solid rgba(59,130,246,.2); text-decoration: none; transition: all .15s; }
+  .btn-delete { padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 600; background: rgba(239,68,68,.10); color: var(--ice-danger); border: 1px solid rgba(239,68,68,.2); text-decoration: none; transition: all .15s; }
+  .btn-view:hover   { background: rgba(16,185,129,.18); text-decoration: none; color: var(--ice-success); }
+  .btn-edit:hover   { background: rgba(59,130,246,.18); text-decoration: none; color: var(--ice-info); }
+  .btn-delete:hover { background: rgba(239,68,68,.18); text-decoration: none; color: var(--ice-danger); }
+
+  .page-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .page-count { font-size: 13px; color: var(--ice-muted); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ice-muted);
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 14px;
+  }
+  .empty-state i { font-size: 48px; opacity: .2; display: block; margin-bottom: 16px; }
+</style>
+{% endblock custom_css %}
+
 {% block content %}
-<section class="content">
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 class="card-title">{{page_title}}</h3>
-            <a href="{% url 'add_assignment' %}" class="btn btn-primary btn-sm">
-              <i class="fas fa-plus"></i> New Assignment
-            </a>
-          </div>
-          <div class="card-body" style="overflow-x:auto;">
-            <table class="table table-bordered table-hover">
-              <thead class="thead-dark">
-                <tr>
-                  <th>#</th>
-                  <th>Title</th>
-                  <th>Group</th>
-                  <th>Due Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for a in assignments %}
-                <tr>
-                  <td>{{ forloop.counter }}</td>
-                  <td>{{ a.title }}</td>
-                  <td>{{ a.group|default:"All" }}</td>
-                  <td>{{ a.due_date }}</td>
-                  <td>
-                    <a href="{% url 'view_submissions' a.id %}" class="btn btn-success btn-sm">Submissions</a>
-                    <a href="{% url 'edit_assignment' a.id %}" class="btn btn-info btn-sm">Edit</a>
-                    <a href="{% url 'delete_assignment' a.id %}" class="btn btn-danger btn-sm"
-                       onclick="return confirm('Delete this assignment?')">Delete</a>
-                  </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="5" class="text-center text-muted">No assignments yet.</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
+
+<div class="page-toolbar">
+  <div class="page-count"><i class="fas fa-tasks me-1" style="color:var(--ice-cyan);"></i> {{ assignments|length }} assignment{{ assignments|length|pluralize }}</div>
+  <a href="{% url 'add_assignment' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus me-1"></i> New Assignment
+  </a>
+</div>
+
+{% if assignments %}
+<div class="assign-grid">
+  {% for a in assignments %}
+  <div class="assign-card">
+    <div class="assign-card-header">
+      <div class="assign-title">{{ a.title }}</div>
+      <div class="assign-meta">
+        <span><i class="fas fa-layer-group me-1"></i>{{ a.group|default:"All Groups" }}</span>
+      </div>
+    </div>
+    {% if a.description %}
+    <div class="assign-card-body">
+      <div class="assign-desc">{{ a.description|truncatewords:20 }}</div>
+    </div>
+    {% endif %}
+    <div class="assign-card-footer">
+      <span class="due-chip">
+        <i class="fas fa-calendar-alt me-1"></i>Due {{ a.due_date }}
+      </span>
+      <div class="action-row">
+        <a href="{% url 'view_submissions' a.id %}" class="btn-view"><i class="fas fa-eye me-1"></i>Submissions</a>
+        <a href="{% url 'edit_assignment' a.id %}" class="btn-edit"><i class="fas fa-edit me-1"></i>Edit</a>
+        <a href="{% url 'delete_assignment' a.id %}" class="btn-delete"
+           onclick="return confirm('Delete this assignment?')"><i class="fas fa-trash"></i></a>
       </div>
     </div>
   </div>
-</section>
-{% endblock content %}
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="fas fa-tasks"></i>
+  <p style="font-size:16px; font-weight:600; color:var(--ice-text); margin-bottom:8px;">No Assignments Yet</p>
+  <p>Create your first assignment to get started.</p>
+  <a href="{% url 'add_assignment' %}" class="btn btn-primary mt-3"><i class="fas fa-plus me-1"></i>New Assignment</a>
+</div>
+{% endif %}
+
+{% endblock %}
