@@ -1,5 +1,5 @@
-# Web framework
-Django==3.1.1
+# Web framework (upgraded from 3.1.1 → 5.x to support DRF 3.14+ and simplejwt 5.x)
+Django>=5.2
 
 # WSGI server (production)
 gunicorn==20.0.4
@@ -22,7 +22,10 @@ requests>=2.27.0
 # Environment variable loading from .env
 python-dotenv>=0.19.0
 
-# Login brute-force lockout (audit item #15).
-# Pinned to the last 5.x line that supports Django 3.1; do NOT upgrade
-# without first upgrading Django itself.
-django-axes==5.13.1
+# Login brute-force lockout. django-axes 8.x is required for Django 5.x.
+django-axes>=8.0
+
+# Mobile API (STEP 3)
+djangorestframework>=3.14.0
+djangorestframework-simplejwt>=5.3.1
+django-cors-headers>=4.3.1

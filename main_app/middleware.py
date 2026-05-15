@@ -1,4 +1,5 @@
 from django.contrib.auth import logout
+from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -6,6 +7,10 @@ from django.shortcuts import redirect
 
 class LoginCheckMiddleWare(MiddlewareMixin):
     def process_view(self, request, view_func, view_args, view_kwargs):
+        # API paths use JWT authentication — let DRF handle auth/permission.
+        if request.path.startswith('/api/'):
+            return None
+
         modulename = view_func.__module__
         user = request.user
         user_type = str(getattr(user, 'user_type', ''))

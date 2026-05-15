@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf.urls.static import static
 from django.views.static import serve
+from rest_framework_simplejwt.views import TokenRefreshView
 from . import settings
 
 from main_app.views import SafePasswordResetView
@@ -20,6 +21,11 @@ urlpatterns = [
 
     path("accounts/", include("django.contrib.auth.urls")),
     path('admin/', admin.site.urls),
+
+    # Mobile API v1
+    path('api/v1/', include('main_app.api.urls')),
+    # JWT token refresh (stateless — no login required)
+    path('api/v1/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
 # Serve uploaded media files (profile pictures, etc.) in all environments.

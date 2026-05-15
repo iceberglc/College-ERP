@@ -46,10 +46,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'axes',                                 # brute-force lockout
+    'rest_framework',                       # Django REST Framework
+    'rest_framework_simplejwt',             # JWT auth
+    'rest_framework_simplejwt.token_blacklist',  # JWT logout blacklist
+    'corsheaders',                          # CORS for mobile apps
     'main_app.apps.MainAppConfig',
 ]
 
 MIDDLEWARE = [
+    # CorsMiddleware must be as high as possible, before anything that generates responses.
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     # WhiteNoise must be directly after SecurityMiddleware and before all others.
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -152,6 +158,9 @@ else:
 
 AUTH_USER_MODEL = 'main_app.CustomUser'
 
+# Keep existing integer PKs — avoids a pointless migration that touches every table.
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 # AxesStandaloneBackend must come FIRST so it can short-circuit
 # authenticate() with AxesSignal-raised lockouts before the real
 # email/password check runs.
@@ -166,10 +175,9 @@ AUTHENTICATION_BACKENDS = [
 # does not lock out the real user — both signals together gate the lockout).
 from datetime import timedelta as _td
 AXES_FAILURE_LIMIT = 5
-AXES_COOLOFF_TIME = _td(minutes=15)               # axes 5.13 requires timedelta, not float
+AXES_COOLOFF_TIME = _td(minutes=15)
 AXES_LOCK_OUT_AT_FAILURE = True
 AXES_RESET_ON_SUCCESS = True
-AXES_ONLY_USER_FAILURES = False
 AXES_LOCKOUT_PARAMETERS = ['username', 'ip_address']
 AXES_USERNAME_FORM_FIELD = 'email'                # doLogin posts ?email=
 AXES_LOCKOUT_TEMPLATE = None                      # use the JSON 403 default
@@ -278,3 +286,66 @@ if not DEBUG:
 
     # Prevent browsers from sniffing the content type.
     SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# ---------------------------------------------------------------------------
+# Django REST Framework (mobile API - STEP 3)
+# ---------------------------------------------------------------------------
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
+
+# ---------------------------------------------------------------------------
+# SimpleJWT configuration
+# ---------------------------------------------------------------------------
+
+from datetime import timedelta as _td_jwt
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': _td_jwt(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': _td_jwt(days=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
+
+# ---------------------------------------------------------------------------
+# CORS — allow Flutter apps on mobile and web clients
+# ---------------------------------------------------------------------------
+
+if DEBUG:
+    # Development: allow all origins so the Flutter dev server can connect.
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    # Production: restrict to explicitly listed origins.
+    # Set CORS_ALLOWED_ORIGINS=https://app.example.com,https://www.example.com
+    _cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '').strip()
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins_env.split(',') if o.strip()]
+
+# Allow the Authorization header for JWT tokens.
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOW_CREDENTIALS = True
