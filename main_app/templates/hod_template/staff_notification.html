@@ -28,7 +28,7 @@
           <td>
             <div style="display:flex; align-items:center; gap:10px;">
               <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--ice-navy),#1340A8); color:white; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; overflow:hidden;">
-                {% if staff.profile_pic %}<img src="{{ staff.profile_pic }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+                {% if staff.profile_pic %}<img src="{{ staff.profile_pic.url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
                 {% else %}{{ staff.first_name|first|upper }}{{ staff.last_name|first|upper }}{% endif %}
               </div>
               <span style="font-weight:600;">{{ staff.last_name }}, {{ staff.first_name }}</span>

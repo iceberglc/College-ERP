@@ -316,8 +316,7 @@ def staff_view_profile(request):
                 if passport != None:
                     fs = FileSystemStorage()
                     filename = fs.save(passport.name, passport)
-                    passport_url = fs.url(filename)
-                    admin.profile_pic = passport_url
+                    admin.profile_pic = filename
                 admin.first_name = first_name
                 admin.last_name = last_name
                 admin.address = address
@@ -404,6 +403,7 @@ def staff_add_result(request):
     return render(request, "staff_template/staff_add_result.html", context)
 
 
+@staff_only
 def fetch_student_result(request):
     try:
         group_id = request.POST.get('group')

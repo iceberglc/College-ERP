@@ -60,21 +60,33 @@ def admin_home(request):
         course_name_list.append(course.name)
         student_count_list_in_course.append(Student.objects.filter(course_id=course.id).count())
 
-    # Student attendance overview
-    student_attendance_present_list = []
-    student_attendance_leave_list = []
-    student_name_list = []
-    for student in Student.objects.select_related('admin').all():
-        present = AttendanceReport.objects.filter(
-            student_id=student.id, status__in=[AttendanceReport.PRESENT, AttendanceReport.LATE]
-        ).count()
-        absent = AttendanceReport.objects.filter(
-            student_id=student.id, status=AttendanceReport.ABSENT
-        ).count()
-        leave = LeaveReportStudent.objects.filter(student_id=student.id, status=1).count()
-        student_attendance_present_list.append(present)
-        student_attendance_leave_list.append(leave + absent)
-        student_name_list.append(student.admin.first_name)
+    # Student attendance overview — 4 queries instead of O(3N+1)
+    from django.db.models import Count, Q
+    students_qs = list(Student.objects.select_related('admin').all())
+    student_ids = [s.id for s in students_qs]
+
+    present_map = dict(
+        AttendanceReport.objects.filter(
+            student_id__in=student_ids,
+            status__in=[AttendanceReport.PRESENT, AttendanceReport.LATE],
+        ).values('student_id').annotate(c=Count('id')).values_list('student_id', 'c')
+    )
+    absent_map = dict(
+        AttendanceReport.objects.filter(
+            student_id__in=student_ids, status=AttendanceReport.ABSENT,
+        ).values('student_id').annotate(c=Count('id')).values_list('student_id', 'c')
+    )
+    leave_map = dict(
+        LeaveReportStudent.objects.filter(
+            student_id__in=student_ids, status=LeaveReportStudent.APPROVED,
+        ).values('student_id').annotate(c=Count('id')).values_list('student_id', 'c')
+    )
+
+    student_attendance_present_list = [present_map.get(s.id, 0) for s in students_qs]
+    student_attendance_leave_list = [
+        absent_map.get(s.id, 0) + leave_map.get(s.id, 0) for s in students_qs
+    ]
+    student_name_list = [s.admin.first_name for s in students_qs]
 
     context = {
         'page_title': "Administrative Dashboard",
@@ -111,8 +123,7 @@ def add_staff(request):
                 passport_url = ''
                 if passport:
                     fs = FileSystemStorage()
-                    filename = fs.save(passport.name, passport)
-                    passport_url = fs.url(filename)
+                    passport_url = fs.save(passport.name, passport)
                 user = CustomUser.objects.create_user(
                     email=email, password=password, user_type=2, first_name=first_name, last_name=last_name, profile_pic=passport_url)
                 user.gender = gender
@@ -154,8 +165,7 @@ def add_student(request):
                 passport_url = ''
                 if passport:
                     fs = FileSystemStorage()
-                    filename = fs.save(passport.name, passport)
-                    passport_url = fs.url(filename)
+                    passport_url = fs.save(passport.name, passport)
                 user = CustomUser.objects.create_user(
                     email=email, password=password, user_type=3,
                     first_name=first_name, last_name=last_name,
@@ -202,7 +212,7 @@ def add_course(request):
                 course.save()
                 messages.success(request, "Successfully Added")
                 return redirect(reverse('add_course'))
-            except:
+            except Exception:
                 messages.error(request, "Could Not Add")
         else:
             messages.error(request, "Could Not Add")
@@ -305,9 +315,7 @@ def edit_staff(request, staff_id):
                     user.set_password(password)
                 if passport is not None:
                     fs = FileSystemStorage()
-                    filename = fs.save(passport.name, passport)
-                    passport_url = fs.url(filename)
-                    user.profile_pic = passport_url
+                    user.profile_pic = fs.save(passport.name, passport)
                 user.first_name = first_name
                 user.last_name = last_name
                 user.gender = gender
@@ -350,9 +358,7 @@ def edit_student(request, student_id):
                 user = CustomUser.objects.get(id=student.admin.id)
                 if passport is not None:
                     fs = FileSystemStorage()
-                    filename = fs.save(passport.name, passport)
-                    passport_url = fs.url(filename)
-                    user.profile_pic = passport_url
+                    user.profile_pic = fs.save(passport.name, passport)
                 user.email = email
                 if password is not None:
                     user.set_password(password)
@@ -389,7 +395,7 @@ def edit_course(request, course_id):
                 course.name = name
                 course.save()
                 messages.success(request, "Successfully Updated")
-            except:
+            except Exception:
                 messages.error(request, "Could Not Update")
         else:
             messages.error(request, "Could Not Update")
@@ -630,9 +636,7 @@ def admin_view_profile(request):
                     custom_user.set_password(password)
                 if passport != None:
                     fs = FileSystemStorage()
-                    filename = fs.save(passport.name, passport)
-                    passport_url = fs.url(filename)
-                    custom_user.profile_pic = passport_url
+                    custom_user.profile_pic = fs.save(passport.name, passport)
                 custom_user.first_name = first_name
                 custom_user.last_name = last_name
                 if email:

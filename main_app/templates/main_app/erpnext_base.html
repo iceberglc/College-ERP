@@ -49,9 +49,9 @@
             
             <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
             {% if user.profile_pic %}
-            <img src="{{ user.profile_pic.url }}" alt="User Avatar" class="user-avatar">
+            <img src="{{ user.profile_pic.url }}" alt="{{ user.get_full_name }}" class="sidebar-user-avatar" onerror="this.outerHTML='<span class=sidebar-user-avatar style=background:linear-gradient(135deg,#1B3F7A,#0891B2);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;>{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>'">
             {% else %}
-            <img src="{% static 'admin/img/icon-unknown.svg' %}" alt="User Avatar" class="user-avatar">
+            <span class="sidebar-user-avatar" style="background:linear-gradient(135deg,#1B3F7A,#0891B2);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
             {% endif %}
         </div>
     </nav>

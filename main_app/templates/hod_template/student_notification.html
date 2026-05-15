@@ -128,7 +128,7 @@
             <div class="student-cell">
               <div class="student-ava">
                 {% if student.profile_pic %}
-                  <img src="{{ student.profile_pic }}" alt="">
+                  <img src="{{ student.profile_pic.url }}" alt="">
                 {% else %}
                   {{ student.first_name|first|upper }}{{ student.last_name|first|upper }}
                 {% endif %}
