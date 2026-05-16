@@ -74,109 +74,159 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Premium Navbar ───────────────────────────────────── */
+/* ── Clean Navbar (fully overrides storefront-ui) ─────── */
 .erpnext-navbar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-  height: var(--navbar-height);
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E9EAEC !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06) !important;
+  height: var(--navbar-height) !important;
+  padding: 0 16px !important;
+}
+
+/* Remove the blue pseudo-element logo that storefront-ui injects */
+.navbar-brand::before {
+  display: none !important;
 }
 
 .navbar-brand {
-  font-size: 15px !important;
-  font-weight: 700 !important;
-  color: var(--navy) !important;
-  letter-spacing: -.2px;
+  display: inline-flex !important;
+  align-items: center !important;
+  text-decoration: none !important;
+  gap: 0 !important;
+}
+.navbar-brand span {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: #0C1F45 !important;
+  letter-spacing: 1.5px !important;
+  text-transform: uppercase !important;
 }
 
+/* Hamburger — plain icon, no box */
 .navbar-toggle {
-  color: var(--text-muted) !important;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #6B7280 !important;
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
   display: flex !important;
-  align-items: center;
-  justify-content: center;
-  transition: background .15s, color .15s;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 17px !important;
+  transition: background .15s, color .15s !important;
 }
 .navbar-toggle:hover {
-  background: var(--surface-2) !important;
-  color: var(--navy) !important;
+  background: #F3F4F6 !important;
+  color: #111827 !important;
 }
 
-/* Notification bell */
+/* Notification bell — clean, no box */
 .navbar-notification {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: background .15s, color .15s;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #6B7280 !important;
+  font-size: 16px !important;
+  text-decoration: none !important;
+  transition: background .15s, color .15s !important;
 }
 .navbar-notification:hover {
-  background: var(--surface-2);
-  color: var(--navy);
-  text-decoration: none;
+  background: #F3F4F6 !important;
+  color: #0C1F45 !important;
+  text-decoration: none !important;
 }
 .navbar-notification .notif-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  min-width: 16px;
-  height: 16px;
+  top: 5px;
+  right: 5px;
+  min-width: 15px;
+  height: 15px;
   padding: 0 4px;
-  background: var(--danger);
+  background: #EF4444;
   color: #fff;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  line-height: 16px;
+  line-height: 15px;
   border-radius: 8px;
   text-align: center;
 }
 
-/* User avatar chip */
-.navbar-user-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px 4px 4px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  text-decoration: none;
-  color: var(--text);
-  transition: border-color .15s, box-shadow .15s;
-  font-size: 13px;
-  font-weight: 500;
-}
-.navbar-user-chip:hover {
-  border-color: var(--border-dk);
-  box-shadow: var(--shadow-sm);
-  text-decoration: none;
-  color: var(--navy);
-}
+/* Profile avatar in navbar — small clean circle */
 .navbar-user-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--navy-mid), var(--cyan-dk));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  flex-shrink: 0;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #1B3F7A, #0891B2) !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fff !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+  transition: opacity .15s !important;
 }
+.navbar-user-avatar:hover { opacity: .85 !important; }
 .navbar-user-avatar img {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+}
+/* Initials span inside avatar */
+.navbar-user-avatar span {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  line-height: 1 !important;
+}
+
+/* Logout — icon only, no border/colour */
+.logout-btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #9CA3AF !important;
+  padding: 0 !important;
+  min-height: unset !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  transition: background .15s, color .15s !important;
+}
+.logout-btn:hover {
+  background: #FEF2F2 !important;
+  color: #EF4444 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.logout-text { display: none !important; }
+
+/* Tighter gap between right-side icons */
+.navbar-user {
+  gap: 4px !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 /* ── Premium Sidebar (deep charcoal) ─────────────────── */
