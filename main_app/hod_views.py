@@ -20,6 +20,25 @@ from .models import *
 logger = logging.getLogger(__name__)
 
 
+def _generate_login_id(prefix):
+    """Generate the next available login_id for the given prefix (TCH or STU)."""
+    existing = (
+        CustomUser.objects
+        .filter(login_id__startswith=f'{prefix}-')
+        .values_list('login_id', flat=True)
+    )
+    used_numbers = set()
+    for lid in existing:
+        try:
+            used_numbers.add(int(lid.split('-')[1]))
+        except (IndexError, ValueError):
+            pass
+    n = 1
+    while n in used_numbers:
+        n += 1
+    return f'{prefix}-{n:04d}'
+
+
 def _active_groups_for_enrollment():
     """
     Keep enrollment page usable even if deploy is running with an older schema.
@@ -124,8 +143,10 @@ def add_staff(request):
                 if passport:
                     fs = FileSystemStorage()
                     passport_url = fs.save(passport.name, passport)
+                login_id = _generate_login_id('TCH')
                 user = CustomUser.objects.create_user(
-                    email=email, password=password, user_type=2, first_name=first_name, last_name=last_name, profile_pic=passport_url)
+                    email=email, password=password, user_type=2, first_name=first_name,
+                    last_name=last_name, profile_pic=passport_url, login_id=login_id)
                 user.gender = gender
                 user.address = address
                 user.save()
@@ -135,7 +156,7 @@ def add_staff(request):
                 staff_obj.specialization = form.cleaned_data.get('specialization', '')
                 staff_obj.is_active = form.cleaned_data.get('is_active', True)
                 staff_obj.save()
-                messages.success(request, "Successfully Added")
+                messages.success(request, f"Teacher added successfully. Login ID: {login_id}")
                 return redirect(reverse('add_staff'))
 
             except Exception as e:
@@ -166,10 +187,11 @@ def add_student(request):
                 if passport:
                     fs = FileSystemStorage()
                     passport_url = fs.save(passport.name, passport)
+                login_id = _generate_login_id('STU')
                 user = CustomUser.objects.create_user(
                     email=email, password=password, user_type=3,
                     first_name=first_name, last_name=last_name,
-                    profile_pic=passport_url)
+                    profile_pic=passport_url, login_id=login_id)
                 user.gender = gender
                 user.address = address
                 user.save()
@@ -185,9 +207,9 @@ def add_student(request):
                         category=Notification.GENERAL,
                         message=f"Welcome! You have been enrolled in {group.name}.",
                     )
-                    messages.success(request, f"Student added and enrolled in '{group.name}'.")
+                    messages.success(request, f"Student added and enrolled in '{group.name}'. Login ID: {login_id}")
                 else:
-                    messages.success(request, f"Student {first_name} {last_name} added. Enroll them in a group from the Enrollments page.")
+                    messages.success(request, f"Student {first_name} {last_name} added. Login ID: {login_id}. Enroll them in a group from the Enrollments page.")
                 return redirect(reverse('add_student'))
             except Exception as e:
                 messages.error(request, "Could Not Add: " + str(e))
@@ -295,6 +317,7 @@ def edit_staff(request, staff_id):
     context = {
         'form': form,
         'staff_id': staff_id,
+        'login_id': staff.admin.login_id or '—',
         'page_title': 'Edit Teacher'
     }
     if request.method == 'POST':
@@ -342,6 +365,7 @@ def edit_student(request, student_id):
     context = {
         'form': form,
         'student_id': student_id,
+        'login_id': student.admin.login_id or '—',
         'page_title': 'Edit Student'
     }
     if request.method == 'POST':

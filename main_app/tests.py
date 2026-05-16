@@ -37,6 +37,7 @@ class LoginPageTests(TestCase):
             gender='M',
             address='Test',
             profile_pic='',
+            login_id='TCH-0001',
         )
         self.student = UserModel.objects.create_user(
             email='student@example.com',
@@ -47,6 +48,7 @@ class LoginPageTests(TestCase):
             gender='M',
             address='Test',
             profile_pic='',
+            login_id='STU-0001',
         )
 
     @override_settings(**_BASE_OVERRIDES)
@@ -66,7 +68,7 @@ class LoginPageTests(TestCase):
     @override_settings(**_BASE_OVERRIDES)
     def test_admin_login_redirects_to_admin_home(self):
         response = self.client.post(reverse('user_login'), {
-            'email': 'admin@example.com',
+            'identifier': 'admin@example.com',
             'password': 'AdminPass123!',
         })
         self.assertRedirects(response, reverse('admin_home'), fetch_redirect_response=False)
@@ -74,7 +76,7 @@ class LoginPageTests(TestCase):
     @override_settings(**_BASE_OVERRIDES)
     def test_staff_login_redirects_to_staff_home(self):
         response = self.client.post(reverse('user_login'), {
-            'email': 'staff@example.com',
+            'identifier': 'TCH-0001',
             'password': 'StaffPass123!',
         })
         self.assertRedirects(response, reverse('staff_home'), fetch_redirect_response=False)
@@ -82,7 +84,7 @@ class LoginPageTests(TestCase):
     @override_settings(**_BASE_OVERRIDES)
     def test_student_login_redirects_to_student_home(self):
         response = self.client.post(reverse('user_login'), {
-            'email': 'student@example.com',
+            'identifier': 'STU-0001',
             'password': 'StudentPass123!',
         })
         self.assertRedirects(response, reverse('student_home'), fetch_redirect_response=False)

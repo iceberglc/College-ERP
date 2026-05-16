@@ -11,6 +11,10 @@
       <div class="page-card-subtitle">Update student information below</div>
     </div>
   </div>
+  <div style="margin: 0 0 16px; padding: 12px 16px; background: #EEF4FB; border: 1px solid #D8E3F2; border-radius: 10px; font-size: 13.5px; color: #0C1F45;">
+    <strong>Student Login ID:</strong>&nbsp;<code style="font-size: 14px; letter-spacing: .5px;">{{ login_id }}</code>
+    <span style="color: #64748B; margin-left: 8px;">(read-only — cannot be changed)</span>
+  </div>
   {% include "main_app/form_template.html" with messages=messages form=form button_text="Update Student" %}
 </div>
 {% endblock %}

@@ -278,6 +278,7 @@
         <tr>
           <th style="width:40px;">#</th>
           <th>Student</th>
+          <th>Login ID</th>
           <th>Gender</th>
           <th>Program</th>
           <th style="text-align:right;">Actions</th>
@@ -302,6 +303,7 @@
               </div>
             </div>
           </td>
+          <td><code style="font-size:12px; background:#EEF4FB; padding:2px 7px; border-radius:5px;">{{ student.login_id|default:"—" }}</code></td>
           <td>
             <span class="gender-badge gender-{{ student.gender|first|upper }}">{{ student.gender|default:"—" }}</span>
           </td>
@@ -320,7 +322,7 @@
         </tr>
         {% empty %}
         <tr class="empty-row">
-          <td colspan="5">
+          <td colspan="6">
             <i class="fas fa-user-graduate"></i>
             <strong>No students yet</strong>
             Click "Add Student" above to create your first record.

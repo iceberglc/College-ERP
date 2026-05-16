@@ -63,6 +63,10 @@ class CustomUser(AbstractUser):
 
     username = None  # Removed username, using email instead
     email = models.EmailField(unique=True)
+    login_id = models.CharField(
+        max_length=20, unique=True, null=True, blank=True,
+        help_text="Unique ID for staff/student login. Leave blank for admin (uses email).",
+    )
     user_type = models.CharField(default='1', choices=USER_TYPE, max_length=1)
     gender = models.CharField(max_length=1, choices=GENDER, blank=True, default='')
     profile_pic = models.ImageField(blank=True, null=True)

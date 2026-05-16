@@ -76,6 +76,7 @@
         <tr>
           <th>#</th>
           <th>Teacher</th>
+          <th>Login ID</th>
           <th>Program</th>
           <th>Status</th>
           <th>Actions</th>
@@ -94,6 +95,7 @@
               </div>
             </div>
           </td>
+          <td><code style="font-size:12px; background:#EEF4FB; padding:2px 7px; border-radius:5px;">{{ staff.login_id|default:"—" }}</code></td>
           <td style="color:var(--ice-muted); font-size:12px;">{{ staff.staff.course.name|default:"—" }}</td>
           <td>
             {% if staff.staff.is_active %}
@@ -113,7 +115,7 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" style="text-align:center; padding:48px; color:var(--ice-muted);">No teachers registered yet.</td></tr>
+        <tr><td colspan="6" style="text-align:center; padding:48px; color:var(--ice-muted);">No teachers registered yet.</td></tr>
         {% endfor %}
       </tbody>
     </table>

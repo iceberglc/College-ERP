@@ -179,7 +179,7 @@ AXES_COOLOFF_TIME = _td(minutes=15)
 AXES_LOCK_OUT_AT_FAILURE = True
 AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_PARAMETERS = ['username', 'ip_address']
-AXES_USERNAME_FORM_FIELD = 'email'                # doLogin posts ?email=
+AXES_USERNAME_FORM_FIELD = 'identifier'           # doLogin posts ?identifier=
 AXES_LOCKOUT_TEMPLATE = None                      # use the JSON 403 default
 
 # ---------------------------------------------------------------------------

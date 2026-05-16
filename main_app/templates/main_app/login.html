@@ -47,7 +47,7 @@
     .hero {
       position: relative;
       width: 100%;
-      height: 280px;
+      height: 220px;
       flex-shrink: 0;
       overflow: hidden;
     }
@@ -63,16 +63,10 @@
     /* ── Brand block ──────────────────────────────────────── */
     .brand-block {
       text-align: center;
-      margin-top: -14px;
-      padding: 0 24px;
+      margin-top: -10px;
+      padding: 0 24px 4px;
       position: relative;
       z-index: 2;
-    }
-    .brand-shield {
-      width: 78px;
-      height: 92px;
-      margin: 0 auto 14px;
-      filter: drop-shadow(0 8px 18px rgba(12,31,69,.18));
     }
     .brand-name {
       font-family: 'Playfair Display', 'Inter', serif;
@@ -258,12 +252,11 @@
 
     @media (min-width: 760px) {
       body { background: linear-gradient(180deg, #DDEAFB 0%, #ECF3FC 50%, #FAFCFF 100%); }
-      .hero { height: 320px; }
-      .brand-block { margin-top: -22px; }
-      .brand-shield { width: 92px; height: 108px; }
+      .hero { height: 260px; }
+      .brand-block { margin-top: -14px; }
       .brand-name { font-size: 36px; letter-spacing: 5px; }
       .welcome { font-size: 36px; }
-      .form-wrap { padding: 36px 22px 56px; }
+      .form-wrap { padding: 28px 22px 56px; }
       .form-card { padding: 36px 36px 32px; }
     }
 
@@ -319,25 +312,6 @@
 
   <!-- ── Brand ──────────────────────────────────────────────── -->
   <div class="brand-block">
-    <svg class="brand-shield" viewBox="0 0 78 92" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <defs>
-        <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stop-color="#1B3F7A"/>
-          <stop offset="100%" stop-color="#0C1F45"/>
-        </linearGradient>
-        <linearGradient id="iceGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stop-color="#D9ECFF"/>
-          <stop offset="100%" stop-color="#7FA6CF"/>
-        </linearGradient>
-      </defs>
-      <path d="M39 2 L74 14 L74 44 C74 66 60 82 39 90 C18 82 4 66 4 44 L4 14 Z"
-            fill="#FFFFFF" stroke="url(#shieldGrad)" stroke-width="3"/>
-      <line x1="10" y1="56" x2="68" y2="56" stroke="#1B3F7A" stroke-width="1.2" opacity=".4"/>
-      <polygon points="39,20 30,40 48,40" fill="#1B3F7A"/>
-      <polygon points="39,20 48,40 44,44 39,32" fill="#0C1F45" opacity=".6"/>
-      <polygon points="22,56 56,56 50,74 28,74" fill="url(#iceGrad)" opacity=".75"/>
-      <polygon points="28,74 50,74 44,80 34,80" fill="#7FA6CF" opacity=".55"/>
-    </svg>
     <div class="brand-name">ICEBERG</div>
     <div class="brand-sub">Study Center</div>
   </div>
@@ -372,14 +346,14 @@
         {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
         <div class="field">
-          <label class="field-label" for="id_email">Email address</label>
+          <label class="field-label" for="id_identifier">Email (admin) or Student / Teacher ID</label>
           <div class="input-wrap">
             <svg class="ico-l" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path d="M2 5.9L10 9.9 18 5.9A2 2 0 0016 4H4a2 2 0 00-2 1.9z"/>
               <path d="M18 8.1l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.1z"/>
             </svg>
-            <input type="email" id="id_email" name="email"
-                   placeholder="you@example.com" autocomplete="email" required autofocus>
+            <input type="text" id="id_identifier" name="identifier"
+                   placeholder="e.g. STU-0001 or admin@example.com" autocomplete="username" required autofocus>
           </div>
         </div>
 

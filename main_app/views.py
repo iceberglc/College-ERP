@@ -63,19 +63,22 @@ def doLogin(request, **kwargs):
     if request.method != 'POST':
         return HttpResponse("<h4>Denied</h4>")
 
-    # Normalise email: strip whitespace and lowercase for consistent lookup.
-    email = (request.POST.get('email') or '').strip().lower()
+    # Identifier is either an email address (admin) or a login_id (staff/student).
+    identifier = (request.POST.get('identifier') or '').strip()
+    if not identifier:
+        # Fallback: some browsers or old bookmarks may still post 'email'.
+        identifier = (request.POST.get('email') or '').strip()
     password = request.POST.get('password') or ''
 
-    if not email or not password:
-        messages.error(request, "Please enter both email and password.")
+    if not identifier or not password:
+        messages.error(request, "Please enter both your ID/email and password.")
         return redirect("/")
 
     try:
-        user = authenticate(request, username=email, password=password)
+        user = authenticate(request, username=identifier, password=password)
     except PermissionDenied:
         # django-axes raises this once AXES_FAILURE_LIMIT is hit.
-        logger.warning("Login locked out by axes for email=%s", email)
+        logger.warning("Login locked out by axes for identifier=%s", identifier)
         messages.error(
             request,
             "Too many failed login attempts. "
@@ -83,7 +86,7 @@ def doLogin(request, **kwargs):
         )
         return redirect("/")
     except Exception:
-        logger.exception("authenticate() raised for email=%s — DB may be missing migrations", email)
+        logger.exception("authenticate() raised for identifier=%s — DB may be missing migrations", identifier)
         messages.error(request, "Login is temporarily unavailable. Please try again in a moment.")
         return redirect("/")
 
@@ -92,29 +95,29 @@ def doLogin(request, **kwargs):
         'RECOVERY_ADMIN_EMAIL', 'iceberg.edu.center@gmail.com'
     ).strip().lower()
 
-    if user is None and email == recovery_email:
+    if user is None and identifier.lower() == recovery_email:
         try:
             create_recovery_admin_access(sender=None, force_password=True)
-            user = authenticate(request, username=email, password=password)
+            user = authenticate(request, username=identifier, password=password)
         except Exception as exc:
             logger.error("Recovery admin re-seed failed: %s", exc)
             user = None
 
     if user is None:
-        messages.error(request, "Invalid email or password.")
+        messages.error(request, "Invalid ID/email or password.")
         return redirect("/")
 
     try:
         login(request, user)
     except DatabaseError:
-        logger.exception("Login failed due to session/database error for email=%s", email)
+        logger.exception("Login failed due to session/database error for identifier=%s", identifier)
         messages.error(
             request,
             "Login is temporarily unavailable. Please try again in a moment."
         )
         return redirect("/")
     except Exception:
-        logger.exception("Unexpected login failure for email=%s", email)
+        logger.exception("Unexpected login failure for identifier=%s", identifier)
         messages.error(
             request,
             "Login failed due to a server issue. Please try again shortly."
