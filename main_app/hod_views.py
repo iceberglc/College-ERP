@@ -951,10 +951,35 @@ def delete_branch(request, branch_id):
 
 @admin_only
 def manage_group(request):
-    groups = Group.objects.select_related('course', 'teacher', 'branch').all()
+    from django.db.models import Count, Q
+    groups = (
+        Group.objects
+        .select_related('course', 'teacher__admin', 'branch')
+        .annotate(enrolled_count=Count('enrollment', filter=Q(enrollment__is_active=True)))
+        .order_by('is_archived', 'name')
+    )
     return render(request, 'hod_template/manage_group.html', {
         'groups': groups,
         'page_title': 'Manage Groups',
+    })
+
+
+@admin_only
+def admin_group_detail(request, group_id):
+    from django.db.models import Count, Q
+    group = get_object_or_404(Group, id=group_id)
+    enrollments = (
+        Enrollment.objects
+        .filter(group=group, is_active=True)
+        .select_related('student__admin', 'student__course')
+        .order_by('student__admin__last_name', 'student__admin__first_name')
+    )
+    total_all = Enrollment.objects.filter(group=group).count()
+    return render(request, 'hod_template/group_detail.html', {
+        'group': group,
+        'enrollments': enrollments,
+        'total_inactive': total_all - enrollments.count(),
+        'page_title': f'{group.name} — Students',
     })
 
 

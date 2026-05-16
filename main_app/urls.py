@@ -106,6 +106,7 @@ urlpatterns = [
     path("group/edit/<int:group_id>", hod_views.edit_group, name='edit_group'),
     path("group/delete/<int:group_id>", hod_views.delete_group, name='delete_group'),
     path("group/archive/<int:group_id>", hod_views.archive_group, name='archive_group'),
+    path("group/<int:group_id>/students/", hod_views.admin_group_detail, name='admin_group_detail'),
 
     # Enrollment
     path("enrollment/manage/", hod_views.manage_enrollment, name='manage_enrollment'),
