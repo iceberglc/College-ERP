@@ -54,14 +54,9 @@ def _redirect_authenticated_user(user):
 def entry_page(request):
     """Root URL — branded entry splash + welcome question page.
 
-    Authenticated users bypass this and go straight to their dashboard.
-    The template itself uses localStorage to skip the 2-second animation
-    on repeat visits (first visit flag 'iceberg_entry_seen').
+    Everyone sees the animation. Authenticated users who click YES are
+    routed through login_page which detects auth and redirects onward.
     """
-    if request.user.is_authenticated:
-        destination = _redirect_authenticated_user(request.user)
-        if destination:
-            return destination
     return render(request, 'main_app/entry.html')
 
 
