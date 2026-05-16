@@ -803,8 +803,8 @@ def staff_vocabulary_days(request):
             pass
     days = list(qs)
     for d in days:
-        d.word_count = d.words.count()
-        d.completion_count = d.completions.count()
+        d.wc = d.words.count()
+        d.cc = d.completions.count()
     return render(request, 'staff_template/staff_vocabulary_days.html', {
         'days': days,
         'my_groups': my_groups,
