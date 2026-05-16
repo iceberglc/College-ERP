@@ -3,7 +3,7 @@ import os
 import logging
 import requests
 from django.contrib import messages
-from django.core.files.storage import FileSystemStorage
+from django.core.files.storage import default_storage
 from django.db import IntegrityError, OperationalError, ProgrammingError, transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import (HttpResponse, HttpResponseRedirect,
@@ -141,8 +141,7 @@ def add_staff(request):
             try:
                 passport_url = ''
                 if passport:
-                    fs = FileSystemStorage()
-                    passport_url = fs.save(passport.name, passport)
+                    passport_url = default_storage.save(passport.name, passport)
                 login_id = _generate_login_id('TCH')
                 user = CustomUser.objects.create_user(
                     email=email, password=password, user_type=2, first_name=first_name,
@@ -185,8 +184,7 @@ def add_student(request):
             try:
                 passport_url = ''
                 if passport:
-                    fs = FileSystemStorage()
-                    passport_url = fs.save(passport.name, passport)
+                    passport_url = default_storage.save(passport.name, passport)
                 login_id = _generate_login_id('STU')
                 user = CustomUser.objects.create_user(
                     email=email, password=password, user_type=3,
@@ -337,8 +335,7 @@ def edit_staff(request, staff_id):
                 if password is not None:
                     user.set_password(password)
                 if passport is not None:
-                    fs = FileSystemStorage()
-                    user.profile_pic = fs.save(passport.name, passport)
+                    user.profile_pic = default_storage.save(passport.name, passport)
                 user.first_name = first_name
                 user.last_name = last_name
                 user.gender = gender
@@ -381,8 +378,7 @@ def edit_student(request, student_id):
             try:
                 user = CustomUser.objects.get(id=student.admin.id)
                 if passport is not None:
-                    fs = FileSystemStorage()
-                    user.profile_pic = fs.save(passport.name, passport)
+                    user.profile_pic = default_storage.save(passport.name, passport)
                 user.email = email
                 if password is not None:
                     user.set_password(password)
@@ -659,8 +655,7 @@ def admin_view_profile(request):
                 if password != None:
                     custom_user.set_password(password)
                 if passport != None:
-                    fs = FileSystemStorage()
-                    custom_user.profile_pic = fs.save(passport.name, passport)
+                    custom_user.profile_pic = default_storage.save(passport.name, passport)
                 custom_user.first_name = first_name
                 custom_user.last_name = last_name
                 if email:

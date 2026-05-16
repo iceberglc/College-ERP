@@ -3,7 +3,7 @@ import math
 from datetime import datetime
 
 from django.contrib import messages
-from django.core.files.storage import FileSystemStorage
+from django.core.files.storage import default_storage
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import (HttpResponseRedirect, get_object_or_404,
                               redirect, render)
@@ -198,9 +198,7 @@ def student_view_profile(request):
                 if password != None:
                     admin.set_password(password)
                 if passport != None:
-                    fs = FileSystemStorage()
-                    filename = fs.save(passport.name, passport)
-                    admin.profile_pic = filename
+                    admin.profile_pic = default_storage.save(passport.name, passport)
                 admin.first_name = first_name
                 admin.last_name = last_name
                 admin.address = address
