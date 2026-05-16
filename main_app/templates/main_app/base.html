@@ -33,15 +33,6 @@
         </div>
 
         <div class="navbar-user">
-            <!-- Dark Mode Toggle -->
-            <label class="theme-toggle" for="theme-switch" title="Toggle dark mode">
-                <input type="checkbox" id="theme-switch" />
-                <span class="slider">
-                    <i class="fas fa-sun icon-light"></i>
-                    <i class="fas fa-moon icon-dark"></i>
-                </span>
-            </label>
-
             <!-- Notification Bell -->
             {% if user.user_type == '1' %}
                 {% url 'admin_notify_student' as notif_url %}
@@ -65,9 +56,11 @@
             {% else %}
                 {% url 'student_view_profile' as profile_url %}
             {% endif %}
-            <a href="{{ profile_url }}" class="navbar-user-avatar" title="My profile">
+            <a href="{{ profile_url }}" class="navbar-user-avatar" title="My profile" id="navbar-avatar-link">
                 {% if user.profile_pic %}
-                    <img src="{{ user.profile_pic.url }}" alt="{{ user.first_name }}">
+                    <img src="{{ user.profile_pic.url }}" alt="{{ user.first_name }}"
+                         onerror="this.style.display='none';document.getElementById('navbar-initials').style.display='flex';">
+                    <span id="navbar-initials" style="display:none;">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
                 {% else %}
                     {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
                 {% endif %}
@@ -259,57 +252,16 @@
         });
     });
 
-    /* ── Dark mode ───────────────────────────────────────────────────────── */
+    /* ── Chart colour helpers ────────────────────────────────────────────── */
     document.addEventListener('DOMContentLoaded', function() {
-        const themeToggle = document.getElementById('theme-switch');
-        const body = document.body;
-
         window.chartInstances = window.chartInstances || [];
         window.chartCreators  = window.chartCreators  || [];
-
         window.registerChartRecreation = function(cb) { window.chartCreators.push(cb); };
-
         window.recreateAllCharts = function() {
             (window.chartInstances || []).forEach(c => { if (c && c.destroy) c.destroy(); });
             window.chartInstances = [];
             (window.chartCreators || []).forEach(cb => { try { cb(); } catch(e) {} });
         };
-
-        function getThemeColors() {
-            const dark = body.classList.contains('dark-mode');
-            return {
-                text: dark ? '#CBD5E1' : '#334155',
-                grid: dark ? '#1E2E4A' : '#EFF6FF',
-            };
-        }
-
-        function updateChartColors() {
-            if (typeof Chart === 'undefined') return;
-            const { text, grid } = getThemeColors();
-            Chart.defaults.color = text;
-            Chart.defaults.borderColor = grid;
-            const canvases = document.querySelectorAll('canvas');
-            canvases.forEach(canvas => {
-                const chart = Chart.getChart(canvas);
-                if (!chart) return;
-                if (chart.options.plugins?.legend?.labels) chart.options.plugins.legend.labels.color = text;
-                if (chart.options.scales) Object.values(chart.options.scales).forEach(scale => {
-                    if (scale.grid) scale.grid.color = grid;
-                    if (scale.ticks) scale.ticks.color = text;
-                });
-                chart.update('none');
-            });
-        }
-
-        const saved = localStorage.getItem('theme') || 'light';
-        if (saved === 'dark') { body.classList.add('dark-mode'); themeToggle.checked = true; }
-        updateChartColors();
-
-        themeToggle.addEventListener('change', function() {
-            body.classList.toggle('dark-mode', this.checked);
-            localStorage.setItem('theme', this.checked ? 'dark' : 'light');
-            updateChartColors();
-        });
     });
     </script>
 

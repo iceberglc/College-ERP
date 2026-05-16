@@ -1,24 +1,37 @@
 {% load static %}
 
+<!-- Profile picture lightbox -->
+<div class="avatar-lightbox" id="avatar-lightbox" onclick="closeLightbox()">
+    {% if request.user.profile_pic %}
+    <img src="{{ request.user.profile_pic.url }}" alt="{{ request.user.first_name }}" id="lightbox-img">
+    {% endif %}
+</div>
+
 <!-- Sidebar Header -->
 <div class="sidebar-header">
     <div class="sidebar-user">
         {% if request.user.profile_pic %}
-        <img src="{{ request.user.profile_pic.url }}" alt="User Avatar" class="sidebar-user-avatar" id="sidebar-avatar" onerror="this.style.display='none';document.getElementById('sidebar-initials').style.display='flex';">
-        <div id="sidebar-initials" class="sidebar-user-avatar" style="display:none;background:linear-gradient(135deg,var(--navy-mid),var(--cyan-dk));color:#fff;font-size:13px;font-weight:700;align-items:center;justify-content:center;">{{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}</div>
+        <img src="{{ request.user.profile_pic.url }}" alt="User Avatar"
+             class="sidebar-user-avatar" id="sidebar-avatar"
+             onclick="openLightbox()"
+             title="Click to view photo"
+             onerror="this.style.display='none';document.getElementById('sidebar-initials').style.display='flex';">
+        <div id="sidebar-initials" class="sidebar-user-avatar"
+             style="display:none;background:linear-gradient(135deg,#374151,#1F2937);color:#fff;font-size:16px;font-weight:700;align-items:center;justify-content:center;cursor:default;">
+            {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+        </div>
         {% else %}
-        <div class="sidebar-user-avatar" style="background:linear-gradient(135deg,var(--navy-mid),var(--cyan-dk));color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}</div>
+        <div class="sidebar-user-avatar"
+             style="background:linear-gradient(135deg,#374151,#1F2937);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:default;">
+            {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+        </div>
         {% endif %}
         <div class="sidebar-user-info">
             <h6>{{ user.get_full_name|default:user.username }}</h6>
             <small>
-                {% if user.user_type == '1' %}
-                    Admin
-                {% elif user.user_type == '2' %}
-                    Teacher
-                {% else %}
-                    Student
-                {% endif %}
+                {% if user.user_type == '1' %}Admin
+                {% elif user.user_type == '2' %}Teacher
+                {% else %}Student{% endif %}
             </small>
         </div>
     </div>
@@ -448,22 +461,15 @@
 </div>
 
 <script>
-function showDefaultAvatar() {
-    // Hide the broken image
-    document.getElementById('sidebar-avatar').style.display = 'none';
-    // Show the default FontAwesome icon
-    document.getElementById('default-avatar').style.display = 'inline-block';
+function openLightbox() {
+    const lb = document.getElementById('avatar-lightbox');
+    if (lb && lb.querySelector('img')) lb.classList.add('open');
 }
-
-// Also check if profile_pic is empty or null and show default avatar
-document.addEventListener('DOMContentLoaded', function() {
-    const avatar = document.getElementById('sidebar-avatar');
-    const defaultAvatar = document.getElementById('default-avatar');
-    
-    // Check if src is empty, null, or just whitespace
-    if (!avatar.src || avatar.src.trim() === '' || avatar.src === window.location.href) {
-        avatar.style.display = 'none';
-        defaultAvatar.style.display = 'inline-block';
-    }
+function closeLightbox() {
+    const lb = document.getElementById('avatar-lightbox');
+    if (lb) lb.classList.remove('open');
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeLightbox();
 });
 </script>
