@@ -175,3 +175,26 @@
 </div>
 
 {% endblock %}
+
+{% block custom_js %}
+<script>
+(function() {
+  // Add a word-column search input into the table header
+  var header = document.querySelector('.table-card-header');
+  if (!header) return;
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.placeholder = 'Search words…';
+  inp.style.cssText = 'padding:6px 12px;border:1px solid #E6ECF5;border-radius:8px;font-size:13px;outline:none;';
+  inp.addEventListener('input', function() {
+    var q = this.value.toLowerCase().trim();
+    document.querySelectorAll('.data-table tbody tr').forEach(function(row) {
+      var wordCell = row.querySelector('td:first-child');
+      var text = wordCell ? wordCell.textContent.toLowerCase() : row.textContent.toLowerCase();
+      row.style.display = text.includes(q) ? '' : 'none';
+    });
+  });
+  header.appendChild(inp);
+})();
+</script>
+{% endblock %}
