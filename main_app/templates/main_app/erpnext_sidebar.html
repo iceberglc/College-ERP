@@ -308,14 +308,6 @@
         </div>
 
         <div class="nav-item">
-            {% url 'staff_vocabulary' as staff_vocabulary %}
-            <a href="{{ staff_vocabulary }}" class="nav-link {% if 'vocabulary' in request.path and 'vocabulary-day' not in request.path %}active{% endif %}">
-                <i class="nav-icon fas fa-spell-check"></i>
-                <span class="nav-text">Vocabulary</span>
-            </a>
-        </div>
-
-        <div class="nav-item">
             {% url 'staff_vocabulary_days' as staff_vocabulary_days %}
             <a href="{{ staff_vocabulary_days }}" class="nav-link {% if 'vocabulary-day' in request.path %}active{% endif %}">
                 <i class="nav-icon fas fa-calendar-alt"></i>
@@ -435,14 +427,6 @@
         </div>
 
         <h6 class="nav-section-title">Vocabulary & Resources</h6>
-
-        <div class="nav-item">
-            {% url 'vocabulary_home' as vocabulary_home %}
-            <a href="{{ vocabulary_home }}" class="nav-link {% if 'vocabulary' in request.path and 'vocabulary-day' not in request.path %}active{% endif %}">
-                <i class="nav-icon fas fa-spell-check"></i>
-                <span class="nav-text">Vocabulary</span>
-            </a>
-        </div>
 
         <div class="nav-item">
             {% url 'vocabulary_day_list' as vocabulary_day_list %}

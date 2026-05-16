@@ -119,8 +119,8 @@
         <div class="day-title">{% if day.title %}{{ day.title }}{% else %}{{ day.group.name }}{% endif %}</div>
         <div class="day-meta">
           <span class="day-chip"><i class="fas fa-users"></i> {{ day.group.name }}</span>
-          <span class="day-chip"><i class="fas fa-book"></i> {{ day._word_count }} words</span>
-          <span class="day-chip"><i class="fas fa-check-circle"></i> {{ day._completion_count }} done</span>
+          <span class="day-chip"><i class="fas fa-book"></i> {{ day.word_count }} words</span>
+          <span class="day-chip"><i class="fas fa-check-circle"></i> {{ day.completion_count }} done</span>
           {% if day.level %}<span class="day-chip"><i class="fas fa-layer-group"></i> Level {{ day.level }}</span>{% endif %}
           <span class="day-chip"><i class="fas fa-clock"></i> {{ day.release_at|date:"M j, H:i" }}</span>
         </div>
