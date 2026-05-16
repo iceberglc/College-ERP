@@ -72,9 +72,47 @@ def student_home(request):
         'data_present': data_present,
         'data_absent': data_absent,
         'data_name': group_name,
+        'recent_assignments': _recent_assignments(student),
+        'latest_result': _latest_result(student),
         'page_title': 'My Dashboard',
     }
     return render(request, 'student_template/erpnext_student_home.html', context)
+
+
+def _recent_assignments(student):
+    enrolled_groups = Enrollment.objects.filter(
+        student=student, is_active=True
+    ).values_list('group_id', flat=True)
+    assignments = (
+        Assignment.objects.filter(group_id__in=enrolled_groups)
+        .select_related('group', 'subject')
+        .order_by('due_date')[:4]
+    )
+    submitted_ids = set(
+        Submission.objects.filter(student=student)
+        .values_list('assignment_id', flat=True)
+    )
+    rows = []
+    for a in assignments:
+        submitted = a.id in submitted_ids
+        rows.append({
+            'id': a.id,
+            'title': a.title,
+            'group_name': a.group.name if a.group else '',
+            'due_date': a.due_date,
+            'submitted': submitted,
+            'progress': 100 if submitted else 0,
+        })
+    return rows
+
+
+def _latest_result(student):
+    return (
+        StudentResult.objects.filter(student=student)
+        .select_related('group')
+        .order_by('-id')
+        .first()
+    )
 
 
 @student_only
@@ -86,9 +124,59 @@ def student_view_attendance(request):
     groups = Group.objects.filter(id__in=enrolled_group_ids).select_related('course')
 
     if request.method != 'POST':
+        # Build a month-aware calendar of the student's attendance status
+        all_reports = (
+            AttendanceReport.objects.filter(student=student)
+            .select_related('attendance')
+            .order_by('-attendance__date')
+        )
+
+        month_present = month_late = month_absent = month_total = 0
+        recent_rows = []
+        status_by_date = {}
+        today = datetime.now().date()
+        month_start = today.replace(day=1)
+        for r in all_reports:
+            d = r.attendance.date
+            iso = d.isoformat()
+            if iso not in status_by_date:
+                status_by_date[iso] = r.status
+            if d >= month_start:
+                month_total += 1
+                if r.status == AttendanceReport.PRESENT:
+                    month_present += 1
+                elif r.status == AttendanceReport.LATE:
+                    month_late += 1
+                else:
+                    month_absent += 1
+            if len(recent_rows) < 8:
+                recent_rows.append({
+                    'date': d,
+                    'status': r.status,
+                    'group_name': r.attendance.group.name if r.attendance.group_id else '',
+                })
+
+        month_pct = round(((month_present + month_late) / month_total) * 100) if month_total else 0
+        if month_pct >= 90:
+            month_message = 'Excellent consistency'
+        elif month_pct >= 75:
+            month_message = 'Healthy attendance'
+        elif month_pct >= 50:
+            month_message = 'Could be better'
+        else:
+            month_message = 'Needs your attention'
+
         context = {
             'groups': groups,
-            'page_title': 'View Attendance',
+            'page_title': 'Attendance',
+            'month_pct': month_pct,
+            'month_present': month_present,
+            'month_late': month_late,
+            'month_absent': month_absent,
+            'month_total': month_total,
+            'month_message': month_message,
+            'recent_rows': recent_rows,
+            'status_by_date': json.dumps(status_by_date),
         }
         return render(request, 'student_template/student_view_attendance.html', context)
 
