@@ -128,13 +128,16 @@
     }
     .splash-bar {
       height: 100%;
+      width: 100%;
       background: linear-gradient(90deg, var(--cyan-2), var(--cyan));
       border-radius: 999px;
-      animation: barFill 2s linear both;
+      transform-origin: left center;
+      transform: scaleX(0);
+      animation: barFill 2s linear forwards;
     }
     @keyframes barFill {
-      from { width: 0; }
-      to   { width: 100%; }
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
     }
 
     /* Fade-out for splash */
@@ -395,9 +398,8 @@
 
   <script>
     (function () {
-      var SEEN_KEY = 'iceberg_entry_seen';
-      var splash   = document.getElementById('splash');
-      var welcome  = document.getElementById('welcome');
+      var splash  = document.getElementById('splash');
+      var welcome = document.getElementById('welcome');
 
       function showWelcome() {
         splash.classList.add('hide');
@@ -408,24 +410,13 @@
         }, 480);
       }
 
-      var alreadySeen = localStorage.getItem(SEEN_KEY);
-
-      if (alreadySeen) {
-        // Skip animation on repeat visits — go straight to welcome card.
-        splash.style.display = 'none';
-        welcome.classList.add('show');
-        spawnParticles();
-      } else {
-        // First visit: play the 2-second splash.
-        localStorage.setItem(SEEN_KEY, '1');
-        setTimeout(showWelcome, 2000);
-      }
+      // Always play the full 2-second branded splash on every visit.
+      setTimeout(showWelcome, 2000);
 
       /* ── Floating particles ───────────────────────────────── */
       function spawnParticles() {
         var container = document.getElementById('particles');
-        var count = 18;
-        for (var i = 0; i < count; i++) {
+        for (var i = 0; i < 18; i++) {
           var p = document.createElement('div');
           p.className = 'w-particle';
           var size = Math.random() * 4 + 2;
