@@ -41,3 +41,10 @@ urlpatterns += [
 # production because WhiteNoise handles them at the WSGI layer).
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+
+# Branded error pages (Django uses these automatically when DEBUG=False).
+handler400 = 'main_app.views.bad_request'
+handler403 = 'main_app.views.permission_denied'
+handler404 = 'main_app.views.page_not_found'
+handler500 = 'main_app.views.server_error'

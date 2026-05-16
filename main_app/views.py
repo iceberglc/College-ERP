@@ -273,3 +273,54 @@ def showFirebaseJS(request):
         "});\n"
     )
     return HttpResponse(data, content_type='application/javascript')
+
+
+# ── Branded error handlers (registered in college_management_system/urls.py) ──
+
+def _render_error(request, code, title, message, status):
+    return render(
+        request,
+        'main_app/error.html',
+        {'error_code': code, 'error_title': title, 'error_message': message},
+        status=status,
+    )
+
+
+def page_not_found(request, exception):
+    return _render_error(
+        request, 404,
+        "We can't find that page",
+        "The page you were looking for has moved or no longer exists. "
+        "Head back to your dashboard to keep learning.",
+        status=404,
+    )
+
+
+def server_error(request):
+    return _render_error(
+        request, 500,
+        "Something went wrong on our end",
+        "An unexpected error occurred. The team has been notified — "
+        "please try again in a moment.",
+        status=500,
+    )
+
+
+def permission_denied(request, exception):
+    return _render_error(
+        request, 403,
+        "You don't have access to this page",
+        "Your account doesn't have permission to view this section. "
+        "Contact an administrator if you believe this is a mistake.",
+        status=403,
+    )
+
+
+def bad_request(request, exception):
+    return _render_error(
+        request, 400,
+        "That request didn't look right",
+        "The server couldn't process your request. Please refresh the page "
+        "and try again.",
+        status=400,
+    )
