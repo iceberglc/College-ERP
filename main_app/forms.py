@@ -14,15 +14,11 @@ class FormSettings(forms.ModelForm):
 
 
 class CustomUserForm(FormSettings):
-    email = forms.EmailField(required=True)
     gender = forms.ChoiceField(choices=[('M', 'Male'), ('F', 'Female')])
     first_name = forms.CharField(required=True)
     last_name = forms.CharField(required=True)
     address = forms.CharField(widget=forms.Textarea)
     password = forms.CharField(widget=forms.PasswordInput)
-    widget = {
-        'password': forms.PasswordInput(),
-    }
     profile_pic = forms.ImageField()
 
     def __init__(self, *args, **kwargs):
@@ -33,28 +29,14 @@ class CustomUserForm(FormSettings):
             instance = kwargs.get('instance').admin.__dict__
             self.fields['password'].required = False
             for field in CustomUserForm.Meta.fields:
-                self.fields[field].initial = instance.get(field)
+                if field in self.fields:
+                    self.fields[field].initial = instance.get(field)
             if self.instance.pk is not None:
                 self.fields['password'].widget.attrs['placeholder'] = "Fill this only if you wish to update password"
 
-    def clean_email(self, *args, **kwargs):
-        formEmail = self.cleaned_data['email'].lower()
-        if self.instance.pk is None:  # Insert
-            if CustomUser.objects.filter(email=formEmail).exists():
-                raise forms.ValidationError(
-                    "The given email is already registered")
-        else:  # Update
-            dbEmail = self.Meta.model.objects.get(
-                id=self.instance.pk).admin.email.lower()
-            if dbEmail != formEmail:  # There has been changes
-                if CustomUser.objects.filter(email=formEmail).exists():
-                    raise forms.ValidationError("The given email is already registered")
-
-        return formEmail
-
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'email', 'gender',  'password','profile_pic', 'address' ]
+        fields = ['first_name', 'last_name', 'gender', 'password', 'profile_pic', 'address']
 
 
 class StudentForm(CustomUserForm):
@@ -139,17 +121,20 @@ class AddStudentForm(CustomUserForm):
 
 
 class AdminForm(CustomUserForm):
+    email = forms.EmailField(required=False, label='Email')
+
     def __init__(self, *args, **kwargs):
         super(AdminForm, self).__init__(*args, **kwargs)
-        # Admin profile updates should not be blocked by optional legacy fields.
         self.fields['password'].required = False
         self.fields['profile_pic'].required = False
         self.fields['gender'].required = False
         self.fields['address'].required = False
+        if kwargs.get('instance'):
+            self.fields['email'].initial = kwargs['instance'].admin.email
 
     class Meta(CustomUserForm.Meta):
         model = Admin
-        fields = CustomUserForm.Meta.fields
+        fields = ['first_name', 'last_name', 'email', 'gender', 'password', 'profile_pic', 'address']
 
 
 class StaffForm(CustomUserForm):
@@ -253,6 +238,60 @@ class StaffEditForm(CustomUserForm):
     class Meta(CustomUserForm.Meta):
         model = Staff
         fields = CustomUserForm.Meta.fields + ['course', 'phone', 'specialization', 'is_active']
+
+
+class StudentProfileForm(forms.Form):
+    """Lean form for student self-service profile editing (no email, no profile_pic)."""
+    first_name = forms.CharField(required=True, label='First Name',
+        widget=forms.TextInput(attrs={'class': 'form-control'}))
+    last_name = forms.CharField(required=True, label='Last Name',
+        widget=forms.TextInput(attrs={'class': 'form-control'}))
+    gender = forms.ChoiceField(
+        choices=[('', '—'), ('M', 'Male'), ('F', 'Female')],
+        required=False, label='Gender',
+        widget=forms.Select(attrs={'class': 'form-control'}))
+    phone = forms.CharField(max_length=20, required=False, label='Phone Number',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+998 90 123 45 67'}))
+    password = forms.CharField(required=False, label='New Password',
+        widget=forms.PasswordInput(attrs={'class': 'form-control',
+            'placeholder': 'Leave blank to keep current password'}))
+
+    def __init__(self, instance=None, data=None, **kwargs):
+        super().__init__(data=data, **kwargs)
+        if instance:
+            self.fields['first_name'].initial = instance.admin.first_name
+            self.fields['last_name'].initial = instance.admin.last_name
+            self.fields['gender'].initial = instance.admin.gender
+            self.fields['phone'].initial = instance.phone
+
+
+class StaffProfileForm(forms.Form):
+    """Lean form for staff self-service profile editing (no email, no profile_pic)."""
+    first_name = forms.CharField(required=True, label='First Name',
+        widget=forms.TextInput(attrs={'class': 'form-control'}))
+    last_name = forms.CharField(required=True, label='Last Name',
+        widget=forms.TextInput(attrs={'class': 'form-control'}))
+    gender = forms.ChoiceField(
+        choices=[('', '—'), ('M', 'Male'), ('F', 'Female')],
+        required=False, label='Gender',
+        widget=forms.Select(attrs={'class': 'form-control'}))
+    phone = forms.CharField(max_length=20, required=False, label='Phone Number',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+998 90 123 45 67'}))
+    specialization = forms.CharField(max_length=200, required=False, label='Specialization',
+        widget=forms.TextInput(attrs={'class': 'form-control',
+            'placeholder': 'e.g. IELTS, Mathematics, Business English'}))
+    password = forms.CharField(required=False, label='New Password',
+        widget=forms.PasswordInput(attrs={'class': 'form-control',
+            'placeholder': 'Leave blank to keep current password'}))
+
+    def __init__(self, instance=None, data=None, **kwargs):
+        super().__init__(data=data, **kwargs)
+        if instance:
+            self.fields['first_name'].initial = instance.admin.first_name
+            self.fields['last_name'].initial = instance.admin.last_name
+            self.fields['gender'].initial = instance.admin.gender
+            self.fields['phone'].initial = instance.phone
+            self.fields['specialization'].initial = instance.specialization
 
 
 class EditResultForm(FormSettings):

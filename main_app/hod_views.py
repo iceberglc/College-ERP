@@ -133,7 +133,6 @@ def add_staff(request):
             first_name = form.cleaned_data.get('first_name')
             last_name = form.cleaned_data.get('last_name')
             address = form.cleaned_data.get('address')
-            email = form.cleaned_data.get('email')
             gender = form.cleaned_data.get('gender')
             password = form.cleaned_data.get('password')
             course = form.cleaned_data.get('course')
@@ -143,6 +142,7 @@ def add_staff(request):
                 if passport:
                     passport_url = default_storage.save(passport.name, passport)
                 login_id = _generate_login_id('TCH')
+                email = f"{login_id.lower()}@iceberg.internal"
                 user = CustomUser.objects.create_user(
                     email=email, password=password, user_type=2, first_name=first_name,
                     last_name=last_name, profile_pic=passport_url, login_id=login_id)
@@ -175,7 +175,6 @@ def add_student(request):
             first_name  = student_form.cleaned_data.get('first_name')
             last_name   = student_form.cleaned_data.get('last_name')
             address     = student_form.cleaned_data.get('address')
-            email       = student_form.cleaned_data.get('email')
             gender      = student_form.cleaned_data.get('gender')
             password    = student_form.cleaned_data.get('password')
             course      = student_form.cleaned_data.get('course')
@@ -186,6 +185,7 @@ def add_student(request):
                 if passport:
                     passport_url = default_storage.save(passport.name, passport)
                 login_id = _generate_login_id('STU')
+                email = f"{login_id.lower()}@iceberg.internal"
                 user = CustomUser.objects.create_user(
                     email=email, password=password, user_type=3,
                     first_name=first_name, last_name=last_name,
@@ -326,7 +326,6 @@ def edit_staff(request, staff_id):
             first_name = form.cleaned_data.get('first_name')
             last_name = form.cleaned_data.get('last_name')
             address = form.cleaned_data.get('address')
-            email = form.cleaned_data.get('email')
             gender = form.cleaned_data.get('gender')
             password = form.cleaned_data.get('password') or None
             course = form.cleaned_data.get('course')
@@ -334,7 +333,6 @@ def edit_staff(request, staff_id):
             passport = request.FILES.get('profile_pic') or None
             try:
                 user = CustomUser.objects.get(id=staff.admin.id)
-                user.email = email
                 if password is not None:
                     user.set_password(password)
                 if passport is not None:
@@ -373,7 +371,6 @@ def edit_student(request, student_id):
             first_name = form.cleaned_data.get('first_name')
             last_name = form.cleaned_data.get('last_name')
             address = form.cleaned_data.get('address')
-            email = form.cleaned_data.get('email')
             gender = form.cleaned_data.get('gender')
             password = form.cleaned_data.get('password') or None
             course = form.cleaned_data.get('course')
@@ -382,7 +379,6 @@ def edit_student(request, student_id):
                 user = CustomUser.objects.get(id=student.admin.id)
                 if passport is not None:
                     user.profile_pic = default_storage.save(passport.name, passport)
-                user.email = email
                 if password is not None:
                     user.set_password(password)
                 user.first_name = first_name

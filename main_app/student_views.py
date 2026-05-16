@@ -286,38 +286,27 @@ def student_feedback(request):
 @student_only
 def student_view_profile(request):
     student = get_object_or_404(Student, admin=request.user)
-    form = StudentEditForm(request.POST or None, request.FILES or None,
-                           instance=student)
-    context = {'form': form,
-               'page_title': 'View/Edit Profile'
-               }
+    form = StudentProfileForm(instance=student, data=request.POST or None)
+    context = {'form': form, 'page_title': 'My Profile', 'student': student}
     if request.method == 'POST':
-        try:
-            if form.is_valid():
-                first_name = form.cleaned_data.get('first_name')
-                last_name = form.cleaned_data.get('last_name')
-                password = form.cleaned_data.get('password') or None
-                address = form.cleaned_data.get('address')
-                gender = form.cleaned_data.get('gender')
-                passport = request.FILES.get('profile_pic') or None
+        if form.is_valid():
+            try:
                 admin = student.admin
-                if password != None:
+                password = form.cleaned_data.get('password') or None
+                if password:
                     admin.set_password(password)
-                if passport != None:
-                    admin.profile_pic = default_storage.save(passport.name, passport)
-                admin.first_name = first_name
-                admin.last_name = last_name
-                admin.address = address
-                admin.gender = gender
+                admin.first_name = form.cleaned_data['first_name']
+                admin.last_name = form.cleaned_data['last_name']
+                admin.gender = form.cleaned_data.get('gender', '')
                 admin.save()
+                student.phone = form.cleaned_data.get('phone', '')
                 student.save()
-                messages.success(request, "Profile Updated!")
+                messages.success(request, "Profile updated!")
                 return redirect(reverse('student_view_profile'))
-            else:
-                messages.error(request, "Invalid Data Provided")
-        except Exception as e:
-            messages.error(request, "Error Occured While Updating Profile " + str(e))
-
+            except Exception as e:
+                messages.error(request, f"Error updating profile: {e}")
+        else:
+            messages.error(request, "Please fix the errors below.")
     return render(request, "student_template/student_view_profile.html", context)
 
 

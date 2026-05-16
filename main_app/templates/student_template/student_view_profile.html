@@ -1,81 +1,117 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{ page_title }}{% endblock %}
+{% block page_title %}My Profile — Iceberg Study Center{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">My Profile</li>{% endblock %}
 
 {% block custom_css %}
 <style>
-  .profile-wrap { max-width: 640px; margin: 0 auto; }
+/* ── layout ── */
+.prof-page { display: flex; flex-direction: column; gap: 20px; max-width: 640px; margin: 0 auto; }
 
-  .profile-hero {
-    background: linear-gradient(135deg, var(--ice-navy) 0%, #1340A8 100%);
-    border-radius: 14px;
-    padding: 28px 24px;
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-  .profile-avatar {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    border: 3px solid rgba(255,255,255,.3);
-    background: rgba(255,255,255,.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 26px;
-    font-weight: 700;
-    flex-shrink: 0;
-    overflow: hidden;
-  }
-  .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .profile-hero-info h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
-  .profile-hero-info p  { font-size: 13px; opacity: .8; margin: 0; }
+/* ── hero ── */
+.prof-hero {
+  background: linear-gradient(135deg, #0C1F45 0%, #1B3F7A 100%);
+  border-radius: 20px; padding: 28px 24px; color: #fff;
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  box-shadow: 0 10px 32px rgba(12,31,69,.22);
+}
+.prof-hero-right { flex: 1; min-width: 0; }
+.prof-hero-name { font-size: 22px; font-weight: 900; margin: 0 0 4px; }
+.prof-hero-sub  { font-size: 13px; opacity: .75; margin: 0 0 10px; }
+.prof-id-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 14px; border-radius: 8px;
+  background: rgba(255,255,255,.14); border: 1.5px solid rgba(255,255,255,.22);
+  font-size: 15px; font-weight: 800; font-family: monospace; letter-spacing: 1px;
+}
+.prof-id-badge i { font-size: 11px; opacity: .7; }
 
-  .pcard {
-    background: var(--ice-surface);
-    border: 1px solid var(--ice-border);
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 1px 4px rgba(27,63,122,.06);
-    margin-bottom: 20px;
-  }
-  .pcard-header {
-    padding: 16px 24px;
-    background: var(--ice-surface2);
-    border-bottom: 1px solid var(--ice-border);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ice-text);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .pcard-header i { color: var(--ice-cyan); }
-  .pcard-body { padding: 24px; }
+/* ── section cards ── */
+.prof-card {
+  background: var(--ice-surface);
+  border: 1.5px solid var(--ice-border);
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(12,31,69,.06);
+}
+.prof-card-hd {
+  padding: 14px 20px;
+  background: var(--ice-surface2);
+  border-bottom: 1.5px solid var(--ice-border);
+  display: flex; align-items: center; gap: 9px;
+  font-size: 13px; font-weight: 700; color: var(--ice-text);
+}
+.prof-card-hd i { color: var(--ice-cyan); font-size: 14px; }
+.prof-card-body { padding: 20px; }
 
-  .form-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--ice-muted); margin-bottom: 6px; }
-  .form-control { border-color: var(--ice-border); color: var(--ice-text); background: var(--ice-surface); }
-  .form-control:focus { border-color: var(--ice-cyan); box-shadow: 0 0 0 3px rgba(6,182,212,.12); }
+/* ── field rows ── */
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 480px) { .field-grid { grid-template-columns: 1fr; } }
+.field-wrap label {
+  display: block; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .6px;
+  color: var(--ice-muted); margin-bottom: 6px;
+}
+.field-wrap .form-control, .field-wrap select {
+  width: 100%; border-radius: 10px;
+  border: 1.5px solid var(--ice-border);
+  background: var(--ice-surface2);
+  color: var(--ice-text);
+  padding: 10px 14px; font-size: 14px;
+  transition: border-color .15s, box-shadow .15s;
+  -webkit-appearance: none; appearance: none;
+}
+.field-wrap .form-control:focus, .field-wrap select:focus {
+  border-color: var(--ice-cyan);
+  box-shadow: 0 0 0 3px rgba(6,182,212,.12);
+  outline: none;
+}
+.field-error { font-size: 11px; color: var(--ice-danger); margin-top: 4px; }
 
-  .password-notice {
-    background: rgba(245,158,11,.08);
-    border: 1px solid rgba(245,158,11,.2);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 12px;
-    color: var(--ice-warning);
-    display: none;
-    margin-top: 8px;
-  }
+/* ── password notice ── */
+.pw-notice {
+  display: none; margin-top: 8px; padding: 10px 14px; border-radius: 8px;
+  background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2);
+  font-size: 12px; color: var(--ice-warning);
+}
+
+/* ── theme selector ── */
+.theme-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.theme-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 8px; border-radius: 12px; cursor: pointer;
+  border: 2px solid var(--ice-border);
+  background: var(--ice-surface2);
+  transition: all .15s; font-size: 12px; font-weight: 700;
+  color: var(--ice-text);
+}
+.theme-btn .theme-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.theme-btn.active {
+  border-color: var(--ice-cyan);
+  background: rgba(6,182,212,.08);
+  color: var(--ice-cyan);
+}
+.theme-btn:hover:not(.active) {
+  border-color: var(--ice-border-strong, #CBD5E1);
+  background: var(--ice-surface);
+}
+.theme-saved-msg { display:none; font-size:12px; color: var(--ice-success); margin-top:10px; }
+
+/* ── save button ── */
+.prof-save-btn {
+  width: 100%; padding: 12px; border-radius: 12px;
+  background: linear-gradient(135deg, #0C1F45, #1B3F7A);
+  color: #fff; font-size: 14px; font-weight: 700;
+  border: none; cursor: pointer; transition: opacity .15s;
+}
+.prof-save-btn:hover { opacity: .9; }
 </style>
-{% endblock custom_css %}
+{% endblock %}
 
 {% block content %}
-<div class="profile-wrap">
+<div class="prof-page">
 
   <!-- Avatar picker modal -->
   <div class="avatar-modal-overlay" id="avatar-modal">
@@ -94,107 +130,115 @@
   <div class="avatar-toast" id="avatar-toast"><i class="fas fa-check-circle me-1"></i>Avatar saved!</div>
 
   <!-- Hero -->
-  <div class="profile-hero">
-    <div class="profile-avatar-sticker" id="profile-avatar-display" onclick="openAvatarModal()" title="Click to change avatar">
+  <div class="prof-hero">
+    <div class="profile-avatar-sticker" id="profile-avatar-display" onclick="openAvatarModal()" title="Click to change avatar" style="cursor:pointer;">
       <span id="profile-avatar-inner">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
     </div>
-    <div class="profile-hero-info">
-      <h2>{{ user.get_full_name|default:user.username }}</h2>
-      <p><i class="fas fa-id-badge me-1"></i>{{ user.login_id|default:"—" }}</p>
-      <p style="font-size:11px;opacity:.65;margin-top:4px;"><i class="fas fa-paint-brush me-1"></i>Click avatar to change</p>
+    <div class="prof-hero-right">
+      <div class="prof-hero-name">{{ user.get_full_name|default:user.login_id }}</div>
+      <div class="prof-hero-sub"><i class="fas fa-user-graduate me-1"></i>Student</div>
+      <div class="prof-id-badge"><i class="fas fa-id-badge"></i>{{ user.login_id|default:"—" }}</div>
+      <div style="font-size:11px;opacity:.5;margin-top:8px;"><i class="fas fa-paint-brush me-1"></i>Tap avatar to change</div>
     </div>
   </div>
 
-  <!-- Login ID display (read-only) -->
-  <div class="pcard" style="margin-bottom: 16px;">
-    <div class="pcard-body" style="padding: 14px 20px;">
-      <div style="font-size: 13px; color: #64748B; margin-bottom: 4px; font-weight: 600; letter-spacing: .2px;">YOUR LOGIN ID</div>
-      <div style="font-size: 22px; font-weight: 700; color: #0C1F45; letter-spacing: 1px; font-family: monospace;">{{ user.login_id|default:"—" }}</div>
-      <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Use this ID to log in. It cannot be changed.</div>
-    </div>
+  {% if messages %}
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
+  {% endfor %}
+  {% endif %}
 
-  <!-- Theme Selector -->
-  <div class="pcard">
-    <div class="pcard-header">
-      <i class="fas fa-palette"></i> Appearance
-    </div>
-    <div class="pcard-body">
-      <div style="font-size:12px;color:var(--ice-muted);margin-bottom:14px;">Choose how ICEBERG looks for you. Your preference is saved and applied on every login.</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;" id="theme-selector">
-        {% with current_theme=request.user.student.theme|default:"system" %}
-        <button type="button" class="theme-btn {% if current_theme == 'bright' %}active{% endif %}" data-theme="bright"
-          style="padding:14px 10px;border-radius:12px;border:2px solid {% if current_theme == 'bright' %}#1B3F7A{% else %}var(--ice-border){% endif %};background:{% if current_theme == 'bright' %}#EFF6FF{% else %}var(--ice-surface){% endif %};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
-          <div style="width:36px;height:36px;border-radius:9px;background:#fff;border:2px solid #E2E8F0;display:flex;align-items:center;justify-content:center;font-size:18px;">☀️</div>
-          <span style="font-size:12px;font-weight:700;color:var(--ice-text);">Bright</span>
+  <!-- Appearance / Theme -->
+  <div class="prof-card">
+    <div class="prof-card-hd"><i class="fas fa-palette"></i> Appearance</div>
+    <div class="prof-card-body">
+      <div style="font-size:12px;color:var(--ice-muted);margin-bottom:14px;">Choose how ICEBERG looks. Saved to your account.</div>
+      {% with ct=request.user.student.theme|default:"system" %}
+      <div class="theme-grid">
+        <button type="button" class="theme-btn {% if ct == 'bright' %}active{% endif %}" data-theme="bright">
+          <div class="theme-icon" style="background:#F1F5F9;border:2px solid #E2E8F0;">☀️</div>
+          Bright
         </button>
-        <button type="button" class="theme-btn {% if current_theme == 'dark' %}active{% endif %}" data-theme="dark"
-          style="padding:14px 10px;border-radius:12px;border:2px solid {% if current_theme == 'dark' %}#1B3F7A{% else %}var(--ice-border){% endif %};background:{% if current_theme == 'dark' %}#EFF6FF{% else %}var(--ice-surface){% endif %};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
-          <div style="width:36px;height:36px;border-radius:9px;background:#1E293B;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:18px;">🌙</div>
-          <span style="font-size:12px;font-weight:700;color:var(--ice-text);">Dark</span>
+        <button type="button" class="theme-btn {% if ct == 'dark' %}active{% endif %}" data-theme="dark">
+          <div class="theme-icon" style="background:#1E293B;border:2px solid #334155;">🌙</div>
+          Dark
         </button>
-        <button type="button" class="theme-btn {% if current_theme == 'system' %}active{% endif %}" data-theme="system"
-          style="padding:14px 10px;border-radius:12px;border:2px solid {% if current_theme == 'system' %}#1B3F7A{% else %}var(--ice-border){% endif %};background:{% if current_theme == 'system' %}#EFF6FF{% else %}var(--ice-surface){% endif %};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
-          <div style="width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#fff 50%,#1E293B 50%);border:2px solid #E2E8F0;display:flex;align-items:center;justify-content:center;font-size:18px;">⚙️</div>
-          <span style="font-size:12px;font-weight:700;color:var(--ice-text);">System</span>
+        <button type="button" class="theme-btn {% if ct == 'system' %}active{% endif %}" data-theme="system">
+          <div class="theme-icon" style="background:linear-gradient(135deg,#F1F5F9 50%,#1E293B 50%);border:2px solid #94A3B8;">⚙️</div>
+          System
         </button>
-        {% endwith %}
       </div>
-      <div id="theme-msg" style="font-size:12px;color:#10B981;margin-top:10px;display:none;"><i class="fas fa-check-circle me-1"></i>Theme saved!</div>
+      {% endwith %}
+      <div class="theme-saved-msg" id="theme-msg"><i class="fas fa-check-circle me-1"></i>Theme saved!</div>
     </div>
   </div>
 
-  <!-- Profile Form -->
-  <div class="pcard">
-    <div class="pcard-header">
-      <i class="fas fa-user-edit"></i> Edit Profile
-    </div>
-    <div class="pcard-body">
-      <form role="form" method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
+  <!-- Profile form -->
+  <form method="POST" novalidate>
+    {% csrf_token %}
 
-        {% if form.non_field_errors %}
-        <div class="alert alert-danger mb-4">
-          {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
-        </div>
-        {% endif %}
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+    {% endif %}
 
-        {% for field in form %}
-        <div class="mb-4">
-          <label class="form-label">{{ field.label }}</label>
-          {{ field }}
-          {% if field.errors %}
-          <div class="invalid-feedback d-block mt-1">
-            {% for error in field.errors %}
-            <span><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</span>
-            {% endfor %}
+    <!-- Personal Info -->
+    <div class="prof-card" style="margin-bottom:20px;">
+      <div class="prof-card-hd"><i class="fas fa-user"></i> Personal Information</div>
+      <div class="prof-card-body">
+        <div class="field-grid">
+          <div class="field-wrap">
+            <label>First Name</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}<div class="field-error">{{ form.first_name.errors.0 }}</div>{% endif %}
           </div>
-          {% endif %}
-          {% if field.help_text %}
-          <small class="form-text text-muted">{{ field.help_text }}</small>
-          {% endif %}
-          {% if field.html_name == 'password' %}
-          <div class="password-notice" id="pw_notice">
+          <div class="field-wrap">
+            <label>Last Name</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}<div class="field-error">{{ form.last_name.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+        <div class="field-grid" style="margin-top:16px;">
+          <div class="field-wrap">
+            <label>Gender</label>
+            {{ form.gender }}
+          </div>
+          <div class="field-wrap">
+            <label>Phone Number</label>
+            {{ form.phone }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security -->
+    <div class="prof-card" style="margin-bottom:20px;">
+      <div class="prof-card-hd"><i class="fas fa-lock"></i> Security</div>
+      <div class="prof-card-body">
+        <div class="field-wrap">
+          <label>New Password</label>
+          {{ form.password }}
+          {% if form.password.errors %}<div class="field-error">{{ form.password.errors.0 }}</div>{% endif %}
+          <div class="pw-notice" id="pw-notice">
             <i class="fas fa-exclamation-triangle me-1"></i>
-            Changing your password will end your current session and require you to log in again.
+            Saving a new password will end your current session.
           </div>
-          {% endif %}
         </div>
-        {% endfor %}
-
-        <button type="submit" class="btn btn-success w-100 mt-2">
-          <i class="fas fa-save me-1"></i> Update Profile
-        </button>
-      </form>
+      </div>
     </div>
-  </div>
+
+    <button type="submit" class="prof-save-btn">
+      <i class="fas fa-save me-1"></i> Save Changes
+    </button>
+  </form>
 
 </div>
 {% endblock %}
 
 {% block custom_js %}
 <script>
-// ── Avatar system ────────────────────────────────────────────────────────────
+// ── Avatar ────────────────────────────────────────────────────────────────────
 var AVATARS = ["🧑‍🎓","👨‍🎓","👩‍🎓","🧑‍💻","👨‍💻","👩‍💻","🧑‍🏫","👨‍🏫","👩‍🏫","🤓",
                "😊","😎","💡","📚","🏆","⭐","💪","🎯","🌟","🦉","🌍","✏️","🎨","🔬"];
 var BG = ["#1B3F7A","#0C1F45","#7C3AED","#0891B2","#1F2937","#6D28D9",
@@ -205,122 +249,82 @@ var currentAvatar = '{{ request.user.avatar }}';
 var pendingAvatar = currentAvatar;
 var CSRF = '{{ csrf_token }}';
 
-function buildGrid() {
-  var grid = document.getElementById('avatar-grid');
-  grid.innerHTML = '';
-  AVATARS.forEach(function (emoji, idx) {
-    var div = document.createElement('div');
-    div.className = 'avatar-option' + (currentAvatar == String(idx + 1) ? ' selected' : '');
-    div.style.background = BG[idx];
-    div.textContent = emoji;
-    div.dataset.av = String(idx + 1);
-    div.addEventListener('click', function () {
-      document.querySelectorAll('.avatar-option').forEach(function (o) { o.classList.remove('selected'); });
-      div.classList.add('selected');
-      pendingAvatar = div.dataset.av;
-    });
-    grid.appendChild(div);
+function buildGrid(){
+  var g=document.getElementById('avatar-grid'); g.innerHTML='';
+  AVATARS.forEach(function(e,i){
+    var d=document.createElement('div');
+    d.className='avatar-option'+(currentAvatar==String(i+1)?' selected':'');
+    d.style.background=BG[i]; d.textContent=e; d.dataset.av=String(i+1);
+    d.addEventListener('click',function(){
+      document.querySelectorAll('.avatar-option').forEach(function(o){o.classList.remove('selected');});
+      d.classList.add('selected'); pendingAvatar=d.dataset.av;
+    }); g.appendChild(d);
   });
 }
-
-function openAvatarModal() {
-  pendingAvatar = currentAvatar;
-  buildGrid();
-  document.getElementById('avatar-modal').classList.add('open');
+function openAvatarModal(){ pendingAvatar=currentAvatar; buildGrid(); document.getElementById('avatar-modal').classList.add('open'); }
+function closeAvatarModal(){ document.getElementById('avatar-modal').classList.remove('open'); }
+function applyAvatarToHero(avId){
+  var inner=document.getElementById('profile-avatar-inner');
+  var wrap=document.getElementById('profile-avatar-display');
+  if(!inner||!wrap) return;
+  var idx=parseInt(avId,10)-1;
+  if(idx>=0&&idx<AVATARS.length){ inner.textContent=AVATARS[idx]; inner.style.fontSize='32px'; wrap.style.background=BG[idx]; }
 }
-function closeAvatarModal() {
-  document.getElementById('avatar-modal').classList.remove('open');
-}
-
-function applyAvatarToHero(avId) {
-  var inner = document.getElementById('profile-avatar-inner');
-  var wrap = document.getElementById('profile-avatar-display');
-  if (!inner || !wrap) return;
-  var idx = parseInt(avId, 10) - 1;
-  if (idx >= 0 && idx < AVATARS.length) {
-    inner.textContent = AVATARS[idx];
-    inner.style.fontSize = '32px';
-    wrap.style.background = BG[idx];
-  }
-}
-
-function saveAvatar() {
-  fetch('{% url "save_avatar" %}', {
-    method: 'POST',
-    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'avatar=' + encodeURIComponent(pendingAvatar),
-  }).then(function (r) { return r.json(); }).then(function (data) {
-    if (data.status === 'ok') {
-      currentAvatar = pendingAvatar;
-      applyAvatarToHero(currentAvatar);
-      closeAvatarModal();
-      var t = document.getElementById('avatar-toast');
-      t.classList.add('show');
-      setTimeout(function () { t.classList.remove('show'); }, 2200);
-    }
+function saveAvatar(){
+  fetch('{% url "save_avatar" %}',{
+    method:'POST', headers:{'X-CSRFToken':CSRF,'Content-Type':'application/x-www-form-urlencoded'},
+    body:'avatar='+encodeURIComponent(pendingAvatar),
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.status==='ok'){ currentAvatar=pendingAvatar; applyAvatarToHero(currentAvatar); closeAvatarModal();
+      var t=document.getElementById('avatar-toast'); t.classList.add('show');
+      setTimeout(function(){t.classList.remove('show');},2200); }
   });
 }
-
-// Apply current avatar on load
-(function () {
-  if (currentAvatar) applyAvatarToHero(currentAvatar);
-  document.getElementById('avatar-modal').addEventListener('click', function (e) {
-    if (e.target === this) closeAvatarModal();
-  });
+(function(){
+  if(currentAvatar) applyAvatarToHero(currentAvatar);
+  document.getElementById('avatar-modal').addEventListener('click',function(e){ if(e.target===this) closeAvatarModal(); });
+  var pw=document.getElementById('id_password');
+  if(pw) pw.addEventListener('input',function(){ if(pw.value) document.getElementById('pw-notice').style.display='block'; });
 })();
 
-// ── Password + Theme ─────────────────────────────────────────────────────────
-(function () {
-  var pwField = document.getElementById('id_password');
-  if (pwField) {
-    pwField.addEventListener('change', function () {
-      document.getElementById('pw_notice').style.display = 'block';
-    });
-  }
+// ── Theme ─────────────────────────────────────────────────────────────────────
+(function(){
+  var SAVE_URL='{% url "student_save_theme" %}';
+  var CSRF2='{{ csrf_token }}';
 
-  // Theme selector
-  var SAVE_URL = '{% url "student_save_theme" %}';
-  var CSRF2 = '{{ csrf_token }}';
-
-  function applyTheme(theme) {
-    var root = document.documentElement;
+  function applyTheme(theme){
+    var root=document.documentElement;
     root.removeAttribute('data-theme');
-    document.body.classList.remove('dark-mode', 'bright-mode');
-    if (theme === 'dark') {
-      root.setAttribute('data-theme', 'dark');
+    root.classList.remove('dark-mode');
+    document.body.classList.remove('dark-mode','bright-mode');
+    if(theme==='dark'){
+      root.setAttribute('data-theme','dark');
+      root.classList.add('dark-mode');
       document.body.classList.add('dark-mode');
-    } else if (theme === 'bright') {
-      root.setAttribute('data-theme', 'bright');
-      document.body.classList.add('bright-mode');
+    } else if(theme==='bright'){
+      root.setAttribute('data-theme','bright');
     } else {
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        root.setAttribute('data-theme', 'dark');
+      if(window.matchMedia('(prefers-color-scheme: dark)').matches){
+        root.setAttribute('data-theme','dark');
+        root.classList.add('dark-mode');
         document.body.classList.add('dark-mode');
       }
     }
   }
 
-  document.querySelectorAll('.theme-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var theme = btn.dataset.theme;
-      // Update button styles
-      document.querySelectorAll('.theme-btn').forEach(function (b) {
-        b.style.borderColor = 'var(--ice-border)';
-        b.style.background = 'var(--ice-surface)';
-      });
-      btn.style.borderColor = '#1B3F7A';
-      btn.style.background = '#EFF6FF';
-
+  document.querySelectorAll('.theme-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var theme=btn.dataset.theme;
+      document.querySelectorAll('.theme-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
       applyTheme(theme);
-
-      // Save to server
-      fetch(SAVE_URL, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': CSRF2, 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'theme=' + theme,
-      }).then(function () {
-        var msg = document.getElementById('theme-msg');
-        if (msg) { msg.style.display = 'block'; setTimeout(function () { msg.style.display = 'none'; }, 2000); }
+      fetch(SAVE_URL,{
+        method:'POST',
+        headers:{'X-CSRFToken':CSRF2,'Content-Type':'application/x-www-form-urlencoded'},
+        body:'theme='+theme,
+      }).then(function(){
+        var m=document.getElementById('theme-msg');
+        if(m){ m.style.display='block'; setTimeout(function(){m.style.display='none';},2200); }
       });
     });
   });

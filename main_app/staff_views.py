@@ -311,38 +311,28 @@ def staff_feedback(request):
 @staff_only
 def staff_view_profile(request):
     staff = get_object_or_404(Staff, admin=request.user)
-    form = StaffEditForm(request.POST or None, request.FILES or None,instance=staff)
-    context = {'form': form, 'page_title': 'View/Update Profile'}
+    form = StaffProfileForm(instance=staff, data=request.POST or None)
+    context = {'form': form, 'page_title': 'My Profile', 'staff': staff}
     if request.method == 'POST':
-        try:
-            if form.is_valid():
-                first_name = form.cleaned_data.get('first_name')
-                last_name = form.cleaned_data.get('last_name')
-                password = form.cleaned_data.get('password') or None
-                address = form.cleaned_data.get('address')
-                gender = form.cleaned_data.get('gender')
-                passport = request.FILES.get('profile_pic') or None
+        if form.is_valid():
+            try:
                 admin = staff.admin
-                if password != None:
+                password = form.cleaned_data.get('password') or None
+                if password:
                     admin.set_password(password)
-                if passport != None:
-                    admin.profile_pic = default_storage.save(passport.name, passport)
-                admin.first_name = first_name
-                admin.last_name = last_name
-                admin.address = address
-                admin.gender = gender
+                admin.first_name = form.cleaned_data['first_name']
+                admin.last_name = form.cleaned_data['last_name']
+                admin.gender = form.cleaned_data.get('gender', '')
                 admin.save()
+                staff.phone = form.cleaned_data.get('phone', '')
+                staff.specialization = form.cleaned_data.get('specialization', '')
                 staff.save()
-                messages.success(request, "Profile Updated!")
+                messages.success(request, "Profile updated!")
                 return redirect(reverse('staff_view_profile'))
-            else:
-                messages.error(request, "Invalid Data Provided")
-                return render(request, "staff_template/staff_view_profile.html", context)
-        except Exception as e:
-            messages.error(
-                request, "Error Occured While Updating Profile " + str(e))
-            return render(request, "staff_template/staff_view_profile.html", context)
-
+            except Exception as e:
+                messages.error(request, f"Error updating profile: {e}")
+        else:
+            messages.error(request, "Please fix the errors below.")
     return render(request, "staff_template/staff_view_profile.html", context)
 
 

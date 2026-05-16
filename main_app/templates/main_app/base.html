@@ -21,9 +21,13 @@
     /* Apply theme before paint to prevent flash */
     (function(){
       var t='{{ student_theme|default:"system" }}';
-      if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}
+      function applyDark(){
+        document.documentElement.setAttribute('data-theme','dark');
+        document.documentElement.classList.add('dark-mode');
+      }
+      if(t==='dark'){applyDark();}
       else if(t==='bright'){document.documentElement.setAttribute('data-theme','bright');}
-      else{if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}}
+      else{if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){applyDark();}}
     })();
     </script>
 </head>
@@ -230,9 +234,12 @@
         }
     }
     document.addEventListener('DOMContentLoaded', function () {
-        /* Sync data-theme → .dark-mode class for legacy CSS rules */
+        /* Sync data-theme → .dark-mode on both html and body for full coverage */
         const th = document.documentElement.getAttribute('data-theme');
-        if (th === 'dark') document.body.classList.add('dark-mode');
+        if (th === 'dark') {
+            document.documentElement.classList.add('dark-mode');
+            document.body.classList.add('dark-mode');
+        }
 
         const state = localStorage.getItem('sidebarState');
         if (isMobile()) { closeSidebar(); }
