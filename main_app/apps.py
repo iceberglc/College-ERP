@@ -10,22 +10,12 @@ class MainAppConfig(AppConfig):
     def ready(self):
         from django.db.models.signals import post_migrate
 
+        # Seed admin accounts after migrations complete.  We intentionally
+        # avoid any DB calls here — doing so triggers Django's "Accessing the
+        # database during app initialization is discouraged" RuntimeWarning and
+        # can fail on a fresh database before migrations have run.
         post_migrate.connect(create_default_test_admin, dispatch_uid='main_app.seed_test_admin')
         post_migrate.connect(create_recovery_admin_access, dispatch_uid='main_app.seed_recovery_admin')
-
-        # Also seed on app startup in debug mode so local login works even
-        # when migrate is not executed in that session.
-        if settings.DEBUG:
-            try:
-                create_default_test_admin(sender=self)
-            except Exception:
-                pass
-
-        # Ensure a recoverable admin account exists for password recovery.
-        try:
-            create_recovery_admin_access(sender=self)
-        except Exception:
-            pass
 
 
 def create_default_test_admin(sender, **kwargs):
