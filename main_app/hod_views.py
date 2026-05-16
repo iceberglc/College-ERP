@@ -387,6 +387,8 @@ def edit_student(request, student_id):
                 user.gender = gender
                 user.address = address
                 student.course = course
+                student.phone = form.cleaned_data.get('phone', '')
+                student.status = form.cleaned_data.get('status', student.status)
                 user.save()
                 student.save()
                 messages.success(request, "Successfully Updated")

@@ -58,12 +58,27 @@ class CustomUserForm(FormSettings):
 
 
 class StudentForm(CustomUserForm):
+    phone = forms.CharField(
+        max_length=20, required=False, label="Phone Number",
+        widget=forms.TextInput(attrs={'placeholder': '+998 90 123 45 67', 'class': 'form-control'}),
+    )
+    status = forms.ChoiceField(
+        choices=Student.STATUS_CHOICES,
+        initial=Student.STATUS_ACTIVE,
+        label="Status",
+    )
+
     def __init__(self, *args, **kwargs):
         super(StudentForm, self).__init__(*args, **kwargs)
+        self.fields['status'].widget.attrs['class'] = 'form-control'
+        instance = kwargs.get('instance')
+        if instance:
+            self.fields['phone'].initial = instance.phone
+            self.fields['status'].initial = instance.status
 
     class Meta(CustomUserForm.Meta):
         model = Student
-        fields = CustomUserForm.Meta.fields + ['course']
+        fields = CustomUserForm.Meta.fields + ['course', 'phone', 'status']
 
 
 class AddStudentForm(CustomUserForm):
