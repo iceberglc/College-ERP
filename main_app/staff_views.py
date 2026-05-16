@@ -784,3 +784,209 @@ def delete_vocabulary(request, vocab_id):
     vocab.delete()
     messages.success(request, f"Word '{word}' deleted.")
     return redirect(reverse('staff_vocabulary'))
+
+
+# ── Vocabulary Days ───────────────────────────────────────────────────────────
+
+@staff_only
+def staff_vocabulary_days(request):
+    staff = get_object_or_404(Staff, admin=request.user)
+    my_groups = Group.objects.filter(teacher=staff, is_archived=False)
+    group_filter = request.GET.get('group', '')
+    qs = VocabularyDay.objects.filter(
+        group__in=my_groups
+    ).select_related('group').prefetch_related('words', 'completions')
+    if group_filter:
+        try:
+            qs = qs.filter(group_id=int(group_filter))
+        except (ValueError, TypeError):
+            pass
+    days = list(qs)
+    for d in days:
+        d._word_count = d.words.count()
+        d._completion_count = d.completions.count()
+    return render(request, 'staff_template/staff_vocabulary_days.html', {
+        'days': days,
+        'my_groups': my_groups,
+        'selected_group': group_filter,
+        'page_title': 'Vocabulary Days',
+    })
+
+
+@staff_only
+def add_vocabulary_day(request):
+    import json as _json
+    staff = get_object_or_404(Staff, admin=request.user)
+    form = VocabularyDayForm(request.POST or None, staff=staff)
+    if request.method == 'POST':
+        if form.is_valid():
+            day = form.save(commit=False)
+            day.created_by = staff
+            # Parse level
+            raw_level = form.cleaned_data.get('level')
+            day.level = int(raw_level) if raw_level else None
+            day.save()
+
+            # Save words from JSON payload
+            words_json = request.POST.get('words_json', '[]')
+            try:
+                words_data = _json.loads(words_json)
+            except _json.JSONDecodeError:
+                words_data = []
+            word_objs = []
+            for i, w in enumerate(words_data):
+                word = (w.get('word') or '').strip()
+                meaning = (w.get('meaning') or '').strip()
+                if word and meaning:
+                    word_objs.append(VocabularyDayWord(
+                        day=day,
+                        word=word,
+                        meaning=meaning,
+                        example_sentence=(w.get('example') or '').strip(),
+                        pronunciation_note=(w.get('pronunciation') or '').strip(),
+                        order=i,
+                    ))
+            VocabularyDayWord.objects.bulk_create(word_objs)
+
+            # Send notifications immediately if already released
+            _notify_vocab_day(day)
+
+            messages.success(request, f"Day {day.day_number} created with {len(word_objs)} words!")
+            return redirect(reverse('staff_vocabulary_days'))
+        else:
+            messages.error(request, "Please fix the errors below.")
+    return render(request, 'staff_template/add_vocabulary_day.html', {
+        'form': form,
+        'page_title': 'Create Vocabulary Day',
+        'editing': False,
+    })
+
+
+@staff_only
+def edit_vocabulary_day(request, day_id):
+    import json as _json
+    staff = get_object_or_404(Staff, admin=request.user)
+    day = get_object_or_404(VocabularyDay, id=day_id, created_by=staff)
+    form = VocabularyDayForm(request.POST or None, instance=day, staff=staff)
+    existing_words = list(day.words.all())
+    if request.method == 'POST':
+        if form.is_valid():
+            day = form.save(commit=False)
+            raw_level = form.cleaned_data.get('level')
+            day.level = int(raw_level) if raw_level else None
+            day.save()
+
+            # Replace all words
+            day.words.all().delete()
+            words_json = request.POST.get('words_json', '[]')
+            try:
+                words_data = _json.loads(words_json)
+            except _json.JSONDecodeError:
+                words_data = []
+            word_objs = []
+            for i, w in enumerate(words_data):
+                word = (w.get('word') or '').strip()
+                meaning = (w.get('meaning') or '').strip()
+                if word and meaning:
+                    word_objs.append(VocabularyDayWord(
+                        day=day,
+                        word=word,
+                        meaning=meaning,
+                        example_sentence=(w.get('example') or '').strip(),
+                        pronunciation_note=(w.get('pronunciation') or '').strip(),
+                        order=i,
+                    ))
+            VocabularyDayWord.objects.bulk_create(word_objs)
+            _notify_vocab_day(day)
+            messages.success(request, f"Day {day.day_number} updated with {len(word_objs)} words!")
+            return redirect(reverse('staff_vocabulary_days'))
+        else:
+            messages.error(request, "Please fix the errors below.")
+    import json as _json
+    existing_words_json = _json.dumps([{
+        'word': w.word,
+        'meaning': w.meaning,
+        'example_sentence': w.example_sentence,
+        'pronunciation_note': w.pronunciation_note,
+    } for w in existing_words])
+    return render(request, 'staff_template/add_vocabulary_day.html', {
+        'form': form,
+        'day': day,
+        'existing_words_json': existing_words_json,
+        'page_title': f'Edit Day {day.day_number}',
+        'editing': True,
+    })
+
+
+@staff_only
+def delete_vocabulary_day(request, day_id):
+    staff = get_object_or_404(Staff, admin=request.user)
+    day = get_object_or_404(VocabularyDay, id=day_id, created_by=staff)
+    num = day.day_number
+    day.delete()
+    messages.success(request, f"Day {num} deleted.")
+    return redirect(reverse('staff_vocabulary_days'))
+
+
+@staff_only
+def staff_vocabulary_day_detail(request, day_id):
+    staff = get_object_or_404(Staff, admin=request.user)
+    day = get_object_or_404(VocabularyDay, id=day_id, created_by=staff)
+    words = day.words.all()
+    # Enrolled students for this group
+    enrollments = Enrollment.objects.filter(
+        group=day.group, is_active=True
+    ).select_related('student__admin')
+    completed_ids = set(
+        VocabularyDayCompletion.objects.filter(day=day)
+        .values_list('student_id', flat=True)
+    )
+    quiz_map = {}
+    for qr in VocabularyQuizResult.objects.filter(day=day).select_related('student'):
+        if qr.student_id not in quiz_map or qr.score > quiz_map[qr.student_id]:
+            quiz_map[qr.student_id] = qr.score
+    student_rows = []
+    for e in enrollments:
+        s = e.student
+        student_rows.append({
+            'student': s,
+            'completed': s.id in completed_ids,
+            'best_quiz': quiz_map.get(s.id),
+        })
+    return render(request, 'staff_template/staff_vocabulary_day_detail.html', {
+        'day': day,
+        'words': words,
+        'student_rows': student_rows,
+        'page_title': f'Day {day.day_number} — {day.group.name}',
+    })
+
+
+def _notify_vocab_day(day: VocabularyDay):
+    """Create Notification objects for all enrolled students if day is released."""
+    from django.urls import reverse as _rev
+    if not day.is_released:
+        return
+    enrollments = Enrollment.objects.filter(
+        group=day.group, is_active=True
+    ).select_related('student__admin')
+    word_count = day.word_count
+    link = _rev('vocabulary_day_detail', args=[day.id])
+    new_notifs = []
+    new_notified = []
+    already = set(day.notified_students.values_list('id', flat=True))
+    for e in enrollments:
+        if e.student_id not in already:
+            new_notifs.append(Notification(
+                recipient=e.student.admin,
+                category=Notification.VOCABULARY,
+                message=(
+                    f"Day {day.day_number} Vocabulary is ready"
+                    + (f' — "{day.title}"' if day.title else '')
+                    + f"! Review {word_count} new words for {day.group.name}."
+                ),
+                link=link,
+            ))
+            new_notified.append(e.student)
+    if new_notifs:
+        Notification.objects.bulk_create(new_notifs)
+        day.notified_students.add(*new_notified)

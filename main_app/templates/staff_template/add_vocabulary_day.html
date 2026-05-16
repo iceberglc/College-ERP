@@ -1,0 +1,251 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block title %}{% if editing %}Edit{% else %}Create{% endif %} Vocabulary Day — Iceberg{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item"><a href="{% url 'staff_vocabulary_days' %}">Vocabulary Days</a></li>
+  <li class="breadcrumb-item active">{{ page_title }}</li>
+{% endblock %}
+
+{% block custom_css %}
+<style>
+.avd-wrap { max-width:900px; }
+.avd-card { background:#fff; border-radius:18px; box-shadow:0 4px 20px rgba(12,31,69,.08); overflow:hidden; margin-bottom:22px; }
+.avd-card-head {
+  padding:18px 22px; border-bottom:1px solid #E8EDF5;
+  display:flex; align-items:center; gap:10px;
+  background:linear-gradient(135deg,#0C1F45,#1B3F7A); color:#fff;
+}
+.avd-card-head h3 { font-size:15px; font-weight:700; margin:0; }
+.avd-card-body { padding:22px; }
+
+.pf-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#64748B; margin-bottom:5px; display:block; }
+.pf-field { margin-bottom:16px; }
+.pf-error { font-size:12px; color:#DC2626; margin-top:4px; }
+.form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media (max-width:600px) { .form-grid-2 { grid-template-columns:1fr; } }
+
+/* Word builder */
+#word-table { width:100%; border-collapse:collapse; }
+#word-table thead th {
+  padding:8px 10px; font-size:10px; font-weight:800; text-transform:uppercase;
+  letter-spacing:.06em; color:#64748B; background:#F8FAFC; border-bottom:2px solid #E8EDF5;
+  text-align:left;
+}
+#word-table tbody tr { border-bottom:1px solid #F1F5F9; }
+#word-table td { padding:6px 6px; vertical-align:top; }
+.word-input { width:100%; border:1.5px solid #D1DCF0; border-radius:8px; padding:7px 10px; font-size:13px; color:#0F172A; font-family:inherit; background:#fff; }
+.word-input:focus { outline:none; border-color:#1B3F7A; box-shadow:0 0 0 3px rgba(27,63,122,.12); }
+.btn-del-row { width:30px; height:30px; border:none; background:#FEF2F2; color:#DC2626; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; transition:background .12s; }
+.btn-del-row:hover { background:#DC2626; color:#fff; }
+.word-counter { font-size:12px; font-weight:600; color:#64748B; }
+
+.btn-add-row {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:9px 16px; border-radius:9px; border:1.5px dashed #1B3F7A;
+  background:transparent; color:#1B3F7A; font-size:13px; font-weight:600;
+  cursor:pointer; transition:all .12s; margin-top:10px;
+}
+.btn-add-row:hover { background:#EEF4FF; }
+
+.btn-submit {
+  padding:12px 32px; border-radius:10px; border:none;
+  background:linear-gradient(135deg,#1B3F7A,#0C1F45); color:#fff;
+  font-size:14px; font-weight:700; cursor:pointer; transition:opacity .15s;
+}
+.btn-submit:hover { opacity:.88; }
+.btn-cancel { padding:12px 20px; border-radius:10px; border:1.5px solid #D1DCF0; background:#fff; color:#64748B; font-size:13px; font-weight:600; text-decoration:none; transition:border-color .15s; }
+.btn-cancel:hover { border-color:#1B3F7A; color:#1B3F7A; }
+
+.word-tip { font-size:11.5px; color:#64748B; background:#F8FAFC; border-radius:8px; padding:8px 12px; margin-bottom:12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="avd-wrap">
+  <form method="POST" id="day-form">
+    {% csrf_token %}
+    <input type="hidden" name="words_json" id="words_json">
+
+    <!-- Day settings -->
+    <div class="avd-card">
+      <div class="avd-card-head">
+        <i class="fas fa-cog"></i>
+        <h3>Day Settings</h3>
+      </div>
+      <div class="avd-card-body">
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-grid-2">
+          <div class="pf-field">
+            <label class="pf-label">Group <span style="color:#DC2626;">*</span></label>
+            {{ form.group }}
+            {% if form.group.errors %}<div class="pf-error">{{ form.group.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="pf-field">
+            <label class="pf-label">Day Number <span style="color:#DC2626;">*</span></label>
+            {{ form.day_number }}
+            {% if form.day_number.errors %}<div class="pf-error">{{ form.day_number.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">Title <span style="color:#94A3B8; font-weight:400;">(optional)</span></label>
+          {{ form.title }}
+        </div>
+        <div class="form-grid-2">
+          <div class="pf-field">
+            <label class="pf-label">Level <span style="color:#94A3B8; font-weight:400;">(optional)</span></label>
+            {{ form.level }}
+          </div>
+          <div class="pf-field">
+            <label class="pf-label">Release Date & Time <span style="color:#DC2626;">*</span></label>
+            {{ form.release_at }}
+            {% if form.release_at.errors %}<div class="pf-error">{{ form.release_at.errors.0 }}</div>{% endif %}
+            <small style="font-size:11px;color:#94A3B8;">Students see the words only after this time.</small>
+          </div>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">Notes <span style="color:#94A3B8; font-weight:400;">(private — not shown to students)</span></label>
+          {{ form.notes }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Word builder -->
+    <div class="avd-card">
+      <div class="avd-card-head">
+        <i class="fas fa-list-ul"></i>
+        <h3>Vocabulary Words &nbsp;<span class="word-counter" id="wc">0 words</span></h3>
+      </div>
+      <div class="avd-card-body">
+        <p class="word-tip"><i class="fas fa-lightbulb"></i>&nbsp;Add 30–50 words. Each word needs at least a <strong>word</strong> and a <strong>meaning</strong>. Example and pronunciation are optional.</p>
+        <div style="overflow-x:auto;">
+          <table id="word-table">
+            <thead>
+              <tr>
+                <th style="width:30px;">#</th>
+                <th style="min-width:140px;">Word</th>
+                <th style="min-width:200px;">Meaning</th>
+                <th style="min-width:200px;">Example Sentence</th>
+                <th style="min-width:140px;">Pronunciation</th>
+                <th style="width:36px;"></th>
+              </tr>
+            </thead>
+            <tbody id="word-tbody">
+              <!-- Rows injected by JS -->
+            </tbody>
+          </table>
+        </div>
+        <button type="button" class="btn-add-row" id="add-row-btn">
+          <i class="fas fa-plus"></i> Add Word
+        </button>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      <button type="submit" class="btn-submit">
+        <i class="fas fa-{% if editing %}save{% else %}plus{% endif %} me-1"></i>
+        {% if editing %}Save Changes{% else %}Create Vocabulary Day{% endif %}
+      </button>
+      <a href="{% url 'staff_vocabulary_days' %}" class="btn-cancel">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block custom_js %}
+<script>
+(function () {
+  var tbody = document.getElementById('word-tbody');
+  var wc = document.getElementById('wc');
+  var rowIdx = 0;
+
+  // Pre-populate existing words (edit mode)
+  var existing = {{ existing_words_json|default:"[]"|safe }};
+  if (existing && existing.length) {
+    existing.forEach(function (w) { addRow(w); });
+  } else {
+    // Start with 5 blank rows
+    for (var i = 0; i < 5; i++) addRow();
+  }
+  updateCounter();
+
+  document.getElementById('add-row-btn').addEventListener('click', function () {
+    addRow();
+    updateCounter();
+    // Scroll to new row
+    tbody.lastElementChild.querySelector('input').focus();
+  });
+
+  function addRow(data) {
+    data = data || {};
+    var idx = rowIdx++;
+    var tr = document.createElement('tr');
+    tr.dataset.idx = idx;
+    tr.innerHTML =
+      '<td style="color:#94A3B8;font-size:12px;padding-top:12px;"></td>' +
+      '<td><input class="word-input w-word" placeholder="e.g. diligent" value="' + esc(data.word || '') + '"></td>' +
+      '<td><input class="word-input w-meaning" placeholder="working hard and carefully" value="' + esc(data.meaning || '') + '"></td>' +
+      '<td><input class="word-input w-example" placeholder="She was diligent in her studies." value="' + esc(data.example_sentence || '') + '"></td>' +
+      '<td><input class="word-input w-pronunciation" placeholder="/ˈdɪlɪdʒənt/" value="' + esc(data.pronunciation_note || '') + '"></td>' +
+      '<td><button type="button" class="btn-del-row" title="Remove"><i class="fas fa-times"></i></button></td>';
+    tbody.appendChild(tr);
+    tr.querySelector('.btn-del-row').addEventListener('click', function () {
+      tr.remove(); updateCounter();
+    });
+    tr.querySelectorAll('.word-input').forEach(function (inp) {
+      inp.addEventListener('input', updateCounter);
+    });
+    updateRowNumbers();
+  }
+
+  function updateRowNumbers() {
+    var rows = tbody.querySelectorAll('tr');
+    rows.forEach(function (tr, i) { tr.cells[0].textContent = i + 1; });
+  }
+
+  function updateCounter() {
+    updateRowNumbers();
+    var filled = countFilled();
+    wc.textContent = filled + ' word' + (filled === 1 ? '' : 's');
+  }
+
+  function countFilled() {
+    var n = 0;
+    tbody.querySelectorAll('tr').forEach(function (tr) {
+      var w = tr.querySelector('.w-word');
+      var m = tr.querySelector('.w-meaning');
+      if (w && m && w.value.trim() && m.value.trim()) n++;
+    });
+    return n;
+  }
+
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  }
+
+  // On submit, serialize words to JSON
+  document.getElementById('day-form').addEventListener('submit', function (e) {
+    var words = [];
+    tbody.querySelectorAll('tr').forEach(function (tr) {
+      var w = (tr.querySelector('.w-word') || {}).value || '';
+      var m = (tr.querySelector('.w-meaning') || {}).value || '';
+      var ex = (tr.querySelector('.w-example') || {}).value || '';
+      var pr = (tr.querySelector('.w-pronunciation') || {}).value || '';
+      w = w.trim(); m = m.trim();
+      if (w && m) {
+        words.push({ word: w, meaning: m, example: ex.trim(), pronunciation: pr.trim() });
+      }
+    });
+    if (words.length === 0) {
+      e.preventDefault();
+      alert('Please add at least one word with both a word and a meaning.');
+      return;
+    }
+    document.getElementById('words_json').value = JSON.stringify(words);
+  });
+})();
+</script>
+{% endblock %}

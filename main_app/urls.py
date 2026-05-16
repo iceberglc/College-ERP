@@ -199,21 +199,40 @@ urlpatterns = [
     path("staff/ajax/teachers-for-course/", staff_views.staff_get_teachers_for_course, name='staff_get_teachers_for_course'),
     path("staff/ajax/groups-for-teacher/", staff_views.staff_get_groups_for_teacher, name='staff_get_groups_for_teacher'),
 
-    # Vocabulary (Student)
+    # Vocabulary word bank (Student)
     path('student/vocabulary/', student_views.vocabulary_home, name='vocabulary_home'),
     path('student/vocabulary/flashcard/', student_views.vocabulary_flashcard, name='vocabulary_flashcard'),
     path('student/vocabulary/quiz/', student_views.vocabulary_quiz, name='vocabulary_quiz'),
     path('student/vocabulary/voice/', student_views.vocabulary_voice, name='vocabulary_voice'),
     path('student/vocabulary/progress/', student_views.vocabulary_progress_update, name='vocabulary_progress_update'),
 
-    # Vocabulary (Staff)
+    # Vocabulary Days (Student)
+    path('student/vocabulary-days/', student_views.vocabulary_day_list, name='vocabulary_day_list'),
+    path('student/vocabulary-days/<int:day_id>/', student_views.vocabulary_day_detail, name='vocabulary_day_detail'),
+    path('student/vocabulary-days/<int:day_id>/complete/', student_views.vocabulary_day_complete, name='vocabulary_day_complete'),
+    path('student/vocabulary-days/<int:day_id>/flashcard/', student_views.vocabulary_day_flashcard, name='vocabulary_day_flashcard'),
+    path('student/vocabulary-days/<int:day_id>/quiz/', student_views.vocabulary_day_quiz, name='vocabulary_day_quiz'),
+    path('student/vocabulary-days/<int:day_id>/quiz/save/', student_views.save_quiz_result, name='save_quiz_result'),
+
+    # Progress page (Student)
+    path('student/progress/', student_views.student_progress, name='student_progress'),
+
+    # Vocabulary word bank (Staff)
     path('staff/vocabulary/', staff_views.staff_vocabulary, name='staff_vocabulary'),
     path('staff/vocabulary/add/', staff_views.add_vocabulary, name='add_vocabulary'),
     path('staff/vocabulary/edit/<int:vocab_id>/', staff_views.edit_vocabulary, name='edit_vocabulary'),
     path('staff/vocabulary/delete/<int:vocab_id>/', staff_views.delete_vocabulary, name='delete_vocabulary'),
 
+    # Vocabulary Days (Staff)
+    path('staff/vocabulary-days/', staff_views.staff_vocabulary_days, name='staff_vocabulary_days'),
+    path('staff/vocabulary-days/add/', staff_views.add_vocabulary_day, name='add_vocabulary_day'),
+    path('staff/vocabulary-days/<int:day_id>/', staff_views.staff_vocabulary_day_detail, name='staff_vocabulary_day_detail'),
+    path('staff/vocabulary-days/<int:day_id>/edit/', staff_views.edit_vocabulary_day, name='edit_vocabulary_day'),
+    path('staff/vocabulary-days/<int:day_id>/delete/', staff_views.delete_vocabulary_day, name='delete_vocabulary_day'),
+
     # Vocabulary (Admin/HOD)
     path('admin/vocabulary/', hod_views.manage_vocabulary, name='manage_vocabulary'),
     path('admin/vocabulary/add/', hod_views.hod_add_vocabulary, name='hod_add_vocabulary'),
     path('admin/vocabulary/delete/<int:vocab_id>/', hod_views.delete_vocabulary_admin, name='delete_vocabulary_admin'),
+    path('admin/vocabulary-days/', hod_views.manage_vocabulary_days, name='manage_vocabulary_days'),
 ]

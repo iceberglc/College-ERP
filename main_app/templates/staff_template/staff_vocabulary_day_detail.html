@@ -1,0 +1,150 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block title %}Day {{ day.day_number }} Detail — Iceberg{% endblock %}
+{% block page_title %}Day {{ day.day_number }} — {{ day.group.name }}{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item"><a href="{% url 'staff_vocabulary_days' %}">Vocabulary Days</a></li>
+  <li class="breadcrumb-item active">Day {{ day.day_number }}</li>
+{% endblock %}
+
+{% block custom_css %}
+<style>
+.vdd-page { display:flex; flex-direction:column; gap:18px; }
+.vdd-hero {
+  padding:20px 22px; border-radius:16px;
+  background:linear-gradient(135deg,#0C1F45,#1B3F7A); color:#fff;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+}
+.vdd-hero h2 { font-size:20px; font-weight:800; margin:0 0 4px; }
+.vdd-hero p  { font-size:13px; color:rgba(255,255,255,.72); margin:0; }
+.release-chip {
+  padding:5px 12px; border-radius:999px; font-size:12px; font-weight:700;
+  background:rgba(255,255,255,.15); color:#fff;
+}
+.release-chip.released { background:rgba(6,182,212,.3); color:#67E8F9; }
+
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.stat-card { background:#fff; border-radius:14px; padding:16px 18px; box-shadow:0 3px 12px rgba(12,31,69,.07); text-align:center; }
+.stat-num { font-size:28px; font-weight:900; color:#0C1F45; }
+.stat-lbl { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#64748B; margin-top:4px; }
+
+.section-card { background:#fff; border-radius:14px; box-shadow:0 3px 12px rgba(12,31,69,.07); overflow:hidden; }
+.section-head { padding:14px 18px; border-bottom:1px solid #E8EDF5; display:flex; align-items:center; justify-content:space-between; }
+.section-head h3 { font-size:14px; font-weight:700; color:#0F172A; margin:0; }
+
+.word-list { padding:0; }
+.word-row { display:flex; align-items:flex-start; gap:12px; padding:12px 18px; border-bottom:1px solid #F8FAFC; }
+.word-row:last-child { border-bottom:none; }
+.word-idx { width:26px; height:26px; border-radius:7px; background:#EFF6FF; color:#1E40AF; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+.word-name { font-size:14px; font-weight:800; color:#0F172A; }
+.word-meaning { font-size:12.5px; color:#475569; margin-top:2px; }
+.word-example { font-size:11.5px; color:#94A3B8; font-style:italic; margin-top:2px; }
+.word-pron { font-size:11px; font-weight:600; color:#06B6D4; font-family:monospace; margin-top:2px; }
+
+.student-table { width:100%; border-collapse:collapse; }
+.student-table th { padding:10px 14px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#64748B; background:#F8FAFC; border-bottom:1px solid #E8EDF5; text-align:left; }
+.student-table td { padding:12px 14px; font-size:13px; border-bottom:1px solid #F8FAFC; }
+.student-table tr:last-child td { border-bottom:none; }
+.done-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:700; background:#D1FAE5; color:#065F46; }
+.pending-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:700; background:#FEF3C7; color:#92400E; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vdd-page">
+
+  <div class="vdd-hero">
+    <div>
+      <h2>Day {{ day.day_number }}{% if day.title %} — {{ day.title }}{% endif %}</h2>
+      <p>{{ day.group.name }} · {{ words.count }} words · Released {{ day.release_at|date:"M j, Y H:i" }}</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span class="release-chip {% if day.is_released %}released{% endif %}">
+        {% if day.is_released %}Released{% else %}Scheduled{% endif %}
+      </span>
+      <a href="{% url 'edit_vocabulary_day' day.id %}" style="padding:7px 14px;border-radius:9px;background:rgba(255,255,255,.15);color:#fff;text-decoration:none;font-size:12px;font-weight:600;"><i class="fas fa-edit me-1"></i>Edit</a>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num">{{ words.count }}</div>
+      <div class="stat-lbl">Words</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{{ student_rows|length }}</div>
+      <div class="stat-lbl">Students</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{% with done=0 %}{% for r in student_rows %}{% if r.completed %}{% with done=done|add:1 %}{% endwith %}{% endif %}{% endfor %}{{ student_rows|length }}{% endwith %}</div>
+      <div class="stat-lbl">Completed</div>
+    </div>
+  </div>
+
+  <!-- Word list -->
+  <div class="section-card">
+    <div class="section-head">
+      <h3><i class="fas fa-list-ul me-2" style="color:#06B6D4;"></i>Vocabulary Words</h3>
+    </div>
+    <div class="word-list">
+      {% for w in words %}
+      <div class="word-row">
+        <div class="word-idx">{{ forloop.counter }}</div>
+        <div style="flex:1;">
+          <div class="word-name">{{ w.word }}</div>
+          <div class="word-meaning">{{ w.meaning }}</div>
+          {% if w.example_sentence %}<div class="word-example">"{{ w.example_sentence }}"</div>{% endif %}
+          {% if w.pronunciation_note %}<div class="word-pron">{{ w.pronunciation_note }}</div>{% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <div style="padding:28px;text-align:center;color:#94A3B8;font-size:13px;">No words added to this day yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Student progress -->
+  <div class="section-card">
+    <div class="section-head">
+      <h3><i class="fas fa-users me-2" style="color:#06B6D4;"></i>Student Progress</h3>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="student-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Completed</th>
+            <th>Best Quiz Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in student_rows %}
+          <tr>
+            <td style="font-weight:600;">{{ row.student.admin.get_full_name }}</td>
+            <td>
+              {% if row.completed %}
+              <span class="done-chip"><i class="fas fa-check"></i> Done</span>
+              {% else %}
+              <span class="pending-chip"><i class="fas fa-clock"></i> Pending</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if row.best_quiz != None %}
+                <span style="font-weight:700;color:{% if row.best_quiz >= 80 %}#10B981{% elif row.best_quiz >= 60 %}#F59E0B{% else %}#EF4444{% endif %};">{{ row.best_quiz|floatformat:0 }}%</span>
+              {% else %}
+                <span style="color:#94A3B8;font-size:12px;">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" style="text-align:center;padding:24px;color:#94A3B8;font-size:13px;">No students enrolled in this group.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,274 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block title %}My Progress — Iceberg{% endblock %}
+{% block page_title %}My Progress{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">My Progress</li>{% endblock %}
+
+{% block custom_css %}
+<style>
+.pg-page { display:flex; flex-direction:column; gap:20px; }
+
+.pg-hero {
+  padding:20px 22px; border-radius:18px;
+  background:linear-gradient(135deg,#0C1F45,#1B3F7A); color:#fff;
+  box-shadow:0 10px 28px rgba(12,31,69,.22);
+}
+.pg-hero h2 { font-size:20px; font-weight:900; margin:0 0 4px; }
+.pg-hero p  { font-size:13px; color:rgba(255,255,255,.72); margin:0; }
+
+/* Stat cards */
+.stat-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+@media(min-width:600px){ .stat-grid { grid-template-columns:repeat(4,1fr); } }
+.stat-card { background:#fff; border-radius:14px; padding:16px 18px; box-shadow:0 3px 12px rgba(12,31,69,.07); text-align:center; }
+.stat-num  { font-size:30px; font-weight:900; color:#0C1F45; }
+.stat-lbl  { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#64748B; margin-top:4px; }
+.stat-sub  { font-size:11px; color:#94A3B8; margin-top:2px; }
+
+/* Chart cards */
+.chart-card { background:#fff; border-radius:16px; box-shadow:0 3px 12px rgba(12,31,69,.07); overflow:hidden; }
+.chart-head { padding:14px 18px 0; display:flex; align-items:center; justify-content:space-between; }
+.chart-head h3 { font-size:14px; font-weight:800; color:#0F172A; margin:0; }
+.chart-head span { font-size:11px; color:#94A3B8; }
+.chart-body { padding:12px 14px 16px; }
+
+/* Empty state */
+.empty-pg { background:#fff; border-radius:16px; box-shadow:0 3px 12px rgba(12,31,69,.07); padding:56px 24px; text-align:center; }
+.empty-pg i { font-size:42px; color:#CBD5E1; margin-bottom:16px; display:block; }
+.empty-pg h3 { font-size:16px; font-weight:700; color:#0F172A; margin-bottom:8px; }
+.empty-pg p { font-size:13px; color:#64748B; margin:0; }
+
+/* Exam table */
+.exam-table { width:100%; border-collapse:collapse; }
+.exam-table th { padding:10px 14px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#64748B; background:#F8FAFC; border-bottom:1px solid #E8EDF5; text-align:left; }
+.exam-table td { padding:12px 14px; font-size:13px; border-bottom:1px solid #F8FAFC; }
+.exam-table tr:last-child td { border-bottom:none; }
+.score-bar-wrap { display:flex; align-items:center; gap:10px; }
+.score-bar { flex:1; height:7px; background:#E8EDF5; border-radius:999px; overflow:hidden; }
+.score-bar-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,#06B6D4,#1B3F7A); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pg-page">
+
+  <div class="pg-hero">
+    <h2><i class="fas fa-chart-line me-2"></i>My Progress</h2>
+    <p>Track your vocabulary completion, mastery, and quiz performance over the last 30 days.</p>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-num" style="color:#1B3F7A;">{{ total_days_available }}</div>
+      <div class="stat-lbl">Days Available</div>
+      <div class="stat-sub">vocabulary sets</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#10B981;">{{ total_completed }}</div>
+      <div class="stat-lbl">Days Completed</div>
+      <div class="stat-sub">all time</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#06B6D4;">{{ total_mastered }}</div>
+      <div class="stat-lbl">Words Mastered</div>
+      <div class="stat-sub">from flashcards</div>
+    </div>
+    <div class="stat-card">
+      {% if recent_quiz %}
+      <div class="stat-num" style="color:{% if recent_quiz.score >= 80 %}#10B981{% elif recent_quiz.score >= 60 %}#F59E0B{% else %}#EF4444{% endif %};">{{ recent_quiz.score|floatformat:0 }}%</div>
+      <div class="stat-lbl">Latest Quiz</div>
+      <div class="stat-sub">{{ recent_quiz.taken_at|date:"M j" }}</div>
+      {% else %}
+      <div class="stat-num" style="color:#CBD5E1;">—</div>
+      <div class="stat-lbl">Latest Quiz</div>
+      <div class="stat-sub">no quiz yet</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if has_any_data %}
+
+  <!-- 30-day activity chart -->
+  <div class="chart-card">
+    <div class="chart-head">
+      <h3><i class="fas fa-calendar-alt me-2" style="color:#06B6D4;"></i>30-Day Activity</h3>
+      <span>Days completed & words mastered</span>
+    </div>
+    <div class="chart-body">
+      <canvas id="activityChart" height="110"></canvas>
+    </div>
+  </div>
+
+  <!-- Quiz scores chart -->
+  <div class="chart-card">
+    <div class="chart-head">
+      <h3><i class="fas fa-question-circle me-2" style="color:#F59E0B;"></i>Quiz Scores (30 days)</h3>
+      <span>Average score per day</span>
+    </div>
+    <div class="chart-body">
+      <canvas id="quizChart" height="100"></canvas>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="empty-pg">
+    <i class="fas fa-chart-line"></i>
+    <h3>No activity yet</h3>
+    <p>Complete vocabulary days and take quizzes to see your progress here.</p>
+    <a href="{% url 'vocabulary_day_list' %}" style="display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:10px 20px;background:linear-gradient(135deg,#0C1F45,#1B3F7A);color:#fff;border-radius:10px;text-decoration:none;font-size:13px;font-weight:700;">
+      <i class="fas fa-book-open"></i> Start Studying
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Exam scores table -->
+  {% if results %}
+  <div class="chart-card">
+    <div class="chart-head">
+      <h3><i class="fas fa-graduation-cap me-2" style="color:#1B3F7A;"></i>Exam Scores by Group</h3>
+      <span>Test + Exam totals</span>
+    </div>
+    <div style="overflow-x:auto;padding:4px 0 8px;">
+      <table class="exam-table">
+        <thead>
+          <tr>
+            <th>Group</th>
+            <th>Test</th>
+            <th>Exam</th>
+            <th>Total</th>
+            <th style="min-width:120px;">Bar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in results %}
+          <tr>
+            <td style="font-weight:700;color:#0F172A;">{{ r.group.name|default:"General" }}</td>
+            <td>{{ r.test|floatformat:0 }}</td>
+            <td>{{ r.exam|floatformat:0 }}</td>
+            <td style="font-weight:700;">{{ r.total }}</td>
+            <td>
+              <div class="score-bar-wrap">
+                <div class="score-bar">
+                  <div class="score-bar-fill" style="width:{% widthratio r.total 200 100 %}%;"></div>
+                </div>
+                <span style="font-size:11px;color:#64748B;white-space:nowrap;">{{ r.total }}/200</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block custom_js %}
+{% if has_any_data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+var labels = {{ date_labels|safe }};
+var completions = {{ completions_line|safe }};
+var mastered   = {{ mastered_line|safe }};
+var quizScores = {{ quiz_line|safe }};
+
+// Activity chart
+new Chart(document.getElementById('activityChart'), {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [
+      {
+        label: 'Days Completed',
+        data: completions,
+        borderColor: '#1B3F7A',
+        backgroundColor: 'rgba(27,63,122,.08)',
+        fill: true,
+        tension: .35,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        borderWidth: 2,
+      },
+      {
+        label: 'Words Mastered',
+        data: mastered,
+        borderColor: '#06B6D4',
+        backgroundColor: 'rgba(6,182,212,.06)',
+        fill: true,
+        tension: .35,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        borderWidth: 2,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top', labels: { font: { size: 11, weight: '600' }, usePointStyle: true, pointStyleWidth: 8 } },
+      tooltip: { backgroundColor: '#0F172A', titleFont: { size: 11 }, bodyFont: { size: 12 } },
+    },
+    scales: {
+      x: {
+        ticks: { font: { size: 10 }, maxTicksLimit: 10, maxRotation: 0 },
+        grid: { color: 'rgba(0,0,0,.04)' },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { font: { size: 10 }, stepSize: 1 },
+        grid: { color: 'rgba(0,0,0,.04)' },
+      }
+    }
+  }
+});
+
+// Quiz score chart
+new Chart(document.getElementById('quizChart'), {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Quiz Score (%)',
+      data: quizScores,
+      borderColor: '#F59E0B',
+      backgroundColor: 'rgba(245,158,11,.08)',
+      fill: true,
+      tension: .35,
+      pointRadius: function(ctx) { return ctx.raw !== null ? 4 : 0; },
+      pointHoverRadius: 7,
+      borderWidth: 2,
+      spanGaps: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0F172A',
+        callbacks: {
+          label: function(ctx) {
+            return ctx.raw !== null ? 'Score: ' + ctx.raw + '%' : 'No quiz';
+          }
+        }
+      },
+    },
+    scales: {
+      x: {
+        ticks: { font: { size: 10 }, maxTicksLimit: 10, maxRotation: 0 },
+        grid: { color: 'rgba(0,0,0,.04)' },
+      },
+      y: {
+        min: 0, max: 100,
+        ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } },
+        grid: { color: 'rgba(0,0,0,.04)' },
+      }
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

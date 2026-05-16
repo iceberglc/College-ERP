@@ -185,6 +185,16 @@
             </a>
         </div>
 
+        <h6 class="nav-section-title">Vocabulary</h6>
+
+        <div class="nav-item">
+            {% url 'manage_vocabulary_days' as manage_vocabulary_days %}
+            <a href="{{ manage_vocabulary_days }}" class="nav-link {% if 'vocabulary-day' in request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-calendar-alt"></i>
+                <span class="nav-text">Vocabulary Days</span>
+            </a>
+        </div>
+
         <h6 class="nav-section-title">Reports</h6>
 
         <div class="nav-item">
@@ -299,9 +309,17 @@
 
         <div class="nav-item">
             {% url 'staff_vocabulary' as staff_vocabulary %}
-            <a href="{{ staff_vocabulary }}" class="nav-link {% if 'vocabulary' in request.path %}active{% endif %}">
+            <a href="{{ staff_vocabulary }}" class="nav-link {% if 'vocabulary' in request.path and 'vocabulary-day' not in request.path %}active{% endif %}">
                 <i class="nav-icon fas fa-spell-check"></i>
                 <span class="nav-text">Vocabulary</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            {% url 'staff_vocabulary_days' as staff_vocabulary_days %}
+            <a href="{{ staff_vocabulary_days }}" class="nav-link {% if 'vocabulary-day' in request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-calendar-alt"></i>
+                <span class="nav-text">Daily Vocabulary</span>
             </a>
         </div>
 
@@ -323,15 +341,7 @@
             </a>
         </div>
 
-        <h6 class="nav-section-title">Vocabulary & Library</h6>
-
-        <div class="nav-item">
-            {% url 'manage_vocabulary' as manage_vocabulary %}
-            <a href="{{ manage_vocabulary }}" class="nav-link {% if 'vocabulary' in request.path %}active{% endif %}">
-                <i class="nav-icon fas fa-spell-check"></i>
-                <span class="nav-text">Vocabulary</span>
-            </a>
-        </div>
+        <h6 class="nav-section-title">Library</h6>
 
         <div class="nav-item">
             {% url 'add_book' as add_book %}
@@ -342,7 +352,7 @@
         </div>
 
         <h6 class="nav-section-title">Communication</h6>
-        
+
         <div class="nav-item">
             {% url 'staff_view_notification' as staff_view_notification %}
             <a href="{{ staff_view_notification }}" class="nav-link {% if staff_view_notification == request.path %}active{% endif %}">
@@ -428,9 +438,25 @@
 
         <div class="nav-item">
             {% url 'vocabulary_home' as vocabulary_home %}
-            <a href="{{ vocabulary_home }}" class="nav-link {% if 'vocabulary' in request.path %}active{% endif %}">
+            <a href="{{ vocabulary_home }}" class="nav-link {% if 'vocabulary' in request.path and 'vocabulary-day' not in request.path %}active{% endif %}">
                 <i class="nav-icon fas fa-spell-check"></i>
                 <span class="nav-text">Vocabulary</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            {% url 'vocabulary_day_list' as vocabulary_day_list %}
+            <a href="{{ vocabulary_day_list }}" class="nav-link {% if 'vocabulary-day' in request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-calendar-alt"></i>
+                <span class="nav-text">Daily Vocabulary</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            {% url 'student_progress' as student_progress %}
+            <a href="{{ student_progress }}" class="nav-link {% if student_progress == request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-chart-line"></i>
+                <span class="nav-text">My Progress</span>
             </a>
         </div>
 

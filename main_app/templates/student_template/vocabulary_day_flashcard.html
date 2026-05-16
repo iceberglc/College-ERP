@@ -1,0 +1,183 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block title %}Flashcards Day {{ day.day_number }} — Iceberg{% endblock %}
+{% block page_title %}Flashcards — Day {{ day.day_number }}{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item"><a href="{% url 'vocabulary_day_list' %}">Daily Vocabulary</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'vocabulary_day_detail' day.id %}">Day {{ day.day_number }}</a></li>
+  <li class="breadcrumb-item active">Flashcards</li>
+{% endblock %}
+
+{% block custom_css %}
+<style>
+.fc-page { display:flex; flex-direction:column; gap:18px; align-items:center; }
+
+/* Action tabs */
+.action-bar { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:100%; max-width:520px; }
+.ab-btn { display:flex; flex-direction:column; align-items:center; gap:5px; padding:12px 8px; border-radius:12px; text-decoration:none; font-size:12px; font-weight:700; transition:all .12s; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.ab-btn i { font-size:20px; }
+.ab-btn.vocab  { background:#fff; color:#1E40AF; border:2px solid rgba(30,64,175,.15); }
+.ab-btn.flash  { background:linear-gradient(135deg,#0C1F45,#1B3F7A); color:#fff; border-color:transparent; }
+.ab-btn.quiz   { background:#fff; color:#92400E; border:2px solid rgba(146,64,14,.15); }
+.ab-btn:hover  { transform:translateY(-2px); }
+
+/* Progress bar */
+.fc-progress-wrap { width:100%; max-width:520px; }
+.fc-progress-info { display:flex; justify-content:space-between; font-size:12px; font-weight:600; color:#64748B; margin-bottom:6px; }
+.fc-progress-track { height:8px; background:#E8EDF5; border-radius:999px; overflow:hidden; }
+.fc-progress-fill { height:100%; background:linear-gradient(90deg,#06B6D4,#1B3F7A); border-radius:999px; transition:width .3s ease; }
+
+/* Flashcard */
+.fc-wrap { width:100%; max-width:520px; perspective:1000px; }
+.fc-card {
+  position:relative; width:100%; height:280px;
+  transform-style:preserve-3d; transition:transform .55s cubic-bezier(.4,0,.2,1);
+  cursor:pointer; border-radius:20px;
+}
+.fc-card.flipped { transform:rotateY(180deg); }
+.fc-face {
+  position:absolute; inset:0; border-radius:20px; backface-visibility:hidden;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:28px; box-shadow:0 10px 32px rgba(12,31,69,.14);
+}
+.fc-front { background:linear-gradient(135deg,#0C1F45,#1B3F7A); color:#fff; }
+.fc-back  { background:#fff; color:#0F172A; transform:rotateY(180deg); border:2px solid #E8EDF5; }
+.fc-word  { font-size:28px; font-weight:900; letter-spacing:-.5px; text-align:center; }
+.fc-pron  { font-size:13px; color:rgba(255,255,255,.65); font-family:monospace; margin-top:6px; }
+.fc-hint  { font-size:12px; color:rgba(255,255,255,.5); margin-top:16px; }
+.fc-meaning { font-size:17px; font-weight:700; text-align:center; margin-bottom:8px; line-height:1.4; }
+.fc-example { font-size:13px; color:#64748B; font-style:italic; text-align:center; line-height:1.5; }
+
+/* Nav buttons */
+.fc-nav { display:flex; gap:12px; align-items:center; width:100%; max-width:520px; justify-content:center; }
+.btn-nav { padding:10px 22px; border-radius:10px; border:1.5px solid #D1DCF0; background:#fff; color:#0F172A; font-size:13px; font-weight:700; cursor:pointer; transition:all .12s; }
+.btn-nav:hover { border-color:#1B3F7A; color:#1B3F7A; }
+.btn-nav:disabled { opacity:.4; cursor:not-allowed; }
+
+/* Finish state */
+.fc-finish { background:#fff; border-radius:18px; box-shadow:0 4px 18px rgba(12,31,69,.09); padding:40px 28px; text-align:center; width:100%; max-width:520px; }
+.fc-finish h3 { font-size:20px; font-weight:900; color:#0F172A; margin-bottom:8px; }
+.fc-finish p { font-size:14px; color:#64748B; margin-bottom:20px; }
+.btn-finish { display:inline-flex; align-items:center; gap:6px; padding:11px 22px; border-radius:10px; background:linear-gradient(135deg,#0C1F45,#1B3F7A); color:#fff; font-size:13px; font-weight:700; text-decoration:none; cursor:pointer; border:none; }
+.btn-finish:hover { color:#fff; opacity:.88; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fc-page">
+
+  <!-- Action tabs -->
+  <div class="action-bar">
+    <a href="{% url 'vocabulary_day_detail' day.id %}" class="ab-btn vocab">
+      <i class="fas fa-book-open"></i> Study
+    </a>
+    <a href="{% url 'vocabulary_day_flashcard' day.id %}" class="ab-btn flash">
+      <i class="fas fa-layer-group"></i> Flashcards
+    </a>
+    <a href="{% url 'vocabulary_day_quiz' day.id %}" class="ab-btn quiz">
+      <i class="fas fa-question-circle"></i> Quiz
+    </a>
+  </div>
+
+  {% if words %}
+  <!-- Progress bar -->
+  <div class="fc-progress-wrap">
+    <div class="fc-progress-info">
+      <span id="prog-label">Card 1 of {{ words.count }}</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="fc-progress-track"><div class="fc-progress-fill" id="prog-fill" style="width:0%;"></div></div>
+  </div>
+
+  <!-- Card -->
+  <div class="fc-wrap" id="fc-wrap">
+    <div class="fc-card" id="fc-card" onclick="flipCard()">
+      <div class="fc-face fc-front">
+        <div class="fc-word" id="fc-word">—</div>
+        <div class="fc-pron" id="fc-pron"></div>
+        <div class="fc-hint">tap to reveal meaning</div>
+      </div>
+      <div class="fc-face fc-back">
+        <div class="fc-meaning" id="fc-meaning"></div>
+        <div class="fc-example" id="fc-example"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="fc-nav">
+    <button class="btn-nav" id="btn-prev" onclick="prevCard()">← Previous</button>
+    <button class="btn-nav" id="btn-next" onclick="nextCard()">Next →</button>
+  </div>
+
+  <!-- Finish panel (hidden initially) -->
+  <div class="fc-finish" id="fc-finish" style="display:none;">
+    <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+    <h3>All {{ words.count }} cards reviewed!</h3>
+    <p>Well done. Ready to test what you've learned?</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <a href="{% url 'vocabulary_day_quiz' day.id %}" class="btn-finish"><i class="fas fa-question-circle"></i> Take Quiz</a>
+      <a href="{% url 'vocabulary_day_list' %}" class="btn-finish" style="background:linear-gradient(135deg,#065F46,#0D9488);"><i class="fas fa-home"></i> Back to Days</a>
+    </div>
+  </div>
+
+  {% else %}
+  <div style="text-align:center;padding:40px;color:#94A3B8;">No words in this day.</div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block custom_js %}
+<script>
+var cards = {{ words_json|safe }};
+var idx = 0;
+var completed = {{ completed|yesno:"true,false" }};
+
+function render() {
+  if (idx >= cards.length) {
+    document.getElementById('fc-wrap').style.display = 'none';
+    document.getElementById('fc-finish').style.display = 'block';
+    document.getElementById('btn-next').style.display = 'none';
+    // Mark complete
+    if (!completed) {
+      fetch('{% url "vocabulary_day_complete" day.id %}', {
+        method:'POST',
+        headers:{'X-CSRFToken':'{{ csrf_token }}','Content-Type':'application/json'},
+        body:JSON.stringify({}),
+      });
+    }
+    return;
+  }
+  var c = cards[idx];
+  document.getElementById('fc-word').textContent = c.word;
+  document.getElementById('fc-pron').textContent = c.pronunciation_note || '';
+  document.getElementById('fc-meaning').textContent = c.meaning;
+  document.getElementById('fc-example').textContent = c.example_sentence ? '"' + c.example_sentence + '"' : '';
+  // Reset flip
+  document.getElementById('fc-card').classList.remove('flipped');
+  // Progress
+  var pct = Math.round((idx / cards.length) * 100);
+  document.getElementById('prog-label').textContent = 'Card ' + (idx + 1) + ' of ' + cards.length;
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('btn-prev').disabled = idx === 0;
+}
+
+function flipCard() {
+  document.getElementById('fc-card').classList.toggle('flipped');
+}
+
+function nextCard() { idx++; render(); }
+function prevCard() { if (idx > 0) { idx--; render(); } }
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flipCard(); }
+  else if (e.key === 'ArrowRight') nextCard();
+  else if (e.key === 'ArrowLeft')  prevCard();
+});
+
+render();
+</script>
+{% endblock %}

@@ -367,6 +367,48 @@ class IssueBookForm(forms.Form):
         return cleaned
 
 
+class VocabularyDayForm(forms.ModelForm):
+    class Meta:
+        model = VocabularyDay
+        fields = ['group', 'day_number', 'title', 'level', 'release_at', 'notes']
+        widgets = {
+            'day_number': forms.NumberInput(attrs={
+                'class': 'form-control', 'min': '1', 'max': '365', 'placeholder': '1',
+            }),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g. Describing People',
+            }),
+            'level': forms.Select(attrs={'class': 'form-control'}),
+            'release_at': forms.DateTimeInput(
+                attrs={'class': 'form-control', 'type': 'datetime-local'},
+                format='%Y-%m-%dT%H:%M',
+            ),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control', 'rows': 2,
+                'placeholder': 'Private teacher notes (not shown to students)',
+            }),
+            'group': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    LEVEL_CHOICES = [('', '— Inherit from group —')] + [(i, f'Level {i}') for i in range(1, 7)]
+
+    def __init__(self, *args, **kwargs):
+        staff = kwargs.pop('staff', None)
+        super().__init__(*args, **kwargs)
+        self.fields['title'].required = False
+        self.fields['level'].required = False
+        self.fields['level'].choices = self.LEVEL_CHOICES
+        self.fields['notes'].required = False
+        if staff:
+            self.fields['group'].queryset = Group.objects.filter(
+                teacher=staff, is_archived=False
+            )
+        else:
+            self.fields['group'].queryset = Group.objects.filter(is_archived=False)
+        if self.instance and self.instance.pk and self.instance.release_at:
+            self.initial['release_at'] = self.instance.release_at.strftime('%Y-%m-%dT%H:%M')
+
+
 class VocabularyForm(forms.ModelForm):
     class Meta:
         model = models.Vocabulary

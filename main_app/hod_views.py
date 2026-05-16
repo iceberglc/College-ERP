@@ -1180,3 +1180,20 @@ def delete_vocabulary_admin(request, vocab_id):
     vocab.delete()
     messages.success(request, f"Word '{word}' deleted.")
     return redirect(reverse('manage_vocabulary'))
+
+
+@admin_only
+def manage_vocabulary_days(request):
+    from django.db.models import Count
+    days = (
+        VocabularyDay.objects
+        .select_related('group', 'created_by__admin')
+        .prefetch_related('words', 'completions')
+        .annotate(word_count=Count('words', distinct=True),
+                  completion_count=Count('completions', distinct=True))
+        .order_by('-created_at')
+    )
+    return render(request, 'hod_template/manage_vocabulary_days.html', {
+        'days': days,
+        'page_title': 'Manage Vocabulary Days',
+    })

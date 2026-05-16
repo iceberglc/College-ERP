@@ -1,0 +1,110 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block title %}Daily Vocabulary — Iceberg Study Center{% endblock %}
+{% block page_title %}Daily Vocabulary{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Daily Vocabulary</li>{% endblock %}
+
+{% block custom_css %}
+<style>
+.vdl-page { display:flex; flex-direction:column; gap:18px; }
+.vdl-hero {
+  padding:22px 24px 18px; border-radius:18px;
+  background:linear-gradient(135deg,#0C1F45,#1B3F7A); color:#fff;
+  box-shadow:0 10px 28px rgba(12,31,69,.22);
+}
+.vdl-hero h2 { font-size:22px; font-weight:900; margin:0 0 5px; }
+.vdl-hero p  { font-size:13px; color:rgba(255,255,255,.72); margin:0; }
+
+.day-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+.day-card {
+  background:#fff; border-radius:16px; overflow:hidden;
+  box-shadow:0 4px 14px rgba(12,31,69,.07);
+  border:1.5px solid #E8EDF5; transition:transform .15s,box-shadow .15s;
+  display:flex; flex-direction:column;
+}
+.day-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(12,31,69,.12); }
+.day-card-top {
+  padding:14px 16px 10px;
+  background:linear-gradient(135deg,#0C1F45,#1B3F7A); color:#fff;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.day-num-big { font-size:26px; font-weight:900; letter-spacing:-1px; }
+.done-badge { padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+.done-badge.done { background:rgba(16,185,129,.25); color:#6EE7B7; }
+.done-badge.pending { background:rgba(255,255,255,.15); color:#fff; }
+
+.day-card-body { padding:14px 16px; flex:1; }
+.day-group-name { font-size:14px; font-weight:800; color:#0F172A; margin-bottom:6px; }
+.day-meta { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.meta-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:999px; background:#F1F5F9; color:#64748B; font-size:11px; font-weight:600; }
+.meta-chip i { font-size:10px; }
+
+.day-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:auto; }
+.action-btn {
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  padding:10px 6px; border-radius:10px; text-decoration:none;
+  font-size:11px; font-weight:700; transition:all .12s; text-align:center;
+}
+.action-btn i { font-size:18px; }
+.action-btn.vocab  { background:#EFF6FF; color:#1E40AF; border:1.5px solid rgba(30,64,175,.15); }
+.action-btn.flash  { background:#ECFDF5; color:#065F46; border:1.5px solid rgba(6,95,70,.15); }
+.action-btn.quiz   { background:#FFF7ED; color:#92400E; border:1.5px solid rgba(146,64,14,.15); }
+.action-btn:hover { filter:brightness(.92); transform:translateY(-1px); }
+
+.empty-state { background:#fff; border-radius:16px; box-shadow:0 4px 14px rgba(12,31,69,.07); padding:56px 24px; text-align:center; }
+.empty-icon { font-size:42px; margin-bottom:14px; opacity:.2; }
+.empty-title { font-size:15px; font-weight:700; color:#0F172A; margin-bottom:6px; }
+.empty-sub { font-size:13px; color:#64748B; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vdl-page">
+
+  <div class="vdl-hero">
+    <h2><i class="fas fa-calendar-alt me-2"></i>Daily Vocabulary</h2>
+    <p>Your teacher's vocabulary sets — study each day's words, then test yourself.</p>
+  </div>
+
+  {% if day_rows %}
+  <div class="day-grid">
+    {% for row in day_rows %}
+    <div class="day-card">
+      <div class="day-card-top">
+        <div class="day-num-big">Day {{ row.day.day_number }}</div>
+        <span class="done-badge {% if row.completed %}done{% else %}pending{% endif %}">
+          {% if row.completed %}✓ Done{% else %}Study{% endif %}
+        </span>
+      </div>
+      <div class="day-card-body">
+        <div class="day-group-name">{% if row.day.title %}{{ row.day.title }}{% else %}{{ row.day.group.name }}{% endif %}</div>
+        <div class="day-meta">
+          <span class="meta-chip"><i class="fas fa-users"></i> {{ row.day.group.name }}</span>
+          <span class="meta-chip"><i class="fas fa-book"></i> {{ row.word_count }} words</span>
+          {% if row.day.level %}<span class="meta-chip"><i class="fas fa-layer-group"></i> Level {{ row.day.level }}</span>{% endif %}
+        </div>
+        <div class="day-actions">
+          <a href="{% url 'vocabulary_day_detail' row.day.id %}" class="action-btn vocab">
+            <i class="fas fa-book-open"></i> Study
+          </a>
+          <a href="{% url 'vocabulary_day_flashcard' row.day.id %}" class="action-btn flash">
+            <i class="fas fa-layer-group"></i> Cards
+          </a>
+          <a href="{% url 'vocabulary_day_quiz' row.day.id %}" class="action-btn quiz">
+            <i class="fas fa-question-circle"></i> Quiz
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="fas fa-calendar-plus"></i></div>
+    <div class="empty-title">No vocabulary days available yet</div>
+    <p class="empty-sub">Your teacher will publish vocabulary sets here. Check back after class!</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

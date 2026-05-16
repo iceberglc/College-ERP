@@ -252,12 +252,14 @@ class Notification(models.Model):
     RESULT = 'result'
     ANNOUNCEMENT = 'announcement'
     HOMEWORK = 'homework'
+    VOCABULARY = 'vocabulary'
     GENERAL = 'general'
     CATEGORY_CHOICES = [
         (ATTENDANCE, 'Attendance'),
         (RESULT, 'Result'),
         (ANNOUNCEMENT, 'Announcement'),
         (HOMEWORK, 'Homework'),
+        (VOCABULARY, 'Vocabulary'),
         (GENERAL, 'General'),
     ]
 
@@ -265,6 +267,8 @@ class Notification(models.Model):
                                   related_name='notifications')
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default=GENERAL)
     message = models.TextField()
+    link = models.CharField(max_length=500, blank=True, default='',
+                            help_text='Optional URL the notification links to')
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -486,7 +490,100 @@ class Loan(models.Model):
         return self.days_overdue * _OVERDUE_FINE_PER_DAY
 
 
-# ── Vocabulary ───────────────────────────────────────────────────────────────
+# ── Vocabulary ────────────────────────────────────────────────────────────────
+
+
+class VocabularyDay(models.Model):
+    """A teacher-curated vocabulary set for a group on a specific day number."""
+    group = models.ForeignKey('Group', on_delete=models.CASCADE, related_name='vocabulary_days')
+    day_number = models.PositiveIntegerField(help_text='Day 1, Day 2, …')
+    title = models.CharField(max_length=200, blank=True, default='',
+                             help_text='Optional title, e.g. "Describing People"')
+    level = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        help_text='Target level (1–6). Leave blank to inherit the group default.',
+    )
+    release_at = models.DateTimeField(
+        help_text='Words become visible to students at this date/time.',
+    )
+    notes = models.TextField(blank=True, default='',
+                             help_text='Private teaching notes (not shown to students).')
+    created_by = models.ForeignKey('Staff', on_delete=models.CASCADE,
+                                   related_name='vocabulary_days')
+    notified_students = models.ManyToManyField('Student', blank=True,
+                                               related_name='notified_vocab_days')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['day_number']
+        unique_together = ('group', 'day_number')
+
+    def __str__(self):
+        return f"{self.group.name} — Day {self.day_number}"
+
+    @property
+    def is_released(self):
+        return timezone.now() >= self.release_at
+
+    @property
+    def word_count(self):
+        return self.words.count()
+
+
+class VocabularyDayWord(models.Model):
+    """One vocabulary item inside a VocabularyDay."""
+    day = models.ForeignKey(VocabularyDay, on_delete=models.CASCADE, related_name='words')
+    word = models.CharField(max_length=200)
+    meaning = models.TextField()
+    example_sentence = models.TextField(blank=True, default='')
+    pronunciation_note = models.CharField(
+        max_length=300, blank=True, default='',
+        help_text='IPA or phonetic hint, e.g. /ˈɛfərt/',
+    )
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"Day {self.day.day_number} — {self.word}"
+
+
+class VocabularyDayCompletion(models.Model):
+    """Records that a student finished reviewing a vocabulary day."""
+    student = models.ForeignKey('Student', on_delete=models.CASCADE,
+                                related_name='day_completions')
+    day = models.ForeignKey(VocabularyDay, on_delete=models.CASCADE,
+                            related_name='completions')
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student', 'day')
+
+    def __str__(self):
+        return f"{self.student} ✓ Day {self.day.day_number}"
+
+
+class VocabularyQuizResult(models.Model):
+    """Saves the outcome of one quiz session (tied to a VocabularyDay)."""
+    student = models.ForeignKey('Student', on_delete=models.CASCADE,
+                                related_name='quiz_results')
+    day = models.ForeignKey(VocabularyDay, on_delete=models.SET_NULL,
+                            null=True, blank=True, related_name='quiz_results')
+    score = models.FloatField(help_text='Percentage 0–100')
+    correct = models.PositiveIntegerField(default=0)
+    total = models.PositiveIntegerField(default=0)
+    taken_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-taken_at']
+
+    def __str__(self):
+        return f"{self.student} — {self.score:.0f}% ({self.taken_at.date()})"
+
+
+# ── Legacy Vocabulary (word bank / spaced repetition) ─────────────────────────
 
 class Vocabulary(models.Model):
     LEVEL_ALL = 0

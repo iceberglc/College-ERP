@@ -68,6 +68,9 @@ def student_home(request):
     is_english = student.is_english_student
     student_level = student.level
 
+    # Notify student of any newly released vocabulary days
+    _check_and_notify_vocab_days(student, [e.group_id for e in enrollments])
+
     # Today's vocabulary (level-filtered, for English students)
     todays_vocab = []
     if is_english:
@@ -474,6 +477,36 @@ def submit_assignment(request, assignment_id):
 
 # ── Vocabulary ────────────────────────────────────────────────────────────────
 
+def _check_and_notify_vocab_days(student, enrolled_group_ids):
+    """Create notifications for any released VocabularyDays the student hasn't been told about."""
+    from django.utils import timezone as tz
+    from django.urls import reverse as _rev
+    now = tz.now()
+    new_days = (
+        VocabularyDay.objects.filter(
+            group_id__in=enrolled_group_ids,
+            release_at__lte=now,
+        ).exclude(notified_students=student)
+        .select_related('group')
+    )
+    notifs = []
+    for day in new_days:
+        link = _rev('vocabulary_day_detail', args=[day.id])
+        notifs.append(Notification(
+            recipient=student.admin,
+            category=Notification.VOCABULARY,
+            message=(
+                f"Day {day.day_number} Vocabulary is ready"
+                + (f' — "{day.title}"' if day.title else '')
+                + f"! Review {day.word_count} new words for {day.group.name}."
+            ),
+            link=link,
+        ))
+        day.notified_students.add(student)
+    if notifs:
+        Notification.objects.bulk_create(notifs)
+
+
 def _vocab_queryset_for_student(student, enrolled_group_ids):
     """Return vocabulary visible to this student filtered by their level and enrolled groups."""
     level_filter = [Vocabulary.LEVEL_ALL]
@@ -683,6 +716,276 @@ def vocabulary_voice(request):
         'vocab_json': vocab_json,
         'page_title': 'Voice Practice',
     })
+
+
+@student_only
+def vocabulary_day_list(request):
+    """Show all released vocabulary days for this student's enrolled groups."""
+    from django.utils import timezone as tz
+    student = get_object_or_404(Student, admin=request.user)
+    enrolled_group_ids = list(
+        Enrollment.objects.filter(student=student, is_active=True)
+        .values_list('group_id', flat=True)
+    )
+    now = tz.now()
+    days = (
+        VocabularyDay.objects.filter(group_id__in=enrolled_group_ids, release_at__lte=now)
+        .select_related('group', 'created_by__admin')
+        .prefetch_related('words', 'completions')
+        .order_by('day_number')
+    )
+    completed_ids = set(
+        VocabularyDayCompletion.objects.filter(student=student)
+        .values_list('day_id', flat=True)
+    )
+    day_rows = []
+    for d in days:
+        day_rows.append({
+            'day': d,
+            'word_count': d.words.count(),
+            'completed': d.id in completed_ids,
+        })
+    return render(request, 'student_template/vocabulary_day_list.html', {
+        'day_rows': day_rows,
+        'page_title': 'Daily Vocabulary',
+    })
+
+
+@student_only
+def vocabulary_day_detail(request, day_id):
+    """Show the words for one vocabulary day and allow marking complete."""
+    from django.utils import timezone as tz
+    student = get_object_or_404(Student, admin=request.user)
+    day = get_object_or_404(VocabularyDay, id=day_id)
+    # Security: student must be in the day's group
+    if not Enrollment.objects.filter(student=student, group=day.group, is_active=True).exists():
+        messages.error(request, "You are not enrolled in this group.")
+        return redirect(reverse('vocabulary_day_list'))
+    if not day.is_released:
+        messages.warning(request, "This vocabulary set is not available yet.")
+        return redirect(reverse('vocabulary_day_list'))
+    words = day.words.all()
+    completed = VocabularyDayCompletion.objects.filter(student=student, day=day).exists()
+    best_quiz = (
+        VocabularyQuizResult.objects.filter(student=student, day=day)
+        .order_by('-score').first()
+    )
+    return render(request, 'student_template/vocabulary_day_detail.html', {
+        'day': day,
+        'words': words,
+        'completed': completed,
+        'best_quiz': best_quiz,
+        'page_title': f'Day {day.day_number} — {day.group.name}',
+    })
+
+
+@student_only
+def vocabulary_day_complete(request, day_id):
+    """AJAX endpoint: mark a vocabulary day as completed."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    student = get_object_or_404(Student, admin=request.user)
+    day = get_object_or_404(VocabularyDay, id=day_id)
+    if not Enrollment.objects.filter(student=student, group=day.group, is_active=True).exists():
+        return JsonResponse({'error': 'Not enrolled'}, status=403)
+    _, created = VocabularyDayCompletion.objects.get_or_create(student=student, day=day)
+    return JsonResponse({'status': 'ok', 'created': created})
+
+
+@student_only
+def vocabulary_day_flashcard(request, day_id):
+    """Flashcard mode for a specific vocabulary day."""
+    from django.utils import timezone as tz
+    student = get_object_or_404(Student, admin=request.user)
+    day = get_object_or_404(VocabularyDay, id=day_id)
+    if not Enrollment.objects.filter(student=student, group=day.group, is_active=True).exists():
+        messages.error(request, "You are not enrolled in this group.")
+        return redirect(reverse('vocabulary_day_list'))
+    if not day.is_released:
+        messages.warning(request, "This vocabulary set is not available yet.")
+        return redirect(reverse('vocabulary_day_list'))
+    words = list(day.words.all())
+    words_json = json.dumps([{
+        'id': w.id,
+        'word': w.word,
+        'meaning': w.meaning,
+        'example_sentence': w.example_sentence,
+        'pronunciation_note': w.pronunciation_note,
+    } for w in words])
+    completed = VocabularyDayCompletion.objects.filter(student=student, day=day).exists()
+    return render(request, 'student_template/vocabulary_day_flashcard.html', {
+        'day': day,
+        'words': words,
+        'words_json': words_json,
+        'completed': completed,
+        'page_title': f'Flashcards — Day {day.day_number}',
+    })
+
+
+@student_only
+def vocabulary_day_quiz(request, day_id):
+    """Quiz mode for a specific vocabulary day."""
+    import random
+    student = get_object_or_404(Student, admin=request.user)
+    day = get_object_or_404(VocabularyDay, id=day_id)
+    if not Enrollment.objects.filter(student=student, group=day.group, is_active=True).exists():
+        messages.error(request, "You are not enrolled in this group.")
+        return redirect(reverse('vocabulary_day_list'))
+    if not day.is_released:
+        messages.warning(request, "This vocabulary set is not available yet.")
+        return redirect(reverse('vocabulary_day_list'))
+
+    all_words = list(day.words.all())
+    if len(all_words) < 2:
+        messages.warning(request, "Need at least 2 words for a quiz.")
+        return redirect(reverse('vocabulary_day_detail', args=[day_id]))
+
+    # Build quiz questions: show meaning, pick correct word (MCQ 4 choices)
+    questions = []
+    for w in all_words:
+        distractors = random.sample([x for x in all_words if x.id != w.id],
+                                    min(3, len(all_words) - 1))
+        choices = [{'id': w.id, 'word': w.word}] + [{'id': d.id, 'word': d.word} for d in distractors]
+        random.shuffle(choices)
+        questions.append({
+            'id': w.id,
+            'meaning': w.meaning,
+            'example': w.example_sentence,
+            'correct_id': w.id,
+            'choices': choices,
+        })
+    random.shuffle(questions)
+    best_quiz = (
+        VocabularyQuizResult.objects.filter(student=student, day=day)
+        .order_by('-score').first()
+    )
+    return render(request, 'student_template/vocabulary_day_quiz.html', {
+        'day': day,
+        'questions_json': json.dumps(questions),
+        'total_questions': len(questions),
+        'best_quiz': best_quiz,
+        'page_title': f'Quiz — Day {day.day_number}',
+    })
+
+
+@student_only
+def save_quiz_result(request, day_id):
+    """AJAX: save quiz result and return updated stats."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    student = get_object_or_404(Student, admin=request.user)
+    day = get_object_or_404(VocabularyDay, id=day_id)
+    try:
+        if request.content_type and 'application/json' in request.content_type:
+            data = json.loads(request.body)
+        else:
+            data = request.POST
+        correct = int(data.get('correct', 0))
+        total = int(data.get('total', 1))
+        score = round((correct / total) * 100, 1) if total else 0
+        VocabularyQuizResult.objects.create(
+            student=student, day=day,
+            score=score, correct=correct, total=total,
+        )
+        # Auto-complete day if quiz score >= 60%
+        if score >= 60:
+            VocabularyDayCompletion.objects.get_or_create(student=student, day=day)
+        return JsonResponse({'status': 'ok', 'score': score})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@student_only
+def student_progress(request):
+    """Dedicated progress page with real line-graph data."""
+    from django.db.models import Avg, Count
+    from django.db.models.functions import TruncDate
+    from django.utils import timezone as tz
+    from datetime import timedelta
+
+    student = get_object_or_404(Student, admin=request.user)
+    enrolled_group_ids = list(
+        Enrollment.objects.filter(student=student, is_active=True)
+        .values_list('group_id', flat=True)
+    )
+    today = tz.localdate()
+    days_30 = [(today - timedelta(days=i)) for i in range(29, -1, -1)]
+    date_labels = [d.strftime('%b %d') for d in days_30]
+    date_set = set(days_30)
+
+    # ── Vocabulary days completed per day (last 30 days) ─────────────────────
+    completions_qs = dict(
+        VocabularyDayCompletion.objects.filter(student=student)
+        .annotate(d=TruncDate('completed_at'))
+        .values('d').annotate(cnt=Count('id'))
+        .values_list('d', 'cnt')
+    )
+    completions_line = [completions_qs.get(d, 0) for d in days_30]
+
+    # ── Cumulative vocab mastered (words where stage=MASTERED, by last_seen) ─
+    mastered_qs = dict(
+        VocabularyProgress.objects.filter(
+            student=student,
+            stage=VocabularyProgress.STAGE_MASTERED,
+            last_seen__isnull=False,
+        )
+        .annotate(d=TruncDate('last_seen'))
+        .values('d').annotate(cnt=Count('id'))
+        .values_list('d', 'cnt')
+    )
+    mastered_line = [mastered_qs.get(d, 0) for d in days_30]
+
+    # ── Quiz scores per day (average if multiple) ─────────────────────────────
+    quiz_qs = dict(
+        VocabularyQuizResult.objects.filter(student=student)
+        .annotate(d=TruncDate('taken_at'))
+        .values('d').annotate(avg=Avg('score'))
+        .values_list('d', 'avg')
+    )
+    quiz_line = [round(quiz_qs[d], 1) if d in quiz_qs else None for d in days_30]
+
+    # ── Exam results per group (snapshot — bar chart) ─────────────────────────
+    results = list(
+        StudentResult.objects.filter(
+            student=student, group_id__in=enrolled_group_ids
+        ).select_related('group')
+    )
+    for r in results:
+        r.total = int(r.test) + int(r.exam)
+    exam_labels = [r.group.name if r.group else 'General' for r in results]
+    exam_totals = [r.total for r in results]
+
+    # ── Summary stats ─────────────────────────────────────────────────────────
+    total_days_available = VocabularyDay.objects.filter(
+        group_id__in=enrolled_group_ids,
+        release_at__lte=tz.now(),
+    ).count()
+    total_completed = VocabularyDayCompletion.objects.filter(student=student).count()
+    total_mastered = VocabularyProgress.objects.filter(
+        student=student, stage=VocabularyProgress.STAGE_MASTERED
+    ).count()
+    recent_quiz = VocabularyQuizResult.objects.filter(student=student).first()
+
+    has_any_data = any(completions_line) or any(mastered_line) or any(q is not None for q in quiz_line)
+
+    context = {
+        'date_labels': json.dumps(date_labels),
+        'completions_line': json.dumps(completions_line),
+        'mastered_line': json.dumps(mastered_line),
+        'quiz_line': json.dumps(quiz_line),
+        'exam_labels': json.dumps(exam_labels),
+        'exam_totals': json.dumps(exam_totals),
+        'has_any_data': has_any_data,
+        'total_days_available': total_days_available,
+        'total_completed': total_completed,
+        'total_mastered': total_mastered,
+        'recent_quiz': recent_quiz,
+        'results': results,
+        'is_english': student.is_english_student,
+        'student_level': student.level_display,
+        'page_title': 'My Progress',
+    }
+    return render(request, 'student_template/student_progress.html', context)
 
 
 @student_only
