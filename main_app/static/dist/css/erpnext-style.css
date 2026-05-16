@@ -40,6 +40,10 @@
   box-sizing: border-box;
 }
 
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   background-color: var(--light-color);
@@ -156,14 +160,22 @@ body {
   height: calc(100vh - var(--navbar-height));
   background: linear-gradient(180deg, #0C1F45 0%, #0F2454 60%, #122870 100%);
   border-right: none;
-  overflow-y: auto;
   z-index: 1020;
   transition: transform 0.3s ease;
+  /* Flex column so footer stays pinned and nav-section scrolls independently */
+  display: flex;
+  flex-direction: column;
+}
+.erpnext-sidebar .sidebar-header { flex-shrink: 0; }
+.erpnext-sidebar .nav-section {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,.12) transparent;
 }
-.erpnext-sidebar::-webkit-scrollbar { width: 4px; }
-.erpnext-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 4px; }
+.erpnext-sidebar .nav-section::-webkit-scrollbar { width: 4px; }
+.erpnext-sidebar .nav-section::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 4px; }
 
 .sidebar-collapsed .erpnext-sidebar {
   transform: translateX(-100%);
@@ -345,11 +357,10 @@ body {
 
 /* Sidebar footer / logout ─────────────────────────────────────────────────── */
 .sidebar-footer {
+  flex-shrink: 0;
   padding: 14px 16px;
   border-top: 1px solid rgba(255,255,255,.08);
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(6,15,40,.6) 100%);
+  background: linear-gradient(180deg, rgba(6,15,40,.0) 0%, rgba(6,15,40,.6) 100%);
 }
 
 .sidebar-logout-btn {
@@ -1042,8 +1053,6 @@ body {
   .erpnext-sidebar {
     transform: translateX(-100%);
     z-index: 1040;
-    /* Reserve space for the mobile bottom-nav (62px) so footer/logout is visible */
-    padding-bottom: 76px;
   }
 
   .erpnext-main {
@@ -1062,11 +1071,6 @@ body {
 
   .sidebar-open .sidebar-overlay {
     display: block;
-  }
-
-  /* Sticky logout footer sits above the bottom-nav, never behind it */
-  .sidebar-footer {
-    bottom: 0;
   }
 
   .stats-grid {

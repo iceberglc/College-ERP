@@ -238,12 +238,16 @@ body {
   flex-direction: column !important;
 }
 
-/* Nav section grows to fill space so footer sticks to bottom */
+/* Nav section grows AND shrinks so it scrolls internally while footer stays
+   pinned at the bottom (preventing overlap with the last nav item). */
 .erpnext-sidebar .nav-section {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .sidebar-header {
+  flex-shrink: 0;
   padding: 20px 16px 16px;
   border-bottom: 1px solid rgba(255,255,255,.08);
   background: rgba(0,0,0,.20);
@@ -453,11 +457,12 @@ body {
   flex-shrink: 0;
 }
 
-/* Sidebar logout at bottom */
+/* Sidebar logout at bottom — stays pinned outside the scrollable nav-section */
 .sidebar-footer {
+  flex-shrink: 0;
   padding: 14px 12px 20px;
   border-top: 1px solid rgba(255,255,255,.08) !important;
-  margin-top: 16px;
+  margin-top: 0;
   background: rgba(0,0,0,.12);
 }
 .sidebar-footer form { margin: 0; }
