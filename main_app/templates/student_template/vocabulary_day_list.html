@@ -15,7 +15,8 @@
 .vdl-hero h2 { font-size:22px; font-weight:900; margin:0 0 5px; }
 .vdl-hero p  { font-size:13px; color:rgba(255,255,255,.72); margin:0; }
 
-.day-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+.day-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+@media (max-width: 480px) { .day-grid { grid-template-columns: 1fr; } }
 .day-card {
   background:#fff; border-radius:16px; overflow:hidden;
   box-shadow:0 4px 14px rgba(12,31,69,.07);
@@ -62,7 +63,7 @@
 <div class="vdl-page">
 
   <div class="vdl-hero">
-    <h2><i class="fas fa-calendar-alt me-2"></i>Daily Vocabulary</h2>
+    <h2><i class="fas fa-language me-2"></i>Daily Vocabulary</h2>
     <p>Your teacher's vocabulary sets — study each day's words, then test yourself.</p>
   </div>
 

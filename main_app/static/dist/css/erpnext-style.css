@@ -1041,7 +1041,9 @@ body {
 @media (max-width: 768px) {
   .erpnext-sidebar {
     transform: translateX(-100%);
-    z-index: 1025;
+    z-index: 1040;
+    /* Reserve space for the mobile bottom-nav (62px) so footer/logout is visible */
+    padding-bottom: 76px;
   }
 
   .erpnext-main {
@@ -1052,8 +1054,19 @@ body {
     transform: translateX(0);
   }
 
+  /* Hide the mobile bottom-nav while the sidebar drawer is open so the
+     Sign Out button at the bottom of the sidebar is fully tappable */
+  .sidebar-open .bottom-nav {
+    display: none !important;
+  }
+
   .sidebar-open .sidebar-overlay {
     display: block;
+  }
+
+  /* Sticky logout footer sits above the bottom-nav, never behind it */
+  .sidebar-footer {
+    bottom: 0;
   }
 
   .stats-grid {
@@ -1070,6 +1083,14 @@ body {
 
   .erpnext-main {
     padding: 12px 10px;
+    padding-bottom: 80px;
+  }
+
+  /* Prevent any wide child from horizontally overflowing the viewport */
+  .erpnext-main,
+  .content-area {
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 }
 
