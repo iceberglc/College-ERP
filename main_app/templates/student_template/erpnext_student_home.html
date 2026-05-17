@@ -1,323 +1,527 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
 {% block title %}Dashboard — Iceberg Study Center{% endblock %}
-{% block page_title %}My Dashboard{% endblock %}
-{% block breadcrumb %}<li class="breadcrumb-item active">Dashboard</li>{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
 {% block custom_css %}
 <style>
-  .stu-page { display: flex; flex-direction: column; gap: 20px; padding-bottom: 24px; }
+/* ── Reset page-header (hero replaces it) ─────────────────────── */
+.page-header { display: none !important; }
 
-  /* Hero */
-  .stu-hero {
-    position: relative; overflow: hidden;
-    padding: 28px 24px 20px;
-    background: #fff;
-    box-shadow: 0 2px 12px rgba(15,23,42,.06);
-  }
-  .stu-hero-img {
-    position: absolute; top: -10px; right: -20px;
-    width: 220px; opacity: .35;
-    pointer-events: none; transform: rotate(8deg);
-  }
-  .stu-greeting { position: relative; z-index: 1; font-size: clamp(22px,5vw,29px); font-weight: 900; color: #0F172A; letter-spacing: -.3px; line-height: 1.2; }
-  .stu-greeting-sub { margin-top: 4px; font-size: 14px; color: #64748B; position: relative; z-index: 1; }
-  .level-badge {
-    display: inline-flex; align-items: center; gap: 5px; margin-top: 10px;
-    padding: 5px 12px; border-radius: 999px;
-    background: linear-gradient(135deg, #0C1F45, #1B3F7A);
-    color: #fff; font-size: 12px; font-weight: 700; position: relative; z-index: 1;
-  }
-  .level-badge i { opacity: .8; }
+/* ── Page wrapper ─────────────────────────────────────────────── */
+.dash {
+  margin: -20px;
+  background: #F0F4FA;
+  min-height: 100%;
+  padding-bottom: 32px;
+  font-family: 'Inter', sans-serif;
+}
+.dark-mode .dash { background: #07111E; }
 
-  /* Navy stats card */
-  .stu-progress-card {
-    margin: 0 16px; padding: 20px; border-radius: 22px;
-    background: linear-gradient(135deg, #0F1F5C 0%, #1340A8 100%);
-    color: #fff; box-shadow: 0 12px 32px rgba(15,31,92,.28);
-  }
-  .stu-progress-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-  .stu-progress-title { font-size: 14px; font-weight: 600; opacity: .82; }
-  .stu-progress-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 5px 12px; border-radius: 999px;
-    background: rgba(255,255,255,.14); font-size: 12px; font-weight: 700;
-  }
-  .stu-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
-  .stu-stat-tile { padding: 4px 8px 8px; text-align: center; border-right: 1px solid rgba(255,255,255,.14); }
-  .stu-stat-tile:last-child { border-right: none; }
-  .stu-stat-icon-wrap {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 44px; height: 44px; border-radius: 12px;
-    background: rgba(255,255,255,.15); margin-bottom: 10px; font-size: 18px;
-  }
-  .stu-stat-label { font-size: 12px; opacity: .75; margin-bottom: 4px; }
-  .stu-stat-value { font-size: 26px; font-weight: 900; line-height: 1; }
-  .stu-stat-desc { font-size: 11px; opacity: .68; margin-top: 3px; }
+/* ── Hero ─────────────────────────────────────────────────────── */
+.dash-hero {
+  background: #fff;
+  padding: 20px 18px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid #E8EEF8;
+}
+.dark-mode .dash-hero { background: #0D1B2F; border-bottom-color: #18304F; }
 
-  /* Combo card */
-  .stu-combo {
-    margin: 0 16px; display: grid; grid-template-columns: 1fr 1fr;
-    background: #fff; border-radius: 20px; overflow: hidden;
-    box-shadow: 0 4px 16px rgba(15,23,42,.07);
-  }
-  .stu-combo-half { padding: 18px 16px; display: flex; flex-direction: column; gap: 6px; }
-  .stu-combo-half:first-child { border-right: 1px solid #F1F5F9; }
-  .stu-combo-icon { width: 44px; height: 44px; border-radius: 13px; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; margin-bottom: 6px; }
-  .stu-combo-sup { font-size: 11px; color: #94A3B8; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
-  .stu-combo-title { font-size: 15px; font-weight: 800; color: #0F172A; line-height: 1.25; }
-  .stu-combo-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .stu-combo-time { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #64748B; }
-  .stu-combo-room { padding: 3px 9px; border-radius: 999px; background: #E8F0FE; color: #1F4FD9; font-size: 11px; font-weight: 700; }
-  .stu-result-score { font-size: 28px; font-weight: 900; color: #10B981; line-height: 1; }
-  .stu-view-btn {
-    display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;
-    padding: 6px 12px; border-radius: 8px; border: 1.5px solid #10B981;
-    color: #10B981; font-size: 12px; font-weight: 700; text-decoration: none; width: fit-content;
-    transition: background .15s, color .15s;
-  }
-  .stu-view-btn:hover { background: #10B981; color: #fff; }
+.dash-avatar {
+  width: 54px; height: 54px; border-radius: 50%;
+  background: #0C1F45;
+  color: #fff;
+  font-size: 18px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(12,31,69,.28);
+  position: relative;
+}
+.dash-avatar-emoji {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; line-height: 1;
+}
+.dash-hero-text { flex: 1; min-width: 0; }
+.dash-salute {
+  font-size: 12px; font-weight: 600;
+  color: #60748E; letter-spacing: .02em;
+}
+.dark-mode .dash-salute { color: #8CA4BE; }
+.dash-name {
+  font-size: 19px; font-weight: 800;
+  color: #0C1A36; line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dark-mode .dash-name { color: #E2E8F0; }
+.dash-level-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 4px;
+  padding: 3px 10px; border-radius: 999px;
+  background: rgba(6,182,212,.12); border: 1px solid rgba(6,182,212,.3);
+  color: #0891B2; font-size: 11px; font-weight: 700;
+}
 
-  /* Section header */
-  .stu-section-hd { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-  .stu-section-hd h3 { font-size: 17px; font-weight: 900; color: #0F172A; margin: 0; }
-  .stu-section-hd a { font-size: 13px; font-weight: 700; color: #1F4FD9; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
+/* ── Horizontal group strip ───────────────────────────────────── */
+.dash-strip {
+  display: flex; gap: 12px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.dash-strip::-webkit-scrollbar { display: none; }
 
-  /* Tasks */
-  .stu-tasks { margin: 0 16px; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 16px rgba(15,23,42,.07); }
-  .stu-task-row { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 1px solid #F8FAFC; text-decoration: none; color: inherit; transition: background .12s; }
-  .stu-task-row:last-child { border-bottom: none; }
-  .stu-task-row:hover { background: #F8FAFC; }
-  .stu-task-avatar { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: #fff; flex-shrink: 0; }
-  .stu-task-body { flex: 1; min-width: 0; }
-  .stu-task-title { font-size: 14px; font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .stu-task-sub { font-size: 12px; color: #94A3B8; margin-top: 1px; }
-  .stu-task-right { text-align: right; flex-shrink: 0; }
-  .stu-task-pct { font-size: 14px; font-weight: 800; color: #1F4FD9; }
-  .stu-task-bar-track { width: 80px; height: 5px; border-radius: 999px; background: #E2E8F0; margin-top: 5px; overflow: hidden; }
-  .stu-task-bar-fill { height: 100%; border-radius: 999px; background: #1F4FD9; }
-  .stu-task-chevron { margin-left: 6px; color: #CBD5E1; font-size: 12px; }
-  .stu-empty-tasks { padding: 28px; text-align: center; color: #94A3B8; font-size: 13px; }
-  .stu-empty-tasks i { font-size: 32px; display: block; margin-bottom: 10px; opacity: .3; }
+.dash-strip-card {
+  flex-shrink: 0;
+  width: 110px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 10px 12px;
+  text-align: center;
+  text-decoration: none;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 10px rgba(12,31,69,.07);
+  transition: border-color .15s, box-shadow .15s;
+}
+.dark-mode .dash-strip-card { background: #0D1B2F; box-shadow: none; border-color: #18304F; }
+.dash-strip-card.active-card {
+  border-color: #0C1F45;
+  box-shadow: 0 4px 18px rgba(12,31,69,.15);
+}
+.dark-mode .dash-strip-card.active-card { border-color: #06B6D4; }
 
-  /* Vocabulary modes */
-  .stu-vocab-card { margin: 0 16px; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 16px rgba(15,23,42,.07); }
-  .stu-vocab-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 10px; border-bottom: 1px solid #F1F5F9; }
-  .stu-vocab-card-header-title { font-size: 13px; font-weight: 700; color: #334155; }
-  .stu-vocab-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #F1F5F9; }
-  .stu-vocab-mode { padding: 16px 12px; background: #fff; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: background .12s; }
-  .stu-vocab-mode:hover { background: #F8FAFC; }
-  .stu-vocab-mode-icon { width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; }
-  .stu-vocab-mode span { font-size: 12px; font-weight: 700; color: #334155; text-align: center; }
-  .stu-vocab-mode small { font-size: 10.5px; color: #94A3B8; text-align: center; line-height: 1.3; }
+.dash-strip-ring {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; font-weight: 900;
+  color: #fff;
+  position: relative;
+}
+.dash-strip-ring svg {
+  position: absolute; inset: 0; width: 52px; height: 52px;
+}
+.dash-strip-ring-num {
+  position: relative; z-index: 1;
+  font-size: 14px; font-weight: 900; color: #0C1A36;
+  line-height: 1;
+}
+.dark-mode .dash-strip-ring-num { color: #E2E8F0; }
+.dash-strip-name {
+  font-size: 11px; font-weight: 700;
+  color: #334155; line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.dark-mode .dash-strip-name { color: #94AFC8; }
+.dash-strip-pct {
+  font-size: 10px; font-weight: 700;
+  margin-top: 4px; color: #64748B;
+}
 
-  /* Vocabulary day quick-access */
-  .stu-vocab-quick { margin: 0 16px; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 16px rgba(15,23,42,.07); }
-  .stu-vocab-quick-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 10px; border-bottom: 1px solid #F1F5F9; }
-  .stu-vocab-quick-title { font-size: 13px; font-weight: 700; color: #334155; }
+/* ── Section label ────────────────────────────────────────────── */
+.dash-section {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 18px 10px;
+}
+.dash-section-title {
+  font-size: 17px; font-weight: 800;
+  color: #0C1A36; display: flex; align-items: center; gap: 8px;
+}
+.dark-mode .dash-section-title { color: #E2E8F0; }
+.dash-section-title i { color: #0C1F45; font-size: 16px; }
+.dark-mode .dash-section-title i { color: #06B6D4; }
+.dash-section-link {
+  font-size: 13px; font-weight: 600;
+  color: #0C1F45; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.dark-mode .dash-section-link { color: #06B6D4; }
 
-  /* Bottom banner */
-  .stu-banner {
-    margin: 4px 16px 0; padding: 22px 24px; border-radius: 22px;
-    background: linear-gradient(135deg, #0F1F5C 0%, #1340A8 100%);
-    color: #fff; display: flex; align-items: center; gap: 18px;
-    position: relative; overflow: hidden;
-  }
-  .stu-banner::after {
-    content: ''; position: absolute; right: -30px; bottom: -30px;
-    width: 140px; height: 140px; border-radius: 999px;
-    border: 24px solid rgba(255,255,255,.08); pointer-events: none;
-  }
-  .stu-banner-icon { width: 54px; height: 54px; border-radius: 999px; background: rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 22px; }
-  .stu-banner-text { font-size: 18px; font-weight: 800; line-height: 1.3; position: relative; z-index: 1; }
+/* ── Group lesson card ────────────────────────────────────────── */
+.dash-lesson-card {
+  background: #fff;
+  border-radius: 18px;
+  margin: 0 14px 12px;
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(12,31,69,.07);
+}
+.dark-mode .dash-lesson-card { background: #0D1B2F; box-shadow: none; border: 1px solid #18304F; }
 
-  @media (max-width: 480px) {
-    .stu-combo { grid-template-columns: 1fr; }
-    .stu-combo-half:first-child { border-right: none; border-bottom: 1px solid #F1F5F9; }
-    .stu-task-bar-track { width: 56px; }
-  }
+.dash-lesson-name {
+  font-size: 16px; font-weight: 900;
+  color: #0C1A36; margin-bottom: 10px;
+}
+.dark-mode .dash-lesson-name { color: #E2E8F0; }
+.dash-lesson-meta {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 10px;
+}
+.dash-lesson-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; color: #60748E; font-weight: 500;
+}
+.dark-mode .dash-lesson-pill { color: #8CA4BE; }
+.dash-lesson-pill i { font-size: 11px; color: #0C1F45; }
+.dark-mode .dash-lesson-pill i { color: #06B6D4; }
+
+.dash-lesson-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 6px;
+}
+.dash-lesson-teacher {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: #64748B; font-weight: 500;
+}
+.dark-mode .dash-lesson-teacher { color: #8CA4BE; }
+.dash-status-chip {
+  padding: 4px 12px; border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+  background: rgba(12,31,69,.08); color: #0C1F45;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.dark-mode .dash-status-chip { background: rgba(6,182,212,.12); color: #67E8F9; }
+
+/* ── Stats row ────────────────────────────────────────────────── */
+.dash-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; padding: 0 14px;
+  margin-bottom: 4px;
+}
+.dash-stat {
+  background: #fff; border-radius: 16px;
+  padding: 14px 10px; text-align: center;
+  box-shadow: 0 2px 10px rgba(12,31,69,.06);
+}
+.dark-mode .dash-stat { background: #0D1B2F; border: 1px solid #18304F; box-shadow: none; }
+.dash-stat-icon { font-size: 18px; margin-bottom: 6px; }
+.dash-stat-num { font-size: 20px; font-weight: 900; color: #0C1A36; line-height: 1; }
+.dark-mode .dash-stat-num { color: #E2E8F0; }
+.dash-stat-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #94A3B8; margin-top: 4px; }
+
+/* ── Latest result card ───────────────────────────────────────── */
+.dash-result-card {
+  background: linear-gradient(160deg, #07152E 0%, #0F2860 55%, #1040A0 100%);
+  border-radius: 18px; margin: 0 14px 12px;
+  padding: 18px;
+  position: relative; overflow: hidden;
+}
+.dash-result-card::before {
+  content: ''; position: absolute;
+  right: -30px; top: -30px;
+  width: 160px; height: 160px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(6,182,212,.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+.dash-result-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.dash-result-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: rgba(255,255,255,.55); }
+.dash-result-group { font-size: 15px; font-weight: 800; color: #fff; margin-top: 2px; }
+.dash-result-score { font-size: 38px; font-weight: 900; color: #fff; line-height: 1; }
+.dash-result-score span { font-size: 14px; font-weight: 600; opacity: .6; }
+.dash-result-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.dash-result-cell { background: rgba(255,255,255,.08); border-radius: 10px; padding: 10px 12px; }
+.dash-result-cell-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.5); letter-spacing: .06em; }
+.dash-result-cell-val { font-size: 18px; font-weight: 900; color: #fff; margin-top: 2px; }
+.dash-result-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 14px;
+  padding: 8px 16px; border-radius: 10px;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18);
+  color: #fff; font-size: 12px; font-weight: 700; text-decoration: none;
+  transition: background .15s;
+}
+.dash-result-link:hover { background: rgba(255,255,255,.2); color: #fff; }
+
+/* ── Notification strip ───────────────────────────────────────── */
+.dash-notif {
+  margin: 0 14px 4px;
+  padding: 12px 14px;
+  background: #EFF6FF; border: 1.5px solid rgba(27,63,122,.15);
+  border-radius: 14px;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.dark-mode .dash-notif { background: rgba(27,63,122,.12); border-color: rgba(6,182,212,.2); }
+.dash-notif i { color: #1B3F7A; flex-shrink: 0; margin-top: 1px; }
+.dark-mode .dash-notif i { color: #67E8F9; }
+.dash-notif-msg { font-size: 13px; font-weight: 600; color: #1E3A8A; flex: 1; line-height: 1.4; }
+.dark-mode .dash-notif-msg { color: #93C5FD; }
+.dash-notif-date { font-size: 11px; color: #64748B; white-space: nowrap; margin-top: 1px; }
+
+/* ── Assignment rows ──────────────────────────────────────────── */
+.dash-task-list {
+  background: #fff; border-radius: 18px;
+  margin: 0 14px; overflow: hidden;
+  box-shadow: 0 2px 12px rgba(12,31,69,.07);
+}
+.dark-mode .dash-task-list { background: #0D1B2F; border: 1px solid #18304F; box-shadow: none; }
+.dash-task-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid #F1F5F9;
+  text-decoration: none; color: inherit;
+  transition: background .12s;
+}
+.dark-mode .dash-task-row { border-bottom-color: #18304F; }
+.dash-task-row:last-child { border-bottom: none; }
+.dash-task-row:active { background: #F8FAFC; }
+.dark-mode .dash-task-row:active { background: rgba(255,255,255,.04); }
+.dash-task-icon {
+  width: 42px; height: 42px; border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.dash-task-body { flex: 1; min-width: 0; }
+.dash-task-title { font-size: 14px; font-weight: 700; color: #0C1A36; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dark-mode .dash-task-title { color: #E2E8F0; }
+.dash-task-sub { font-size: 11px; color: #94A3B8; margin-top: 2px; }
+.dash-task-badge {
+  flex-shrink: 0; padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+}
+.dash-task-done { background: #D1FAE5; color: #065F46; }
+.dash-task-todo { background: #FEF3C7; color: #92400E; }
+.dark-mode .dash-task-done { background: rgba(16,185,129,.18); color: #6EE7B7; }
+.dark-mode .dash-task-todo { background: rgba(245,158,11,.18); color: #FCD34D; }
+
+/* ── Vocab section ────────────────────────────────────────────── */
+.dash-vocab-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 0 14px;
+}
+.dash-vocab-tile {
+  background: #fff; border-radius: 16px;
+  padding: 16px 14px; text-decoration: none;
+  box-shadow: 0 2px 10px rgba(12,31,69,.06);
+  display: flex; flex-direction: column; gap: 8px;
+  transition: box-shadow .15s;
+}
+.dark-mode .dash-vocab-tile { background: #0D1B2F; border: 1px solid #18304F; box-shadow: none; }
+.dash-vocab-tile:active { box-shadow: 0 4px 18px rgba(12,31,69,.14); }
+.dash-vocab-icon {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: #fff;
+}
+.dash-vocab-name { font-size: 14px; font-weight: 800; color: #0C1A36; }
+.dark-mode .dash-vocab-name { color: #E2E8F0; }
+.dash-vocab-desc { font-size: 11px; color: #94A3B8; line-height: 1.35; }
+
+/* ── Empty state ──────────────────────────────────────────────── */
+.dash-empty {
+  padding: 32px 24px; text-align: center;
+  color: #94A3B8; font-size: 13px;
+}
+.dash-empty i { font-size: 28px; display: block; margin-bottom: 10px; opacity: .35; }
 </style>
 {% endblock custom_css %}
 
 {% block content %}
 {% with user=request.user %}
-<div class="stu-page">
+<div class="dash">
 
-  <!-- Hero greeting -->
-  <div class="stu-hero">
-    <img src="{% static 'dist/img/logo.png' %}" alt="" class="stu-hero-img" aria-hidden="true">
-    <div class="stu-greeting" id="stu-greeting-text">Good morning, {{ user.first_name|default:user.username }} 👋</div>
-    <div class="stu-greeting-sub" id="stu-greeting-sub">Let's make today great!</div>
-    {% if is_english and student_level %}
-    <div class="level-badge"><i class="fas fa-layer-group"></i> {{ student_level }}</div>
-    {% endif %}
+  <!-- ── Hero ─────────────────────────────────────────────────── -->
+  <div class="dash-hero">
+    <div class="dash-avatar" id="dash-avatar">
+      <span id="dash-avatar-inner">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+    </div>
+    <div class="dash-hero-text">
+      <div class="dash-salute" id="dash-salute">Good morning</div>
+      <div class="dash-name">{{ user.get_full_name|default:user.username }}</div>
+      {% if is_english and student_level %}
+      <div class="dash-level-chip"><i class="fas fa-layer-group"></i> {{ student_level }}</div>
+      {% endif %}
+    </div>
   </div>
 
+  <!-- ── Notifications ─────────────────────────────────────────── -->
   {% if recent_notifications %}
-  <!-- Notifications banner -->
-  <div style="margin:0 4px; display:flex; flex-direction:column; gap:8px;">
+  <div style="margin-top:14px;">
     {% for notif in recent_notifications %}
-    <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;background:#EFF6FF;border:1.5px solid rgba(30,64,175,.15);border-radius:14px;position:relative;">
-      <i class="fas fa-bell" style="color:#1B3F7A;font-size:15px;flex-shrink:0;margin-top:1px;"></i>
-      <span style="font-size:13px;color:#1E3A8A;font-weight:600;flex:1;line-height:1.4;">{{ notif.message }}</span>
-      <span style="font-size:11px;color:#64748B;white-space:nowrap;margin-top:1px;">{{ notif.created_at|date:"M j" }}</span>
+    <div class="dash-notif">
+      <i class="fas fa-bell"></i>
+      <span class="dash-notif-msg">{{ notif.message }}</span>
+      <span class="dash-notif-date">{{ notif.created_at|date:"M j" }}</span>
     </div>
     {% endfor %}
-    <a href="{% url 'student_view_notification' %}" style="font-size:12px;font-weight:700;color:#1B3F7A;text-decoration:none;text-align:right;padding-right:4px;">View all notifications →</a>
+    <div style="text-align:right;padding:4px 18px 0;">
+      <a href="{% url 'student_view_notification' %}" class="dash-section-link">All notifications <i class="fas fa-chevron-right" style="font-size:10px;"></i></a>
+    </div>
   </div>
   {% endif %}
 
-  <!-- Navy progress card -->
-  <div class="stu-progress-card">
-    <div class="stu-progress-header">
-      <span class="stu-progress-title">Your progress this week</span>
-      <span class="stu-progress-badge"><i class="fas fa-calendar-week"></i> This Week</span>
-    </div>
-    <div class="stu-stats-row">
-      <div class="stu-stat-tile">
-        <div class="stu-stat-icon-wrap"><i class="fas fa-calendar-check"></i></div>
-        <div class="stu-stat-label">Attendance</div>
-        <div class="stu-stat-value">{{ percent_present }}%</div>
-        <div class="stu-stat-desc">{% if percent_present >= 75 %}Excellent{% elif percent_present >= 50 %}Improving{% else %}Needs focus{% endif %}</div>
-      </div>
-      <div class="stu-stat-tile">
-        <div class="stu-stat-icon-wrap"><i class="fas fa-star"></i></div>
-        <div class="stu-stat-label">Classes</div>
-        <div class="stu-stat-value">{{ total_attendance }}</div>
-        <div class="stu-stat-desc">Total Recorded</div>
-      </div>
-      <div class="stu-stat-tile">
-        <div class="stu-stat-icon-wrap"><i class="fas fa-trophy"></i></div>
-        <div class="stu-stat-label">Groups</div>
-        <div class="stu-stat-value">#{{ total_subject }}</div>
-        <div class="stu-stat-desc">Active Groups</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Next Up + Latest Result -->
-  <div class="stu-combo">
-    <div class="stu-combo-half">
-      <div class="stu-combo-icon" style="background:#1340A8;"><i class="fas fa-book-open"></i></div>
-      <div class="stu-combo-sup">Next Up</div>
-      {% if recent_assignments %}
-        <div class="stu-combo-title">{{ recent_assignments.0.title }}</div>
-        <div class="stu-combo-meta">
-          <span class="stu-combo-time"><i class="fas fa-clock"></i> Due {{ recent_assignments.0.due_date|date:"M j" }}</span>
-          <span class="stu-combo-room">{{ recent_assignments.0.group_name }}</span>
-        </div>
-      {% else %}
-        <div class="stu-combo-title">No upcoming tasks</div>
-        <div class="stu-combo-meta"><span class="stu-combo-time">All caught up!</span></div>
-      {% endif %}
-    </div>
-    <div class="stu-combo-half">
-      <div class="stu-combo-icon" style="background:#0D9488;"><i class="fas fa-file-alt"></i></div>
-      <div class="stu-combo-sup">Latest Result</div>
-      {% if latest_result %}
-        {% with total=latest_result.test|add:latest_result.exam %}
-        <div class="stu-combo-title">{{ latest_result.group.name|default:"General" }}</div>
-        <div class="stu-result-score">{{ total }}%</div>
-        <a href="{% url 'student_view_result' %}" class="stu-view-btn">View Result <i class="fas fa-chevron-right"></i></a>
-        {% endwith %}
-      {% else %}
-        <div class="stu-combo-title">No results yet</div>
-        <div class="stu-combo-meta"><span class="stu-combo-time">Check back soon</span></div>
-      {% endif %}
-    </div>
-  </div>
-
+  <!-- ── Group strip ───────────────────────────────────────────── -->
   {% if subject_rows %}
-  <!-- My Groups -->
-  <div class="stu-section-hd"><h3>My Groups</h3></div>
-  <div style="margin:0 16px; display:flex; flex-direction:column; gap:8px;">
+  <div class="dash-strip">
     {% for row in subject_rows %}
-    <div style="background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 2px 10px rgba(15,23,42,.06);display:flex;align-items:center;gap:14px;">
-      <div style="width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#0C1F45,#1B3F7A);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;">{{ row.name|first|upper }}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:700;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ row.name }}</div>
-        <div style="font-size:12px;color:#94A3B8;margin-top:2px;">
-          {% if row.start_date %}
-            <i class="fas fa-calendar-alt" style="color:#06B6D4;margin-right:3px;"></i>Starts {{ row.start_date|date:"M j, Y" }}
-          {% else %}
-            <i class="fas fa-calendar-alt" style="color:#CBD5E1;margin-right:3px;"></i>Starting date not set yet
-          {% endif %}
-        </div>
+    {% with idx=forloop.counter0 %}
+    <a href="{% url 'student_view_attendance' %}" class="dash-strip-card {% if forloop.first %}active-card{% endif %}">
+      <div class="dash-strip-ring">
+        <svg viewBox="0 0 52 52">
+          <circle cx="26" cy="26" r="22" fill="none"
+            stroke="{% if row.pct >= 75 %}rgba(16,185,129,.2){% elif row.pct >= 50 %}rgba(245,158,11,.2){% else %}rgba(239,68,68,.2){% endif %}"
+            stroke-width="5"/>
+          <circle cx="26" cy="26" r="22" fill="none"
+            stroke="{% if row.pct >= 75 %}#10B981{% elif row.pct >= 50 %}#F59E0B{% else %}#EF4444{% endif %}"
+            stroke-width="5" stroke-linecap="round"
+            stroke-dasharray="138.23"
+            stroke-dashoffset="{{ row.pct|floatformat:0 }}"
+            transform="rotate(-90 26 26)"
+            class="strip-ring-arc"/>
+        </svg>
+        <span class="dash-strip-ring-num">{{ row.pct }}%</span>
       </div>
-      <div style="text-align:right;flex-shrink:0;">
-        <div style="font-size:18px;font-weight:900;color:{% if row.pct >= 75 %}#10B981{% elif row.pct >= 50 %}#F59E0B{% else %}#EF4444{% endif %};">{{ row.pct }}%</div>
-        <div style="font-size:10px;color:#94A3B8;">Attendance</div>
-      </div>
-    </div>
+      <div class="dash-strip-name">{{ row.name }}</div>
+      <div class="dash-strip-pct">{{ row.present }}/{{ row.total }} present</div>
+    </a>
+    {% endwith %}
     {% endfor %}
   </div>
   {% endif %}
 
-  <!-- Today's Tasks -->
-  <div class="stu-section-hd">
-    <h3>Today's Tasks</h3>
-    <a href="{% url 'student_assignments' %}">View All <i class="fas fa-chevron-right"></i></a>
-  </div>
-  <div class="stu-tasks">
-    {% if recent_assignments %}
-      {% for a in recent_assignments %}
-      {% with idx=forloop.counter0 %}
-      <a href="{% url 'submit_assignment' a.id %}" class="stu-task-row">
-        <div class="stu-task-avatar" style="background:{% if idx == 0 %}#1F4FD9{% elif idx == 1 %}#0D9488{% elif idx == 2 %}#D97706{% else %}#7C3AED{% endif %};">
-          {{ a.title|first|upper }}
-        </div>
-        <div class="stu-task-body">
-          <div class="stu-task-title">{{ a.title }}</div>
-          <div class="stu-task-sub">{{ a.group_name }} · Due {{ a.due_date|date:"M j" }}</div>
-        </div>
-        <div class="stu-task-right">
-          <div class="stu-task-pct">{% if a.submitted %}100%{% else %}0%{% endif %}</div>
-          <div class="stu-task-bar-track">
-            <div class="stu-task-bar-fill" style="width:{% if a.submitted %}100{% else %}0{% endif %}%;"></div>
-          </div>
-        </div>
-        <i class="fas fa-chevron-right stu-task-chevron"></i>
-      </a>
-      {% endwith %}
-      {% endfor %}
-    {% else %}
-      <div class="stu-empty-tasks">
-        <i class="fas fa-check-circle"></i>
-        No pending assignments — you're all caught up!
-      </div>
-    {% endif %}
+  <!-- ── Stats row ─────────────────────────────────────────────── -->
+  <div class="dash-stats">
+    <div class="dash-stat">
+      <div class="dash-stat-icon">📊</div>
+      <div class="dash-stat-num">{{ percent_present }}%</div>
+      <div class="dash-stat-lbl">Attendance</div>
+    </div>
+    <div class="dash-stat">
+      <div class="dash-stat-icon">📚</div>
+      <div class="dash-stat-num">{{ total_attendance }}</div>
+      <div class="dash-stat-lbl">Classes</div>
+    </div>
+    <div class="dash-stat">
+      <div class="dash-stat-icon">🎓</div>
+      <div class="dash-stat-num">{{ total_subject }}</div>
+      <div class="dash-stat-lbl">Groups</div>
+    </div>
   </div>
 
-  {% if is_english %}
-  <!-- Vocabulary section (new day-based system) -->
-  <div class="stu-section-hd">
-    <h3>Vocabulary</h3>
-    <a href="{% url 'vocabulary_day_list' %}">All Days <i class="fas fa-chevron-right"></i></a>
+  <!-- ── Upcoming lessons ──────────────────────────────────────── -->
+  {% if subject_rows %}
+  <div class="dash-section">
+    <div class="dash-section-title"><i class="fas fa-calendar-check"></i> My Groups</div>
+    <a href="{% url 'student_view_attendance' %}" class="dash-section-link">Details <i class="fas fa-chevron-right" style="font-size:10px;"></i></a>
   </div>
-  <div class="stu-vocab-quick">
-    <div class="stu-vocab-quick-header">
-      <div class="stu-vocab-quick-title">Study Modes</div>
+
+  {% for row in subject_rows %}
+  <div class="dash-lesson-card">
+    <div class="dash-lesson-name">{{ row.name }}</div>
+    <div class="dash-lesson-meta">
+      {% if row.schedule %}
+      <span class="dash-lesson-pill"><i class="fas fa-clock"></i> {{ row.schedule }}</span>
+      {% endif %}
+      {% if row.start_date %}
+      <span class="dash-lesson-pill"><i class="fas fa-calendar-alt"></i> Starts {{ row.start_date|date:"M j, Y" }}</span>
+      {% endif %}
+      {% if row.room %}
+      <span class="dash-lesson-pill"><i class="fas fa-door-open"></i> {{ row.room }}</span>
+      {% endif %}
+      {% if row.branch %}
+      <span class="dash-lesson-pill"><i class="fas fa-map-marker-alt"></i> {{ row.branch }}</span>
+      {% endif %}
     </div>
-    <div class="stu-vocab-modes">
-      <a href="{% url 'vocabulary_day_list' %}" class="stu-vocab-mode">
-        <div class="stu-vocab-mode-icon" style="background:#1340A8;"><i class="fas fa-language"></i></div>
-        <span>Daily Words</span>
-        <small>Day-by-day lessons</small>
-      </a>
-      <a href="{% url 'student_progress' %}" class="stu-vocab-mode">
-        <div class="stu-vocab-mode-icon" style="background:#0D9488;"><i class="fas fa-chart-line"></i></div>
-        <span>My Progress</span>
-        <small>Charts &amp; stats</small>
-      </a>
+    <div class="dash-lesson-footer">
+      <span class="dash-lesson-teacher">
+        {% if row.teacher %}<i class="fas fa-chalkboard-teacher"></i> {{ row.teacher }}{% endif %}
+      </span>
+      <span class="dash-status-chip">
+        {% if row.pct >= 75 %}<i class="fas fa-circle" style="font-size:6px;color:#10B981;"></i> Great
+        {% elif row.pct >= 50 %}<i class="fas fa-circle" style="font-size:6px;color:#F59E0B;"></i> Good
+        {% else %}<i class="fas fa-circle" style="font-size:6px;color:#EF4444;"></i> Needs focus{% endif %}
+      </span>
     </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- ── Latest result ─────────────────────────────────────────── -->
+  {% if latest_result %}
+  <div class="dash-section">
+    <div class="dash-section-title"><i class="fas fa-chart-bar"></i> Latest Result</div>
+    <a href="{% url 'student_view_result' %}" class="dash-section-link">All Results <i class="fas fa-chevron-right" style="font-size:10px;"></i></a>
+  </div>
+  <div class="dash-result-card">
+    <div class="dash-result-top">
+      <div>
+        <div class="dash-result-label">Score</div>
+        <div class="dash-result-group">{{ latest_result.group.name|default:"General" }}</div>
+      </div>
+      <div class="dash-result-score">
+        {% with total=latest_result.test|add:latest_result.exam %}{{ total }}{% endwith %}<span> /100</span>
+      </div>
+    </div>
+    <div class="dash-result-row">
+      <div class="dash-result-cell">
+        <div class="dash-result-cell-lbl">Test</div>
+        <div class="dash-result-cell-val">{{ latest_result.test }} <span style="font-size:12px;opacity:.6;">/40</span></div>
+      </div>
+      <div class="dash-result-cell">
+        <div class="dash-result-cell-lbl">Exam</div>
+        <div class="dash-result-cell-val">{{ latest_result.exam }} <span style="font-size:12px;opacity:.6;">/60</span></div>
+      </div>
+    </div>
+    <a href="{% url 'student_view_result' %}" class="dash-result-link">View full results <i class="fas fa-arrow-right"></i></a>
   </div>
   {% endif %}
 
-  <!-- Bottom motivational banner -->
-  <div class="stu-banner">
-    <div class="stu-banner-icon"><i class="fas fa-mountain"></i></div>
-    <div class="stu-banner-text">Consistency today,<br>excellence tomorrow.</div>
+  <!-- ── Assignments ───────────────────────────────────────────── -->
+  <div class="dash-section">
+    <div class="dash-section-title"><i class="fas fa-tasks"></i> Assignments</div>
+    <a href="{% url 'student_assignments' %}" class="dash-section-link">View all <i class="fas fa-chevron-right" style="font-size:10px;"></i></a>
   </div>
+  {% if recent_assignments %}
+  <div class="dash-task-list">
+    {% for a in recent_assignments %}
+    {% with idx=forloop.counter0 %}
+    <a href="{% url 'submit_assignment' a.id %}" class="dash-task-row">
+      <div class="dash-task-icon" style="background:{% if idx == 0 %}#0C1F45{% elif idx == 1 %}#0D9488{% elif idx == 2 %}#D97706{% else %}#7C3AED{% endif %};">
+        {{ a.title|first|upper }}
+      </div>
+      <div class="dash-task-body">
+        <div class="dash-task-title">{{ a.title }}</div>
+        <div class="dash-task-sub">{{ a.group_name }} · Due {{ a.due_date|date:"M j" }}</div>
+      </div>
+      <span class="dash-task-badge {% if a.submitted %}dash-task-done{% else %}dash-task-todo{% endif %}">
+        {% if a.submitted %}Done{% else %}Pending{% endif %}
+      </span>
+    </a>
+    {% endwith %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="dash-task-list">
+    <div class="dash-empty"><i class="fas fa-check-circle"></i>All assignments complete!</div>
+  </div>
+  {% endif %}
+
+  <!-- ── Vocabulary ────────────────────────────────────────────── -->
+  {% if is_english %}
+  <div class="dash-section">
+    <div class="dash-section-title"><i class="fas fa-language"></i> Vocabulary</div>
+    <a href="{% url 'vocabulary_day_list' %}" class="dash-section-link">All Days <i class="fas fa-chevron-right" style="font-size:10px;"></i></a>
+  </div>
+  <div class="dash-vocab-grid">
+    <a href="{% url 'vocabulary_day_list' %}" class="dash-vocab-tile">
+      <div class="dash-vocab-icon" style="background:#0C1F45;"><i class="fas fa-layer-group"></i></div>
+      <div class="dash-vocab-name">Daily Words</div>
+      <div class="dash-vocab-desc">Study today's vocabulary list</div>
+    </a>
+    <a href="{% url 'student_progress' %}" class="dash-vocab-tile">
+      <div class="dash-vocab-icon" style="background:#0D9488;"><i class="fas fa-chart-line"></i></div>
+      <div class="dash-vocab-name">My Progress</div>
+      <div class="dash-vocab-desc">View charts and quiz scores</div>
+    </a>
+  </div>
+  {% endif %}
 
 </div>
 {% endwith %}
@@ -325,64 +529,37 @@
 
 {% block custom_js %}
 <script>
-// ── Time-based greeting ──────────────────────────────────────────────────────
 (function () {
+  /* ── Time-based greeting ─────────────────────────────────── */
   var h = new Date().getHours();
-  var greeting, sub;
-  if (h >= 5 && h < 12) {
-    greeting = 'Good morning'; sub = "Let's make today great! ☀️";
-  } else if (h >= 12 && h < 17) {
-    greeting = 'Good afternoon'; sub = "Keep up the great work! 💪";
-  } else if (h >= 17 && h < 21) {
-    greeting = 'Good evening'; sub = "Time to review what you learned today! 🌆";
-  } else {
-    greeting = 'Good night'; sub = "Rest well and come back stronger! 🌙";
-  }
-  var el = document.getElementById('stu-greeting-text');
-  var sub_el = document.getElementById('stu-greeting-sub');
-  if (el) {
-    var parts = el.textContent.split(',');
-    if (parts.length > 1) el.textContent = greeting + ',' + parts.slice(1).join(',');
-  }
-  if (sub_el) sub_el.textContent = sub;
-})();
+  var salute = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 21 ? 'Good evening' : 'Good night';
+  var el = document.getElementById('dash-salute');
+  if (el) el.textContent = salute;
 
-// ── Theme application ────────────────────────────────────────────────────────
-(function () {
-  var savedTheme = '{{ student_theme|default:"system" }}';
-
-  function applyTheme(theme) {
-    var root = document.documentElement;
-    root.removeAttribute('data-theme');
-    if (theme === 'dark') {
-      root.setAttribute('data-theme', 'dark');
-      document.body.classList.add('dark-mode');
-      document.body.classList.remove('bright-mode');
-    } else if (theme === 'bright') {
-      root.setAttribute('data-theme', 'bright');
-      document.body.classList.add('bright-mode');
-      document.body.classList.remove('dark-mode');
-    } else {
-      // System default
-      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        root.setAttribute('data-theme', 'dark');
-        document.body.classList.add('dark-mode');
-        document.body.classList.remove('bright-mode');
-      } else {
-        document.body.classList.remove('dark-mode', 'bright-mode');
-      }
-    }
+  /* ── Avatar sticker ─────────────────────────────────────── */
+  var AVATARS = ["🧑‍🎓","👨‍🎓","👩‍🎓","🧑‍💻","👨‍💻","👩‍💻","🧑‍🏫","👨‍🏫","👩‍🏫","🤓",
+                 "😊","😎","💡","📚","🏆","⭐","💪","🎯","🌟","🦉","🌍","✏️","🎨","🔬"];
+  var BG = ["#1B3F7A","#0C1F45","#7C3AED","#0891B2","#1F2937","#6D28D9",
+            "#BE185D","#B45309","#C2410C","#15803D","#0284C7","#4338CA",
+            "#A16207","#7C2D12","#B45309","#EA580C","#B91C1C","#991B1B",
+            "#4F46E5","#65A30D","#0D9488","#6B7280","#DB2777","#0891B2"];
+  var av = '{{ request.user.avatar }}';
+  var idx = parseInt(av, 10) - 1;
+  var wrap = document.getElementById('dash-avatar');
+  var inner = document.getElementById('dash-avatar-inner');
+  if (idx >= 0 && idx < AVATARS.length && wrap && inner) {
+    inner.textContent = AVATARS[idx];
+    inner.style.fontSize = '26px';
+    inner.style.lineHeight = '1';
+    wrap.style.background = BG[idx];
   }
 
-  applyTheme(savedTheme);
-
-  // Listen for system theme changes (when "system" is selected)
-  if (savedTheme === 'system') {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-      applyTheme('system');
-    });
-  }
+  /* ── Strip ring arcs — convert pct → dashoffset ──────────── */
+  var CIRC = 138.23; /* 2π × 22 */
+  document.querySelectorAll('.strip-ring-arc').forEach(function (arc) {
+    var pct = parseFloat(arc.getAttribute('stroke-dashoffset')) || 0;
+    arc.setAttribute('stroke-dashoffset', CIRC * (1 - pct / 100));
+  });
 })();
 </script>
 {% endblock custom_js %}

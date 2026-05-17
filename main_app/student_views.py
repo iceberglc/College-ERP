@@ -63,6 +63,10 @@ def student_home(request):
             'total': total_cls,
             'pct': pct,
             'start_date': group.start_date,
+            'schedule': group.schedule,
+            'room': group.room,
+            'teacher': group.teacher.admin.get_full_name() if group.teacher and group.teacher.admin else '',
+            'branch': group.branch.name if group.branch else '',
         })
 
     # Level & English program detection
