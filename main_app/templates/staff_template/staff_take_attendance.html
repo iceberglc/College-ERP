@@ -122,49 +122,37 @@
       <i class="fas fa-clipboard-check"></i> {{ page_title }}
     </div>
 
+    {% if not groups %}
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      You have no active groups assigned. Contact your administrator.
+    </div>
+    {% else %}
     <div class="row g-3">
-      <div class="col-md-4">
-        <label class="form-label" style="font-size:12px; font-weight:600; color:var(--ice-muted); text-transform:uppercase; letter-spacing:.4px;">
-          <i class="fas fa-book me-1"></i> Course / Program
-        </label>
-        <select id="course_sel" class="form-control">
-          <option value="">— All Courses —</option>
-          {% for c in courses %}
-          <option value="{{ c.id }}">{{ c.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label" style="font-size:12px; font-weight:600; color:var(--ice-muted); text-transform:uppercase; letter-spacing:.4px;">
-          <i class="fas fa-chalkboard-teacher me-1"></i> Teacher
-        </label>
-        <select id="teacher_sel" class="form-control" disabled>
-          <option value="">— Select Course first —</option>
-        </select>
-      </div>
-      <div class="col-md-4">
+      <div class="col-md-6">
         <label class="form-label" style="font-size:12px; font-weight:600; color:var(--ice-muted); text-transform:uppercase; letter-spacing:.4px;">
           <i class="fas fa-layer-group me-1"></i> Group <span style="color:var(--ice-danger)">*</span>
         </label>
-        <select id="group" class="form-control" disabled>
-          <option value="">— Select Teacher first —</option>
+        <select id="group" class="form-control">
+          <option value="">— Select your group —</option>
+          {% for g in groups %}
+          <option value="{{ g.id }}">{{ g.name }}{% if g.course %} · {{ g.course.name }}{% endif %}</option>
+          {% endfor %}
         </select>
       </div>
-    </div>
-
-    <div class="row g-3 mt-1">
       <div class="col-md-4">
         <label class="form-label" style="font-size:12px; font-weight:600; color:var(--ice-muted); text-transform:uppercase; letter-spacing:.4px;">
           <i class="fas fa-calendar-day me-1"></i> Date
         </label>
         <input type="date" id="attendance_date" class="form-control" value="{{ today }}" max="{{ today }}">
       </div>
-      <div class="col-md-4 d-flex align-items-end">
+      <div class="col-md-2 d-flex align-items-end">
         <button type="button" id="fetch_btn" class="btn btn-primary w-100" disabled>
-          <i class="fas fa-users me-1"></i> Load Students
+          <i class="fas fa-users me-1"></i> Load
         </button>
       </div>
     </div>
+    {% endif %}
   </div>
 
   <!-- Roster Card -->
@@ -223,170 +211,108 @@ function markAll(status) {
   document.querySelectorAll('#student_list .roster-student').forEach(r => setStatus(r, status));
 }
 
-document.getElementById('course_sel').addEventListener('change', function () {
-  const courseId = this.value;
-  const teacherSel = document.getElementById('teacher_sel');
-  const groupSel = document.getElementById('group');
-  const fetchBtn = document.getElementById('fetch_btn');
-
-  teacherSel.innerHTML = '<option value="">— Loading… —</option>';
-  teacherSel.disabled = true;
-  groupSel.innerHTML = '<option value="">— Select Teacher first —</option>';
-  groupSel.disabled = true;
-  fetchBtn.disabled = true;
-
-  if (!courseId) {
-    teacherSel.innerHTML = '<option value="">— Select Course first —</option>';
-    return;
-  }
-
-  fetch("{% url 'staff_get_teachers_for_course' %}", {
-    method: 'POST',
-    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ course_id: courseId })
-  })
-  .then(r => r.json())
-  .then(d => {
-    if (!d.teachers.length) {
-      teacherSel.innerHTML = '<option value="">No teachers for this course</option>';
-      return;
-    }
-    teacherSel.innerHTML = '<option value="">— All Teachers —</option>' +
-      d.teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-    teacherSel.disabled = false;
-    loadGroups(null, courseId);
-  })
-  .catch(() => { teacherSel.innerHTML = '<option value="">Error loading teachers</option>'; });
-});
-
-document.getElementById('teacher_sel').addEventListener('change', function () {
-  const teacherId = this.value;
-  const courseId  = document.getElementById('course_sel').value;
-  loadGroups(teacherId || null, teacherId ? null : courseId);
-});
-
-function loadGroups(teacherId, courseId) {
-  const groupSel = document.getElementById('group');
-  const fetchBtn = document.getElementById('fetch_btn');
-  groupSel.innerHTML = '<option value="">— Loading… —</option>';
-  groupSel.disabled = true;
-  fetchBtn.disabled = true;
-
-  const params = {};
-  if (teacherId) params.teacher_id = teacherId;
-  else if (courseId) params.course_id = courseId;
-
-  fetch("{% url 'staff_get_groups_for_teacher' %}", {
-    method: 'POST',
-    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(params)
-  })
-  .then(r => r.json())
-  .then(d => {
-    if (!d.groups.length) {
-      groupSel.innerHTML = '<option value="">No groups found</option>';
-      return;
-    }
-    groupSel.innerHTML = '<option value="">— Select a group —</option>' +
-      d.groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-    groupSel.disabled = false;
-  })
-  .catch(() => { groupSel.innerHTML = '<option value="">Error loading groups</option>'; });
+const groupSel = document.getElementById('group');
+if (groupSel) {
+  groupSel.addEventListener('change', function () {
+    document.getElementById('fetch_btn').disabled = !this.value;
+  });
 }
 
-document.getElementById('group').addEventListener('change', function () {
-  document.getElementById('fetch_btn').disabled = !this.value;
-});
+const fetchBtn = document.getElementById('fetch_btn');
+if (fetchBtn) {
+  fetchBtn.addEventListener('click', function () {
+    const group   = document.getElementById('group').value;
+    const attDate = document.getElementById('attendance_date').value;
+    if (!group)   { alert('Please select a group first.'); return; }
+    if (!attDate) { alert('Please select a date.'); return; }
 
-document.getElementById('fetch_btn').addEventListener('click', function () {
-  const group   = document.getElementById('group').value;
-  const attDate = document.getElementById('attendance_date').value;
-  if (!group)   { alert('Please select a group first.'); return; }
-  if (!attDate) { alert('Please select a date.'); return; }
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Loading…';
 
-  this.disabled = true;
-  this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Loading…';
+    fetch("{% url 'get_students' %}", {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ group })
+    })
+    .then(r => r.json())
+    .then(data => {
+      const arr = typeof data === 'string' ? JSON.parse(data) : data;
+      document.getElementById('fetch_btn').disabled = false;
+      document.getElementById('fetch_btn').innerHTML = '<i class="fas fa-users me-1"></i> Load';
 
-  fetch("{% url 'get_students' %}", {
-    method: 'POST',
-    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ group })
-  })
-  .then(r => r.json())
-  .then(data => {
-    const arr = typeof data === 'string' ? JSON.parse(data) : data;
-    document.getElementById('fetch_btn').disabled = false;
-    document.getElementById('fetch_btn').innerHTML = '<i class="fas fa-users me-1"></i> Load Students';
+      if (!arr.length) { alert('No enrolled students in this group.'); return; }
 
-    if (!arr.length) { alert('No enrolled students in this group.'); return; }
+      document.getElementById('student_list').innerHTML = arr.map(s => `
+        <div class="roster-student" data-id="${s.id}">
+          <div class="student-name">
+            <i class="fas fa-user-graduate me-2" style="color:var(--ice-cyan);"></i>${s.name}
+          </div>
+          <div class="status-btn-group">
+            <button type="button" class="status-btn active-present" data-status="1" onclick="setStatus(this.closest('.roster-student'),1)">Present</button>
+            <button type="button" class="status-btn" data-status="2" onclick="setStatus(this.closest('.roster-student'),2)">Late</button>
+            <button type="button" class="status-btn" data-status="0" onclick="setStatus(this.closest('.roster-student'),0)">Absent</button>
+          </div>
+          <input type="hidden" class="student-status" value="1">
+        </div>`).join('');
 
-    document.getElementById('student_list').innerHTML = arr.map(s => `
-      <div class="roster-student" data-id="${s.id}">
-        <div class="student-name">
-          <i class="fas fa-user-graduate me-2" style="color:var(--ice-cyan);"></i>${s.name}
-        </div>
-        <div class="status-btn-group">
-          <button type="button" class="status-btn active-present" data-status="1" onclick="setStatus(this.closest('.roster-student'),1)">Present</button>
-          <button type="button" class="status-btn" data-status="2" onclick="setStatus(this.closest('.roster-student'),2)">Late</button>
-          <button type="button" class="status-btn" data-status="0" onclick="setStatus(this.closest('.roster-student'),0)">Absent</button>
-        </div>
-        <input type="hidden" class="student-status" value="1">
-      </div>`).join('');
-
-    const grpOpt = document.getElementById('group').selectedOptions[0].text;
-    document.getElementById('roster_title').textContent = `${grpOpt} · ${attDate} — ${arr.length} students`;
-    document.getElementById('roster_card').style.display = 'block';
-    document.getElementById('save_btn').style.display = '';
-    document.getElementById('save_msg').innerHTML = '';
-    updateSummary();
-  })
-  .catch(() => {
-    document.getElementById('fetch_btn').disabled = false;
-    document.getElementById('fetch_btn').innerHTML = '<i class="fas fa-users me-1"></i> Load Students';
-    alert('Error loading students.');
+      const grpOpt = document.getElementById('group').selectedOptions[0].text;
+      document.getElementById('roster_title').textContent = `${grpOpt} · ${attDate} — ${arr.length} students`;
+      document.getElementById('roster_card').style.display = 'block';
+      document.getElementById('save_btn').style.display = '';
+      document.getElementById('save_msg').innerHTML = '';
+      updateSummary();
+    })
+    .catch(() => {
+      document.getElementById('fetch_btn').disabled = false;
+      document.getElementById('fetch_btn').innerHTML = '<i class="fas fa-users me-1"></i> Load';
+      alert('Error loading students.');
+    });
   });
-});
+}
 
-document.getElementById('save_btn').addEventListener('click', function () {
-  const group   = document.getElementById('group').value;
-  const attDate = document.getElementById('attendance_date').value;
-  const rows    = document.querySelectorAll('#student_list .roster-student');
-  if (!rows.length) return;
+const saveBtn = document.getElementById('save_btn');
+if (saveBtn) {
+  saveBtn.addEventListener('click', function () {
+    const group   = document.getElementById('group').value;
+    const attDate = document.getElementById('attendance_date').value;
+    const rows    = document.querySelectorAll('#student_list .roster-student');
+    if (!rows.length) return;
 
-  const student_ids = JSON.stringify(
-    Array.from(rows).map(r => ({
-      id:     parseInt(r.dataset.id),
-      status: parseInt(r.querySelector('input.student-status').value),
-    }))
-  );
+    const student_ids = JSON.stringify(
+      Array.from(rows).map(r => ({
+        id:     parseInt(r.dataset.id),
+        status: parseInt(r.querySelector('input.student-status').value),
+      }))
+    );
 
-  this.disabled = true;
-  this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving…';
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving…';
 
-  fetch("{% url 'save_attendance' %}", {
-    method: 'POST',
-    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ group, date: attDate, student_ids })
-  })
-  .then(r => r.text())
-  .then(resp => {
-    if (resp === 'OK') {
+    fetch("{% url 'save_attendance' %}", {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ group, date: attDate, student_ids })
+    })
+    .then(r => r.text())
+    .then(resp => {
+      if (resp === 'OK') {
+        document.getElementById('save_msg').innerHTML =
+          '<div class="alert alert-success mb-0"><i class="fas fa-check-circle me-2"></i>Attendance saved! Students have been notified.</div>';
+        document.getElementById('save_btn').style.display = 'none';
+      } else {
+        document.getElementById('save_msg').innerHTML =
+          '<div class="alert alert-danger mb-0">Error saving attendance. Please try again.</div>';
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-save me-1"></i> Save Attendance';
+      }
+    })
+    .catch(() => {
       document.getElementById('save_msg').innerHTML =
-        '<div class="alert alert-success mb-0"><i class="fas fa-check-circle me-2"></i>Attendance saved! Students have been notified.</div>';
-      document.getElementById('save_btn').style.display = 'none';
-    } else {
-      document.getElementById('save_msg').innerHTML =
-        '<div class="alert alert-danger mb-0">Error saving attendance. Please try again.</div>';
+        '<div class="alert alert-danger mb-0">Network error. Please try again.</div>';
       this.disabled = false;
       this.innerHTML = '<i class="fas fa-save me-1"></i> Save Attendance';
-    }
-  })
-  .catch(() => {
-    document.getElementById('save_msg').innerHTML =
-      '<div class="alert alert-danger mb-0">Network error. Please try again.</div>';
-    this.disabled = false;
-    this.innerHTML = '<i class="fas fa-save me-1"></i> Save Attendance';
+    });
   });
-});
+}
 </script>
 {% endblock %}

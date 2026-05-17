@@ -53,9 +53,10 @@ def staff_home(request):
 
 @staff_only
 def staff_take_attendance(request):
-    courses = Course.objects.filter(is_active=True).order_by('name')
+    staff = get_object_or_404(Staff, admin=request.user)
+    groups = Group.objects.filter(teacher=staff, is_archived=False).select_related('course').order_by('name')
     context = {
-        'courses': courses,
+        'groups': groups,
         'today': date.today().isoformat(),
         'page_title': 'Take Attendance',
     }
@@ -111,6 +112,9 @@ def save_attendance(request):
         return HttpResponse("Missing group/date/students", status=400)
 
     group = get_object_or_404(Group, id=group_id)
+    staff = get_object_or_404(Staff, admin=request.user)
+    if group.teacher_id != staff.id:
+        return HttpResponse("You do not own this group", status=403)
     student_ids = {int(r['id']) for r in rows if 'id' in r}
     if not student_ids:
         return HttpResponse("No student IDs supplied", status=400)
@@ -156,9 +160,10 @@ def save_attendance(request):
 
 @staff_only
 def staff_update_attendance(request):
-    courses = Course.objects.filter(is_active=True).order_by('name')
+    staff = get_object_or_404(Staff, admin=request.user)
+    groups = Group.objects.filter(teacher=staff, is_archived=False).select_related('course').order_by('name')
     context = {
-        'courses': courses,
+        'groups': groups,
         'page_title': 'Update Attendance',
     }
     return render(request, 'staff_template/staff_update_attendance.html', context)
@@ -674,32 +679,11 @@ def delete_result_file(request, file_id):
 
 
 @staff_only
-def staff_get_teachers_for_course(request):
-    """Return active staff members for a given course (for AJAX cascade in staff views)."""
-    course_id = request.POST.get('course_id') or request.GET.get('course_id')
-    if not course_id:
-        return JsonResponse({'teachers': []})
-    staff_qs = Staff.objects.filter(
-        course_id=course_id, is_active=True
-    ).select_related('admin').order_by('admin__first_name')
-    teachers = [
-        {'id': s.id, 'name': f"{s.admin.first_name} {s.admin.last_name}"}
-        for s in staff_qs
-    ]
-    return JsonResponse({'teachers': teachers})
-
-
-@staff_only
 def staff_get_groups_for_teacher(request):
-    """Return active groups for a given teacher (for AJAX cascade in staff views)."""
-    teacher_id = request.POST.get('teacher_id') or request.GET.get('teacher_id')
-    course_id = request.POST.get('course_id') or request.GET.get('course_id')
-    qs = Group.objects.filter(is_archived=False)
-    if teacher_id:
-        qs = qs.filter(teacher_id=teacher_id)
-    elif course_id:
-        qs = qs.filter(course_id=course_id)
-    groups = [{'id': g.id, 'name': g.name} for g in qs.order_by('name')]
+    """Return active groups for the logged-in teacher."""
+    staff = get_object_or_404(Staff, admin=request.user)
+    qs = Group.objects.filter(teacher=staff, is_archived=False).order_by('name')
+    groups = [{'id': g.id, 'name': g.name} for g in qs]
     return JsonResponse({'groups': groups})
 
 
@@ -909,28 +893,40 @@ def _notify_vocab_day(day: VocabularyDay):
         day.notified_students.add(*new_notified)
 
 
-@staff_only
 def _story_storage_ok():
+    """True when a persistent remote storage backend (S3/Spaces) is configured."""
     import os
     return bool(os.environ.get('SPACES_KEY') and os.environ.get('SPACES_BUCKET'))
 
 
+@staff_only
 def staff_create_story(request):
     staff = get_object_or_404(Staff, admin=request.user)
+    teacher_groups = Group.objects.filter(teacher=staff, is_archived=False)
     if request.method == 'POST':
         form = DashboardStoryForm(request.POST, request.FILES)
-        # Restrict target_groups to teacher's own groups before validation
-        form.fields['target_groups'].queryset = Group.objects.filter(teacher=staff, is_archived=False)
+        # Restrict target_groups choices to teacher's own groups before validation,
+        # so a teacher can't post to a group they don't own even by tampering payload.
+        form.fields['target_groups'].queryset = teacher_groups
         if form.is_valid():
-            story = form.save(commit=False)
-            story.created_by = request.user
-            story.save()
-            form.save_m2m()
-            messages.success(request, 'Story published to student dashboards.')
-            return redirect(reverse('staff_create_story'))
+            try:
+                story = form.save(commit=False)
+                story.created_by = request.user
+                story.save()
+                form.save_m2m()
+                # If the teacher did not pick any specific group, default to ALL of
+                # their groups — so the story reaches only their students, not the
+                # entire school (which would happen with an empty M2M).
+                if not story.target_groups.exists():
+                    story.target_groups.set(teacher_groups)
+                messages.success(request, 'Story published to student dashboards.')
+                return redirect(reverse('staff_create_story'))
+            except Exception as exc:
+                logger.exception("staff_create_story save failed for user=%s", request.user.id)
+                messages.error(request, f"Could not publish story: {exc}")
     else:
         form = DashboardStoryForm()
-        form.fields['target_groups'].queryset = Group.objects.filter(teacher=staff, is_archived=False)
+        form.fields['target_groups'].queryset = teacher_groups
     return render(request, 'staff_template/staff_story_form.html', {
         'form': form,
         'page_title': 'Post a Story',

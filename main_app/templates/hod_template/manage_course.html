@@ -17,7 +17,6 @@
         <tr>
           <th>#</th>
           <th>Course Name</th>
-          <th>Status</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -27,22 +26,8 @@
           <td style="color:var(--ice-muted); width:40px;">{{ forloop.counter }}</td>
           <td style="font-weight:600;">{{ course.name }}</td>
           <td>
-            {% if course.is_active %}
-              <span class="sb sb-success"><i class="fas fa-circle me-1" style="font-size:7px;"></i>Active</span>
-            {% else %}
-              <span class="sb sb-muted">Inactive</span>
-            {% endif %}
-          </td>
-          <td>
             <div class="ab-row">
               <a href="{% url 'edit_course' course.id %}" class="ab-edit"><i class="fas fa-edit"></i> Edit</a>
-              {% if course.is_active %}
-              <a href="{% url 'toggle_course_active' course.id %}"
-                 onclick="return confirm('Deactivate {{ course.name }}?')"
-                 class="ab-warn"><i class="fas fa-ban"></i> Deactivate</a>
-              {% else %}
-              <a href="{% url 'toggle_course_active' course.id %}" class="ab-success"><i class="fas fa-check"></i> Activate</a>
-              {% endif %}
               <a href="{% url 'delete_course' course.id %}"
                  onclick="return confirm('Permanently delete {{ course.name }}?')"
                  class="ab-danger"><i class="fas fa-trash"></i> Delete</a>
@@ -50,7 +35,7 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" style="text-align:center; padding:48px; color:var(--ice-muted);">No courses yet. <a href="{% url 'add_course' %}">Add one</a>.</td></tr>
+        <tr><td colspan="3" style="text-align:center; padding:48px; color:var(--ice-muted);">No courses yet. <a href="{% url 'add_course' %}">Add one</a>.</td></tr>
         {% endfor %}
       </tbody>
     </table>
