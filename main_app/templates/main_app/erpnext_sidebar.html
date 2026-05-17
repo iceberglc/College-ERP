@@ -394,7 +394,15 @@
         </div>
 
         <h6 class="nav-section-title">Academic</h6>
-        
+
+        <div class="nav-item">
+            {% url 'student_leaderboard' as student_leaderboard %}
+            <a href="{{ student_leaderboard }}" class="nav-link {% if student_leaderboard == request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-trophy"></i>
+                <span class="nav-text">Leaderboard</span>
+            </a>
+        </div>
+
         <div class="nav-item">
             {% url 'student_view_attendance' as student_view_attendance %}
             <a href="{{ student_view_attendance }}" class="nav-link {% if student_view_attendance == request.path %}active{% endif %}">

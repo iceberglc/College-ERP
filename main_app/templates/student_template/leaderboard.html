@@ -1,0 +1,576 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block title %}Leaderboard — Iceberg Study Center{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
+
+{% block custom_css %}
+<style>
+/* ══ Layout takeover — full-bleed gradient hero ═══════════════════ */
+.page-header  { display: none !important; }
+.erpnext-main { padding: 0 !important; }
+.content-area { overflow: visible !important; }
+
+/* ══ Tokens ══════════════════════════════════════════════════════ */
+.lb {
+  --bg:         #EEF3FB;
+  --surface:    #ffffff;
+  --border:     #E2EAF4;
+  --text:       #0C1A36;
+  --text-sub:   #475569;
+  --text-muted: #94A3B8;
+  --navy:       #0C1F45;
+  --navy-mid:   #1B3F7A;
+  --cyan:       #06B6D4;
+  --gold:       #F59E0B;
+  --gold-bg:    #FFFBEB;
+  --silver:     #94A3B8;
+  --silver-bg:  #F1F5F9;
+  --bronze:     #B45309;
+  --bronze-bg:  #FEF3C7;
+
+  background: var(--bg);
+  min-height: 100svh;
+  padding-bottom: 48px;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+.dark-mode .lb {
+  --bg:         #070F1C;
+  --surface:    #0D1B2F;
+  --border:     #18304F;
+  --text:       #E2E8F0;
+  --text-sub:   #94AFC8;
+  --text-muted: #4A6080;
+  --gold-bg:    rgba(245,158,11,.08);
+  --silver-bg:  rgba(148,163,184,.08);
+  --bronze-bg:  rgba(180,83,9,.08);
+}
+@media (max-width: 768px) {
+  .lb { padding-bottom: calc(116px + env(safe-area-inset-bottom)); }
+}
+
+/* ══ Hero ════════════════════════════════════════════════════════ */
+.lb-hero {
+  background: linear-gradient(160deg, #06102A 0%, #0D2657 50%, #0E3E94 100%);
+  padding: 28px 20px 80px;
+  position: relative;
+  overflow: hidden;
+}
+.lb-hero::before {
+  content: '';
+  position: absolute; inset: -30px;
+  background:
+    radial-gradient(circle at 80% 20%, rgba(6,182,212,.30) 0%, transparent 45%),
+    radial-gradient(circle at 20% 80%, rgba(245,158,11,.20) 0%, transparent 50%);
+  pointer-events: none;
+}
+.lb-hero-inner { position: relative; z-index: 1; }
+.lb-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10.5px; font-weight: 700;
+  color: #67E8F9; letter-spacing: .08em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(6,182,212,.16); border: 1px solid rgba(6,182,212,.3);
+  margin-bottom: 10px;
+}
+.lb-title {
+  margin: 0 0 6px; color: #fff; font-size: 26px; font-weight: 800;
+  letter-spacing: -.6px; line-height: 1.15;
+  display: flex; align-items: center; gap: 10px;
+}
+.lb-title .star { font-size: 24px; filter: drop-shadow(0 0 18px rgba(245,158,11,.7)); }
+.lb-sub  { margin: 0; color: rgba(255,255,255,.65); font-size: 13px; }
+
+/* ══ Filter pills ═══════════════════════════════════════════════ */
+.lb-filters {
+  margin: -54px 16px 18px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 22px;
+  padding: 14px;
+  box-shadow: 0 8px 32px rgba(12,31,69,.10);
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.lb-filter-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px;
+  background: var(--bg);
+  border-radius: 14px;
+}
+.dark-mode .lb-filter-row { background: rgba(255,255,255,.03); }
+.lb-filter-row.time { grid-template-columns: repeat(3, 1fr); }
+.lb-chip {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 9px 10px; border-radius: 11px;
+  font-size: 12px; font-weight: 700;
+  color: var(--text-sub); text-decoration: none;
+  transition: background .2s, color .2s, transform .15s, box-shadow .2s;
+  white-space: nowrap;
+}
+.lb-chip:hover { color: var(--navy); }
+.lb-chip i { font-size: 10px; opacity: .7; }
+.lb-chip.on {
+  background: linear-gradient(135deg, var(--navy), var(--navy-mid));
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(12,31,69,.25);
+}
+.dark-mode .lb-chip { color: var(--text-sub); }
+.dark-mode .lb-chip.on {
+  background: linear-gradient(135deg, var(--cyan), #1B3F7A);
+  box-shadow: 0 4px 14px rgba(6,182,212,.35);
+}
+
+/* ══ Podium ══════════════════════════════════════════════════════ */
+.lb-podium {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1fr;
+  gap: 10px;
+  margin: 0 16px 18px;
+  align-items: end;
+}
+.lb-pod {
+  position: relative;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 22px;
+  padding: 14px 8px 16px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(12,31,69,.08);
+  animation: lb-pop .55s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes lb-pop {
+  0%   { opacity: 0; transform: translateY(20px) scale(.92); }
+  100% { opacity: 1; transform: translateY(0)    scale(1);   }
+}
+.lb-pod.silver { animation-delay: .05s; }
+.lb-pod.gold   { animation-delay: .15s; padding-top: 26px; padding-bottom: 22px; }
+.lb-pod.bronze { animation-delay: .10s; }
+
+.lb-pod.gold {
+  background: linear-gradient(180deg, var(--gold-bg) 0%, var(--surface) 70%);
+  border-color: rgba(245,158,11,.5);
+  box-shadow: 0 12px 36px rgba(245,158,11,.22), 0 0 0 1px rgba(245,158,11,.2);
+}
+.lb-pod.silver {
+  background: linear-gradient(180deg, var(--silver-bg) 0%, var(--surface) 70%);
+  border-color: rgba(148,163,184,.4);
+}
+.lb-pod.bronze {
+  background: linear-gradient(180deg, var(--bronze-bg) 0%, var(--surface) 70%);
+  border-color: rgba(180,83,9,.35);
+}
+
+/* Floating animation on gold */
+.lb-pod.gold { animation: lb-pop .55s cubic-bezier(.34,1.56,.64,1) both, lb-float 3.4s ease-in-out 1s infinite; }
+@keyframes lb-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+/* Crown / medal badge */
+.lb-medal {
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  border: 2.5px solid var(--surface);
+}
+.lb-medal.m1 { background: linear-gradient(135deg, #F59E0B, #D97706); box-shadow: 0 4px 14px rgba(245,158,11,.55); }
+.lb-medal.m2 { background: linear-gradient(135deg, #94A3B8, #64748B); }
+.lb-medal.m3 { background: linear-gradient(135deg, #B45309, #92400E); }
+
+.lb-crown {
+  position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+  font-size: 26px; filter: drop-shadow(0 4px 10px rgba(245,158,11,.6));
+  animation: lb-crown-bob 2.6s ease-in-out infinite;
+}
+@keyframes lb-crown-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0)    rotate(-6deg); }
+  50%      { transform: translateX(-50%) translateY(-3px) rotate(6deg); }
+}
+
+/* Podium avatar */
+.lb-pod-av-wrap {
+  position: relative;
+  width: 64px; height: 64px;
+  margin: 0 auto 10px;
+}
+.lb-pod.gold .lb-pod-av-wrap { width: 76px; height: 76px; }
+.lb-pod-av-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: linear-gradient(135deg, var(--cyan), var(--navy));
+}
+.lb-pod.gold   .lb-pod-av-ring { background: linear-gradient(135deg, #FBBF24, #D97706, #92400E); box-shadow: 0 0 24px rgba(245,158,11,.5); }
+.lb-pod.silver .lb-pod-av-ring { background: linear-gradient(135deg, #E2E8F0, #94A3B8, #475569); }
+.lb-pod.bronze .lb-pod-av-ring { background: linear-gradient(135deg, #FCD34D, #B45309, #78350F); }
+
+.lb-pod-av {
+  position: absolute; inset: 3px;
+  border-radius: 50%;
+  background: var(--navy-mid);
+  color: #fff;
+  font-size: 22px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.lb-pod.gold .lb-pod-av { font-size: 26px; }
+
+.lb-pod-name {
+  font-size: 12.5px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding: 0 4px;
+}
+.lb-pod.gold .lb-pod-name { font-size: 14px; }
+.lb-pod-meta {
+  font-size: 10px; font-weight: 600; color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding: 0 4px;
+}
+.lb-pod-score {
+  margin-top: 8px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 800; letter-spacing: -.2px;
+  background: rgba(12,31,69,.08);
+  color: var(--navy);
+}
+.dark-mode .lb-pod-score { background: rgba(255,255,255,.06); color: #E2E8F0; }
+.lb-pod.gold   .lb-pod-score { background: rgba(245,158,11,.18); color: #92400E; }
+.lb-pod.silver .lb-pod-score { background: rgba(148,163,184,.18); color: #334155; }
+.lb-pod.bronze .lb-pod-score { background: rgba(180,83,9,.18);   color: #78350F; }
+.dark-mode .lb-pod.gold   .lb-pod-score { color: #FCD34D; }
+.dark-mode .lb-pod.silver .lb-pod-score { color: #CBD5E1; }
+.dark-mode .lb-pod.bronze .lb-pod-score { color: #FCD34D; }
+
+/* ══ "Your rank" callout ═════════════════════════════════════════ */
+.lb-myrank {
+  margin: 0 16px 14px;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+  border-radius: 20px;
+  padding: 16px 18px;
+  color: #fff;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 10px 28px rgba(12,31,69,.25);
+  position: relative; overflow: hidden;
+}
+.lb-myrank::before {
+  content: ''; position: absolute; right: -40px; top: -40px;
+  width: 160px; height: 160px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(6,182,212,.25), transparent 70%);
+  pointer-events: none;
+}
+.lb-myrank-rank {
+  font-size: 38px; font-weight: 900; line-height: 1; letter-spacing: -1.5px;
+  position: relative; z-index: 1;
+}
+.lb-myrank-rank::before { content: '#'; font-size: 22px; opacity: .5; margin-right: 2px; }
+.lb-myrank-body { flex: 1; min-width: 0; position: relative; z-index: 1; }
+.lb-myrank-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .08em; opacity: .65; text-transform: uppercase; }
+.lb-myrank-msg  { font-size: 14px; font-weight: 600; margin-top: 2px; }
+.lb-myrank-score { font-size: 22px; font-weight: 800; color: #67E8F9; }
+.lb-myrank-score-lbl { font-size: 10px; opacity: .55; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
+
+/* ══ Ranked list ═════════════════════════════════════════════════ */
+.lb-list {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 22px;
+  margin: 0 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(12,31,69,.06);
+}
+.lb-list-hd {
+  padding: 14px 18px;
+  border-bottom: 1.5px dashed var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.lb-list-title {
+  font-size: 13px; font-weight: 700; color: var(--text); margin: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.lb-list-title i { color: var(--cyan); font-size: 12px; }
+.lb-list-count {
+  font-size: 10px; font-weight: 700; color: var(--text-muted);
+  letter-spacing: .07em; text-transform: uppercase;
+}
+
+.lb-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+  position: relative;
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover { background: rgba(6,182,212,.04); }
+.dark-mode .lb-row:hover { background: rgba(6,182,212,.06); }
+.lb-row.me {
+  background: linear-gradient(90deg, rgba(6,182,212,.10), rgba(6,182,212,.02));
+}
+.lb-row.me::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--cyan);
+}
+
+.lb-rank {
+  width: 28px; flex-shrink: 0; text-align: center;
+  font-size: 14px; font-weight: 800; color: var(--text-muted);
+  letter-spacing: -.5px;
+}
+.lb-row.me .lb-rank { color: var(--cyan); }
+
+.lb-av-wrap { position: relative; width: 38px; height: 38px; flex-shrink: 0; }
+.lb-av-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: linear-gradient(135deg, var(--cyan), var(--navy));
+  opacity: .85;
+}
+.lb-av {
+  position: absolute; inset: 2px;
+  border-radius: 50%;
+  background: var(--navy-mid);
+  color: #fff; font-size: 13px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+
+.lb-info { flex: 1; min-width: 0; }
+.lb-name {
+  font-size: 13.5px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lb-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 7px; margin-top: 3px;
+  border-radius: 999px;
+  background: rgba(6,182,212,.10);
+  border: 1px solid rgba(6,182,212,.18);
+  font-size: 10px; font-weight: 700; color: #0891B2;
+  letter-spacing: .02em;
+}
+.dark-mode .lb-badge { background: rgba(6,182,212,.16); color: #67E8F9; border-color: rgba(6,182,212,.3); }
+.lb-badge .ico { font-size: 11px; }
+
+.lb-score {
+  flex-shrink: 0;
+  font-size: 14px; font-weight: 800; color: var(--text);
+  letter-spacing: -.3px;
+  font-variant-numeric: tabular-nums;
+}
+.lb-row.me .lb-score { color: var(--cyan); }
+
+/* ══ Empty state ════════════════════════════════════════════════ */
+.lb-empty {
+  margin: 0 16px 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 22px;
+  padding: 50px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.lb-empty i { font-size: 38px; opacity: .25; display: block; margin-bottom: 12px; }
+.lb-empty-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.lb-empty p { font-size: 12.5px; margin: 0; }
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+<div class="lb">
+
+  <!-- ── Hero ──────────────────────────────────────────────────── -->
+  <div class="lb-hero">
+    <div class="lb-hero-inner">
+      <span class="lb-eyebrow"><i class="fas fa-bolt"></i> Iceberg League</span>
+      <h1 class="lb-title">Leaderboard <span class="star">✨</span></h1>
+      <p class="lb-sub">{{ total_count }} student{{ total_count|pluralize }} competing — climb the ranks by being consistent.</p>
+    </div>
+  </div>
+
+  <!-- ── Filters ───────────────────────────────────────────────── -->
+  <div class="lb-filters">
+    <div class="lb-filter-row scope">
+      <a href="?scope=group&time={{ time_filter }}"  class="lb-chip {% if scope == 'group' %}on{% endif %}">
+        <i class="fas fa-layer-group"></i> My Group
+      </a>
+      <a href="?scope=branch&time={{ time_filter }}" class="lb-chip {% if scope == 'branch' %}on{% endif %}">
+        <i class="fas fa-building"></i> My Branch
+      </a>
+      <a href="?scope=all&time={{ time_filter }}"    class="lb-chip {% if scope == 'all' %}on{% endif %}">
+        <i class="fas fa-globe"></i> All
+      </a>
+    </div>
+    <div class="lb-filter-row time">
+      <a href="?scope={{ scope }}&time=week"  class="lb-chip {% if time_filter == 'week' %}on{% endif %}">
+        Weekly
+      </a>
+      <a href="?scope={{ scope }}&time=month" class="lb-chip {% if time_filter == 'month' %}on{% endif %}">
+        Monthly
+      </a>
+      <a href="?scope={{ scope }}&time=all"   class="lb-chip {% if time_filter == 'all' %}on{% endif %}">
+        All Time
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Podium (Top 3) ────────────────────────────────────────── -->
+  {% if top3 %}
+  <div class="lb-podium">
+
+    {% if top3|length >= 2 %}
+    {% with r=top3.1 %}
+    <div class="lb-pod silver">
+      <div class="lb-medal m2">2</div>
+      <div class="lb-pod-av-wrap">
+        <div class="lb-pod-av-ring"></div>
+        <div class="lb-pod-av" data-av="{{ r.avatar }}">{{ r.first|first|upper }}</div>
+      </div>
+      <div class="lb-pod-name">{{ r.first|default:r.name }}</div>
+      <div class="lb-pod-meta">{{ r.level }}</div>
+      <div class="lb-pod-score">{{ r.score }}%</div>
+    </div>
+    {% endwith %}
+    {% endif %}
+
+    {% with r=top3.0 %}
+    <div class="lb-pod gold">
+      <div class="lb-crown">👑</div>
+      <div class="lb-pod-av-wrap">
+        <div class="lb-pod-av-ring"></div>
+        <div class="lb-pod-av" data-av="{{ r.avatar }}">{{ r.first|first|upper }}</div>
+      </div>
+      <div class="lb-pod-name">{{ r.first|default:r.name }}</div>
+      <div class="lb-pod-meta">{{ r.level }}</div>
+      <div class="lb-pod-score">{{ r.score }}%</div>
+    </div>
+    {% endwith %}
+
+    {% if top3|length >= 3 %}
+    {% with r=top3.2 %}
+    <div class="lb-pod bronze">
+      <div class="lb-medal m3">3</div>
+      <div class="lb-pod-av-wrap">
+        <div class="lb-pod-av-ring"></div>
+        <div class="lb-pod-av" data-av="{{ r.avatar }}">{{ r.first|first|upper }}</div>
+      </div>
+      <div class="lb-pod-name">{{ r.first|default:r.name }}</div>
+      <div class="lb-pod-meta">{{ r.level }}</div>
+      <div class="lb-pod-score">{{ r.score }}%</div>
+    </div>
+    {% endwith %}
+    {% endif %}
+
+  </div>
+  {% else %}
+  <div class="lb-empty">
+    <i class="fas fa-trophy"></i>
+    <div class="lb-empty-title">No rankings yet</div>
+    <p>Once attendance, homework, or quiz data exists, the leaderboard fills up here.</p>
+  </div>
+  {% endif %}
+
+  <!-- ── Your rank callout ─────────────────────────────────────── -->
+  {% if my_entry and my_rank > 3 %}
+  <div class="lb-myrank">
+    <div class="lb-myrank-rank">{{ my_rank }}</div>
+    <div class="lb-myrank-body">
+      <div class="lb-myrank-eyebrow">Your rank</div>
+      <div class="lb-myrank-msg">{{ my_msg }}</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="lb-myrank-score">{{ my_entry.score }}%</div>
+      <div class="lb-myrank-score-lbl">Score</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Ranked list ───────────────────────────────────────────── -->
+  {% if list_rows %}
+  <div class="lb-list">
+    <div class="lb-list-hd">
+      <h3 class="lb-list-title"><i class="fas fa-list-ol"></i> Full Ranking</h3>
+      <span class="lb-list-count">{{ list_rows|length }} more</span>
+    </div>
+    {% for r in list_rows %}
+    <div class="lb-row {% if r.is_me %}me{% endif %}">
+      <span class="lb-rank">{{ r.rank }}</span>
+      <div class="lb-av-wrap">
+        <div class="lb-av-ring"></div>
+        <div class="lb-av" data-av="{{ r.avatar }}">{{ r.first|first|upper }}</div>
+      </div>
+      <div class="lb-info">
+        <div class="lb-name">{{ r.name }}{% if r.is_me %} · You{% endif %}</div>
+        {% if r.badge %}
+          <span class="lb-badge"><span class="ico">{{ r.badge.icon }}</span> {{ r.badge.label }}</span>
+        {% elif r.level and r.level != '—' %}
+          <span class="lb-badge" style="background:rgba(100,116,139,.08);color:#475569;border-color:rgba(100,116,139,.18);">
+            <span class="ico">📚</span> {{ r.level }}
+          </span>
+        {% endif %}
+      </div>
+      <span class="lb-score">{{ r.score }}%</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+(function () {
+  /* Same avatar mapping as the dashboard */
+  var AVATARS = ["🧑‍🎓","👨‍🎓","👩‍🎓","🧑‍💻","👨‍💻","👩‍💻","🧑‍🏫","👨‍🏫","👩‍🏫","🤓",
+                 "😊","😎","💡","📚","🏆","⭐","💪","🎯","🌟","🦉","🌍","✏️","🎨","🔬"];
+  var BG = ["#1B3F7A","#0C1F45","#7C3AED","#0891B2","#1F2937","#6D28D9",
+            "#BE185D","#B45309","#C2410C","#15803D","#0284C7","#4338CA",
+            "#A16207","#7C2D12","#B45309","#EA580C","#B91C1C","#991B1B",
+            "#4F46E5","#65A30D","#0D9488","#6B7280","#DB2777","#0891B2"];
+  document.querySelectorAll('[data-av]').forEach(function (el) {
+    var av = el.getAttribute('data-av');
+    if (!av) return;
+    var idx = parseInt(av, 10) - 1;
+    if (idx >= 0 && idx < AVATARS.length) {
+      el.textContent = AVATARS[idx];
+      el.style.background = BG[idx];
+    }
+  });
+
+  /* Subtle confetti burst for #1 on first paint */
+  function confetti() {
+    var crown = document.querySelector('.lb-pod.gold');
+    if (!crown) return;
+    var colors = ['#F59E0B', '#06B6D4', '#10B981', '#8B5CF6', '#EF4444'];
+    for (var i = 0; i < 14; i++) {
+      var dot = document.createElement('span');
+      dot.style.cssText =
+        'position:absolute;top:18px;left:50%;width:6px;height:6px;border-radius:50%;' +
+        'background:' + colors[i % colors.length] + ';' +
+        'pointer-events:none;z-index:5;opacity:0;' +
+        'transform:translate(-50%, 0)';
+      crown.appendChild(dot);
+      var dx = (Math.random() - 0.5) * 140;
+      var dy = -40 - Math.random() * 60;
+      dot.animate(
+        [
+          { transform: 'translate(-50%, 0) scale(0.5)',  opacity: 0 },
+          { transform: 'translate(calc(-50% + ' + dx + 'px), ' + dy + 'px) scale(1.1)', opacity: 1, offset: .4 },
+          { transform: 'translate(calc(-50% + ' + (dx * 1.4) + 'px), ' + (dy + 80) + 'px) scale(0.6)', opacity: 0 },
+        ],
+        { duration: 1400 + Math.random() * 500, easing: 'cubic-bezier(.16,.7,.4,1)', delay: 400 + Math.random() * 250, fill: 'forwards' }
+      );
+      setTimeout(function (d) { return function () { d.remove(); }; }(dot), 2200);
+    }
+  }
+  confetti();
+})();
+</script>
+{% endblock custom_js %}

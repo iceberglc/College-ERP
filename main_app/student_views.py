@@ -591,6 +591,280 @@ def student_result_files(request):
     })
 
 
+# ── Leaderboard ───────────────────────────────────────────────────────────────
+
+# Default weights for the composite ranking score
+LEADERBOARD_WEIGHTS = {
+    'attendance': 0.25,
+    'homework':   0.25,
+    'quizzes':    0.25,
+    'results':    0.25,
+}
+
+
+def _peer_student_ids(student, scope):
+    """Return the queryset of student IDs in the chosen scope."""
+    if scope == 'group':
+        my_groups = Enrollment.objects.filter(
+            student=student, is_active=True
+        ).values_list('group_id', flat=True)
+        return Enrollment.objects.filter(
+            group_id__in=my_groups, is_active=True
+        ).values_list('student_id', flat=True).distinct()
+    if scope == 'branch':
+        my_groups = Enrollment.objects.filter(
+            student=student, is_active=True
+        ).values_list('group_id', flat=True)
+        branch_ids = Group.objects.filter(
+            id__in=my_groups
+        ).values_list('branch_id', flat=True).distinct()
+        if not branch_ids:
+            return Student.objects.filter(id=student.id).values_list('id', flat=True)
+        branch_groups = Group.objects.filter(branch_id__in=branch_ids).values_list('id', flat=True)
+        return Enrollment.objects.filter(
+            group_id__in=branch_groups, is_active=True
+        ).values_list('student_id', flat=True).distinct()
+    # 'all'
+    return Student.objects.filter(status=Student.STATUS_ACTIVE).values_list('id', flat=True)
+
+
+def _time_start(time_filter):
+    """Return the start datetime (tz-aware) for the given filter, or None for all-time."""
+    from datetime import timedelta
+    from django.utils import timezone as tz
+    now = tz.now()
+    if time_filter == 'week':
+        return now - timedelta(days=7)
+    if time_filter == 'month':
+        return now - timedelta(days=30)
+    return None
+
+
+def _compute_streak(student):
+    """Consecutive days with any tracked activity ending today."""
+    from datetime import timedelta
+    today = datetime.now().date()
+    activity_dates = set()
+    for ar in AttendanceReport.objects.filter(
+        student=student,
+        status__in=[AttendanceReport.PRESENT, AttendanceReport.LATE],
+        attendance__date__gte=today - timedelta(days=60),
+    ).values_list('attendance__date', flat=True):
+        activity_dates.add(ar)
+    for d in VocabularyDayCompletion.objects.filter(
+        student=student,
+        completed_at__date__gte=today - timedelta(days=60),
+    ).values_list('completed_at__date', flat=True):
+        activity_dates.add(d)
+    for d in Submission.objects.filter(
+        student=student,
+        submitted_at__date__gte=today - timedelta(days=60),
+    ).values_list('submitted_at__date', flat=True):
+        activity_dates.add(d)
+    streak = 0
+    cursor = today
+    while cursor in activity_dates:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return streak
+
+
+def _rank_score(student_id, time_start, weights, enrolled_by_student):
+    """
+    Return a dict of metric percentages + composite score for one student.
+    Missing metrics get None and are excluded from the weighted average
+    (so a student isn't penalised for metrics that don't exist for them).
+    """
+    from django.db.models import Avg, Count, Q, F
+
+    # ── Attendance % ─────────────────────────────────────────
+    att_qs = AttendanceReport.objects.filter(student_id=student_id)
+    if time_start:
+        att_qs = att_qs.filter(attendance__date__gte=time_start.date())
+    att_agg = att_qs.aggregate(
+        total=Count('id'),
+        good=Count('id', filter=Q(status__in=[AttendanceReport.PRESENT, AttendanceReport.LATE])),
+    )
+    attendance = (
+        round(att_agg['good'] / att_agg['total'] * 100)
+        if att_agg['total'] else None
+    )
+
+    # ── Homework % ───────────────────────────────────────────
+    group_ids = enrolled_by_student.get(student_id, [])
+    asg_qs = Assignment.objects.filter(group_id__in=group_ids)
+    if time_start:
+        asg_qs = asg_qs.filter(due_date__gte=time_start.date())
+    due_count = asg_qs.count()
+    if due_count:
+        sub_count = Submission.objects.filter(
+            student_id=student_id,
+            assignment__in=asg_qs,
+        ).count()
+        homework = round(sub_count / due_count * 100)
+    else:
+        homework = None
+
+    # ── Quizzes avg ──────────────────────────────────────────
+    qz_qs = VocabularyQuizResult.objects.filter(student_id=student_id)
+    if time_start:
+        qz_qs = qz_qs.filter(taken_at__gte=time_start)
+    qz_avg = qz_qs.aggregate(a=Avg('score'))['a']
+    quizzes = round(qz_avg) if qz_avg is not None else None
+
+    # ── Results avg (test + exam) ────────────────────────────
+    rs_qs = StudentResult.objects.filter(student_id=student_id)
+    if time_start:
+        rs_qs = rs_qs.filter(created_at__gte=time_start)
+    rs_avg = rs_qs.aggregate(a=Avg(F('test') + F('exam')))['a']
+    results = round(rs_avg) if rs_avg is not None else None
+
+    # ── Composite score: weighted mean of available metrics ──
+    metrics = {
+        'attendance': attendance,
+        'homework':   homework,
+        'quizzes':    quizzes,
+        'results':    results,
+    }
+    weighted_sum = 0.0
+    weight_total = 0.0
+    for key, val in metrics.items():
+        if val is not None:
+            w = weights.get(key, 0)
+            weighted_sum += val * w
+            weight_total += w
+    score = round(weighted_sum / weight_total, 1) if weight_total else 0.0
+
+    return {
+        'attendance': attendance,
+        'homework':   homework,
+        'quizzes':    quizzes,
+        'results':    results,
+        'score':      score,
+    }
+
+
+def _assign_badges(rankings):
+    """
+    Assign category-best badges to the rankings list in-place.
+    Mutates each entry to add a `badge` dict if it leads a category.
+    """
+    if not rankings:
+        return
+    # Find the leader in each metric (only among entries with that metric)
+    def best_in(key):
+        valid = [r for r in rankings if r['metrics'].get(key) is not None]
+        if not valid:
+            return None
+        winner = max(valid, key=lambda r: r['metrics'][key])
+        return winner if winner['metrics'][key] > 0 else None
+
+    leaders = {
+        'attendance': best_in('attendance'),
+        'homework':   best_in('homework'),
+        'quizzes':    best_in('quizzes'),
+        'results':    best_in('results'),
+    }
+    badges = {
+        'attendance': {'label': 'Attendance King', 'icon': '🎯'},
+        'homework':   {'label': 'Homework Hero',   'icon': '📝'},
+        'quizzes':    {'label': 'Quiz Master',     'icon': '🧠'},
+        'results':    {'label': 'Top Scorer',      'icon': '🏆'},
+    }
+    for key, winner in leaders.items():
+        if winner is not None:
+            # Don't overwrite an existing badge — first one wins, prefer attendance > results
+            winner.setdefault('badge', badges[key])
+    # Rank #1 overall always gets the crown
+    if rankings:
+        rankings[0]['badge'] = {'label': 'Top Overall', 'icon': '👑'}
+
+
+@student_only
+def student_leaderboard(request):
+    student = get_object_or_404(Student, admin=request.user)
+    scope = request.GET.get('scope', 'group')
+    time_filter = request.GET.get('time', 'month')
+    if scope not in ('group', 'branch', 'all'):
+        scope = 'group'
+    if time_filter not in ('week', 'month', 'all'):
+        time_filter = 'month'
+
+    peer_ids = list(_peer_student_ids(student, scope))
+    if student.id not in peer_ids:
+        peer_ids.append(student.id)
+
+    # Pre-fetch enrolled groups per student so homework calc is fast
+    enrolled_by_student = {}
+    for e in Enrollment.objects.filter(student_id__in=peer_ids, is_active=True).values('student_id', 'group_id'):
+        enrolled_by_student.setdefault(e['student_id'], []).append(e['group_id'])
+
+    # Pre-fetch student → user info in one query
+    peers = (
+        Student.objects.filter(id__in=peer_ids)
+        .select_related('admin', 'course')
+    )
+
+    time_start = _time_start(time_filter)
+    rankings = []
+    for s in peers:
+        m = _rank_score(s.id, time_start, LEADERBOARD_WEIGHTS, enrolled_by_student)
+        rankings.append({
+            'student_id': s.id,
+            'name':       (s.admin.get_full_name() or s.admin.username).strip() or s.admin.username,
+            'first':      (s.admin.first_name or '').strip(),
+            'avatar':     s.admin.avatar or '',
+            'level':      s.level_display,
+            'course':     s.course.name if s.course else '',
+            'is_me':      s.id == student.id,
+            'metrics':    m,
+            'score':      m['score'],
+            'streak':     _compute_streak(s) if s.id == student.id else 0,
+        })
+
+    rankings.sort(key=lambda r: r['score'], reverse=True)
+    for idx, r in enumerate(rankings):
+        r['rank'] = idx + 1
+
+    _assign_badges(rankings)
+
+    # Find current user's rank
+    my_entry = next((r for r in rankings if r['is_me']), None)
+    my_rank = my_entry['rank'] if my_entry else None
+
+    # Top 3 podium
+    top3 = rankings[:3]
+
+    # The list shown below the podium — skip top 3 if present in scope
+    list_rows = rankings[3:] if len(rankings) > 3 else []
+
+    # Motivational message
+    if my_rank is None:
+        my_msg = ''
+    elif my_rank == 1:
+        my_msg = "You're leading the pack — keep it up!"
+    elif my_rank <= 3:
+        my_msg = "On the podium! One more push to the top."
+    elif my_rank <= 10:
+        my_msg = "Top 10! Stay consistent to climb higher."
+    else:
+        gap = rankings[9]['score'] - my_entry['score'] if my_entry and len(rankings) >= 10 else 0
+        my_msg = f"Just {gap:.1f}% away from the top 10."
+
+    context = {
+        'scope':       scope,
+        'time_filter': time_filter,
+        'top3':        top3,
+        'list_rows':   list_rows,
+        'my_entry':    my_entry,
+        'my_rank':     my_rank,
+        'total_count': len(rankings),
+        'my_msg':      my_msg,
+        'page_title':  'Leaderboard',
+    }
+    return render(request, 'student_template/leaderboard.html', context)
+
+
 #library
 
 @student_only
