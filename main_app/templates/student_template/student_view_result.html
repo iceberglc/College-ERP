@@ -1,11 +1,14 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
 {% block title %}Results — Iceberg Study Center{% endblock %}
-{% block page_title %}Results{% endblock %}
+{% block page_title %}{% endblock %}
 {% block breadcrumb %}<li class="breadcrumb-item active">Results</li>{% endblock %}
 
 {% block custom_css %}
 <style>
+/* Hide the standard page-header — hero replaces it */
+.page-header { display: none !important; }
+
 /* ── Page tokens ─────────────────────────────────────────────────────────── */
 .rp {
   --bg:      #EEF2FB;
@@ -26,7 +29,7 @@
   background: var(--bg);
   color: var(--txt);
   font-family: 'Inter', sans-serif;
-  margin: -24px;
+  margin: -20px;
   padding: 0 0 40px;
   min-height: 100%;
 }
