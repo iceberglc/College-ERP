@@ -221,6 +221,28 @@
     .btn-signin:hover  { opacity: .96; box-shadow: 0 10px 26px rgba(10,27,61,.36); }
     .btn-signin:active { transform: translateY(1px); }
 
+    /* Back to site link */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 18px;
+      padding: 9px 18px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--white);
+      color: var(--navy-mid);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .back-link:hover {
+      border-color: var(--navy-mid);
+      box-shadow: 0 2px 10px rgba(12,31,69,.10);
+    }
+    .back-link svg { opacity: .65; }
+
     /* Footer */
     .login-footer {
       text-align: center;
@@ -320,6 +342,15 @@
 
         <button type="submit" class="btn-signin">Sign In</button>
       </form>
+
+      <div style="text-align:center;">
+        <a href="https://iceberglc.com" class="back-link" target="_blank" rel="noopener">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 010 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+          </svg>
+          Back to site
+        </a>
+      </div>
     </div>
   </div>
 
