@@ -28,87 +28,14 @@
       overflow: hidden;
     }
 
-    /* ─── Phase 1: Splash ────────────────────────────────── */
-    #splash {
-      position: fixed; inset: 0; z-index: 10;
-      background: linear-gradient(160deg, var(--navy) 0%, #0A3070 55%, var(--navy-lt) 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      animation: splashOut 0.5s ease-in 2s forwards;
-    }
-    @keyframes splashOut {
-      to { opacity: 0; visibility: hidden; }
-    }
-
-    .splash-logo {
-      width: 72px;
-      height: 72px;
-      border-radius: 18px;
-      background: rgba(255,255,255,.10);
-      border: 1px solid rgba(255,255,255,.18);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: fadeUp .5s ease both;
-    }
-    .splash-logo img { width: 46px; height: 46px; object-fit: contain; }
-
-    .splash-text {
-      text-align: center;
-      animation: fadeUp .5s ease .08s both;
-    }
-    .splash-name {
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: #fff;
-    }
-    .splash-sub {
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 1.5px;
-      color: rgba(255,255,255,.55);
-      margin-top: 4px;
-    }
-
-    /* Thin progress bar at the bottom */
-    .splash-bar-track {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      height: 3px;
-      background: rgba(255,255,255,.08);
-    }
-    .splash-bar-fill {
-      height: 100%;
-      background: var(--cyan);
-      transform-origin: left;
-      transform: scaleX(0);
-      animation: barFill 2s linear forwards;
-    }
-    @keyframes barFill { to { transform: scaleX(1); } }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ─── Phase 2: Welcome card ──────────────────────────── */
+    /* ─── Welcome card ───────────────────────────────────── */
     #welcome {
-      position: fixed; inset: 0; z-index: 5;
+      position: fixed; inset: 0;
       background: var(--bg);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 24px;
-      opacity: 0;
-      animation: fadeIn .6s ease 2.3s forwards;
-    }
-    @keyframes fadeIn {
-      to { opacity: 1; }
     }
 
     .card {
@@ -152,16 +79,9 @@
       font-size: 20px;
       font-weight: 700;
       color: var(--navy);
-      margin-bottom: 8px;
+      margin-bottom: 28px;
       letter-spacing: -.3px;
     }
-    .card-sub {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.6;
-      margin-bottom: 28px;
-    }
-
     .btn-yes {
       display: flex;
       align-items: center;
@@ -210,21 +130,7 @@
 </head>
 <body>
 
-  <!-- Phase 1: Splash -->
-  <div id="splash">
-    <div class="splash-logo">
-      <img src="{% static 'dist/img/logo.png' %}" alt="Iceberg logo">
-    </div>
-    <div class="splash-text">
-      <div class="splash-name">Iceberg</div>
-      <div class="splash-sub">Study Center</div>
-    </div>
-    <div class="splash-bar-track">
-      <div class="splash-bar-fill"></div>
-    </div>
-  </div>
-
-  <!-- Phase 2: Welcome -->
+  <!-- Welcome -->
   <div id="welcome">
     <div class="card">
       <div class="card-logo">
@@ -240,7 +146,6 @@
       <div class="card-divider"></div>
 
       <h1 class="card-title">Welcome</h1>
-      <p class="card-sub">Do you study at Iceberg Study Center?</p>
 
       <a href="{% url 'login_page' %}" class="btn-yes">
         <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
@@ -260,13 +165,6 @@
     </div>
   </div>
 
-  <script>
-    /* Enable pointer-events on the welcome card once it's fully visible */
-    document.getElementById('welcome').style.pointerEvents = 'none';
-    setTimeout(function () {
-      document.getElementById('welcome').style.pointerEvents = 'auto';
-    }, 3000);
-  </script>
 
 </body>
 </html>
