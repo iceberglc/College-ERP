@@ -17,6 +17,34 @@
     <link rel="stylesheet" href="{% static 'dist/css/iceberg.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'dist/js/trend-chart.js' %}"></script>
+    <style>
+/* ── Page Transitions ───────────────────────────────────────────────── */
+#ice-progress {
+  position: fixed; top: 0; left: 0; z-index: 9999;
+  height: 3px; width: 0%;
+  background: linear-gradient(90deg, #06B6D4, #0891B2);
+  box-shadow: 0 0 8px rgba(6,182,212,.5);
+  opacity: 0; pointer-events: none;
+  transition: width .2s ease, opacity .3s ease;
+}
+#ice-progress.ice-active { opacity: 1; }
+
+@keyframes icePageOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes icePageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ice-page-out { animation: icePageOut .18s cubic-bezier(.22,1,.36,1) both; }
+.ice-page-in  { animation: icePageIn  .38s cubic-bezier(.22,1,.36,1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ice-page-out, .ice-page-in { animation: none !important; opacity: 1 !important; transform: none !important; }
+  #ice-progress { transition: none; }
+}
+    </style>
     {% block custom_css %}{% endblock custom_css %}
     <script>
     /* Apply theme before paint to prevent flash */
@@ -42,6 +70,7 @@
 </head>
 
 <body id="stu-body">
+    <div id="ice-progress"></div>
     <!-- ── Top Navbar ──────────────────────────────────────────────────────── -->
     <nav class="erpnext-navbar">
         <div class="navbar-left">
@@ -346,6 +375,105 @@
     });
     </script>
 
+    <script>
+/* ── Page Transitions ───────────────────────────────────────────────── */
+(function () {
+  var bar     = document.getElementById('ice-progress');
+  var content = document.getElementById('main-content');
+  var barTimer = null;
+  var navTimer = null;
+
+  /* ── Progress bar ── */
+  function barStart() {
+    if (!bar) return;
+    clearInterval(barTimer);
+    bar.style.width = '0%';
+    bar.classList.add('ice-active');
+    var w = 0;
+    barTimer = setInterval(function () {
+      w += (88 - w) * 0.07;
+      bar.style.width = w + '%';
+    }, 30);
+  }
+  function barDone() {
+    if (!bar) return;
+    clearInterval(barTimer);
+    bar.style.width = '100%';
+    setTimeout(function () {
+      bar.classList.remove('ice-active');
+      setTimeout(function () { bar.style.width = '0%'; }, 300);
+    }, 200);
+  }
+
+  /* ── Determine if a link is safe to intercept ── */
+  function isSafe(a) {
+    if (!a || !a.href) return false;
+    try {
+      var url = new URL(a.href);
+      // External origin
+      if (url.origin !== window.location.origin) return false;
+      // Hash-only scroll on same page
+      if (url.pathname === window.location.pathname && url.hash) return false;
+    } catch (e) { return false; }
+    if (a.target === '_blank') return false;
+    var raw = a.getAttribute('href') || '';
+    if (/^(mailto:|tel:|javascript:)/i.test(raw)) return false;
+    if (a.hasAttribute('download') || a.hasAttribute('data-no-transition')) return false;
+    return true;
+  }
+
+  /* ── Intercept link clicks ── */
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest('a[href]');
+    if (!a) return;
+    // Never intercept links inside forms (POST actions, logout, etc.)
+    if (a.closest('form')) return;
+    if (!isSafe(a)) return;
+
+    e.preventDefault();
+    var dest = a.href;
+    barStart();
+    if (content) {
+      content.classList.remove('ice-page-in');
+      void content.offsetWidth; // force reflow to restart animation
+      content.classList.add('ice-page-out');
+    }
+    clearTimeout(navTimer);
+    navTimer = setTimeout(function () { window.location.href = dest; }, 180);
+  });
+
+  /* ── Page-in animation on load ── */
+  function pageIn() {
+    if (!content) return;
+    content.classList.remove('ice-page-out', 'ice-page-in');
+    void content.offsetWidth;
+    content.classList.add('ice-page-in');
+    barDone();
+    content.addEventListener('animationend', function () {
+      content.classList.remove('ice-page-in');
+    }, { once: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', pageIn);
+  } else {
+    pageIn();
+  }
+
+  /* ── Restore cleanly from bfcache (browser back/forward) ── */
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    clearTimeout(navTimer);
+    barDone();
+    if (content) {
+      content.classList.remove('ice-page-out', 'ice-page-in');
+      content.style.opacity = '1';
+      content.style.transform = 'none';
+    }
+  });
+})();
+    </script>
     {% block custom_js %}{% endblock custom_js %}
 </body>
 </html>
