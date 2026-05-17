@@ -458,7 +458,7 @@ body {
 .erpnext-main {
   margin-left: var(--sidebar-width);
   margin-top: var(--navbar-height);
-  padding: 20px;
+  padding: 14px 20px 24px;
   min-height: calc(100vh - var(--navbar-height));
   transition: margin-left 0.3s ease;
 }
@@ -1125,8 +1125,7 @@ body {
   }
 
   .erpnext-main {
-    padding: 12px 10px;
-    padding-bottom: 80px;
+    padding: 10px 12px 80px;
   }
 
   /* Prevent any wide child from horizontally overflowing the viewport */
@@ -1802,28 +1801,27 @@ body {
   .erpnext-navbar {
     padding: 0 1rem !important;
   }
-  
-  .erpnext-main {
-    padding-top: calc(var(--navbar-height) + 1rem) !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-  }
-  
-  /* Page header responsive */
+
+  /* NOTE: do NOT add padding-top here — base .erpnext-main already has
+     margin-top: var(--navbar-height), so any extra padding would double
+     the offset and leave a huge gap under the fixed navbar. */
+
+  /* Page header responsive — tight spacing, no heavy divider */
   .page-header {
-    margin-bottom: 1rem !important;
+    margin-bottom: 10px !important;
     padding: 0 !important;
+    border-bottom: 0 !important;
   }
-  
+
   .page-title {
-    font-size: 1.5rem !important;
-    margin-bottom: 0.5rem !important;
+    font-size: 1.25rem !important;
+    margin-bottom: 0 !important;
   }
-  
+
   /* Breadcrumb mobile */
   .breadcrumb {
-    font-size: 0.875rem !important;
-    padding: 0.5rem 0 !important;
+    font-size: 0.8rem !important;
+    padding: 4px 0 0 !important;
     margin-bottom: 0 !important;
     background: transparent !important;
   }

@@ -577,17 +577,18 @@ body {
 
 /* ── Page Header ─────────────────────────────────────── */
 .page-header {
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .page-title {
-  font-size: 22px !important;
+  font-size: 20px !important;
   font-weight: 700 !important;
   color: var(--text) !important;
   letter-spacing: -.4px !important;
   margin: 0 !important;
+  line-height: 1.25;
 }
 
 .page-subtitle {
@@ -599,7 +600,7 @@ body {
 /* ── Breadcrumb ──────────────────────────────────────── */
 .breadcrumb {
   background: none !important;
-  padding: 8px 0 0 !important;
+  padding: 4px 0 0 !important;
   margin: 0 !important;
   font-size: 12px !important;
 }
