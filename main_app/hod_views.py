@@ -19,6 +19,15 @@ from .models import *
 
 logger = logging.getLogger(__name__)
 
+_ENGLISH_KEYWORDS = frozenset([
+    'ielts', 'toefl', 'sat', 'english', 'speaking', 'grammar',
+    'reading', 'writing', 'listening', 'cambridge', 'pronunciation', 'conversation',
+])
+
+def _derive_is_english(name):
+    name_lower = name.lower()
+    return any(kw in name_lower for kw in _ENGLISH_KEYWORDS)
+
 
 def _generate_login_id(prefix):
     """Generate the next available login_id for the given prefix (TCH or STU)."""
@@ -153,7 +162,7 @@ def add_staff(request):
                 staff_obj.course = course
                 staff_obj.phone = form.cleaned_data.get('phone', '')
                 staff_obj.specialization = form.cleaned_data.get('specialization', '')
-                staff_obj.is_active = form.cleaned_data.get('is_active', True)
+                staff_obj.is_active = True
                 staff_obj.save()
                 messages.success(request, f"Teacher added successfully. Login ID: {login_id}")
                 return redirect(reverse('add_staff'))
@@ -230,8 +239,8 @@ def add_course(request):
             try:
                 course = Course()
                 course.name = form.cleaned_data.get('name')
-                course.is_english = form.cleaned_data.get('is_english', False)
-                course.is_active = form.cleaned_data.get('is_active', True)
+                course.is_english = _derive_is_english(course.name)
+                course.is_active = True
                 course.save()
                 messages.success(request, "Program added successfully.")
                 return redirect(reverse('add_course'))
@@ -329,7 +338,6 @@ def edit_staff(request, staff_id):
             gender = form.cleaned_data.get('gender')
             password = form.cleaned_data.get('password') or None
             course = form.cleaned_data.get('course')
-            is_active = form.cleaned_data.get('is_active', True)
             passport = request.FILES.get('profile_pic') or None
             try:
                 user = CustomUser.objects.get(id=staff.admin.id)
@@ -344,7 +352,7 @@ def edit_staff(request, staff_id):
                 staff.course = course
                 staff.phone = form.cleaned_data.get('phone', '')
                 staff.specialization = form.cleaned_data.get('specialization', '')
-                staff.is_active = is_active
+                staff.is_active = True
                 user.save()
                 staff.save()
                 messages.success(request, "Successfully Updated")
@@ -415,8 +423,7 @@ def edit_course(request, course_id):
             try:
                 course = Course.objects.get(id=course_id)
                 course.name = form.cleaned_data.get('name')
-                course.is_english = form.cleaned_data.get('is_english', False)
-                course.is_active = form.cleaned_data.get('is_active', course.is_active)
+                course.is_english = _derive_is_english(course.name)
                 course.save()
                 messages.success(request, "Program updated successfully.")
             except Exception:
@@ -857,7 +864,7 @@ def get_teachers_for_course(request):
     course_id = request.GET.get('course_id') or request.POST.get('course_id')
     try:
         teachers = Staff.objects.filter(
-            course_id=course_id, is_active=True
+            course_id=course_id
         ).select_related('admin').order_by('admin__last_name')
         data = [{'id': t.id, 'name': f"{t.admin.first_name} {t.admin.last_name}"} for t in teachers]
         return JsonResponse(data, safe=False)

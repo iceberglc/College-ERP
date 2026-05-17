@@ -137,22 +137,64 @@ class AdminForm(CustomUserForm):
         fields = ['first_name', 'last_name', 'email', 'gender', 'password', 'profile_pic', 'address']
 
 
+PREDEFINED_SUBJECTS = [
+    'General English',
+    'Pre-IELTS',
+    'IELTS Academic',
+    'IELTS General Training',
+    'IELTS 7+ Band',
+    'TOEFL iBT Preparation',
+    'SAT English',
+    'Business English',
+    'Academic English',
+    'Speaking & Communication',
+    'Grammar & Vocabulary',
+    'Reading & Writing',
+    'Listening & Note-taking',
+    'Conversation Club',
+    'English for Kids',
+    'English for Beginners',
+    'Cambridge B2 (FCE)',
+    'Cambridge C1 (CAE)',
+    'Pronunciation Training',
+    'IELTS Speaking',
+    'IELTS Writing',
+    'IELTS Reading',
+    'IELTS Listening',
+    'Mathematics',
+    'Physics',
+    'Chemistry',
+    'Computer Science',
+]
+
+
 class StaffForm(CustomUserForm):
     def __init__(self, *args, **kwargs):
         super(StaffForm, self).__init__(*args, **kwargs)
 
     class Meta(CustomUserForm.Meta):
         model = Staff
-        fields = CustomUserForm.Meta.fields + ['course', 'phone', 'specialization', 'is_active']
+        fields = CustomUserForm.Meta.fields + ['course', 'phone', 'specialization']
 
 
-class CourseForm(FormSettings):
-    def __init__(self, *args, **kwargs):
-        super(CourseForm, self).__init__(*args, **kwargs)
+class CourseForm(forms.Form):
+    name = forms.ChoiceField(
+        choices=[('', '— Select a subject —')] + [(s, s) for s in PREDEFINED_SUBJECTS],
+        label='Subject / Program',
+        widget=forms.Select(attrs={'class': 'form-control'}),
+    )
 
-    class Meta:
-        fields = ['name', 'is_english', 'is_active']
-        model = Course
+    def __init__(self, *args, instance=None, **kwargs):
+        initial = kwargs.get('initial', {})
+        if instance and instance.name and not initial.get('name'):
+            initial['name'] = instance.name
+        kwargs['initial'] = initial
+        super().__init__(*args, **kwargs)
+        # If editing a course whose name isn't in the predefined list, add it
+        if instance and instance.name:
+            existing = [c[0] for c in self.fields['name'].choices]
+            if instance.name not in existing:
+                self.fields['name'].choices.append((instance.name, instance.name))
 
 
 class SubjectForm(FormSettings):
@@ -237,7 +279,7 @@ class StaffEditForm(CustomUserForm):
 
     class Meta(CustomUserForm.Meta):
         model = Staff
-        fields = CustomUserForm.Meta.fields + ['course', 'phone', 'specialization', 'is_active']
+        fields = CustomUserForm.Meta.fields + ['course', 'phone', 'specialization']
 
 
 class StudentProfileForm(forms.Form):

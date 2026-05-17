@@ -78,7 +78,6 @@
           <th>Teacher</th>
           <th>Login ID</th>
           <th>Program</th>
-          <th>Status</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -98,13 +97,6 @@
           <td><code style="font-size:12px; background:#EEF4FB; padding:2px 7px; border-radius:5px;">{{ staff.login_id|default:"—" }}</code></td>
           <td style="color:var(--ice-muted); font-size:12px;">{{ staff.staff.course.name|default:"—" }}</td>
           <td>
-            {% if staff.staff.is_active %}
-              <span class="status-badge status-active"><i class="fas fa-circle me-1" style="font-size:7px;"></i>Active</span>
-            {% else %}
-              <span class="status-badge status-inactive"><i class="fas fa-circle me-1" style="font-size:7px;"></i>Inactive</span>
-            {% endif %}
-          </td>
-          <td>
             <div class="action-btns">
               <a href="{% url 'edit_staff' staff.staff.id %}" class="btn-edit"><i class="fas fa-edit me-1"></i>Edit</a>
               <a href="{% url 'delete_staff' staff.staff.id %}" class="btn-delete"
@@ -115,7 +107,7 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" style="text-align:center; padding:48px; color:var(--ice-muted);">No teachers registered yet.</td></tr>
+        <tr><td colspan="5" style="text-align:center; padding:48px; color:var(--ice-muted);">No teachers registered yet.</td></tr>
         {% endfor %}
       </tbody>
     </table>
