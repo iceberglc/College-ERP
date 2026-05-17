@@ -7,6 +7,10 @@
 
 {% block custom_css %}
 <style>
+/* ══ LAYOUT TAKEOVER — full-bleed page ═══════════════════════════ */
+.erpnext-main  { padding: 0 !important; }
+.content-area  { overflow: visible !important; }
+
 /* ── Page shell ─────────────────────────────────────────────── */
 .stu-page {
   --c-bg: #F4F7FB;
@@ -25,14 +29,17 @@
   --c-warning: #F59E0B;
   --c-danger:  #EF4444;
   background: var(--c-bg);
-  margin: -24px;
-  padding: 18px 16px 32px;
-  min-height: 100%;
+  padding: 18px 16px 48px;
+  min-height: 100svh;
   color: var(--c-text);
   font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
 }
 @media (min-width: 640px) {
-  .stu-page { padding: 24px 28px 40px; }
+  .stu-page { padding: 24px 28px 48px; }
+}
+@media (max-width: 768px) {
+  .stu-page { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
 }
 
 /* ── Hero ───────────────────────────────────────────────────── */
@@ -494,7 +501,17 @@ select.att-control {
 .rec-chev { color: #94A3B8; font-size: 11px; }
 
 /* Dark mode */
-.dark-mode .stu-page { background: #0B1220; color: #E2E8F0; }
+.dark-mode .stu-page {
+  --c-bg: #070F1C;
+  --c-surface: #0D1B2F;
+  --c-border: #18304F;
+  --c-text: #E2E8F0;
+  --c-muted: #8CA4BE;
+  --c-blue-soft: #0D1B2F;
+  --c-blue-bg: #111F35;
+  background: var(--c-bg);
+  color: var(--c-text);
+}
 .dark-mode .att-h1 { color: #F1F5F9; }
 .dark-mode .att-card { background: #131C30; box-shadow: 0 6px 24px rgba(0,0,0,.35); }
 .dark-mode .att-control { background: #1A2238; color: #E2E8F0; border-color: #1E293B; }

@@ -6,8 +6,10 @@
 
 {% block custom_css %}
 <style>
-/* Hide the standard page-header — hero replaces it */
-.page-header { display: none !important; }
+/* ══ LAYOUT TAKEOVER — full-bleed hero ═══════════════════════════ */
+.page-header   { display: none !important; }
+.erpnext-main  { padding: 0 !important; }
+.content-area  { overflow: visible !important; }
 
 /* ── Page tokens ─────────────────────────────────────────────────────────── */
 .rp {
@@ -29,9 +31,12 @@
   background: var(--bg);
   color: var(--txt);
   font-family: 'Inter', sans-serif;
-  margin: -20px;
-  padding: 0 0 40px;
-  min-height: 100%;
+  min-height: 100svh;
+  padding-bottom: 48px;
+  overflow-x: hidden;
+}
+@media (max-width: 768px) {
+  .rp { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
 }
 .dark-mode .rp {
   --bg:    #07111E;
