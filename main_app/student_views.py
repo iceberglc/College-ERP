@@ -98,6 +98,36 @@ def student_home(request):
         recipient=request.user, is_read=False
     ).order_by('-created_at')[:3]
 
+    # ── Quick Access badge counters ─────────────────────────────────
+    from datetime import timedelta
+    from django.utils import timezone as _tz
+
+    student_enrolled_group_ids = list(enrollments.values_list('group_id', flat=True))
+    _now = _tz.now()
+    _week_ago = _now - timedelta(days=7)
+
+    qa_pending_assignments = (
+        Assignment.objects.filter(group_id__in=student_enrolled_group_ids)
+        .exclude(submission__student=student)
+        .count()
+    )
+    qa_unread_notifications = Notification.objects.filter(
+        recipient=request.user, is_read=False
+    ).count()
+    qa_new_result_files = (
+        ResultFile.objects.filter(group_id__in=student_enrolled_group_ids)
+        .filter(models.Q(student=student) | models.Q(student__isnull=True))
+        .filter(uploaded_at__gte=_week_ago)
+        .count()
+    )
+    qa_new_vocab_days = (
+        VocabularyDay.objects.filter(
+            group_id__in=student_enrolled_group_ids,
+            release_at__lte=_now,
+            release_at__gte=_week_ago,
+        ).count()
+    )
+
     context = {
         'total_attendance': total_attendance,
         'percent_present': percent_present,
@@ -123,6 +153,10 @@ def student_home(request):
             'img':   s.safe_image_url,
         } for s in visible_stories]),
         'overall_trend_json': json.dumps(_overall_performance_trend(student, weeks=8)),
+        'qa_pending_assignments':   qa_pending_assignments,
+        'qa_unread_notifications':  qa_unread_notifications,
+        'qa_new_result_files':      qa_new_result_files,
+        'qa_new_vocab_days':        qa_new_vocab_days,
         'page_title': 'My Dashboard',
     }
     return render(request, 'student_template/erpnext_student_home.html', context)
