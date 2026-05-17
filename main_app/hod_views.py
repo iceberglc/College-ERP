@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import logging
 import requests
 from django.contrib import messages
@@ -30,22 +31,32 @@ def _derive_is_english(name):
 
 
 def _generate_login_id(prefix):
-    """Generate the next available login_id for the given prefix (TCH or STU)."""
+    """Generate the next sequential login_id for the given prefix.
+
+    prefix='IC' → IC00001, IC00002 … (student — 5-digit zero-padded)
+    prefix='TC' → TC0001,  TC0002  … (teacher — 4-digit zero-padded)
+
+    Legacy IDs in the old STU-/TCH- format are left untouched; they don't
+    collide with the new IC/TC prefix because the old format contained a dash
+    and the new format contains only digits after the two-letter prefix.
+    The TC regex anchors on ^TC\\d to exclude legacy 'TCH-XXXX' IDs.
+    """
+    width = 5 if prefix == 'IC' else 4
+    pat   = re.compile(rf'^{re.escape(prefix)}(\d+)$')
     existing = (
         CustomUser.objects
-        .filter(login_id__startswith=f'{prefix}-')
+        .filter(login_id__regex=rf'^{re.escape(prefix)}\d')
         .values_list('login_id', flat=True)
     )
-    used_numbers = set()
+    used = set()
     for lid in existing:
-        try:
-            used_numbers.add(int(lid.split('-')[1]))
-        except (IndexError, ValueError):
-            pass
+        m = pat.match(lid)
+        if m:
+            used.add(int(m.group(1)))
     n = 1
-    while n in used_numbers:
+    while n in used:
         n += 1
-    return f'{prefix}-{n:04d}'
+    return f'{prefix}{n:0{width}d}'
 
 
 def _active_groups_for_enrollment():
@@ -150,7 +161,7 @@ def add_staff(request):
                 passport_url = ''
                 if passport:
                     passport_url = default_storage.save(passport.name, passport)
-                login_id = _generate_login_id('TCH')
+                login_id = _generate_login_id('TC')
                 email = f"{login_id.lower()}@iceberg.internal"
                 user = CustomUser.objects.create_user(
                     email=email, password=password, user_type=2, first_name=first_name,
@@ -193,7 +204,7 @@ def add_student(request):
                 passport_url = ''
                 if passport:
                     passport_url = default_storage.save(passport.name, passport)
-                login_id = _generate_login_id('STU')
+                login_id = _generate_login_id('IC')
                 email = f"{login_id.lower()}@iceberg.internal"
                 user = CustomUser.objects.create_user(
                     email=email, password=password, user_type=3,

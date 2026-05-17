@@ -4,288 +4,302 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Iceberg Study Center — Sign In</title>
+  <title>ICEBERG — Sign In</title>
   <link rel="shortcut icon" href="{% static 'image/favicon1.ico' %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --navy-deep: #0A1B3D;
-      --navy:      #0C1F45;
-      --navy-mid:  #1B3F7A;
-      --cyan:      #06B6D4;
-      --cyan-dk:   #0891B2;
-      --ice-3:     #EEF4FB;
-      --bg:        #F2F7FE;
-      --white:     #FFFFFF;
-      --border:    #D8E3F2;
-      --text:      #0C1F45;
-      --muted:     #64748B;
-      --danger:    #DC2626;
-      --danger-bg: #FEF2F2;
-      --success:   #047857;
-      --success-bg:#F0FDF4;
+      --n900: #05091A;
+      --n800: #080E26;
+      --n700: #0C1432;
+      --n600: #0C1F45;
+      --n500: #122E66;
+      --n400: #1B3F7A;
+      --cyan:  #06B6D4;
+      --clt:   #38BDF8;
+      --cdk:   #0891B2;
+      --white: #FFFFFF;
+      --slate: #CBD5E1;
+      --muted: #94A3B8;
+      --dim:   rgba(148,163,184,.45);
+      --err:   #F87171;
+      --ok:    #34D399;
+      --warn:  #FBBF24;
     }
 
-    html, body { height: 100%; }
+    html, body { height: 100%; -webkit-font-smoothing: antialiased; }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(180deg, #DDEAFB 0%, #ECF3FC 38%, #F4F8FE 70%, #FAFCFF 100%);
-      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--n900);
+      color: var(--white);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      -webkit-font-smoothing: antialiased;
+      align-items: center;
+      justify-content: center;
       overflow-x: hidden;
     }
 
-    /* ── Brand block ──────────────────────────────────────── */
-    .brand-block {
-      text-align: center;
-      padding: 40px 24px 4px;
+    /* ── Ambient background ──────────────────────────────────── */
+    .bg {
+      position: fixed; inset: 0; z-index: 0; overflow: hidden;
+      background: linear-gradient(180deg, #05091A 0%, #080E26 45%, #0C1432 100%);
     }
-    .brand-name {
-      font-family: 'Playfair Display', 'Inter', serif;
-      font-size: 30px;
-      font-weight: 700;
-      color: var(--navy);
-      letter-spacing: 4px;
-      line-height: 1;
-    }
-    .brand-sub {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 8px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 3.2px;
-      color: var(--navy-mid);
-      text-transform: uppercase;
-    }
-    .brand-sub::before,
-    .brand-sub::after {
-      content: '';
-      width: 18px;
-      height: 1px;
-      background: var(--navy-mid);
-      opacity: .5;
-    }
-
-    /* ── Form area ────────────────────────────────────────── */
-    .form-wrap {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 28px 22px 40px;
-      width: 100%;
-    }
-    .form-card {
-      width: 100%;
-      max-width: 420px;
-      background: var(--white);
-      border: 1px solid rgba(216,227,242,.7);
-      border-radius: 20px;
-      padding: 32px 28px 30px;
-      box-shadow: 0 8px 36px rgba(12,31,69,.10),
-                  0 1px 0 rgba(255,255,255,.6) inset;
-    }
-    .welcome {
-      font-family: 'Playfair Display', 'Inter', serif;
-      font-size: 32px;
-      font-weight: 700;
-      color: var(--navy);
-      letter-spacing: -.5px;
-      line-height: 1.1;
-      margin-bottom: 6px;
-    }
-    .welcome-sub {
-      font-size: 14px;
-      color: var(--muted);
-      margin-bottom: 22px;
-    }
-
-    /* Alerts */
-    .alert {
-      padding: 11px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      margin-bottom: 16px;
-      border: 1px solid transparent;
-      display: flex;
-      align-items: flex-start;
-      gap: 9px;
-      line-height: 1.45;
-    }
-    .alert-danger  { background: var(--danger-bg);  color: var(--danger);  border-color: #FECACA; }
-    .alert-success { background: var(--success-bg); color: var(--success); border-color: #BBF7D0; }
-    .alert-warning { background: #FFFBEB;           color: #92400E;        border-color: #FDE68A; }
-    .alert-info    { background: #EFF6FF;           color: #1E40AF;        border-color: #BFDBFE; }
-    .alert .ico    { flex-shrink: 0; width: 14px; height: 14px; margin-top: 2px; }
-
-    /* Fields */
-    .field { margin-bottom: 14px; }
-    .field-label {
-      display: block;
-      font-size: 12.5px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 7px;
-      letter-spacing: .1px;
-    }
-    .input-wrap { position: relative; display: flex; align-items: center; }
-    .input-wrap .ico-l {
-      position: absolute;
-      left: 14px;
-      width: 16px;
-      height: 16px;
-      color: var(--muted);
+    .bg-glow-top {
+      position: absolute; top: -20%; left: 50%; transform: translateX(-50%);
+      width: 900px; height: 500px;
+      background: radial-gradient(ellipse, rgba(6,182,212,.14) 0%, transparent 70%);
       pointer-events: none;
     }
-    .input-wrap .ico-r {
-      position: absolute;
-      right: 10px;
-      width: 30px;
-      height: 30px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: var(--muted);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-      padding: 0;
+    .bg-glow-br {
+      position: absolute; bottom: -10%; right: -5%;
+      width: 600px; height: 500px;
+      background: radial-gradient(ellipse, rgba(27,63,122,.28) 0%, transparent 70%);
+      pointer-events: none;
     }
-    .input-wrap .ico-r:hover { color: var(--navy); background: var(--ice-3); }
-    .input-wrap input {
-      width: 100%;
-      height: 48px;
-      padding: 0 44px 0 42px;
-      font-family: 'Inter', sans-serif;
-      font-size: 14.5px;
-      color: var(--text);
-      background: #F7FAFE;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      outline: none;
-      transition: border-color .15s, box-shadow .15s, background .15s;
-    }
-    .input-wrap input::placeholder { color: #94A3B8; }
-    .input-wrap input:focus {
-      border-color: var(--navy-mid);
-      background: var(--white);
-      box-shadow: 0 0 0 4px rgba(27,63,122,.10);
+    canvas#ptx {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: .45;
     }
 
-    /* Remember-me row */
-    .row-meta { display: flex; align-items: center; margin: 4px 0 22px; font-size: 13px; }
-    .remember {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      user-select: none;
-      color: var(--muted);
-    }
-    .remember input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--navy);
-      cursor: pointer;
+    /* ── Layout ──────────────────────────────────────────────── */
+    .page {
+      position: relative; z-index: 10;
+      width: 100%; padding: 32px 20px 40px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 0;
+      min-height: 100dvh; justify-content: center;
     }
 
-    /* Sign-in button */
-    .btn-signin {
-      width: 100%;
-      height: 52px;
-      border: none;
-      border-radius: 14px;
-      background: linear-gradient(180deg, #122E66 0%, #0A1B3D 100%);
-      color: #fff;
-      font-family: 'Inter', sans-serif;
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: .3px;
-      cursor: pointer;
-      transition: transform .12s, box-shadow .15s, opacity .15s;
-      box-shadow: 0 8px 22px rgba(10,27,61,.30),
-                  0 1px 0 rgba(255,255,255,.10) inset;
+    /* ── Brand ───────────────────────────────────────────────── */
+    .brand {
+      text-align: center; margin-bottom: 30px;
+      animation: slideDown .55s cubic-bezier(.22,1,.36,1) both;
     }
-    .btn-signin:hover  { opacity: .96; box-shadow: 0 10px 26px rgba(10,27,61,.36); }
-    .btn-signin:active { transform: translateY(1px); }
-
-    /* Back to site link */
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 18px;
-      padding: 9px 18px;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--white);
-      color: var(--navy-mid);
-      font-size: 13px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: border-color .15s, box-shadow .15s;
+    .brand-icon {
+      width: 56px; height: 56px; margin: 0 auto 14px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(6,182,212,.18) 0%, rgba(18,46,102,.55) 100%);
+      border: 1.5px solid rgba(6,182,212,.35);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 22px rgba(6,182,212,.22), 0 0 70px rgba(6,182,212,.08);
+      animation: iconPulse 4s ease-in-out infinite;
     }
-    .back-link:hover {
-      border-color: var(--navy-mid);
-      box-shadow: 0 2px 10px rgba(12,31,69,.10);
+    @keyframes iconPulse {
+      0%,100% { box-shadow: 0 0 22px rgba(6,182,212,.22), 0 0 70px rgba(6,182,212,.08); }
+      50%      { box-shadow: 0 0 32px rgba(6,182,212,.38), 0 0 90px rgba(6,182,212,.15); }
     }
-    .back-link svg { opacity: .65; }
-
-    /* Footer */
-    .login-footer {
-      text-align: center;
-      font-size: 12px;
-      color: var(--muted);
-      padding: 14px 20px 24px;
-      letter-spacing: .1px;
+    .brand-name {
+      font-size: 30px; font-weight: 900;
+      letter-spacing: 7px; color: var(--white);
+      text-transform: uppercase; line-height: 1;
+    }
+    .brand-tag {
+      font-size: 10px; font-weight: 600; letter-spacing: 3.5px;
+      color: var(--cyan); text-transform: uppercase; opacity: .8;
+      margin-top: 5px; display: block;
     }
 
-    @media (min-width: 760px) {
-      body { background: linear-gradient(180deg, #DDEAFB 0%, #ECF3FC 50%, #FAFCFF 100%); }
-      .brand-block { padding-top: 56px; }
-      .brand-name { font-size: 36px; letter-spacing: 5px; }
-      .welcome { font-size: 36px; }
-      .form-wrap { padding: 28px 22px 56px; }
-      .form-card { padding: 36px 36px 32px; }
+    /* ── Frosted glass card ──────────────────────────────────── */
+    .card {
+      width: 100%; max-width: 400px;
+      background: rgba(8,14,38,.62);
+      border: 1px solid rgba(6,182,212,.18);
+      border-radius: 26px;
+      padding: 34px 30px 30px;
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      box-shadow:
+        0 32px 80px rgba(0,0,0,.55),
+        0 0 0 1px rgba(255,255,255,.04) inset,
+        0 1px 0 rgba(6,182,212,.12) inset;
+      animation: slideUp .6s cubic-bezier(.22,1,.36,1) .06s both;
+    }
+    .card-title {
+      font-size: 22px; font-weight: 800; color: var(--white);
+      letter-spacing: -.25px; margin-bottom: 3px;
+    }
+    .card-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+
+    /* ── Alerts ──────────────────────────────────────────────── */
+    .alert {
+      padding: 11px 14px; border-radius: 12px; font-size: 13px;
+      margin-bottom: 18px; display: flex; align-items: flex-start;
+      gap: 9px; line-height: 1.45; border: 1px solid transparent;
+    }
+    .alert svg { flex-shrink: 0; width: 15px; height: 15px; margin-top: 1px; }
+    .alert-danger  { background: rgba(248,113,113,.12); color: var(--err);  border-color: rgba(248,113,113,.22); }
+    .alert-success { background: rgba(52,211,153,.10);  color: var(--ok);   border-color: rgba(52,211,153,.2); }
+    .alert-warning { background: rgba(251,191,36,.10);  color: var(--warn); border-color: rgba(251,191,36,.2); }
+    .alert-info    { background: rgba(6,182,212,.10);   color: var(--clt);  border-color: rgba(6,182,212,.2); }
+
+    /* ── Form fields ─────────────────────────────────────────── */
+    .field { margin-bottom: 15px; }
+    .field-label {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; font-weight: 700; letter-spacing: .8px;
+      color: var(--slate); text-transform: uppercase; margin-bottom: 7px;
+    }
+    .input-wrap { position: relative; display: flex; align-items: center; }
+    .input-wrap .il {
+      position: absolute; left: 14px; color: var(--muted);
+      pointer-events: none; transition: color .2s;
+    }
+    .input-wrap:focus-within .il { color: var(--cyan); }
+    .input-wrap .ir {
+      position: absolute; right: 8px;
+      width: 32px; height: 32px;
+      background: transparent; border: none; cursor: pointer;
+      color: var(--muted); display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; transition: color .15s, background .15s;
+    }
+    .input-wrap .ir:hover { color: var(--clt); background: rgba(6,182,212,.12); }
+    .field-input {
+      width: 100%; height: 50px;
+      padding: 0 44px 0 44px;
+      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500;
+      color: var(--white);
+      background: rgba(5,9,26,.6);
+      border: 1.5px solid rgba(255,255,255,.09);
+      border-radius: 14px; outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .field-input::placeholder { color: rgba(148,163,184,.4); font-weight: 400; }
+    .field-input:focus {
+      border-color: var(--cyan);
+      background: rgba(5,9,26,.85);
+      box-shadow: 0 0 0 3px rgba(6,182,212,.16), 0 0 18px rgba(6,182,212,.1);
+    }
+    /* Autofill dark override */
+    .field-input:-webkit-autofill,
+    .field-input:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 100px #0A1224 inset;
+      -webkit-text-fill-color: var(--white);
+      caret-color: var(--white);
     }
 
-    @media (max-width: 380px) {
-      .form-card { padding: 26px 20px 24px; }
-      .brand-name { font-size: 26px; letter-spacing: 3px; }
-      .welcome { font-size: 28px; }
+    /* ── Role pills ──────────────────────────────────────────── */
+    .role-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 700;
+      letter-spacing: .25px; border: 1px solid; cursor: default;
+    }
+    .pill-s { background: rgba(6,182,212,.10);   color: var(--clt);  border-color: rgba(6,182,212,.22); }
+    .pill-t { background: rgba(56,189,248,.07);  color: #67E8F9;     border-color: rgba(56,189,248,.18); }
+    .pill-a { background: rgba(255,255,255,.05); color: var(--slate); border-color: rgba(255,255,255,.1); }
+
+    /* ── Remember row ────────────────────────────────────────── */
+    .meta-row { display: flex; align-items: center; margin: 8px 0 22px; }
+    .remember-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      cursor: pointer; user-select: none;
+      font-size: 13px; color: var(--muted);
+    }
+    .remember-label input[type="checkbox"] {
+      width: 16px; height: 16px; accent-color: var(--cyan); cursor: pointer;
+    }
+
+    /* ── Submit button ───────────────────────────────────────── */
+    .btn-primary {
+      width: 100%; height: 52px; border: none; border-radius: 14px;
+      background: linear-gradient(135deg, var(--cdk) 0%, var(--cyan) 50%, var(--cdk) 100%);
+      background-size: 200% 100%;
+      color: #041020; font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 800; letter-spacing: .2px;
+      cursor: pointer; position: relative; overflow: hidden;
+      box-shadow: 0 4px 22px rgba(6,182,212,.42), 0 1px 0 rgba(255,255,255,.16) inset;
+      transition: background-position .45s ease, transform .12s, box-shadow .2s;
+    }
+    .btn-primary:hover {
+      background-position: 100% 0;
+      box-shadow: 0 6px 30px rgba(6,182,212,.58);
+    }
+    .btn-primary:active { transform: translateY(1px); }
+    .btn-primary .shine {
+      position: absolute; top: 0; left: -100%; width: 55%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
+      transform: skewX(-18deg); transition: left .6s ease; pointer-events: none;
+    }
+    .btn-primary:hover .shine { left: 160%; }
+    .btn-primary .lbl { position: relative; z-index: 1; }
+
+    /* ── Forgot link ─────────────────────────────────────────── */
+    .forgot {
+      display: block; text-align: center; margin-top: 16px;
+      font-size: 13px; color: var(--muted); text-decoration: none;
+      transition: color .15s;
+    }
+    .forgot:hover { color: var(--clt); }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    .footer {
+      margin-top: 26px; text-align: center;
+      font-size: 11px; color: rgba(148,163,184,.3); letter-spacing: .3px;
+      animation: fadeIn .8s ease .25s both;
+    }
+
+    /* ── Keyframes ───────────────────────────────────────────── */
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 440px) {
+      .card { padding: 28px 22px 26px; border-radius: 22px; }
+      .brand-name { font-size: 26px; letter-spacing: 6px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ── Brand ──────────────────────────────────────────────── -->
-  <div class="brand-block">
-    <div class="brand-name">ICEBERG</div>
-    <div class="brand-sub">Study Center</div>
+  <!-- Ambient background -->
+  <div class="bg">
+    <div class="bg-glow-top"></div>
+    <div class="bg-glow-br"></div>
   </div>
+  <canvas id="ptx"></canvas>
 
-  <!-- ── Form ───────────────────────────────────────────────── -->
-  <div class="form-wrap">
-    <div class="form-card">
-      <h1 class="welcome">Welcome back</h1>
-      <p class="welcome-sub">Sign in to continue your journey at Iceberg.</p>
+  <div class="page">
 
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+          <polygon points="15,3 22,11 8,11" fill="rgba(6,182,212,.95)"/>
+          <polygon points="8,11 5,18 25,18 22,11" fill="rgba(6,182,212,.65)"/>
+          <polygon points="5,18 2,27 28,27 25,18" fill="rgba(6,182,212,.35)"/>
+        </svg>
+      </div>
+      <div class="brand-name">ICEBERG</div>
+      <span class="brand-tag">Study Center</span>
+    </div>
+
+    <!-- Login card -->
+    <div class="card">
+      <h1 class="card-title">Welcome back</h1>
+      <p class="card-sub">Sign in to your Iceberg account</p>
+
+      <!-- Django messages -->
       {% if messages %}
         {% for message in messages %}
           <div class="alert alert-{{ message.tags|default:'info' }}">
-            <svg class="ico" viewBox="0 0 20 20" fill="currentColor">
+            <svg viewBox="0 0 20 20" fill="currentColor">
               {% if message.tags == 'success' %}
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.7-9.3l-4 4a1 1 0 01-1.4 0l-2-2a1 1 0 011.4-1.4L9 10.6l3.3-3.3a1 1 0 011.4 1.4z" clip-rule="evenodd"/>
               {% elif message.tags == 'danger' or message.tags == 'error' %}
@@ -293,7 +307,7 @@
               {% elif message.tags == 'warning' %}
                 <path fill-rule="evenodd" d="M8.3 2.6c.8-1.5 2.9-1.5 3.7 0l6.5 12a2 2 0 01-1.8 3H3.7a2 2 0 01-1.9-3l6.5-12zM10 7a1 1 0 011 1v4a1 1 0 11-2 0V8a1 1 0 011-1zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
               {% else %}
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-8a1 1 0 112 0v4a1 1 0 11-2 0v-4zm1-6a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/>
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
               {% endif %}
             </svg>
             <span>{{ message }}</span>
@@ -305,27 +319,54 @@
         {% csrf_token %}
         {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
+        <!-- ICE ID field -->
         <div class="field">
-          <label class="field-label" for="id_identifier">Student ID</label>
+          <label class="field-label" for="id_identifier">ICE ID</label>
           <div class="input-wrap">
-            <svg class="ico-l" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg class="il" width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd" d="M10 2a4 4 0 100 8 4 4 0 000-8zM6 12a6 6 0 00-6 6 2 2 0 002 2h16a2 2 0 002-2 6 6 0 00-6-6H6z" clip-rule="evenodd"/>
             </svg>
-            <input type="text" id="id_identifier" name="identifier"
-                   placeholder="Enter your student ID" autocomplete="username" required autofocus>
+            <input class="field-input" type="text" id="id_identifier" name="identifier"
+                   placeholder="IC00001 · TC0001 · admin@email.com"
+                   autocomplete="username" required autofocus
+                   spellcheck="false" autocorrect="off" autocapitalize="characters">
+          </div>
+          <!-- Role hints -->
+          <div class="role-row">
+            <span class="pill pill-s" title="Student login">
+              <svg width="8" height="8" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
+              </svg>
+              IC##### &nbsp;Student
+            </span>
+            <span class="pill pill-t" title="Teacher login">
+              <svg width="8" height="8" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd"/>
+              </svg>
+              TC#### &nbsp;Teacher
+            </span>
+            <span class="pill pill-a" title="Admin login">
+              <svg width="8" height="8" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+              </svg>
+              Email &nbsp;Admin
+            </span>
           </div>
         </div>
 
+        <!-- Password field -->
         <div class="field">
           <label class="field-label" for="id_password">Password</label>
           <div class="input-wrap">
-            <svg class="ico-l" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg class="il" width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
             </svg>
-            <input type="password" id="id_password" name="password"
-                   placeholder="Enter your password" autocomplete="current-password" required>
-            <button type="button" class="ico-r" onclick="togglePassword()" aria-label="Show or hide password">
-              <svg id="eye-icon" viewBox="0 0 20 20" fill="currentColor" width="16" height="16" aria-hidden="true">
+            <input class="field-input" type="password" id="id_password" name="password"
+                   placeholder="Enter your password"
+                   autocomplete="current-password" required>
+            <button type="button" class="ir" id="pw-toggle" aria-label="Show or hide password">
+              <svg id="eye-ico" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
                 <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
                 <path fill-rule="evenodd" d="M.5 10C1.7 5.9 5.5 3 10 3s8.3 2.9 9.5 7c-1.2 4.1-5 7-9.5 7S1.7 14.1.5 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
               </svg>
@@ -333,43 +374,106 @@
           </div>
         </div>
 
-        <div class="row-meta">
-          <label class="remember">
+        <!-- Remember me -->
+        <div class="meta-row">
+          <label class="remember-label">
             <input type="checkbox" name="remember" id="remember">
-            Remember me
+            Keep me signed in
           </label>
         </div>
 
-        <button type="submit" class="btn-signin">Sign In</button>
+        <!-- Submit -->
+        <button type="submit" class="btn-primary">
+          <span class="shine"></span>
+          <span class="lbl">Sign In to ICEBERG</span>
+        </button>
       </form>
 
-      <div style="text-align:center;">
-        <a href="https://iceberglc.com" class="back-link" target="_blank" rel="noopener">
-          <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 010 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
-          </svg>
-          Back to site
-        </a>
-      </div>
+      <a href="{% url 'forgot_password' %}" class="forgot">Forgot your password?</a>
     </div>
-  </div>
 
-  <div class="login-footer">
-    &copy; {% now "Y" %} Iceberg Study Center &mdash; All rights reserved
+    <p class="footer">&copy; {% now "Y" %} Iceberg Study Center &mdash; All rights reserved</p>
   </div>
 
   <script>
-    function togglePassword() {
-      const inp = document.getElementById('id_password');
-      inp.type = inp.type === 'password' ? 'text' : 'password';
+  /* ── Password visibility toggle ── */
+  (function () {
+    var btn = document.getElementById('pw-toggle');
+    var inp = document.getElementById('id_password');
+    var ico = document.getElementById('eye-ico');
+    var OPEN   = '<path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.5 10C1.7 5.9 5.5 3 10 3s8.3 2.9 9.5 7c-1.2 4.1-5 7-9.5 7S1.7 14.1.5 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>';
+    var CLOSED = '<path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.515a4 4 0 00-5.478-5.48zM8.88 12.88l-3.29-3.29A3.98 3.98 0 014 10c0 2.21 1.79 4 4 4 .736 0 1.424-.207 2.015-.555l-1.136-1.136z" clip-rule="evenodd"/><path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"/>';
+    var shown = false;
+    if (btn && inp) {
+      btn.addEventListener('click', function () {
+        shown = !shown;
+        inp.type = shown ? 'text' : 'password';
+        ico.innerHTML = shown ? CLOSED : OPEN;
+      });
     }
-    (function () {
-      const rem = document.getElementById('remember');
-      if (!rem) return;
-      if (localStorage.getItem('icebergRemember') === '1') rem.checked = true;
-      rem.addEventListener('change', () =>
-        localStorage.setItem('icebergRemember', rem.checked ? '1' : '0'));
-    })();
+  })();
+
+  /* ── Remember-me persistence ── */
+  (function () {
+    var rem = document.getElementById('remember');
+    if (!rem) return;
+    try { if (localStorage.getItem('icebergRemember') === '1') rem.checked = true; } catch (e) {}
+    rem.addEventListener('change', function () {
+      try { localStorage.setItem('icebergRemember', rem.checked ? '1' : '0'); } catch (e) {}
+    });
+  })();
+
+  /* ── Auto-uppercase ICE ID prefix ── */
+  (function () {
+    var inp = document.getElementById('id_identifier');
+    if (!inp) return;
+    inp.addEventListener('input', function () {
+      var v = inp.value, pos = inp.selectionStart;
+      var up = v.slice(0, 2).toUpperCase() + v.slice(2);
+      if (up !== v) { inp.value = up; try { inp.setSelectionRange(pos, pos); } catch (e) {} }
+    });
+  })();
+
+  /* ── Floating particle canvas ── */
+  (function () {
+    var c = document.getElementById('ptx');
+    if (!c || !c.getContext) return;
+    var ctx = c.getContext('2d');
+    var W, H, pts = [];
+    var N = window.innerWidth < 640 ? 35 : 60;
+
+    function resize() { W = c.width = window.innerWidth; H = c.height = window.innerHeight; }
+
+    function P() {
+      this.x  = Math.random() * W;
+      this.y  = Math.random() * H;
+      this.r  = Math.random() * 1.4 + 0.25;
+      this.dx = (Math.random() - 0.5) * 0.25;
+      this.dy = -Math.random() * 0.25 - 0.05;
+      this.a  = Math.random() * 0.45 + 0.08;
+    }
+    P.prototype.tick = function () {
+      this.x += this.dx; this.y += this.dy;
+      if (this.y < -4) { this.y = H + 4; this.x = Math.random() * W; }
+      if (this.x < -4) this.x = W + 4;
+      if (this.x > W + 4) this.x = -4;
+    };
+
+    function init() { resize(); pts = []; for (var i = 0; i < N; i++) pts.push(new P()); }
+    function frame() {
+      ctx.clearRect(0, 0, W, H);
+      pts.forEach(function (p) {
+        p.tick();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, 6.2832);
+        ctx.fillStyle = 'rgba(6,182,212,' + p.a + ')';
+        ctx.fill();
+      });
+      requestAnimationFrame(frame);
+    }
+    window.addEventListener('resize', resize);
+    init(); frame();
+  })();
   </script>
 </body>
 </html>
