@@ -13,6 +13,9 @@ class FormSettings(forms.ModelForm):
             field.field.widget.attrs['class'] = 'form-control'
 
 
+_MAX_PROFILE_PIC_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
 class CustomUserForm(FormSettings):
     gender = forms.ChoiceField(choices=[('M', 'Male'), ('F', 'Female')])
     first_name = forms.CharField(required=True)
@@ -24,6 +27,12 @@ class CustomUserForm(FormSettings):
     def __init__(self, *args, **kwargs):
         super(CustomUserForm, self).__init__(*args, **kwargs)
         self.fields['profile_pic'].required = False
+
+    def clean_profile_pic(self):
+        pic = self.cleaned_data.get('profile_pic')
+        if pic and getattr(pic, 'size', 0) > _MAX_PROFILE_PIC_BYTES:
+            raise forms.ValidationError("Profile picture too large. Maximum size is 5 MB.")
+        return pic
 
         if kwargs.get('instance'):
             instance = kwargs.get('instance').admin.__dict__

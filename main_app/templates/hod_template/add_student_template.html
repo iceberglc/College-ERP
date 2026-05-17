@@ -7,6 +7,12 @@
   .email-hint { font-size: 12px; margin-top: 5px; display: block; }
   .email-hint.valid   { color: var(--ice-success); }
   .email-hint.invalid { color: var(--ice-danger); }
+  /* Collapse the inline 2-column grids to a single column on phones */
+  @media (max-width: 640px) {
+    div[style*="grid-template-columns:1fr 1fr"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
 </style>
 {% endblock %}
 

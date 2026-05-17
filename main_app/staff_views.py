@@ -67,7 +67,10 @@ def staff_take_attendance(request):
 def get_students(request):
     group_id = request.POST.get('group')
     try:
-        group = get_object_or_404(Group, id=group_id)
+        # Scope to the teacher's own groups — prevents IDOR enumeration
+        # of other teachers' rosters via a forged group_id.
+        staff = get_object_or_404(Staff, admin=request.user)
+        group = get_object_or_404(Group, id=group_id, teacher=staff)
         enrollments = Enrollment.objects.filter(
             group=group, is_active=True
         ).select_related('student__admin')
@@ -208,6 +211,11 @@ def update_attendance(request):
         return HttpResponse("Missing attendance/students", status=400)
 
     attendance = get_object_or_404(Attendance, id=attendance_id)
+    # A teacher can only edit attendance for groups they own — otherwise a
+    # crafted attendance_id could update another teacher's records.
+    staff = get_object_or_404(Staff, admin=request.user)
+    if attendance.group.teacher_id != staff.id:
+        return HttpResponse("You do not own this group", status=403)
     status_by_student = {
         int(r['id']): int(r.get('status', AttendanceReport.ABSENT))
         for r in rows if 'id' in r
@@ -583,6 +591,7 @@ def grade_submission(request, submission_id):
 # ── Result Files ──────────────────────────────────────────────────────────────
 
 _ALLOWED_RESULT_EXTENSIONS = {'.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif', '.webp'}
+_MAX_RESULT_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 
 @staff_only
@@ -626,6 +635,8 @@ def upload_result_file(request):
         errors['file'] = 'Please choose a file to upload.'
     elif os.path.splitext(uploaded_file.name)[1].lower() not in _ALLOWED_RESULT_EXTENSIONS:
         errors['file'] = 'Only PDF, Word (.doc/.docx), or image files are allowed.'
+    elif uploaded_file.size > _MAX_RESULT_FILE_BYTES:
+        errors['file'] = 'File too large. Maximum size is 10 MB.'
 
     if errors:
         return render(request, 'staff_template/upload_result_file.html', {
@@ -635,8 +646,15 @@ def upload_result_file(request):
             'page_title': 'Upload Result File',
         })
 
-    group = get_object_or_404(Group, id=group_id)
-    student = get_object_or_404(Student, id=student_id) if student_id else None
+    # Only allow uploading to a group the logged-in teacher owns.
+    group = get_object_or_404(Group, id=group_id, teacher=staff)
+    # If a specific student was selected, they must be enrolled in that group.
+    if student_id:
+        student = get_object_or_404(
+            Student, id=student_id, enrollment__group=group, enrollment__is_active=True
+        )
+    else:
+        student = None
 
     result_file = ResultFile.objects.create(
         group=group,

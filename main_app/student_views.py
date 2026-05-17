@@ -9,6 +9,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import (HttpResponseRedirect, get_object_or_404,
                               redirect, render)
 from django.urls import reverse
+from django.utils import timezone
 
 from .decorators import student_only
 from .forms import *
@@ -270,7 +271,7 @@ def _scores_trend(student):
 def _attendance_weekly_trend(student, weeks=8):
     """Weekly attendance % for the last `weeks` weeks (None for empty weeks)."""
     from datetime import timedelta
-    today = datetime.now().date()
+    today = timezone.localdate()
     labels, values = [], []
     for i in range(weeks - 1, -1, -1):
         week_end = today - timedelta(days=i * 7)
@@ -301,7 +302,7 @@ def _attendance_weekly_trend(student, weeks=8):
 def _homework_weekly_trend(student, weeks=8):
     """Weekly homework submission rate (% submitted by due_date) for last N weeks."""
     from datetime import timedelta
-    today = datetime.now().date()
+    today = timezone.localdate()
     enrolled_group_ids = list(
         Enrollment.objects.filter(student=student, is_active=True)
         .values_list('group_id', flat=True)
@@ -356,7 +357,7 @@ def _overall_performance_trend(student, weeks=8):
     so a student missing one metric isn't penalised.
     """
     from datetime import timedelta
-    today = datetime.now().date()
+    today = timezone.localdate()
 
     attendance = _attendance_weekly_trend(student, weeks)['values']
     homework   = _homework_weekly_trend(student, weeks)['values']
@@ -410,7 +411,7 @@ def student_view_attendance(request):
         month_present = month_late = month_absent = month_total = 0
         recent_rows = []
         status_by_date = {}
-        today = datetime.now().date()
+        today = timezone.localdate()
         month_start = today.replace(day=1)
         for r in all_reports:
             d = r.attendance.date
@@ -733,7 +734,7 @@ def _time_start(time_filter):
 def _compute_streak(student):
     """Consecutive days with any tracked activity ending today."""
     from datetime import timedelta
-    today = datetime.now().date()
+    today = timezone.localdate()
     activity_dates = set()
     for ar in AttendanceReport.objects.filter(
         student=student,
