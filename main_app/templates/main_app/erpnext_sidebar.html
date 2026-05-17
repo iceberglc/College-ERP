@@ -188,6 +188,22 @@
             </a>
         </div>
 
+        <div class="nav-item">
+            {% url 'admin_leaderboard_settings' as lset_url %}
+            <a href="{{ lset_url }}" class="nav-link {% if 'leaderboard/settings' in request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-sliders-h"></i>
+                <span class="nav-text">Leaderboard Settings</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            {% url 'admin_manage_seasons' as lsea_url %}
+            <a href="{{ lsea_url }}" class="nav-link {% if 'leaderboard/seasons' in request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-trophy"></i>
+                <span class="nav-text">Leaderboard Seasons</span>
+            </a>
+        </div>
+
         <h6 class="nav-section-title">Reports</h6>
 
         <div class="nav-item">

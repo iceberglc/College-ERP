@@ -6,7 +6,7 @@
 
 {% block custom_css %}
 <style>
-/* ══ Layout takeover — full-bleed gradient hero ═══════════════════ */
+/* ══ Layout takeover ═════════════════════════════════════════════ */
 .page-header  { display: none !important; }
 .erpnext-main { padding: 0 !important; }
 .content-area { overflow: visible !important; }
@@ -54,7 +54,7 @@
 /* ══ Hero ════════════════════════════════════════════════════════ */
 .lb-hero {
   background: linear-gradient(160deg, #06102A 0%, #0D2657 50%, #0E3E94 100%);
-  padding: 28px 20px 80px;
+  padding: 28px 20px 84px;
   position: relative;
   overflow: hidden;
 }
@@ -66,7 +66,11 @@
     radial-gradient(circle at 20% 80%, rgba(245,158,11,.20) 0%, transparent 50%);
   pointer-events: none;
 }
-.lb-hero-inner { position: relative; z-index: 1; }
+.lb-hero-inner {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.lb-hero-text { flex: 1; min-width: 0; }
 .lb-eyebrow {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 10.5px; font-weight: 700;
@@ -80,19 +84,63 @@
   letter-spacing: -.6px; line-height: 1.15;
   display: flex; align-items: center; gap: 10px;
 }
-.lb-title .star { font-size: 24px; filter: drop-shadow(0 0 18px rgba(245,158,11,.7)); }
+.lb-title .star { font-size: 22px; filter: drop-shadow(0 0 18px rgba(245,158,11,.7)); }
 .lb-sub  { margin: 0; color: rgba(255,255,255,.65); font-size: 13px; }
+
+.lb-history-btn {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 14px; border-radius: 12px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.9); font-size: 12px; font-weight: 700;
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+  transition: background .15s;
+}
+.lb-history-btn:hover { background: rgba(255,255,255,.18); color: #fff; }
+.lb-history-btn i { font-size: 11px; }
+
+/* ══ Mode tabs (Students / Groups / Branches) ════════════════════ */
+.lb-modebar {
+  margin: -58px 16px 0;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 22px 22px 0 0;
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(12,31,69,.10);
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+}
+.lb-mode-chip {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 10px 8px; border-radius: 13px;
+  font-size: 12px; font-weight: 700;
+  color: var(--text-sub); text-decoration: none;
+  transition: background .2s, color .2s, transform .15s, box-shadow .2s;
+  white-space: nowrap;
+  background: var(--bg);
+}
+.lb-mode-chip i { font-size: 11px; opacity: .8; }
+.lb-mode-chip:hover { color: var(--navy); }
+.dark-mode .lb-mode-chip { background: rgba(255,255,255,.03); }
+.lb-mode-chip.on {
+  background: linear-gradient(135deg, var(--cyan), #0891B2);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(6,182,212,.35);
+}
 
 /* ══ Filter pills ═══════════════════════════════════════════════ */
 .lb-filters {
-  margin: -54px 16px 18px;
+  margin: 0 16px 18px;
   background: var(--surface);
   border: 1.5px solid var(--border);
-  border-radius: 22px;
-  padding: 14px;
+  border-top: none;
+  border-radius: 0 0 22px 22px;
+  padding: 0 12px 12px;
   box-shadow: 0 8px 32px rgba(12,31,69,.10);
   position: relative; z-index: 2;
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 8px;
 }
 .lb-filter-row {
   display: grid;
@@ -103,11 +151,10 @@
   border-radius: 14px;
 }
 .dark-mode .lb-filter-row { background: rgba(255,255,255,.03); }
-.lb-filter-row.time { grid-template-columns: repeat(3, 1fr); }
 .lb-chip {
   display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-  padding: 9px 10px; border-radius: 11px;
-  font-size: 12px; font-weight: 700;
+  padding: 9px 8px; border-radius: 11px;
+  font-size: 11.5px; font-weight: 700;
   color: var(--text-sub); text-decoration: none;
   transition: background .2s, color .2s, transform .15s, box-shadow .2s;
   white-space: nowrap;
@@ -119,7 +166,6 @@
   color: #fff;
   box-shadow: 0 4px 14px rgba(12,31,69,.25);
 }
-.dark-mode .lb-chip { color: var(--text-sub); }
 .dark-mode .lb-chip.on {
   background: linear-gradient(135deg, var(--cyan), #1B3F7A);
   box-shadow: 0 4px 14px rgba(6,182,212,.35);
@@ -141,15 +187,24 @@
   padding: 14px 8px 16px;
   text-align: center;
   box-shadow: 0 4px 20px rgba(12,31,69,.08);
+  cursor: pointer;
+  transition: transform .15s;
   animation: lb-pop .55s cubic-bezier(.34,1.56,.64,1) both;
 }
+.lb-pod:active { transform: scale(.97); }
 @keyframes lb-pop {
   0%   { opacity: 0; transform: translateY(20px) scale(.92); }
   100% { opacity: 1; transform: translateY(0)    scale(1);   }
 }
 .lb-pod.silver { animation-delay: .05s; }
-.lb-pod.gold   { animation-delay: .15s; padding-top: 26px; padding-bottom: 22px; }
+.lb-pod.gold   { animation-delay: .15s; padding-top: 26px; padding-bottom: 22px;
+                  animation: lb-pop .55s cubic-bezier(.34,1.56,.64,1) both,
+                             lb-float 3.4s ease-in-out 1s infinite; }
 .lb-pod.bronze { animation-delay: .10s; }
+@keyframes lb-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
 
 .lb-pod.gold {
   background: linear-gradient(180deg, var(--gold-bg) 0%, var(--surface) 70%);
@@ -165,14 +220,6 @@
   border-color: rgba(180,83,9,.35);
 }
 
-/* Floating animation on gold */
-.lb-pod.gold { animation: lb-pop .55s cubic-bezier(.34,1.56,.64,1) both, lb-float 3.4s ease-in-out 1s infinite; }
-@keyframes lb-float {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-4px); }
-}
-
-/* Crown / medal badge */
 .lb-medal {
   position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
   width: 32px; height: 32px; border-radius: 50%;
@@ -181,7 +228,6 @@
   box-shadow: 0 4px 12px rgba(0,0,0,.2);
   border: 2.5px solid var(--surface);
 }
-.lb-medal.m1 { background: linear-gradient(135deg, #F59E0B, #D97706); box-shadow: 0 4px 14px rgba(245,158,11,.55); }
 .lb-medal.m2 { background: linear-gradient(135deg, #94A3B8, #64748B); }
 .lb-medal.m3 { background: linear-gradient(135deg, #B45309, #92400E); }
 
@@ -195,17 +241,9 @@
   50%      { transform: translateX(-50%) translateY(-3px) rotate(6deg); }
 }
 
-/* Podium avatar */
-.lb-pod-av-wrap {
-  position: relative;
-  width: 64px; height: 64px;
-  margin: 0 auto 10px;
-}
+.lb-pod-av-wrap { position: relative; width: 64px; height: 64px; margin: 0 auto 10px; }
 .lb-pod.gold .lb-pod-av-wrap { width: 76px; height: 76px; }
-.lb-pod-av-ring {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: linear-gradient(135deg, var(--cyan), var(--navy));
-}
+.lb-pod-av-ring { position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(135deg, var(--cyan), var(--navy)); }
 .lb-pod.gold   .lb-pod-av-ring { background: linear-gradient(135deg, #FBBF24, #D97706, #92400E); box-shadow: 0 0 24px rgba(245,158,11,.5); }
 .lb-pod.silver .lb-pod-av-ring { background: linear-gradient(135deg, #E2E8F0, #94A3B8, #475569); }
 .lb-pod.bronze .lb-pod-av-ring { background: linear-gradient(135deg, #FCD34D, #B45309, #78350F); }
@@ -229,9 +267,8 @@
 .lb-pod.gold .lb-pod-name { font-size: 14px; }
 .lb-pod-meta {
   font-size: 10px; font-weight: 600; color: var(--text-muted);
-  margin-top: 2px;
+  margin-top: 2px; padding: 0 4px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  padding: 0 4px;
 }
 .lb-pod-score {
   margin-top: 8px;
@@ -266,10 +303,7 @@
   background: radial-gradient(circle, rgba(6,182,212,.25), transparent 70%);
   pointer-events: none;
 }
-.lb-myrank-rank {
-  font-size: 38px; font-weight: 900; line-height: 1; letter-spacing: -1.5px;
-  position: relative; z-index: 1;
-}
+.lb-myrank-rank { font-size: 38px; font-weight: 900; line-height: 1; letter-spacing: -1.5px; position: relative; z-index: 1; }
 .lb-myrank-rank::before { content: '#'; font-size: 22px; opacity: .5; margin-right: 2px; }
 .lb-myrank-body { flex: 1; min-width: 0; position: relative; z-index: 1; }
 .lb-myrank-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .08em; opacity: .65; text-transform: uppercase; }
@@ -282,7 +316,7 @@
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: 22px;
-  margin: 0 16px;
+  margin: 0 16px 18px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(12,31,69,.06);
 }
@@ -307,17 +341,15 @@
   border-bottom: 1px solid var(--border);
   transition: background .15s;
   position: relative;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .lb-row:last-child { border-bottom: none; }
 .lb-row:hover { background: rgba(6,182,212,.04); }
 .dark-mode .lb-row:hover { background: rgba(6,182,212,.06); }
-.lb-row.me {
-  background: linear-gradient(90deg, rgba(6,182,212,.10), rgba(6,182,212,.02));
-}
-.lb-row.me::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-  width: 3px; background: var(--cyan);
-}
+.lb-row:active { background: rgba(6,182,212,.10); }
+.lb-row.me { background: linear-gradient(90deg, rgba(6,182,212,.10), rgba(6,182,212,.02)); }
+.lb-row.me::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--cyan); }
 
 .lb-rank {
   width: 28px; flex-shrink: 0; text-align: center;
@@ -327,11 +359,8 @@
 .lb-row.me .lb-rank { color: var(--cyan); }
 
 .lb-av-wrap { position: relative; width: 38px; height: 38px; flex-shrink: 0; }
-.lb-av-ring {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: linear-gradient(135deg, var(--cyan), var(--navy));
-  opacity: .85;
-}
+.lb-av-ring { position: absolute; inset: 0; border-radius: 50%;
+              background: linear-gradient(135deg, var(--cyan), var(--navy)); opacity: .85; }
 .lb-av {
   position: absolute; inset: 2px;
   border-radius: 50%;
@@ -342,10 +371,8 @@
 }
 
 .lb-info { flex: 1; min-width: 0; }
-.lb-name {
-  font-size: 13.5px; font-weight: 700; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.lb-name { font-size: 13.5px; font-weight: 700; color: var(--text);
+           white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lb-badge {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 1px 7px; margin-top: 3px;
@@ -365,6 +392,50 @@
   font-variant-numeric: tabular-nums;
 }
 .lb-row.me .lb-score { color: var(--cyan); }
+.lb-row-chev { color: var(--text-muted); font-size: 11px; flex-shrink: 0; margin-left: 4px; }
+
+/* Group / Branch rows */
+.lb-row.entity .lb-av { background: linear-gradient(135deg, var(--cyan), var(--navy));
+                        font-size: 14px; }
+.lb-row.entity .lb-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px;
+                          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ══ History strip ═══════════════════════════════════════════════ */
+.lb-history-strip {
+  margin: 0 16px 18px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 22px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 20px rgba(12,31,69,.06);
+}
+.lb-history-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.lb-history-title {
+  font-size: 13px; font-weight: 700; color: var(--text); margin: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.lb-history-title i { color: var(--cyan); font-size: 12px; }
+.lb-history-link { font-size: 11.5px; font-weight: 600; color: var(--cyan); text-decoration: none; }
+.lb-history-list { display: flex; flex-direction: column; gap: 8px; }
+.lb-history-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: var(--bg);
+  text-decoration: none;
+  transition: transform .15s;
+}
+.dark-mode .lb-history-row { background: rgba(255,255,255,.03); }
+.lb-history-row:active { transform: scale(.98); }
+.lb-history-row-name { flex: 1; font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-history-row-rank {
+  font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px;
+  background: rgba(6,182,212,.14); color: #0891B2; letter-spacing: -.2px;
+}
+.dark-mode .lb-history-row-rank { background: rgba(6,182,212,.2); color: #67E8F9; }
 
 /* ══ Empty state ════════════════════════════════════════════════ */
 .lb-empty {
@@ -379,6 +450,153 @@
 .lb-empty i { font-size: 38px; opacity: .25; display: block; margin-bottom: 12px; }
 .lb-empty-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
 .lb-empty p { font-size: 12.5px; margin: 0; }
+
+/* ══════════════════════════════════════════════════════════════════
+   DETAIL MODAL
+══════════════════════════════════════════════════════════════════ */
+.lb-modal {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  background: rgba(7,15,28,.78);
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 0;
+}
+.lb-modal.open { display: flex; animation: lb-modal-fade .25s ease; }
+@keyframes lb-modal-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.lb-modal-card {
+  background: var(--surface);
+  border-top-left-radius: 28px; border-top-right-radius: 28px;
+  width: 100%; max-width: 520px;
+  max-height: 90vh; overflow-y: auto;
+  position: relative;
+  animation: lb-slide-up .35s cubic-bezier(.4,0,.2,1);
+}
+@keyframes lb-slide-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@media (min-width: 640px) {
+  .lb-modal { align-items: center; padding: 20px; }
+  .lb-modal-card { border-radius: 28px; max-height: 80vh; }
+}
+
+.lb-modal-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--text-muted); opacity: .3;
+  margin: 8px auto 0;
+}
+.lb-modal-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--bg); color: var(--text-sub);
+  border: none; cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1;
+}
+.dark-mode .lb-modal-close { background: rgba(255,255,255,.06); color: #CBD5E1; }
+
+.lb-modal-hero {
+  background: linear-gradient(160deg, #06102A 0%, #0D2657 60%, #0E3E94 100%);
+  padding: 32px 24px 28px;
+  text-align: center;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  border-top-left-radius: 28px; border-top-right-radius: 28px;
+}
+.lb-modal-hero::before {
+  content: ''; position: absolute; inset: -30px;
+  background: radial-gradient(circle at 30% 20%, rgba(6,182,212,.30), transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(245,158,11,.20), transparent 55%);
+  pointer-events: none;
+}
+.lb-modal-rank-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 999px;
+  background: rgba(6,182,212,.2); border: 1px solid rgba(6,182,212,.35);
+  color: #67E8F9; font-size: 11px; font-weight: 800;
+  margin-bottom: 14px; position: relative; z-index: 1;
+}
+.lb-modal-av-wrap { position: relative; width: 96px; height: 96px;
+                    margin: 0 auto 14px; z-index: 1; }
+.lb-modal-av-ring { position: absolute; inset: 0; border-radius: 50%;
+                    background: linear-gradient(135deg, #06B6D4, #1B3F7A, #0C1F45);
+                    box-shadow: 0 0 28px rgba(6,182,212,.4); }
+.lb-modal-av {
+  position: absolute; inset: 4px; border-radius: 50%;
+  background: #1B3F7A; color: #fff;
+  font-size: 30px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.lb-modal-name {
+  position: relative; z-index: 1;
+  font-size: 20px; font-weight: 800; color: #fff;
+  letter-spacing: -.4px; margin: 0 0 4px;
+}
+.lb-modal-meta {
+  position: relative; z-index: 1;
+  font-size: 12px; color: rgba(255,255,255,.6);
+}
+.lb-modal-score-big {
+  position: relative; z-index: 1; margin-top: 14px;
+  font-size: 38px; font-weight: 900; color: #fff;
+  letter-spacing: -1px; line-height: 1;
+}
+.lb-modal-score-big span { font-size: 14px; opacity: .55; font-weight: 600; margin-left: 4px; }
+
+.lb-modal-badge {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 12px;
+  padding: 5px 12px; border-radius: 999px;
+  background: rgba(245,158,11,.18); border: 1px solid rgba(245,158,11,.35);
+  color: #FCD34D; font-size: 11px; font-weight: 800;
+  position: relative; z-index: 1;
+}
+
+.lb-modal-body { padding: 22px 22px 26px; }
+.lb-modal-section {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--text-muted);
+  margin: 0 0 12px;
+}
+.lb-mbar-row { margin-bottom: 14px; }
+.lb-mbar-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px;
+}
+.lb-mbar-name { font-size: 12.5px; font-weight: 700; color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
+.lb-mbar-name i { font-size: 11px; color: var(--cyan); }
+.lb-mbar-val { font-size: 13px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.lb-mbar-val.na { color: var(--text-muted); font-weight: 600; }
+.lb-mbar-track { height: 7px; border-radius: 999px; background: var(--bg); overflow: hidden; }
+.dark-mode .lb-mbar-track { background: rgba(255,255,255,.05); }
+.lb-mbar-fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--cyan), var(--navy-mid));
+  transition: width .8s cubic-bezier(.34,1.56,.64,1);
+}
+.lb-mbar-fill.att { background: linear-gradient(90deg, #3B82F6, #1D4ED8); }
+.lb-mbar-fill.hw  { background: linear-gradient(90deg, #8B5CF6, #6D28D9); }
+.lb-mbar-fill.qz  { background: linear-gradient(90deg, #10B981, #047857); }
+.lb-mbar-fill.rs  { background: linear-gradient(90deg, #F59E0B, #B45309); }
+
+.lb-modal-foot {
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+  display: flex; gap: 8px;
+  flex-wrap: wrap;
+}
+.lb-modal-pill {
+  flex: 1; min-width: 0; padding: 10px 12px;
+  border-radius: 14px; background: var(--bg);
+  text-align: center;
+}
+.dark-mode .lb-modal-pill { background: rgba(255,255,255,.04); }
+.lb-modal-pill-num { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+.lb-modal-pill-lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-top: 3px; }
 </style>
 {% endblock custom_css %}
 
@@ -388,35 +606,40 @@
   <!-- ── Hero ──────────────────────────────────────────────────── -->
   <div class="lb-hero">
     <div class="lb-hero-inner">
-      <span class="lb-eyebrow"><i class="fas fa-bolt"></i> Iceberg League</span>
-      <h1 class="lb-title">Leaderboard <span class="star">✨</span></h1>
-      <p class="lb-sub">{{ total_count }} student{{ total_count|pluralize }} competing — climb the ranks by being consistent.</p>
+      <div class="lb-hero-text">
+        <span class="lb-eyebrow"><i class="fas fa-bolt"></i> Iceberg League</span>
+        <h1 class="lb-title">Leaderboard <span class="star">✨</span></h1>
+        <p class="lb-sub">{{ total_count }} {% if mode == 'students' %}student{% elif mode == 'groups' %}group{% else %}branch{% endif %}{{ total_count|pluralize }} competing — climb the ranks by being consistent.</p>
+      </div>
+      <a href="{% url 'student_leaderboard_history' %}" class="lb-history-btn">
+        <i class="fas fa-history"></i> History
+      </a>
     </div>
   </div>
 
-  <!-- ── Filters ───────────────────────────────────────────────── -->
+  <!-- ── Mode + Filters ─────────────────────────────────────────── -->
+  <div class="lb-modebar">
+    <a href="?mode=students&scope={{ scope }}&time={{ time_filter }}" class="lb-mode-chip {% if mode == 'students' %}on{% endif %}">
+      <i class="fas fa-user-graduate"></i> Students
+    </a>
+    <a href="?mode=groups&scope={{ scope }}&time={{ time_filter }}" class="lb-mode-chip {% if mode == 'groups' %}on{% endif %}">
+      <i class="fas fa-layer-group"></i> Groups
+    </a>
+    <a href="?mode=branches&scope={{ scope }}&time={{ time_filter }}" class="lb-mode-chip {% if mode == 'branches' %}on{% endif %}">
+      <i class="fas fa-building"></i> Branches
+    </a>
+  </div>
+
   <div class="lb-filters">
     <div class="lb-filter-row scope">
-      <a href="?scope=group&time={{ time_filter }}"  class="lb-chip {% if scope == 'group' %}on{% endif %}">
-        <i class="fas fa-layer-group"></i> My Group
-      </a>
-      <a href="?scope=branch&time={{ time_filter }}" class="lb-chip {% if scope == 'branch' %}on{% endif %}">
-        <i class="fas fa-building"></i> My Branch
-      </a>
-      <a href="?scope=all&time={{ time_filter }}"    class="lb-chip {% if scope == 'all' %}on{% endif %}">
-        <i class="fas fa-globe"></i> All
-      </a>
+      <a href="?mode={{ mode }}&scope=group&time={{ time_filter }}"  class="lb-chip {% if scope == 'group' %}on{% endif %}"><i class="fas fa-layer-group"></i> My Group</a>
+      <a href="?mode={{ mode }}&scope=branch&time={{ time_filter }}" class="lb-chip {% if scope == 'branch' %}on{% endif %}"><i class="fas fa-building"></i> My Branch</a>
+      <a href="?mode={{ mode }}&scope=all&time={{ time_filter }}"    class="lb-chip {% if scope == 'all' %}on{% endif %}"><i class="fas fa-globe"></i> All</a>
     </div>
     <div class="lb-filter-row time">
-      <a href="?scope={{ scope }}&time=week"  class="lb-chip {% if time_filter == 'week' %}on{% endif %}">
-        Weekly
-      </a>
-      <a href="?scope={{ scope }}&time=month" class="lb-chip {% if time_filter == 'month' %}on{% endif %}">
-        Monthly
-      </a>
-      <a href="?scope={{ scope }}&time=all"   class="lb-chip {% if time_filter == 'all' %}on{% endif %}">
-        All Time
-      </a>
+      <a href="?mode={{ mode }}&scope={{ scope }}&time=week"  class="lb-chip {% if time_filter == 'week' %}on{% endif %}">Weekly</a>
+      <a href="?mode={{ mode }}&scope={{ scope }}&time=month" class="lb-chip {% if time_filter == 'month' %}on{% endif %}">Monthly</a>
+      <a href="?mode={{ mode }}&scope={{ scope }}&time=all"   class="lb-chip {% if time_filter == 'all' %}on{% endif %}">All Time</a>
     </div>
   </div>
 
@@ -426,42 +649,42 @@
 
     {% if top3|length >= 2 %}
     {% with r=top3.1 %}
-    <div class="lb-pod silver">
+    <div class="lb-pod silver" {% if mode == 'students' %}data-row="{{ r.student_id }}" onclick="lbOpenStudent(this)"{% endif %}>
       <div class="lb-medal m2">2</div>
       <div class="lb-pod-av-wrap">
         <div class="lb-pod-av-ring"></div>
-        <div class="lb-pod-av" data-av="{{ r.avatar }}">{{ r.first|first|upper }}</div>
+        <div class="lb-pod-av" {% if mode == 'students' %}data-av="{{ r.avatar }}"{% endif %}>{{ r.first|first|upper|default:r.name|first|upper }}</div>
       </div>
       <div class="lb-pod-name">{{ r.first|default:r.name }}</div>
-      <div class="lb-pod-meta">{{ r.level }}</div>
+      <div class="lb-pod-meta">{% if mode == 'students' %}{{ r.level }}{% elif mode == 'groups' %}{{ r.branch }}{% else %}{{ r.count }} students{% endif %}</div>
       <div class="lb-pod-score">{{ r.score }}%</div>
     </div>
     {% endwith %}
     {% endif %}
 
     {% with r=top3.0 %}
-    <div class="lb-pod gold">
+    <div class="lb-pod gold" {% if mode == 'students' %}data-row="{{ r.student_id }}" onclick="lbOpenStudent(this)"{% endif %}>
       <div class="lb-crown">👑</div>
       <div class="lb-pod-av-wrap">
         <div class="lb-pod-av-ring"></div>
-        <div class="lb-pod-av" data-av="{{ r.avatar }}">{{ r.first|first|upper }}</div>
+        <div class="lb-pod-av" {% if mode == 'students' %}data-av="{{ r.avatar }}"{% endif %}>{{ r.first|first|upper|default:r.name|first|upper }}</div>
       </div>
       <div class="lb-pod-name">{{ r.first|default:r.name }}</div>
-      <div class="lb-pod-meta">{{ r.level }}</div>
+      <div class="lb-pod-meta">{% if mode == 'students' %}{{ r.level }}{% elif mode == 'groups' %}{{ r.branch }}{% else %}{{ r.count }} students{% endif %}</div>
       <div class="lb-pod-score">{{ r.score }}%</div>
     </div>
     {% endwith %}
 
     {% if top3|length >= 3 %}
     {% with r=top3.2 %}
-    <div class="lb-pod bronze">
+    <div class="lb-pod bronze" {% if mode == 'students' %}data-row="{{ r.student_id }}" onclick="lbOpenStudent(this)"{% endif %}>
       <div class="lb-medal m3">3</div>
       <div class="lb-pod-av-wrap">
         <div class="lb-pod-av-ring"></div>
-        <div class="lb-pod-av" data-av="{{ r.avatar }}">{{ r.first|first|upper }}</div>
+        <div class="lb-pod-av" {% if mode == 'students' %}data-av="{{ r.avatar }}"{% endif %}>{{ r.first|first|upper|default:r.name|first|upper }}</div>
       </div>
       <div class="lb-pod-name">{{ r.first|default:r.name }}</div>
-      <div class="lb-pod-meta">{{ r.level }}</div>
+      <div class="lb-pod-meta">{% if mode == 'students' %}{{ r.level }}{% elif mode == 'groups' %}{{ r.branch }}{% else %}{{ r.count }} students{% endif %}</div>
       <div class="lb-pod-score">{{ r.score }}%</div>
     </div>
     {% endwith %}
@@ -472,12 +695,12 @@
   <div class="lb-empty">
     <i class="fas fa-trophy"></i>
     <div class="lb-empty-title">No rankings yet</div>
-    <p>Once attendance, homework, or quiz data exists, the leaderboard fills up here.</p>
+    <p>Once {% if mode == 'students' %}attendance, homework, or quiz data{% else %}student activity{% endif %} exists, the leaderboard fills up here.</p>
   </div>
   {% endif %}
 
-  <!-- ── Your rank callout ─────────────────────────────────────── -->
-  {% if my_entry and my_rank > 3 %}
+  <!-- ── Your rank callout (students mode only) ───────────────── -->
+  {% if mode == 'students' and my_entry and my_rank > 3 %}
   <div class="lb-myrank">
     <div class="lb-myrank-rank">{{ my_rank }}</div>
     <div class="lb-myrank-body">
@@ -499,27 +722,139 @@
       <span class="lb-list-count">{{ list_rows|length }} more</span>
     </div>
     {% for r in list_rows %}
-    <div class="lb-row {% if r.is_me %}me{% endif %}">
-      <span class="lb-rank">{{ r.rank }}</span>
-      <div class="lb-av-wrap">
-        <div class="lb-av-ring"></div>
-        <div class="lb-av" data-av="{{ r.avatar }}">{{ r.first|first|upper }}</div>
+      {% if mode == 'students' %}
+      <div class="lb-row {% if r.is_me %}me{% endif %}" data-row="{{ r.student_id }}" onclick="lbOpenStudent(this)">
+        <span class="lb-rank">{{ r.rank }}</span>
+        <div class="lb-av-wrap">
+          <div class="lb-av-ring"></div>
+          <div class="lb-av" data-av="{{ r.avatar }}">{{ r.first|first|upper }}</div>
+        </div>
+        <div class="lb-info">
+          <div class="lb-name">{{ r.name }}{% if r.is_me %} · You{% endif %}</div>
+          {% if r.badge %}
+            <span class="lb-badge"><span class="ico">{{ r.badge.icon }}</span> {{ r.badge.label }}</span>
+          {% elif r.level and r.level != '—' %}
+            <span class="lb-badge" style="background:rgba(100,116,139,.08);color:#475569;border-color:rgba(100,116,139,.18);">
+              <span class="ico">📚</span> {{ r.level }}
+            </span>
+          {% endif %}
+        </div>
+        <span class="lb-score">{{ r.score }}%</span>
+        <i class="fas fa-chevron-right lb-row-chev"></i>
       </div>
-      <div class="lb-info">
-        <div class="lb-name">{{ r.name }}{% if r.is_me %} · You{% endif %}</div>
-        {% if r.badge %}
-          <span class="lb-badge"><span class="ico">{{ r.badge.icon }}</span> {{ r.badge.label }}</span>
-        {% elif r.level and r.level != '—' %}
-          <span class="lb-badge" style="background:rgba(100,116,139,.08);color:#475569;border-color:rgba(100,116,139,.18);">
-            <span class="ico">📚</span> {{ r.level }}
-          </span>
-        {% endif %}
+      {% else %}
+      <div class="lb-row entity {% if r.is_me %}me{% endif %}">
+        <span class="lb-rank">{{ r.rank }}</span>
+        <div class="lb-av-wrap">
+          <div class="lb-av-ring"></div>
+          <div class="lb-av">{% if mode == 'groups' %}<i class="fas fa-layer-group"></i>{% else %}<i class="fas fa-building"></i>{% endif %}</div>
+        </div>
+        <div class="lb-info">
+          <div class="lb-name">{{ r.name }}{% if r.is_me %} · You{% endif %}</div>
+          <div class="lb-meta">
+            {% if mode == 'groups' %}
+              {{ r.branch|default:'—' }} · {{ r.count }} student{{ r.count|pluralize }}
+              {% if r.teacher %} · {{ r.teacher }}{% endif %}
+            {% else %}
+              {{ r.count }} student{{ r.count|pluralize }}
+            {% endif %}
+          </div>
+        </div>
+        <span class="lb-score">{{ r.score }}%</span>
       </div>
-      <span class="lb-score">{{ r.score }}%</span>
-    </div>
+      {% endif %}
     {% endfor %}
   </div>
   {% endif %}
+
+  <!-- ── Recent seasons history strip ─────────────────────────── -->
+  {% if my_history %}
+  <div class="lb-history-strip">
+    <div class="lb-history-hd">
+      <h4 class="lb-history-title"><i class="fas fa-history"></i> Your Recent Seasons</h4>
+      <a href="{% url 'student_leaderboard_history' %}" class="lb-history-link">View all →</a>
+    </div>
+    <div class="lb-history-list">
+      {% for s in my_history|slice:":3" %}
+      <a href="{% url 'student_leaderboard_season' s.season_id %}" class="lb-history-row">
+        <span class="lb-history-row-name">{{ s.season.name }}</span>
+        <span class="lb-history-row-rank">#{{ s.rank }} · {{ s.score|floatformat:1 }}%</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ══ DETAIL MODAL (students mode) ═══════════════════════════ -->
+  <div class="lb-modal" id="lb-modal" onclick="lbCloseIfOutside(event)">
+    <div class="lb-modal-card" id="lb-modal-card">
+      <div class="lb-modal-handle"></div>
+      <button type="button" class="lb-modal-close" onclick="lbCloseModal()" aria-label="Close">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="lb-modal-hero">
+        <span class="lb-modal-rank-chip" id="lbm-rank">#1</span>
+        <div class="lb-modal-av-wrap">
+          <div class="lb-modal-av-ring"></div>
+          <div class="lb-modal-av" id="lbm-av">—</div>
+        </div>
+        <h3 class="lb-modal-name" id="lbm-name">—</h3>
+        <div class="lb-modal-meta" id="lbm-meta">—</div>
+        <div class="lb-modal-score-big" id="lbm-score">0<span>/100</span></div>
+        <div id="lbm-badge-wrap"></div>
+      </div>
+      <div class="lb-modal-body">
+        <h4 class="lb-modal-section">Score Breakdown</h4>
+
+        <div class="lb-mbar-row">
+          <div class="lb-mbar-head">
+            <span class="lb-mbar-name"><i class="fas fa-calendar-check"></i> Attendance</span>
+            <span class="lb-mbar-val" id="lbm-att-v">—</span>
+          </div>
+          <div class="lb-mbar-track"><div class="lb-mbar-fill att" id="lbm-att-f" style="width:0%;"></div></div>
+        </div>
+
+        <div class="lb-mbar-row">
+          <div class="lb-mbar-head">
+            <span class="lb-mbar-name"><i class="fas fa-tasks"></i> Homework</span>
+            <span class="lb-mbar-val" id="lbm-hw-v">—</span>
+          </div>
+          <div class="lb-mbar-track"><div class="lb-mbar-fill hw" id="lbm-hw-f" style="width:0%;"></div></div>
+        </div>
+
+        <div class="lb-mbar-row">
+          <div class="lb-mbar-head">
+            <span class="lb-mbar-name"><i class="fas fa-brain"></i> Quizzes</span>
+            <span class="lb-mbar-val" id="lbm-qz-v">—</span>
+          </div>
+          <div class="lb-mbar-track"><div class="lb-mbar-fill qz" id="lbm-qz-f" style="width:0%;"></div></div>
+        </div>
+
+        <div class="lb-mbar-row">
+          <div class="lb-mbar-head">
+            <span class="lb-mbar-name"><i class="fas fa-chart-bar"></i> Results</span>
+            <span class="lb-mbar-val" id="lbm-rs-v">—</span>
+          </div>
+          <div class="lb-mbar-track"><div class="lb-mbar-fill rs" id="lbm-rs-f" style="width:0%;"></div></div>
+        </div>
+
+        <div class="lb-modal-foot">
+          <div class="lb-modal-pill">
+            <div class="lb-modal-pill-num" id="lbm-rank-num">—</div>
+            <div class="lb-modal-pill-lbl">Rank</div>
+          </div>
+          <div class="lb-modal-pill">
+            <div class="lb-modal-pill-num" id="lbm-comp">—</div>
+            <div class="lb-modal-pill-lbl">Composite</div>
+          </div>
+          <div class="lb-modal-pill">
+            <div class="lb-modal-pill-num" id="lbm-level">—</div>
+            <div class="lb-modal-pill-lbl">Level</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </div>
 {% endblock content %}
@@ -527,14 +862,14 @@
 {% block custom_js %}
 <script>
 (function () {
-  /* Same avatar mapping as the dashboard */
+  /* ── Avatar emoji mapping (same as dashboard) ─────────────── */
   var AVATARS = ["🧑‍🎓","👨‍🎓","👩‍🎓","🧑‍💻","👨‍💻","👩‍💻","🧑‍🏫","👨‍🏫","👩‍🏫","🤓",
                  "😊","😎","💡","📚","🏆","⭐","💪","🎯","🌟","🦉","🌍","✏️","🎨","🔬"];
   var BG = ["#1B3F7A","#0C1F45","#7C3AED","#0891B2","#1F2937","#6D28D9",
             "#BE185D","#B45309","#C2410C","#15803D","#0284C7","#4338CA",
             "#A16207","#7C2D12","#B45309","#EA580C","#B91C1C","#991B1B",
             "#4F46E5","#65A30D","#0D9488","#6B7280","#DB2777","#0891B2"];
-  document.querySelectorAll('[data-av]').forEach(function (el) {
+  function applyAvatar(el) {
     var av = el.getAttribute('data-av');
     if (!av) return;
     var idx = parseInt(av, 10) - 1;
@@ -542,9 +877,10 @@
       el.textContent = AVATARS[idx];
       el.style.background = BG[idx];
     }
-  });
+  }
+  document.querySelectorAll('[data-av]').forEach(applyAvatar);
 
-  /* Subtle confetti burst for #1 on first paint */
+  /* ── Confetti for #1 ──────────────────────────────────────── */
   function confetti() {
     var crown = document.querySelector('.lb-pod.gold');
     if (!crown) return;
@@ -571,6 +907,93 @@
     }
   }
   confetti();
+
+  /* ── Detail modal ─────────────────────────────────────────── */
+  var RANKINGS = {{ rankings_json|safe }};
+  var byId = {};
+  RANKINGS.forEach(function (r) { byId[r.id] = r; });
+
+  window.lbOpenStudent = function (rowEl) {
+    var id = parseInt(rowEl.getAttribute('data-row'), 10);
+    var r = byId[id];
+    if (!r) return;
+
+    // Header
+    document.getElementById('lbm-rank').textContent = '#' + r.rank;
+    document.getElementById('lbm-name').textContent = r.name + (r.is_me ? ' · You' : '');
+    var metaBits = [];
+    if (r.level && r.level !== '—') metaBits.push(r.level);
+    if (r.course) metaBits.push(r.course);
+    document.getElementById('lbm-meta').textContent = metaBits.join(' · ') || '—';
+
+    // Avatar
+    var avEl = document.getElementById('lbm-av');
+    avEl.textContent = (r.first || r.name || '?').charAt(0).toUpperCase();
+    avEl.style.background = '#1B3F7A';
+    avEl.style.fontSize = '30px';
+    if (r.avatar) {
+      var idx = parseInt(r.avatar, 10) - 1;
+      if (idx >= 0 && idx < AVATARS.length) {
+        avEl.textContent = AVATARS[idx];
+        avEl.style.background = BG[idx];
+        avEl.style.fontSize = '40px';
+      }
+    }
+
+    // Score
+    document.getElementById('lbm-score').innerHTML = r.score + '<span>/100</span>';
+
+    // Badge
+    var badgeWrap = document.getElementById('lbm-badge-wrap');
+    badgeWrap.innerHTML = '';
+    if (r.badge && r.badge.label) {
+      badgeWrap.innerHTML =
+        '<div class="lb-modal-badge"><span>' + (r.badge.icon || '⭐') + '</span> ' + r.badge.label + '</div>';
+    }
+
+    // Metric bars
+    var metrics = r.metrics || {};
+    function set(prefix, val) {
+      var fEl = document.getElementById('lbm-' + prefix + '-f');
+      var vEl = document.getElementById('lbm-' + prefix + '-v');
+      if (val === null || val === undefined) {
+        vEl.textContent = '—';
+        vEl.classList.add('na');
+        fEl.style.width = '0%';
+      } else {
+        vEl.textContent = val + '%';
+        vEl.classList.remove('na');
+        // Animate after a short delay so the transition runs
+        fEl.style.width = '0%';
+        setTimeout(function () { fEl.style.width = Math.max(0, Math.min(100, val)) + '%'; }, 60);
+      }
+    }
+    set('att', metrics.attendance);
+    set('hw',  metrics.homework);
+    set('qz',  metrics.quizzes);
+    set('rs',  metrics.results);
+
+    // Footer pills
+    document.getElementById('lbm-rank-num').textContent = '#' + r.rank;
+    document.getElementById('lbm-comp').textContent = r.score + '%';
+    document.getElementById('lbm-level').textContent = r.level && r.level !== '—' ? r.level.replace('Level ', 'L') : '—';
+
+    // Open modal
+    var modal = document.getElementById('lb-modal');
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.lbCloseModal = function () {
+    document.getElementById('lb-modal').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+  window.lbCloseIfOutside = function (e) {
+    if (e.target === document.getElementById('lb-modal')) window.lbCloseModal();
+  };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') window.lbCloseModal();
+  });
 })();
 </script>
 {% endblock custom_js %}

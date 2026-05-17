@@ -4,7 +4,7 @@ import logging
 import requests
 from django.contrib import messages
 from django.core.files.storage import default_storage
-from django.db import IntegrityError, OperationalError, ProgrammingError, transaction
+from django.db import IntegrityError, OperationalError, ProgrammingError, models, transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import (HttpResponse, HttpResponseRedirect,
                               get_object_or_404, redirect, render)
@@ -1249,3 +1249,133 @@ def delete_story(request, story_id):
     story.delete()
     messages.success(request, 'Story deleted.')
     return redirect(reverse('manage_stories'))
+
+
+# ── Leaderboard Admin ────────────────────────────────────────────────────────
+
+@admin_only
+def admin_leaderboard_settings(request):
+    """Admin form for tuning ranking weights and toggling metrics."""
+    settings = LeaderboardSettings.get()
+    form = LeaderboardSettingsForm(request.POST or None, instance=settings)
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Leaderboard weights updated.')
+            return redirect(reverse('admin_leaderboard_settings'))
+    return render(request, 'hod_template/admin_leaderboard_settings.html', {
+        'form':       form,
+        'settings':   settings,
+        'page_title': 'Leaderboard Settings',
+    })
+
+
+@admin_only
+def admin_manage_seasons(request):
+    """List, create and end leaderboard seasons. Capture snapshots on demand."""
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'create':
+            form = LeaderboardSeasonForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Season created.')
+            else:
+                messages.error(request, 'Could not create season — please check the fields.')
+            return redirect(reverse('admin_manage_seasons'))
+        if action == 'end':
+            season_id = request.POST.get('season_id')
+            season = get_object_or_404(LeaderboardSeason, id=season_id)
+            from django.utils import timezone as tz
+            season.end_date = tz.now().date()
+            season.is_active = False
+            season.save()
+            messages.success(request, f'Season "{season.name}" ended.')
+            return redirect(reverse('admin_manage_seasons'))
+        if action == 'snapshot':
+            season_id = request.POST.get('season_id')
+            season = get_object_or_404(LeaderboardSeason, id=season_id)
+            count = _capture_season_snapshot(season)
+            messages.success(request, f'Captured {count} snapshots for "{season.name}".')
+            return redirect(reverse('admin_manage_seasons'))
+        if action == 'delete':
+            season_id = request.POST.get('season_id')
+            season = get_object_or_404(LeaderboardSeason, id=season_id)
+            name = season.name
+            season.delete()
+            messages.success(request, f'Season "{name}" deleted.')
+            return redirect(reverse('admin_manage_seasons'))
+
+    seasons = (
+        LeaderboardSeason.objects.all()
+        .annotate(snap_count=models.Count('snapshots'))
+        .order_by('-is_active', '-start_date')
+    )
+    create_form = LeaderboardSeasonForm()
+    return render(request, 'hod_template/admin_manage_seasons.html', {
+        'seasons':     seasons,
+        'create_form': create_form,
+        'page_title':  'Leaderboard Seasons',
+    })
+
+
+def _capture_season_snapshot(season):
+    """
+    Freeze the current full-school 'all-time' ranking for the given season.
+    Wipes previous snapshots for this season and writes a new set.
+    """
+    from .student_views import (
+        _rank_score, _leaderboard_weights, _time_start, _assign_badges,
+    )
+    from django.db import transaction
+
+    weights = _leaderboard_weights()
+    time_start = None  # Capture lifetime snapshot
+
+    student_ids = list(
+        Student.objects.filter(status=Student.STATUS_ACTIVE).values_list('id', flat=True)
+    )
+    if not student_ids:
+        return 0
+
+    enrolled_by_student = {}
+    for e in Enrollment.objects.filter(
+        student_id__in=student_ids, is_active=True
+    ).values('student_id', 'group_id'):
+        enrolled_by_student.setdefault(e['student_id'], []).append(e['group_id'])
+
+    students = Student.objects.filter(id__in=student_ids).select_related('admin')
+    rankings = []
+    for s in students:
+        m = _rank_score(s.id, time_start, weights, enrolled_by_student)
+        rankings.append({
+            'student_id': s.id,
+            'first':      (s.admin.first_name or '').strip(),
+            'name':       s.admin.get_full_name() or s.admin.username,
+            'avatar':     s.admin.avatar or '',
+            'metrics':    m,
+            'score':      m['score'],
+            'is_me':      False,
+        })
+    rankings.sort(key=lambda r: r['score'], reverse=True)
+    for idx, r in enumerate(rankings):
+        r['rank'] = idx + 1
+    _assign_badges(rankings)
+
+    with transaction.atomic():
+        season.snapshots.all().delete()
+        bulk = []
+        for r in rankings:
+            bulk.append(LeaderboardSnapshot(
+                season=season,
+                student_id=r['student_id'],
+                rank=r['rank'],
+                score=r['score'],
+                attendance_pct=r['metrics']['attendance'],
+                homework_pct=r['metrics']['homework'],
+                quizzes_pct=r['metrics']['quizzes'],
+                results_pct=r['metrics']['results'],
+                badge=r.get('badge', {}).get('label', '') if r.get('badge') else '',
+            ))
+        LeaderboardSnapshot.objects.bulk_create(bulk, batch_size=500)
+    return len(rankings)

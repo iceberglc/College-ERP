@@ -593,13 +593,9 @@ def student_result_files(request):
 
 # ── Leaderboard ───────────────────────────────────────────────────────────────
 
-# Default weights for the composite ranking score
-LEADERBOARD_WEIGHTS = {
-    'attendance': 0.25,
-    'homework':   0.25,
-    'quizzes':    0.25,
-    'results':    0.25,
-}
+def _leaderboard_weights():
+    """Resolve weights from the singleton settings row (admin-tunable)."""
+    return LeaderboardSettings.get().normalized_weights()
 
 
 def _peer_student_ids(student, scope):
@@ -780,35 +776,28 @@ def _assign_badges(rankings):
         rankings[0]['badge'] = {'label': 'Top Overall', 'icon': '👑'}
 
 
-@student_only
-def student_leaderboard(request):
-    student = get_object_or_404(Student, admin=request.user)
-    scope = request.GET.get('scope', 'group')
-    time_filter = request.GET.get('time', 'month')
-    if scope not in ('group', 'branch', 'all'):
-        scope = 'group'
-    if time_filter not in ('week', 'month', 'all'):
-        time_filter = 'month'
-
+def _build_student_rankings(student, scope, time_filter):
+    """Return a sorted list of student ranking dicts for the given scope+time filter."""
     peer_ids = list(_peer_student_ids(student, scope))
     if student.id not in peer_ids:
         peer_ids.append(student.id)
 
-    # Pre-fetch enrolled groups per student so homework calc is fast
     enrolled_by_student = {}
-    for e in Enrollment.objects.filter(student_id__in=peer_ids, is_active=True).values('student_id', 'group_id'):
+    for e in Enrollment.objects.filter(
+        student_id__in=peer_ids, is_active=True
+    ).values('student_id', 'group_id'):
         enrolled_by_student.setdefault(e['student_id'], []).append(e['group_id'])
 
-    # Pre-fetch student → user info in one query
     peers = (
         Student.objects.filter(id__in=peer_ids)
         .select_related('admin', 'course')
     )
 
     time_start = _time_start(time_filter)
+    weights = _leaderboard_weights()
     rankings = []
     for s in peers:
-        m = _rank_score(s.id, time_start, LEADERBOARD_WEIGHTS, enrolled_by_student)
+        m = _rank_score(s.id, time_start, weights, enrolled_by_student)
         rankings.append({
             'student_id': s.id,
             'name':       (s.admin.get_full_name() or s.admin.username).strip() or s.admin.username,
@@ -819,50 +808,290 @@ def student_leaderboard(request):
             'is_me':      s.id == student.id,
             'metrics':    m,
             'score':      m['score'],
-            'streak':     _compute_streak(s) if s.id == student.id else 0,
         })
 
     rankings.sort(key=lambda r: r['score'], reverse=True)
     for idx, r in enumerate(rankings):
         r['rank'] = idx + 1
-
     _assign_badges(rankings)
+    return rankings
 
-    # Find current user's rank
-    my_entry = next((r for r in rankings if r['is_me']), None)
-    my_rank = my_entry['rank'] if my_entry else None
 
-    # Top 3 podium
-    top3 = rankings[:3]
-
-    # The list shown below the podium — skip top 3 if present in scope
-    list_rows = rankings[3:] if len(rankings) > 3 else []
-
-    # Motivational message
-    if my_rank is None:
-        my_msg = ''
-    elif my_rank == 1:
-        my_msg = "You're leading the pack — keep it up!"
-    elif my_rank <= 3:
-        my_msg = "On the podium! One more push to the top."
-    elif my_rank <= 10:
-        my_msg = "Top 10! Stay consistent to climb higher."
+def _build_group_rankings(student, scope, time_filter):
+    """Rank groups by the mean composite score of their enrolled students."""
+    # Determine which group IDs to consider
+    if scope == 'branch':
+        my_group_ids = Enrollment.objects.filter(
+            student=student, is_active=True
+        ).values_list('group_id', flat=True)
+        branch_ids = Group.objects.filter(
+            id__in=my_group_ids
+        ).values_list('branch_id', flat=True).distinct()
+        candidate_groups = Group.objects.filter(branch_id__in=branch_ids, is_archived=False)
+    elif scope == 'group':
+        my_group_ids = list(Enrollment.objects.filter(
+            student=student, is_active=True
+        ).values_list('group_id', flat=True))
+        candidate_groups = Group.objects.filter(id__in=my_group_ids, is_archived=False)
     else:
-        gap = rankings[9]['score'] - my_entry['score'] if my_entry and len(rankings) >= 10 else 0
-        my_msg = f"Just {gap:.1f}% away from the top 10."
+        candidate_groups = Group.objects.filter(is_archived=False)
+
+    candidate_groups = candidate_groups.select_related('branch', 'teacher__admin')
+
+    # Compute scores for all relevant students in one pass
+    student_ids = list(
+        Enrollment.objects.filter(
+            group__in=candidate_groups, is_active=True
+        ).values_list('student_id', flat=True).distinct()
+    )
+    if not student_ids:
+        return []
+
+    enrolled_by_student = {}
+    for e in Enrollment.objects.filter(
+        student_id__in=student_ids, is_active=True
+    ).values('student_id', 'group_id'):
+        enrolled_by_student.setdefault(e['student_id'], []).append(e['group_id'])
+
+    time_start = _time_start(time_filter)
+    weights = _leaderboard_weights()
+    student_score = {}
+    for sid in student_ids:
+        m = _rank_score(sid, time_start, weights, enrolled_by_student)
+        student_score[sid] = m['score']
+
+    my_group_ids = set(Enrollment.objects.filter(
+        student=student, is_active=True
+    ).values_list('group_id', flat=True))
+
+    rankings = []
+    for g in candidate_groups:
+        members = Enrollment.objects.filter(
+            group=g, is_active=True
+        ).values_list('student_id', flat=True)
+        scores = [student_score.get(sid, 0) for sid in members]
+        if not scores:
+            continue
+        avg = round(sum(scores) / len(scores), 1)
+        rankings.append({
+            'group_id':    g.id,
+            'name':        g.name,
+            'branch':      g.branch.name if g.branch else '',
+            'teacher':     g.teacher.admin.get_full_name() if g.teacher and g.teacher.admin else '',
+            'count':       len(scores),
+            'score':       avg,
+            'is_me':       g.id in my_group_ids,
+        })
+
+    rankings.sort(key=lambda r: r['score'], reverse=True)
+    for idx, r in enumerate(rankings):
+        r['rank'] = idx + 1
+    return rankings
+
+
+def _build_branch_rankings(student, scope, time_filter):
+    """Rank branches by the mean composite score of all their students."""
+    branches_qs = Branch.objects.all()
+    my_group_ids = Enrollment.objects.filter(
+        student=student, is_active=True
+    ).values_list('group_id', flat=True)
+    my_branch_ids = set(
+        Group.objects.filter(id__in=my_group_ids)
+        .values_list('branch_id', flat=True)
+    )
+
+    # Pre-compute all relevant student scores
+    all_student_ids = list(
+        Enrollment.objects.filter(
+            group__branch__in=branches_qs, is_active=True
+        ).values_list('student_id', flat=True).distinct()
+    )
+    if not all_student_ids:
+        return []
+
+    enrolled_by_student = {}
+    for e in Enrollment.objects.filter(
+        student_id__in=all_student_ids, is_active=True
+    ).values('student_id', 'group_id'):
+        enrolled_by_student.setdefault(e['student_id'], []).append(e['group_id'])
+
+    time_start = _time_start(time_filter)
+    weights = _leaderboard_weights()
+    student_score = {sid: _rank_score(sid, time_start, weights, enrolled_by_student)['score']
+                     for sid in all_student_ids}
+
+    rankings = []
+    for b in branches_qs:
+        group_ids = Group.objects.filter(branch=b).values_list('id', flat=True)
+        member_ids = (
+            Enrollment.objects.filter(group_id__in=group_ids, is_active=True)
+            .values_list('student_id', flat=True).distinct()
+        )
+        scores = [student_score.get(sid, 0) for sid in member_ids if sid in student_score]
+        if not scores:
+            continue
+        avg = round(sum(scores) / len(scores), 1)
+        rankings.append({
+            'branch_id': b.id,
+            'name':      b.name,
+            'count':     len(scores),
+            'score':     avg,
+            'is_me':     b.id in my_branch_ids,
+        })
+
+    rankings.sort(key=lambda r: r['score'], reverse=True)
+    for idx, r in enumerate(rankings):
+        r['rank'] = idx + 1
+    return rankings
+
+
+@student_only
+def student_leaderboard(request):
+    student = get_object_or_404(Student, admin=request.user)
+    scope = request.GET.get('scope', 'group')
+    time_filter = request.GET.get('time', 'month')
+    mode = request.GET.get('mode', 'students')
+    if scope not in ('group', 'branch', 'all'):
+        scope = 'group'
+    if time_filter not in ('week', 'month', 'all'):
+        time_filter = 'month'
+    if mode not in ('students', 'groups', 'branches'):
+        mode = 'students'
+
+    top3 = []
+    list_rows = []
+    my_entry = None
+    my_rank = None
+    my_msg = ''
+    rankings = []
+    rankings_json = '[]'
+
+    if mode == 'students':
+        rankings = _build_student_rankings(student, scope, time_filter)
+        # Build modal-data JSON (only fields needed by the modal)
+        rankings_json = json.dumps([
+            {
+                'id':     r['student_id'],
+                'name':   r['name'],
+                'first':  r['first'],
+                'avatar': r['avatar'],
+                'rank':   r['rank'],
+                'score':  r['score'],
+                'level':  r['level'],
+                'course': r['course'],
+                'metrics': r['metrics'],
+                'badge':   r.get('badge', {}),
+                'is_me':   r['is_me'],
+            }
+            for r in rankings
+        ])
+        my_entry = next((r for r in rankings if r['is_me']), None)
+        my_rank = my_entry['rank'] if my_entry else None
+        if my_rank == 1:
+            my_msg = "You're leading the pack — keep it up!"
+        elif my_rank and my_rank <= 3:
+            my_msg = "On the podium! One more push to the top."
+        elif my_rank and my_rank <= 10:
+            my_msg = "Top 10! Stay consistent to climb higher."
+        elif my_rank and len(rankings) >= 10:
+            gap = rankings[9]['score'] - my_entry['score']
+            my_msg = f"Just {gap:.1f}% away from the top 10."
+        top3 = rankings[:3]
+        list_rows = rankings[3:] if len(rankings) > 3 else []
+    elif mode == 'groups':
+        rankings = _build_group_rankings(student, scope, time_filter)
+        top3 = rankings[:3]
+        list_rows = rankings[3:] if len(rankings) > 3 else []
+    else:  # branches
+        rankings = _build_branch_rankings(student, scope, time_filter)
+        top3 = rankings[:3]
+        list_rows = rankings[3:] if len(rankings) > 3 else []
+
+    # Latest 3 closed seasons for the history widget
+    recent_seasons = LeaderboardSeason.objects.filter(
+        snapshots__isnull=False
+    ).distinct().order_by('-start_date')[:3]
+
+    # Student's own snapshot streak across recent seasons (for motivation)
+    my_history = list(
+        LeaderboardSnapshot.objects.filter(student=student)
+        .select_related('season')
+        .order_by('-season__start_date')[:6]
+    )
 
     context = {
-        'scope':       scope,
-        'time_filter': time_filter,
-        'top3':        top3,
-        'list_rows':   list_rows,
-        'my_entry':    my_entry,
-        'my_rank':     my_rank,
-        'total_count': len(rankings),
-        'my_msg':      my_msg,
-        'page_title':  'Leaderboard',
+        'scope':         scope,
+        'time_filter':   time_filter,
+        'mode':          mode,
+        'top3':          top3,
+        'list_rows':     list_rows,
+        'my_entry':      my_entry,
+        'my_rank':       my_rank,
+        'total_count':   len(rankings),
+        'my_msg':        my_msg,
+        'rankings_json': rankings_json,
+        'recent_seasons': recent_seasons,
+        'my_history':    my_history,
+        'page_title':    'Leaderboard',
     }
     return render(request, 'student_template/leaderboard.html', context)
+
+
+@student_only
+def student_leaderboard_history(request):
+    """Browse past leaderboard seasons + their frozen snapshots."""
+    student = get_object_or_404(Student, admin=request.user)
+    seasons = (
+        LeaderboardSeason.objects.filter(snapshots__isnull=False)
+        .distinct().order_by('-start_date')
+    )
+    # Current student's history across all seasons
+    my_history = (
+        LeaderboardSnapshot.objects.filter(student=student)
+        .select_related('season')
+        .order_by('-season__start_date')
+    )
+    return render(request, 'student_template/leaderboard_history.html', {
+        'seasons':    seasons,
+        'my_history': my_history,
+        'page_title': 'Leaderboard History',
+    })
+
+
+@student_only
+def student_leaderboard_season(request, season_id):
+    """View one frozen season's rankings."""
+    student = get_object_or_404(Student, admin=request.user)
+    season = get_object_or_404(LeaderboardSeason, id=season_id)
+    snapshots = (
+        season.snapshots.select_related('student__admin', 'student__course')
+        .order_by('rank')
+    )
+    rows = []
+    for sn in snapshots:
+        rows.append({
+            'rank':       sn.rank,
+            'score':      round(sn.score, 1),
+            'name':       sn.student.admin.get_full_name() or sn.student.admin.username,
+            'first':      sn.student.admin.first_name or '',
+            'avatar':     sn.student.admin.avatar or '',
+            'level':      sn.student.level_display,
+            'badge':      sn.badge,
+            'is_me':      sn.student_id == student.id,
+            'attendance': sn.attendance_pct,
+            'homework':   sn.homework_pct,
+            'quizzes':    sn.quizzes_pct,
+            'results':    sn.results_pct,
+        })
+    top3 = rows[:3]
+    list_rows = rows[3:] if len(rows) > 3 else []
+    return render(request, 'student_template/leaderboard_season.html', {
+        'season':     season,
+        'top3':       top3,
+        'list_rows':  list_rows,
+        'total':      len(rows),
+        'page_title': f"Season — {season.name}",
+    })
 
 
 #library

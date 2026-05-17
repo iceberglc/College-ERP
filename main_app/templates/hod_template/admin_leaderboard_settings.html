@@ -1,0 +1,229 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}Leaderboard Settings{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Leaderboard Settings</li>{% endblock %}
+
+{% block custom_css %}
+<style>
+.lset-wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.lset-card {
+  background: var(--ice-surface);
+  border: 1.5px solid var(--ice-border);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 4px 18px rgba(12,31,69,.05);
+}
+.lset-card h2 {
+  font-size: 14px; font-weight: 800; margin: 0 0 4px;
+  color: var(--ice-text); display: flex; align-items: center; gap: 8px;
+}
+.lset-card h2 i { color: var(--ice-cyan); font-size: 13px; }
+.lset-card .sub { font-size: 12px; color: var(--ice-muted); margin-bottom: 16px; }
+
+.lset-row {
+  display: grid; grid-template-columns: 1fr auto auto;
+  gap: 14px; align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--ice-border);
+}
+.lset-row:last-of-type { border-bottom: none; }
+.lset-row-label {
+  font-size: 13px; font-weight: 700; color: var(--ice-text);
+  display: flex; align-items: center; gap: 8px;
+}
+.lset-row-label .ico { font-size: 18px; }
+.lset-row-label .lbl { display: flex; flex-direction: column; }
+.lset-row-label .lbl small { font-size: 11px; font-weight: 500; color: var(--ice-muted); margin-top: 1px; }
+.lset-weight {
+  width: 88px; padding: 8px 12px; border-radius: 10px;
+  border: 1.5px solid var(--ice-border);
+  background: var(--ice-surface2);
+  text-align: center; font-weight: 700; color: var(--ice-text);
+  font-size: 13px; font-variant-numeric: tabular-nums;
+}
+.lset-weight:focus { outline: none; border-color: var(--ice-cyan); box-shadow: 0 0 0 3px rgba(6,182,212,.12); }
+
+/* iOS-style switch */
+.lset-toggle { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+.lset-toggle input { opacity: 0; width: 0; height: 0; }
+.lset-toggle .track {
+  position: absolute; inset: 0; background: #CBD5E1;
+  border-radius: 999px; transition: .2s;
+}
+.lset-toggle .knob {
+  position: absolute; top: 2px; left: 2px;
+  width: 22px; height: 22px; background: #fff;
+  border-radius: 50%; transition: .2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.lset-toggle input:checked + .track { background: var(--ice-cyan); }
+.lset-toggle input:checked + .track + .knob { transform: translateX(20px); }
+.dark-mode .lset-toggle .track { background: #334155; }
+
+.lset-total {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 14px; padding: 10px 14px;
+  background: var(--ice-surface2); border-radius: 12px;
+  font-size: 12px; font-weight: 700; color: var(--ice-text);
+}
+.lset-total span { color: var(--ice-cyan); font-size: 14px; }
+
+.lset-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.lset-btn {
+  flex: 1; padding: 12px 18px; border-radius: 12px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  border: none; text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: opacity .15s;
+}
+.lset-btn-primary { background: linear-gradient(135deg, #0C1F45, #1B3F7A); color: #fff; }
+.lset-btn-primary:hover { opacity: .9; color: #fff; }
+.lset-btn-ghost { background: var(--ice-surface2); color: var(--ice-text); border: 1.5px solid var(--ice-border); }
+
+.lset-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px;
+  background: rgba(6,182,212,.12); color: #0891B2;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.dark-mode .lset-pill { background: rgba(6,182,212,.18); color: #67E8F9; }
+
+.lset-help {
+  font-size: 12px; line-height: 1.55; color: var(--ice-muted);
+  background: var(--ice-surface2); border-radius: 12px;
+  padding: 14px; border: 1px dashed var(--ice-border);
+}
+.lset-help strong { color: var(--ice-text); }
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+<div class="lset-wrap">
+
+  <form method="POST" novalidate>
+    {% csrf_token %}
+
+    <div class="lset-card">
+      <h2><i class="fas fa-sliders-h"></i> Ranking Formula</h2>
+      <p class="sub">Tune the weight of each metric in the composite score and toggle metrics on or off. Weights are normalized — they don't need to add up to 100.</p>
+
+      <div class="lset-row">
+        <div class="lset-row-label">
+          <span class="ico">🎯</span>
+          <span class="lbl">
+            Attendance
+            <small>Daily presence rate, weighted by class count.</small>
+          </span>
+        </div>
+        {{ form.attendance_weight }}
+        <label class="lset-toggle">
+          {{ form.enable_attendance }}
+          <span class="track"></span><span class="knob"></span>
+        </label>
+      </div>
+
+      <div class="lset-row">
+        <div class="lset-row-label">
+          <span class="ico">📝</span>
+          <span class="lbl">
+            Homework
+            <small>Submission rate vs. due assignments in this period.</small>
+          </span>
+        </div>
+        {{ form.homework_weight }}
+        <label class="lset-toggle">
+          {{ form.enable_homework }}
+          <span class="track"></span><span class="knob"></span>
+        </label>
+      </div>
+
+      <div class="lset-row">
+        <div class="lset-row-label">
+          <span class="ico">🧠</span>
+          <span class="lbl">
+            Quizzes
+            <small>Average vocabulary quiz score in this period.</small>
+          </span>
+        </div>
+        {{ form.quizzes_weight }}
+        <label class="lset-toggle">
+          {{ form.enable_quizzes }}
+          <span class="track"></span><span class="knob"></span>
+        </label>
+      </div>
+
+      <div class="lset-row">
+        <div class="lset-row-label">
+          <span class="ico">🏆</span>
+          <span class="lbl">
+            Results
+            <small>Test + exam totals from official results.</small>
+          </span>
+        </div>
+        {{ form.results_weight }}
+        <label class="lset-toggle">
+          {{ form.enable_results }}
+          <span class="track"></span><span class="knob"></span>
+        </label>
+      </div>
+
+      <div class="lset-total">
+        <span>Total weight (raw):</span>
+        <span id="lset-total-num">—</span>
+      </div>
+
+      <div class="lset-help" style="margin-top:14px;">
+        <strong>How it works:</strong> Each student's composite score is a weighted mean of the enabled metrics. If a student has no data for a metric (e.g. no quizzes yet), that metric is excluded from <em>their</em> average — they aren't penalised. Weights normalize automatically, so disabling Quizzes redistributes its share across the remaining metrics.
+      </div>
+    </div>
+
+    <div class="lset-actions">
+      <button type="submit" class="lset-btn lset-btn-primary">
+        <i class="fas fa-save"></i> Save Settings
+      </button>
+      <a href="{% url 'admin_manage_seasons' %}" class="lset-btn lset-btn-ghost">
+        <i class="fas fa-calendar-alt"></i> Manage Seasons
+      </a>
+    </div>
+
+    <div class="lset-card">
+      <h2><i class="fas fa-info-circle"></i> Snapshot Schedule</h2>
+      <p class="sub">Snapshots freeze the ranking at a point in time so students can browse history.</p>
+      <div class="lset-help">
+        Run this on a cron (weekly or monthly) to capture all active seasons:
+        <pre style="margin:8px 0 0;padding:10px 12px;background:rgba(12,31,69,.06);border-radius:8px;font-size:11.5px;overflow-x:auto;">python manage.py snapshot_leaderboard</pre>
+        Or snapshot a specific season manually from the <a href="{% url 'admin_manage_seasons' %}" style="color:var(--ice-cyan);">Seasons page</a>.
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--ice-muted);">
+        Last settings change: {{ settings.updated_at|date:"M j, Y · H:i" }}
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+  /* Live total recompute */
+  var inputs = document.querySelectorAll('.lset-weight');
+  var toggles = document.querySelectorAll('.lset-toggle input[type=checkbox]');
+  function recalc() {
+    var total = 0;
+    inputs.forEach(function (inp) {
+      var row = inp.closest('.lset-row');
+      var toggle = row.querySelector('input[type=checkbox]');
+      if (toggle && toggle.checked) {
+        total += parseInt(inp.value, 10) || 0;
+      }
+    });
+    document.getElementById('lset-total-num').textContent = total;
+  }
+  inputs.forEach(function (inp) {
+    inp.classList.add('lset-weight');
+    inp.addEventListener('input', recalc);
+  });
+  toggles.forEach(function (t) { t.addEventListener('change', recalc); });
+  recalc();
+})();
+</script>
+{% endblock content %}

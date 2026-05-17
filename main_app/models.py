@@ -596,6 +596,107 @@ class VocabularyQuizResult(models.Model):
         return f"{self.student} — {self.score:.0f}% ({self.taken_at.date()})"
 
 
+# ── Leaderboard configuration & history ─────────────────────────────────────
+
+class LeaderboardSettings(models.Model):
+    """
+    Singleton row holding ranking weights and metric toggles.
+    Use LeaderboardSettings.get() to read; admin form writes the same row.
+    """
+    attendance_weight = models.PositiveSmallIntegerField(default=25)
+    homework_weight   = models.PositiveSmallIntegerField(default=25)
+    quizzes_weight    = models.PositiveSmallIntegerField(default=25)
+    results_weight    = models.PositiveSmallIntegerField(default=25)
+    enable_attendance = models.BooleanField(default=True)
+    enable_homework   = models.BooleanField(default=True)
+    enable_quizzes    = models.BooleanField(default=True)
+    enable_results    = models.BooleanField(default=True)
+    updated_at        = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Leaderboard Settings"
+        verbose_name_plural = "Leaderboard Settings"
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def normalized_weights(self):
+        """Return {metric: weight} for ENABLED metrics, normalized so values sum to 1."""
+        raw = {}
+        if self.enable_attendance: raw['attendance'] = self.attendance_weight
+        if self.enable_homework:   raw['homework']   = self.homework_weight
+        if self.enable_quizzes:    raw['quizzes']    = self.quizzes_weight
+        if self.enable_results:    raw['results']    = self.results_weight
+        total = sum(raw.values())
+        if total == 0:
+            # Avoid divide-by-zero — fall back to equal weights across what's enabled
+            n = len(raw) or 1
+            return {k: 1 / n for k in raw}
+        return {k: v / total for k, v in raw.items()}
+
+    def __str__(self):
+        return "Leaderboard Settings"
+
+
+class LeaderboardSeason(models.Model):
+    """A snapshot period — admin creates seasons, snapshots freeze the rankings."""
+    PERIOD_WEEKLY  = 'weekly'
+    PERIOD_MONTHLY = 'monthly'
+    PERIOD_CUSTOM  = 'custom'
+    PERIOD_CHOICES = [
+        (PERIOD_WEEKLY,  'Weekly'),
+        (PERIOD_MONTHLY, 'Monthly'),
+        (PERIOD_CUSTOM,  'Custom'),
+    ]
+    name        = models.CharField(max_length=120, help_text='e.g. "October 2026"')
+    period      = models.CharField(max_length=12, choices=PERIOD_CHOICES, default=PERIOD_MONTHLY)
+    start_date  = models.DateField()
+    end_date    = models.DateField(null=True, blank=True,
+                                   help_text='Leave blank for ongoing season')
+    is_active   = models.BooleanField(default=True,
+                                      help_text='Snapshots are only captured for active seasons')
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-start_date', '-id']
+
+    def __str__(self):
+        return self.name
+
+
+class LeaderboardSnapshot(models.Model):
+    """One frozen row per student per season."""
+    season         = models.ForeignKey(LeaderboardSeason, on_delete=models.CASCADE,
+                                       related_name='snapshots')
+    student        = models.ForeignKey('Student', on_delete=models.CASCADE,
+                                       related_name='leaderboard_snapshots')
+    rank           = models.PositiveIntegerField()
+    score          = models.FloatField()
+    attendance_pct = models.FloatField(null=True, blank=True)
+    homework_pct   = models.FloatField(null=True, blank=True)
+    quizzes_pct    = models.FloatField(null=True, blank=True)
+    results_pct    = models.FloatField(null=True, blank=True)
+    badge          = models.CharField(max_length=60, blank=True, default='')
+    captured_at    = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('season', 'student')
+        ordering = ['season', 'rank']
+        indexes = [
+            models.Index(fields=['season', 'rank']),
+            models.Index(fields=['student', 'season']),
+        ]
+
+    def __str__(self):
+        return f"{self.season} · #{self.rank} {self.student} ({self.score:.1f}%)"
+
+
 class DashboardStory(models.Model):
     """Short-form content cards shown in the horizontal stories strip on the student dashboard."""
     TYPE_ANNOUNCEMENT = 'announcement'

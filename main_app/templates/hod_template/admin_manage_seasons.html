@@ -1,0 +1,208 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}Leaderboard Seasons{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Leaderboard Seasons</li>{% endblock %}
+
+{% block custom_css %}
+<style>
+.sea-wrap { max-width: 920px; margin: 0 auto; display: grid; gap: 18px; }
+.sea-card {
+  background: var(--ice-surface);
+  border: 1.5px solid var(--ice-border);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 4px 18px rgba(12,31,69,.05);
+}
+.sea-card h2 {
+  font-size: 14px; font-weight: 800; margin: 0 0 6px;
+  color: var(--ice-text); display: flex; align-items: center; gap: 8px;
+}
+.sea-card h2 i { color: var(--ice-cyan); font-size: 13px; }
+.sea-card .sub { font-size: 12px; color: var(--ice-muted); margin: 0 0 16px; }
+
+.sea-form-grid {
+  display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 10px;
+}
+@media (max-width: 720px) { .sea-form-grid { grid-template-columns: 1fr 1fr; } }
+.sea-form-field { display: flex; flex-direction: column; gap: 4px; }
+.sea-form-field label {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ice-muted);
+}
+.sea-form-field input, .sea-form-field select {
+  padding: 9px 12px; border: 1.5px solid var(--ice-border);
+  background: var(--ice-surface2); color: var(--ice-text);
+  border-radius: 10px; font-size: 13px; font-weight: 600;
+  -webkit-appearance: none; appearance: none;
+}
+.sea-form-field input:focus, .sea-form-field select:focus {
+  outline: none; border-color: var(--ice-cyan); box-shadow: 0 0 0 3px rgba(6,182,212,.12);
+}
+.sea-create-btn {
+  align-self: end;
+  padding: 10px 16px; border-radius: 10px;
+  background: linear-gradient(135deg, #0C1F45, #1B3F7A); color: #fff;
+  border: none; font-size: 12.5px; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  white-space: nowrap;
+}
+
+.sea-tbl {
+  width: 100%; border-collapse: collapse;
+}
+.sea-tbl th {
+  text-align: left; padding: 10px 14px;
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--ice-muted); background: var(--ice-surface2);
+  border-bottom: 1px solid var(--ice-border);
+}
+.sea-tbl td {
+  padding: 14px; font-size: 13px; color: var(--ice-text);
+  border-bottom: 1px solid var(--ice-border);
+  vertical-align: middle;
+}
+.sea-tbl tr:last-child td { border-bottom: none; }
+.sea-tbl tr:hover td { background: rgba(6,182,212,.04); }
+.dark-mode .sea-tbl tr:hover td { background: rgba(6,182,212,.06); }
+
+.sea-name { font-weight: 800; letter-spacing: -.2px; }
+.sea-name small { display: block; font-weight: 500; color: var(--ice-muted); margin-top: 2px; }
+.sea-pill {
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+}
+.sea-pill.active { background: rgba(16,185,129,.14); color: #047857; }
+.sea-pill.ended  { background: rgba(100,116,139,.14); color: #475569; }
+.dark-mode .sea-pill.active { background: rgba(16,185,129,.2); color: #6EE7B7; }
+.dark-mode .sea-pill.ended  { background: rgba(100,116,139,.2); color: #94AFC8; }
+.sea-period { font-size: 11.5px; color: var(--ice-muted); text-transform: capitalize; }
+.sea-snap-count { font-weight: 800; color: var(--ice-cyan); font-size: 14px; font-variant-numeric: tabular-nums; }
+
+.sea-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.sea-action {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 10px; border-radius: 8px;
+  background: var(--ice-surface2); border: 1.5px solid var(--ice-border);
+  color: var(--ice-text); cursor: pointer;
+  font-size: 11px; font-weight: 700;
+  transition: background .12s, border-color .12s;
+}
+.sea-action:hover { background: var(--ice-border); }
+.sea-action.snap { background: rgba(6,182,212,.10); border-color: rgba(6,182,212,.3); color: #0891B2; }
+.sea-action.end  { background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.3); color: #B45309; }
+.sea-action.danger { background: rgba(239,68,68,.10); border-color: rgba(239,68,68,.3); color: #B91C1C; }
+.dark-mode .sea-action.snap { background: rgba(6,182,212,.18); color: #67E8F9; }
+.dark-mode .sea-action.end  { background: rgba(245,158,11,.18); color: #FCD34D; }
+.dark-mode .sea-action.danger { background: rgba(239,68,68,.18); color: #FCA5A5; }
+
+.sea-empty {
+  text-align: center; padding: 50px 24px;
+  color: var(--ice-muted); font-size: 13px;
+}
+.sea-empty i { display: block; font-size: 38px; opacity: .25; margin-bottom: 10px; }
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+<div class="sea-wrap">
+
+  <div class="sea-card">
+    <h2><i class="fas fa-plus-circle"></i> Create New Season</h2>
+    <p class="sub">A season is a named period (e.g. "October 2026"). Capture snapshots while it's active to freeze the ranking — students can browse those snapshots later.</p>
+
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="create">
+      <div class="sea-form-grid">
+        <div class="sea-form-field">
+          <label>Name</label>
+          {{ create_form.name }}
+        </div>
+        <div class="sea-form-field">
+          <label>Period</label>
+          {{ create_form.period }}
+        </div>
+        <div class="sea-form-field">
+          <label>Start</label>
+          {{ create_form.start_date }}
+        </div>
+        <div class="sea-form-field">
+          <label>End (optional)</label>
+          {{ create_form.end_date }}
+        </div>
+        <button type="submit" class="sea-create-btn">
+          <i class="fas fa-plus"></i> Create
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="sea-card" style="padding: 6px 0 0;">
+    <h2 style="padding: 16px 24px 0;"><i class="fas fa-history"></i> All Seasons</h2>
+    <p class="sub" style="padding: 0 24px;">Snapshot captures the current full-school all-time ranking and writes one row per active student.</p>
+
+    {% if seasons %}
+    <table class="sea-tbl">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Period</th>
+          <th>Dates</th>
+          <th>Status</th>
+          <th>Snapshots</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in seasons %}
+        <tr>
+          <td class="sea-name">
+            {{ s.name }}
+            <small>Created {{ s.created_at|date:"M j, Y" }}</small>
+          </td>
+          <td><span class="sea-period">{{ s.get_period_display }}</span></td>
+          <td style="font-size:11.5px;color:var(--ice-muted);">
+            {{ s.start_date|date:"M j, Y" }}{% if s.end_date %} → {{ s.end_date|date:"M j, Y" }}{% else %} → <em>ongoing</em>{% endif %}
+          </td>
+          <td>
+            {% if s.is_active %}<span class="sea-pill active">Active</span>{% else %}<span class="sea-pill ended">Ended</span>{% endif %}
+          </td>
+          <td><span class="sea-snap-count">{{ s.snap_count }}</span></td>
+          <td>
+            <div class="sea-actions" style="justify-content:flex-end;">
+              <form method="POST" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="snapshot">
+                <input type="hidden" name="season_id" value="{{ s.id }}">
+                <button class="sea-action snap" type="submit"><i class="fas fa-camera"></i> Snapshot</button>
+              </form>
+              {% if s.is_active %}
+              <form method="POST" style="display:inline;" onsubmit="return confirm('End this season? It can\'t be reopened.');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="end">
+                <input type="hidden" name="season_id" value="{{ s.id }}">
+                <button class="sea-action end" type="submit"><i class="fas fa-stop"></i> End</button>
+              </form>
+              {% endif %}
+              <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this season and all its snapshots?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="season_id" value="{{ s.id }}">
+                <button class="sea-action danger" type="submit"><i class="fas fa-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="sea-empty">
+      <i class="fas fa-calendar-plus"></i>
+      <p style="margin:0;">No seasons yet. Create your first one above.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock content %}

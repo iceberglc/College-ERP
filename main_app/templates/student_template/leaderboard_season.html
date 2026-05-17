@@ -1,0 +1,305 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block title %}{{ season.name }} — Iceberg Study Center{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}
+  <li class="breadcrumb-item"><a href="{% url 'student_leaderboard' %}">Leaderboard</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'student_leaderboard_history' %}">History</a></li>
+  <li class="breadcrumb-item active">{{ season.name }}</li>
+{% endblock %}
+
+{% block custom_css %}
+<style>
+.page-header  { display: none !important; }
+.erpnext-main { padding: 0 !important; }
+.content-area { overflow: visible !important; }
+
+.lbs {
+  --bg: #EEF3FB; --surface: #fff; --border: #E2EAF4;
+  --text: #0C1A36; --text-sub: #475569; --text-muted: #94A3B8;
+  --navy: #0C1F45; --navy-mid: #1B3F7A; --cyan: #06B6D4;
+  --gold: #F59E0B; --gold-bg: #FFFBEB;
+  --silver: #94A3B8; --silver-bg: #F1F5F9;
+  --bronze: #B45309; --bronze-bg: #FEF3C7;
+  background: var(--bg);
+  min-height: 100svh;
+  padding-bottom: 48px;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+.dark-mode .lbs {
+  --bg:#070F1C; --surface:#0D1B2F; --border:#18304F;
+  --text:#E2E8F0; --text-sub:#94AFC8; --text-muted:#4A6080;
+  --gold-bg: rgba(245,158,11,.08);
+  --silver-bg: rgba(148,163,184,.08);
+  --bronze-bg: rgba(180,83,9,.08);
+}
+@media (max-width: 768px) {
+  .lbs { padding-bottom: calc(116px + env(safe-area-inset-bottom)); }
+}
+
+.lbs-hero {
+  background: linear-gradient(160deg, #06102A 0%, #0D2657 60%, #0E3E94 100%);
+  padding: 28px 20px 80px;
+  position: relative; overflow: hidden;
+}
+.lbs-hero::before {
+  content: ''; position: absolute; inset: -30px;
+  background:
+    radial-gradient(circle at 70% 30%, rgba(6,182,212,.25), transparent 50%),
+    radial-gradient(circle at 30% 80%, rgba(245,158,11,.18), transparent 55%);
+  pointer-events: none;
+}
+.lbs-back {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: rgba(255,255,255,.7); font-size: 12px; font-weight: 600;
+  text-decoration: none; margin-bottom: 10px;
+  position: relative; z-index: 1;
+}
+.lbs-back:hover { color: #fff; }
+.lbs-frozen {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.85); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+  position: relative; z-index: 1; margin-bottom: 8px;
+}
+.lbs-title { color: #fff; font-size: 26px; font-weight: 800; margin: 0 0 4px; letter-spacing: -.5px; position: relative; z-index: 1; }
+.lbs-sub { color: rgba(255,255,255,.6); font-size: 13px; margin: 0; position: relative; z-index: 1; }
+
+/* Podium (same as leaderboard) */
+.lbs-podium {
+  display: grid; grid-template-columns: 1fr 1.1fr 1fr; gap: 10px;
+  margin: -54px 16px 18px; position: relative; z-index: 2;
+  align-items: end;
+}
+.lbs-pod {
+  position: relative; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 22px; padding: 14px 8px 16px; text-align: center;
+  box-shadow: 0 4px 20px rgba(12,31,69,.08);
+}
+.lbs-pod.gold {
+  background: linear-gradient(180deg, var(--gold-bg) 0%, var(--surface) 70%);
+  border-color: rgba(245,158,11,.5);
+  box-shadow: 0 12px 36px rgba(245,158,11,.22), 0 0 0 1px rgba(245,158,11,.2);
+  padding-top: 26px; padding-bottom: 22px;
+}
+.lbs-pod.silver { background: linear-gradient(180deg, var(--silver-bg) 0%, var(--surface) 70%); border-color: rgba(148,163,184,.4); }
+.lbs-pod.bronze { background: linear-gradient(180deg, var(--bronze-bg) 0%, var(--surface) 70%); border-color: rgba(180,83,9,.35); }
+
+.lbs-medal {
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  border: 2.5px solid var(--surface);
+}
+.lbs-medal.m2 { background: linear-gradient(135deg, #94A3B8, #64748B); }
+.lbs-medal.m3 { background: linear-gradient(135deg, #B45309, #92400E); }
+.lbs-crown {
+  position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+  font-size: 26px; filter: drop-shadow(0 4px 10px rgba(245,158,11,.6));
+}
+
+.lbs-pod-av-wrap { position: relative; width: 64px; height: 64px; margin: 0 auto 10px; }
+.lbs-pod.gold .lbs-pod-av-wrap { width: 76px; height: 76px; }
+.lbs-pod-av-ring { position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(135deg, var(--cyan), var(--navy)); }
+.lbs-pod.gold   .lbs-pod-av-ring { background: linear-gradient(135deg, #FBBF24, #D97706, #92400E); box-shadow: 0 0 24px rgba(245,158,11,.5); }
+.lbs-pod.silver .lbs-pod-av-ring { background: linear-gradient(135deg, #E2E8F0, #94A3B8, #475569); }
+.lbs-pod.bronze .lbs-pod-av-ring { background: linear-gradient(135deg, #FCD34D, #B45309, #78350F); }
+.lbs-pod-av {
+  position: absolute; inset: 3px; border-radius: 50%;
+  background: var(--navy-mid); color: #fff;
+  font-size: 22px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.lbs-pod.gold .lbs-pod-av { font-size: 26px; }
+.lbs-pod-name {
+  font-size: 12.5px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px;
+}
+.lbs-pod.gold .lbs-pod-name { font-size: 14px; }
+.lbs-pod-score {
+  margin-top: 8px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 800; letter-spacing: -.2px;
+  background: rgba(12,31,69,.08); color: var(--navy);
+}
+.dark-mode .lbs-pod-score { background: rgba(255,255,255,.06); color: #E2E8F0; }
+.lbs-pod.gold   .lbs-pod-score { background: rgba(245,158,11,.18); color: #92400E; }
+.lbs-pod.silver .lbs-pod-score { background: rgba(148,163,184,.18); color: #334155; }
+.lbs-pod.bronze .lbs-pod-score { background: rgba(180,83,9,.18); color: #78350F; }
+.dark-mode .lbs-pod.gold   .lbs-pod-score { color: #FCD34D; }
+.dark-mode .lbs-pod.silver .lbs-pod-score { color: #CBD5E1; }
+.dark-mode .lbs-pod.bronze .lbs-pod-score { color: #FCD34D; }
+
+/* List */
+.lbs-list {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 22px; margin: 0 16px;
+  overflow: hidden; box-shadow: 0 4px 20px rgba(12,31,69,.06);
+}
+.lbs-list-hd {
+  padding: 14px 18px; border-bottom: 1.5px dashed var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.lbs-list-title { font-size: 13px; font-weight: 700; color: var(--text); margin: 0; }
+.lbs-list-count { font-size: 10px; font-weight: 700; color: var(--text-muted); letter-spacing: .07em; text-transform: uppercase; }
+
+.lbs-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.lbs-row:last-child { border-bottom: none; }
+.lbs-row.me { background: linear-gradient(90deg, rgba(6,182,212,.10), rgba(6,182,212,.02)); }
+.lbs-row.me::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--cyan); }
+.lbs-rank { width: 28px; flex-shrink: 0; text-align: center;
+            font-size: 14px; font-weight: 800; color: var(--text-muted); letter-spacing: -.5px; }
+.lbs-row.me .lbs-rank { color: var(--cyan); }
+.lbs-av-wrap { position: relative; width: 38px; height: 38px; flex-shrink: 0; }
+.lbs-av-ring { position: absolute; inset: 0; border-radius: 50%;
+               background: linear-gradient(135deg, var(--cyan), var(--navy)); opacity: .85; }
+.lbs-av {
+  position: absolute; inset: 2px; border-radius: 50%;
+  background: var(--navy-mid); color: #fff; font-size: 13px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.lbs-info { flex: 1; min-width: 0; }
+.lbs-name { font-size: 13.5px; font-weight: 700; color: var(--text);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lbs-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 7px; margin-top: 3px;
+  border-radius: 999px;
+  background: rgba(6,182,212,.10); border: 1px solid rgba(6,182,212,.18);
+  font-size: 10px; font-weight: 700; color: #0891B2;
+}
+.dark-mode .lbs-badge { background: rgba(6,182,212,.16); color: #67E8F9; border-color: rgba(6,182,212,.3); }
+.lbs-score { font-size: 14px; font-weight: 800; color: var(--text);
+             font-variant-numeric: tabular-nums; letter-spacing: -.3px; flex-shrink: 0; }
+.lbs-row.me .lbs-score { color: var(--cyan); }
+
+.lbs-empty {
+  margin: 0 16px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 22px; padding: 50px 24px; text-align: center; color: var(--text-muted);
+}
+.lbs-empty i { font-size: 38px; opacity: .25; display: block; margin-bottom: 10px; }
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+<div class="lbs">
+
+  <div class="lbs-hero">
+    <a href="{% url 'student_leaderboard_history' %}" class="lbs-back"><i class="fas fa-arrow-left"></i> All seasons</a>
+    <div><span class="lbs-frozen"><i class="fas fa-camera"></i> Frozen snapshot</span></div>
+    <h1 class="lbs-title">{{ season.name }}</h1>
+    <p class="lbs-sub">
+      {{ season.get_period_display }} ·
+      {{ season.start_date|date:"M j, Y" }}{% if season.end_date %} – {{ season.end_date|date:"M j, Y" }}{% endif %}
+      · {{ total }} student{{ total|pluralize }}
+    </p>
+  </div>
+
+  {% if top3 %}
+  <div class="lbs-podium">
+    {% if top3|length >= 2 %}
+    {% with r=top3.1 %}
+    <div class="lbs-pod silver">
+      <div class="lbs-medal m2">2</div>
+      <div class="lbs-pod-av-wrap">
+        <div class="lbs-pod-av-ring"></div>
+        <div class="lbs-pod-av" data-av="{{ r.avatar }}">{{ r.first|first|upper|default:r.name|first|upper }}</div>
+      </div>
+      <div class="lbs-pod-name">{{ r.first|default:r.name }}</div>
+      <div class="lbs-pod-score">{{ r.score }}%</div>
+    </div>
+    {% endwith %}
+    {% endif %}
+
+    {% with r=top3.0 %}
+    <div class="lbs-pod gold">
+      <div class="lbs-crown">👑</div>
+      <div class="lbs-pod-av-wrap">
+        <div class="lbs-pod-av-ring"></div>
+        <div class="lbs-pod-av" data-av="{{ r.avatar }}">{{ r.first|first|upper|default:r.name|first|upper }}</div>
+      </div>
+      <div class="lbs-pod-name">{{ r.first|default:r.name }}</div>
+      <div class="lbs-pod-score">{{ r.score }}%</div>
+    </div>
+    {% endwith %}
+
+    {% if top3|length >= 3 %}
+    {% with r=top3.2 %}
+    <div class="lbs-pod bronze">
+      <div class="lbs-medal m3">3</div>
+      <div class="lbs-pod-av-wrap">
+        <div class="lbs-pod-av-ring"></div>
+        <div class="lbs-pod-av" data-av="{{ r.avatar }}">{{ r.first|first|upper|default:r.name|first|upper }}</div>
+      </div>
+      <div class="lbs-pod-name">{{ r.first|default:r.name }}</div>
+      <div class="lbs-pod-score">{{ r.score }}%</div>
+    </div>
+    {% endwith %}
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="lbs-empty">
+    <i class="fas fa-trophy"></i>
+    <p style="margin:0;font-weight:700;color:var(--text);">No rankings recorded for this season.</p>
+  </div>
+  {% endif %}
+
+  {% if list_rows %}
+  <div class="lbs-list">
+    <div class="lbs-list-hd">
+      <h3 class="lbs-list-title">Full Ranking</h3>
+      <span class="lbs-list-count">{{ list_rows|length }} more</span>
+    </div>
+    {% for r in list_rows %}
+    <div class="lbs-row {% if r.is_me %}me{% endif %}">
+      <span class="lbs-rank">{{ r.rank }}</span>
+      <div class="lbs-av-wrap">
+        <div class="lbs-av-ring"></div>
+        <div class="lbs-av" data-av="{{ r.avatar }}">{{ r.first|first|upper }}</div>
+      </div>
+      <div class="lbs-info">
+        <div class="lbs-name">{{ r.name }}{% if r.is_me %} · You{% endif %}</div>
+        {% if r.badge %}<span class="lbs-badge">{{ r.badge }}</span>{% endif %}
+      </div>
+      <span class="lbs-score">{{ r.score }}%</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+(function () {
+  var AVATARS = ["🧑‍🎓","👨‍🎓","👩‍🎓","🧑‍💻","👨‍💻","👩‍💻","🧑‍🏫","👨‍🏫","👩‍🏫","🤓",
+                 "😊","😎","💡","📚","🏆","⭐","💪","🎯","🌟","🦉","🌍","✏️","🎨","🔬"];
+  var BG = ["#1B3F7A","#0C1F45","#7C3AED","#0891B2","#1F2937","#6D28D9",
+            "#BE185D","#B45309","#C2410C","#15803D","#0284C7","#4338CA",
+            "#A16207","#7C2D12","#B45309","#EA580C","#B91C1C","#991B1B",
+            "#4F46E5","#65A30D","#0D9488","#6B7280","#DB2777","#0891B2"];
+  document.querySelectorAll('[data-av]').forEach(function (el) {
+    var av = el.getAttribute('data-av');
+    if (!av) return;
+    var idx = parseInt(av, 10) - 1;
+    if (idx >= 0 && idx < AVATARS.length) {
+      el.textContent = AVATARS[idx];
+      el.style.background = BG[idx];
+    }
+  });
+})();
+</script>
+{% endblock custom_js %}

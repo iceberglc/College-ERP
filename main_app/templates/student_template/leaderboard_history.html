@@ -1,0 +1,161 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block title %}Leaderboard History — Iceberg Study Center{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item"><a href="{% url 'student_leaderboard' %}">Leaderboard</a></li><li class="breadcrumb-item active">History</li>{% endblock %}
+
+{% block custom_css %}
+<style>
+.page-header  { display: none !important; }
+.erpnext-main { padding: 0 !important; }
+.content-area { overflow: visible !important; }
+
+.lbh {
+  --bg: #EEF3FB; --surface: #fff; --border: #E2EAF4;
+  --text: #0C1A36; --text-sub: #475569; --text-muted: #94A3B8;
+  --navy: #0C1F45; --navy-mid: #1B3F7A; --cyan: #06B6D4;
+  background: var(--bg);
+  min-height: 100svh;
+  padding-bottom: 48px;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+.dark-mode .lbh {
+  --bg:#070F1C; --surface:#0D1B2F; --border:#18304F;
+  --text:#E2E8F0; --text-sub:#94AFC8; --text-muted:#4A6080;
+}
+@media (max-width: 768px) {
+  .lbh { padding-bottom: calc(116px + env(safe-area-inset-bottom)); }
+}
+
+.lbh-hero {
+  background: linear-gradient(160deg, #06102A 0%, #0D2657 60%, #0E3E94 100%);
+  padding: 28px 20px 60px;
+  position: relative; overflow: hidden;
+}
+.lbh-hero::before {
+  content: ''; position: absolute; inset: -30px;
+  background: radial-gradient(circle at 70% 30%, rgba(6,182,212,.25), transparent 50%);
+  pointer-events: none;
+}
+.lbh-back {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: rgba(255,255,255,.7); font-size: 12px; font-weight: 600;
+  text-decoration: none; margin-bottom: 10px;
+}
+.lbh-back:hover { color: #fff; }
+.lbh-title { color: #fff; font-size: 24px; font-weight: 800; margin: 0 0 4px; letter-spacing: -.5px; }
+.lbh-sub   { color: rgba(255,255,255,.65); font-size: 13px; margin: 0; }
+
+.lbh-section {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 22px; padding: 16px; margin: -40px 16px 18px;
+  position: relative; z-index: 2;
+  box-shadow: 0 8px 28px rgba(12,31,69,.08);
+}
+.lbh-section + .lbh-section { margin-top: 0; }
+.lbh-section h2 {
+  font-size: 13px; font-weight: 800; margin: 0 0 12px;
+  color: var(--text); display: flex; align-items: center; gap: 7px;
+}
+.lbh-section h2 i { color: var(--cyan); font-size: 12px; }
+
+.lbh-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  transition: background .12s;
+}
+.lbh-row:last-child { border-bottom: none; }
+.lbh-row:hover { background: rgba(6,182,212,.04); }
+.lbh-row-rank {
+  flex-shrink: 0; width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--cyan), var(--navy));
+  color: #fff; font-size: 15px; font-weight: 800;
+  letter-spacing: -.5px;
+}
+.lbh-row-body { flex: 1; min-width: 0; }
+.lbh-row-name {
+  font-size: 13.5px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lbh-row-meta {
+  font-size: 11px; color: var(--text-muted); margin-top: 2px;
+}
+.lbh-row-score {
+  font-size: 14px; font-weight: 800; color: var(--text);
+  font-variant-numeric: tabular-nums; letter-spacing: -.3px;
+}
+.lbh-row-chev { font-size: 11px; color: var(--text-muted); margin-left: 6px; flex-shrink: 0; }
+
+.lbh-empty {
+  padding: 40px 24px; text-align: center;
+  color: var(--text-muted); font-size: 13px;
+}
+.lbh-empty i { font-size: 38px; opacity: .25; display: block; margin-bottom: 10px; }
+.lbh-empty-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+<div class="lbh">
+
+  <div class="lbh-hero">
+    <a href="{% url 'student_leaderboard' %}" class="lbh-back"><i class="fas fa-arrow-left"></i> Back to Leaderboard</a>
+    <h1 class="lbh-title">Season History</h1>
+    <p class="lbh-sub">Browse your past rankings — see how far you've come.</p>
+  </div>
+
+  {% if my_history %}
+  <div class="lbh-section">
+    <h2><i class="fas fa-user"></i> Your Rankings</h2>
+    {% for s in my_history %}
+    <a href="{% url 'student_leaderboard_season' s.season_id %}" class="lbh-row">
+      <div class="lbh-row-rank">#{{ s.rank }}</div>
+      <div class="lbh-row-body">
+        <div class="lbh-row-name">{{ s.season.name }}</div>
+        <div class="lbh-row-meta">
+          {{ s.season.get_period_display }} ·
+          {{ s.season.start_date|date:"M j" }}{% if s.season.end_date %} – {{ s.season.end_date|date:"M j, Y" }}{% endif %}
+          {% if s.badge %} · {{ s.badge }}{% endif %}
+        </div>
+      </div>
+      <span class="lbh-row-score">{{ s.score|floatformat:1 }}%</span>
+      <i class="fas fa-chevron-right lbh-row-chev"></i>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="lbh-section">
+    <h2><i class="fas fa-globe"></i> All Seasons</h2>
+    {% if seasons %}
+      {% for s in seasons %}
+      <a href="{% url 'student_leaderboard_season' s.id %}" class="lbh-row">
+        <div class="lbh-row-rank" style="background: linear-gradient(135deg, #1B3F7A, #0C1F45); font-size: 12px;">
+          <i class="fas fa-calendar"></i>
+        </div>
+        <div class="lbh-row-body">
+          <div class="lbh-row-name">{{ s.name }}</div>
+          <div class="lbh-row-meta">
+            {{ s.get_period_display }} ·
+            {{ s.start_date|date:"M j, Y" }}{% if s.end_date %} – {{ s.end_date|date:"M j, Y" }}{% else %} · Ongoing{% endif %}
+          </div>
+        </div>
+        <i class="fas fa-chevron-right lbh-row-chev"></i>
+      </a>
+      {% endfor %}
+    {% else %}
+    <div class="lbh-empty">
+      <i class="fas fa-history"></i>
+      <div class="lbh-empty-title">No history yet</div>
+      <p>Once your admin creates seasons and captures snapshots, you'll see them here.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock content %}

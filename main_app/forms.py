@@ -469,3 +469,35 @@ class DashboardStoryForm(FormSettings):
         }
 
 
+class LeaderboardSettingsForm(FormSettings):
+    class Meta:
+        model = LeaderboardSettings
+        fields = [
+            'attendance_weight', 'homework_weight', 'quizzes_weight', 'results_weight',
+            'enable_attendance', 'enable_homework', 'enable_quizzes', 'enable_results',
+        ]
+        widgets = {
+            'attendance_weight': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 100}),
+            'homework_weight':   forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 100}),
+            'quizzes_weight':    forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 100}),
+            'results_weight':    forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 100}),
+            'enable_attendance': forms.CheckboxInput(),
+            'enable_homework':   forms.CheckboxInput(),
+            'enable_quizzes':    forms.CheckboxInput(),
+            'enable_results':    forms.CheckboxInput(),
+        }
+
+
+class LeaderboardSeasonForm(FormSettings):
+    class Meta:
+        model = LeaderboardSeason
+        fields = ['name', 'period', 'start_date', 'end_date', 'is_active']
+        widgets = {
+            'name':       forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. October 2026'}),
+            'period':     forms.Select(attrs={'class': 'form-control'}),
+            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'end_date':   forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'is_active':  forms.CheckboxInput(),
+        }
+
+

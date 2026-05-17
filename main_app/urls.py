@@ -196,6 +196,12 @@ urlpatterns = [
 
     # Leaderboard (Student)
     path("student/leaderboard/", student_views.student_leaderboard, name='student_leaderboard'),
+    path("student/leaderboard/history/", student_views.student_leaderboard_history, name='student_leaderboard_history'),
+    path("student/leaderboard/season/<int:season_id>/", student_views.student_leaderboard_season, name='student_leaderboard_season'),
+
+    # Leaderboard (Admin)
+    path("admin/leaderboard/settings/", hod_views.admin_leaderboard_settings, name='admin_leaderboard_settings'),
+    path("admin/leaderboard/seasons/", hod_views.admin_manage_seasons, name='admin_manage_seasons'),
 
     # AJAX helpers (admin)
     path("ajax/teachers-for-course/", hod_views.get_teachers_for_course, name='get_teachers_for_course'),
