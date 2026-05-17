@@ -98,6 +98,37 @@ def student_home(request):
         recipient=request.user, is_read=False
     ).order_by('-created_at')[:3]
 
+    # ── Hero rank badge (live group rank + streak) ──────────────────
+    try:
+        _rank_list = _build_student_rankings(student, 'group', 'month')
+    except Exception:
+        _rank_list = []
+    _my_rank_entry = next((r for r in _rank_list if r.get('is_me')), None)
+    if _my_rank_entry:
+        hero_rank        = _my_rank_entry['rank']
+        hero_rank_score  = _my_rank_entry['score']
+        hero_rank_total  = len(_rank_list)
+        if hero_rank == 1:
+            hero_tier, hero_icon, hero_label = 'gold', '👑', 'Top of Group'
+        elif hero_rank == 2:
+            hero_tier, hero_icon, hero_label = 'gold', '🥈', '2nd Place'
+        elif hero_rank == 3:
+            hero_tier, hero_icon, hero_label = 'gold', '🥉', '3rd Place'
+        elif hero_rank <= 10:
+            hero_tier, hero_icon, hero_label = 'silver', '⭐', 'Top 10'
+        else:
+            top_pct = (hero_rank / hero_rank_total) if hero_rank_total else 1
+            hero_tier = 'cyan'
+            hero_icon = '🚀'
+            hero_label = f'Top {int(top_pct * 100)}%' if top_pct <= .5 else 'Climbing'
+    else:
+        hero_rank = None
+        hero_rank_score = 0
+        hero_rank_total = 0
+        hero_tier, hero_icon, hero_label = 'cyan', '🚀', 'Start your climb'
+
+    hero_streak = _compute_streak(student)
+
     # ── Quick Access badge counters ─────────────────────────────────
     from datetime import timedelta
     from django.utils import timezone as _tz
@@ -157,6 +188,13 @@ def student_home(request):
         'qa_unread_notifications':  qa_unread_notifications,
         'qa_new_result_files':      qa_new_result_files,
         'qa_new_vocab_days':        qa_new_vocab_days,
+        'hero_rank':       hero_rank,
+        'hero_rank_score': hero_rank_score,
+        'hero_rank_total': hero_rank_total,
+        'hero_tier':       hero_tier,
+        'hero_icon':       hero_icon,
+        'hero_label':      hero_label,
+        'hero_streak':     hero_streak,
         'page_title': 'My Dashboard',
     }
     return render(request, 'student_template/erpnext_student_home.html', context)

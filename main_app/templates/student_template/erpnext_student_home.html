@@ -124,20 +124,140 @@
   background: rgba(6,182,212,.18); border: 1px solid rgba(6,182,212,.32);
   color: #67E8F9; font-size: 10.5px; font-weight: 700;
 }
-.dash-notif-btn {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
-  color: rgba(255,255,255,.8); font-size: 14px;
+/* ── Hero rank badge (replaces the old notification bell) ──────── */
+.dash-rankbadge {
+  --rb-glow:  rgba(6,182,212,.45);
+  --rb-edge:  rgba(6,182,212,.5);
+  --rb-tone1: #06B6D4;
+  --rb-tone2: #1B3F7A;
+  --rb-text:  #67E8F9;
+
+  flex-shrink: 0;
+  position: relative;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  min-width: 76px;
+  padding: 10px 8px 9px;
+  border-radius: 18px;
+  text-decoration: none;
+  background: rgba(255,255,255,.08);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(255,255,255,.15);
+  box-shadow:
+    0 8px 22px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.15);
+  transition: transform .15s, box-shadow .2s;
+  overflow: hidden;
+  animation: rb-float 3.6s ease-in-out 1s infinite;
+}
+.dash-rankbadge:active { transform: scale(.94); }
+.dash-rankbadge:hover { color: inherit; }
+@keyframes rb-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+/* Animated gradient ring around the badge — tied to tier */
+.dash-rankbadge::before {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from 0deg,
+    var(--rb-tone1),
+    var(--rb-tone2),
+    var(--rb-tone1)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: .85;
+  animation: rb-spin 6s linear infinite;
+  pointer-events: none;
+}
+@keyframes rb-spin { to { transform: rotate(360deg); } }
+
+/* Ambient inner glow */
+.dash-rankbadge::after {
+  content: '';
+  position: absolute; inset: 0; border-radius: inherit;
+  background: radial-gradient(circle at 50% 0%, var(--rb-glow) 0%, transparent 70%);
+  opacity: .65;
+  pointer-events: none;
+  animation: rb-pulse 2.8s ease-in-out infinite;
+}
+@keyframes rb-pulse {
+  0%, 100% { opacity: .45; }
+  50%      { opacity: .85; }
+}
+
+.dash-rankbadge-orb {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rb-tone1), var(--rb-tone2));
   display: flex; align-items: center; justify-content: center;
-  text-decoration: none; flex-shrink: 0; position: relative;
-  transition: background .15s;
+  box-shadow: 0 4px 14px var(--rb-glow), inset 0 1px 0 rgba(255,255,255,.3);
+  position: relative; z-index: 1;
 }
-.dash-notif-btn:hover { background: rgba(255,255,255,.2); color: #fff; }
-.dash-notif-dot {
-  position: absolute; top: 8px; right: 8px;
-  width: 7px; height: 7px; border-radius: 50%;
-  background: #EF4444; border: 2px solid #07152A;
+.dash-rankbadge-icon {
+  font-size: 17px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.3));
 }
+.dash-rankbadge-num {
+  font-size: 14px; font-weight: 900;
+  color: #fff; letter-spacing: -.4px; line-height: 1;
+  margin-top: 4px;
+  position: relative; z-index: 1;
+  font-variant-numeric: tabular-nums;
+}
+.dash-rankbadge-lbl {
+  font-size: 8.5px; font-weight: 700;
+  color: var(--rb-text);
+  text-transform: uppercase; letter-spacing: .06em;
+  position: relative; z-index: 1;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+.dash-rankbadge-streak {
+  display: inline-flex; align-items: center; gap: 2px;
+  margin-top: 5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #F97316, #EA580C);
+  color: #fff;
+  font-size: 9px; font-weight: 800; letter-spacing: -.2px;
+  box-shadow: 0 3px 10px rgba(249,115,22,.5);
+  position: relative; z-index: 2;
+  white-space: nowrap;
+}
+.dash-rankbadge-streak span { font-size: 9px; }
+
+/* ── Tier colours ─────────────────────────────────────────────── */
+.dash-rankbadge.tier-gold {
+  --rb-tone1: #FBBF24;
+  --rb-tone2: #D97706;
+  --rb-glow:  rgba(245,158,11,.55);
+  --rb-edge:  rgba(245,158,11,.6);
+  --rb-text:  #FCD34D;
+  background: rgba(245,158,11,.10);
+  border-color: rgba(245,158,11,.35);
+}
+.dash-rankbadge.tier-silver {
+  --rb-tone1: #CBD5E1;
+  --rb-tone2: #64748B;
+  --rb-glow:  rgba(148,163,184,.55);
+  --rb-edge:  rgba(203,213,225,.5);
+  --rb-text:  #E2E8F0;
+  background: rgba(203,213,225,.08);
+  border-color: rgba(203,213,225,.3);
+}
+/* tier-cyan uses the defaults defined at top */
 
 /* Stat pills */
 .dash-hero-stats {
@@ -581,9 +701,16 @@
         <div class="dash-level-chip"><i class="fas fa-layer-group"></i> {{ student_level }}</div>
         {% endif %}
       </div>
-      <a href="{% url 'student_view_notification' %}" class="dash-notif-btn" title="Notifications">
-        <i class="fas fa-bell"></i>
-        {% if recent_notifications %}<span class="dash-notif-dot"></span>{% endif %}
+      <a href="{% url 'student_leaderboard' %}" class="dash-rankbadge tier-{{ hero_tier }}"
+         title="View leaderboard">
+        <div class="dash-rankbadge-orb">
+          <span class="dash-rankbadge-icon">{{ hero_icon }}</span>
+        </div>
+        <div class="dash-rankbadge-num">{% if hero_rank %}#{{ hero_rank }}{% else %}—{% endif %}</div>
+        <div class="dash-rankbadge-lbl">{{ hero_label }}</div>
+        {% if hero_streak > 0 %}
+        <div class="dash-rankbadge-streak"><span>🔥</span> {{ hero_streak }}d</div>
+        {% endif %}
       </a>
     </div>
 
