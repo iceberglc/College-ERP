@@ -16,8 +16,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'email', 'first_name', 'last_name', 'user_type',
-                  'gender', 'profile_pic_url', 'address']
+        fields = ['id', 'email', 'login_id', 'first_name', 'last_name', 'user_type',
+                  'gender', 'date_of_birth', 'profile_pic_url', 'address']
 
     def get_profile_pic_url(self, obj):
         if not obj.profile_pic:
@@ -56,9 +56,9 @@ class MeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'email', 'first_name', 'last_name', 'user_type',
-                  'gender', 'profile_pic_url', 'address', 'role_profile']
-        read_only_fields = ['id', 'email', 'user_type']
+        fields = ['id', 'email', 'login_id', 'first_name', 'last_name', 'user_type',
+                  'gender', 'date_of_birth', 'profile_pic_url', 'address', 'role_profile']
+        read_only_fields = ['id', 'email', 'login_id', 'user_type']
 
     def get_profile_pic_url(self, obj):
         if not obj.profile_pic:

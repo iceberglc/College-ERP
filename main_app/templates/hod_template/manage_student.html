@@ -280,6 +280,7 @@
           <th>Student</th>
           <th>Login ID</th>
           <th>Gender</th>
+          <th>Birthday</th>
           <th>Phone</th>
           <th>Program</th>
           <th>Level</th>
@@ -309,6 +310,7 @@
           <td>
             <span class="gender-badge gender-{{ student.gender|first|upper }}">{{ student.gender|default:"—" }}</span>
           </td>
+          <td style="font-size:12.5px; color:var(--ice-muted); white-space:nowrap;">{{ student.date_of_birth|date:"Y-m-d"|default:"—" }}</td>
           <td style="font-size:12.5px; color:var(--ice-muted);">{{ student.student.phone|default:"—" }}</td>
           <td style="font-size:12.5px; color:var(--ice-muted);">{{ student.student.course.name|default:"—" }}</td>
           <td>
@@ -332,7 +334,7 @@
         </tr>
         {% empty %}
         <tr class="empty-row">
-          <td colspan="8">
+          <td colspan="9">
             <i class="fas fa-user-graduate"></i>
             <strong>No students yet</strong>
             Click "Add Student" above to create your first record.

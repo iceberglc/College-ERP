@@ -1,10 +1,13 @@
 import re
+from datetime import date
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
+
+from main_app.hod_views import _generate_login_id
 
 
 _BASE_OVERRIDES = dict(
@@ -143,6 +146,54 @@ class PasswordResetFlowTests(TestCase):
         self.assertTrue(user.check_password(new_password))
 
 
+class LoginIdGeneratorTests(TestCase):
+    """Birthday-based login_id generator: IC052401 etc."""
+
+    def _make_user(self, login_id, dob=None, email=None, user_type='3'):
+        UserModel = get_user_model()
+        return UserModel.objects.create_user(
+            email=email or f'{login_id.lower()}@iceberg.internal',
+            password='x',
+            first_name='X', last_name='Y',
+            user_type=user_type,
+            gender='M', address='', profile_pic='',
+            login_id=login_id,
+            date_of_birth=dob,
+        )
+
+    def test_student_id_encodes_birthday(self):
+        lid = _generate_login_id('IC', date(2010, 5, 24))
+        self.assertEqual(lid, 'IC052401')
+
+    def test_teacher_id_encodes_birthday(self):
+        lid = _generate_login_id('TC', date(1985, 2, 12))
+        self.assertEqual(lid, 'TC021201')
+
+    def test_suffix_increments_on_collision(self):
+        dob = date(2009, 7, 7)
+        self._make_user('IC070701', dob=dob)
+        self._make_user('IC070702', dob=dob)
+        self.assertEqual(_generate_login_id('IC', dob), 'IC070703')
+
+    def test_pads_month_and_day(self):
+        # January 5 should be 0105, not 15.
+        self.assertEqual(_generate_login_id('IC', date(2000, 1, 5)), 'IC010501')
+
+    def test_fallback_when_no_birthday(self):
+        # Without DOB, falls back to sequential.
+        lid = _generate_login_id('IC')
+        self.assertTrue(lid.startswith('IC'))
+        self.assertGreaterEqual(int(lid[2:]), 1000)
+
+    def test_legacy_ids_do_not_collide(self):
+        # Legacy formats (IC00005, IC1000, STU-0001) coexist with new format.
+        self._make_user('IC00005')
+        self._make_user('IC1000', email='legacy2@iceberg.internal')
+        self._make_user('STU-0001', email='legacy3@iceberg.internal')
+        new = _generate_login_id('IC', date(2012, 3, 15))
+        self.assertEqual(new, 'IC031501')
+
+
 class LoginFlowResilienceTests(TestCase):
     def setUp(self):
         self.user_model = get_user_model()
@@ -161,4 +212,5 @@ class LoginFlowResilienceTests(TestCase):
             follow=False,
         )
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], '/')
+        # doLogin redirects to reverse('login_page') == '/login/' on failure.
+        self.assertEqual(response['Location'], '/login/')

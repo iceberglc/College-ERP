@@ -113,7 +113,7 @@ def doLogin(request, **kwargs):
             id_qp       = ''
         else:
             exists = UserModel.objects.filter(login_id__iexact=identifier).exists()
-            id_err_msg  = "Student ID not found."
+            id_err_msg  = "ID not found. Please check your ICEBERG login ID."
             pw_err_msg  = "Incorrect password."
             id_qp       = identifier
 

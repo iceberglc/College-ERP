@@ -205,6 +205,11 @@
             {{ form.gender }}
           </div>
           <div class="field-wrap">
+            <label>Date of Birth</label>
+            {{ form.date_of_birth }}
+            {% if form.date_of_birth.errors %}<div class="field-error">{{ form.date_of_birth.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="field-wrap">
             <label>Phone Number</label>
             {{ form.phone }}
           </div>

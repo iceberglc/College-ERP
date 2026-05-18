@@ -69,6 +69,10 @@ class CustomUser(AbstractUser):
     )
     user_type = models.CharField(default='1', choices=USER_TYPE, max_length=1)
     gender = models.CharField(max_length=1, choices=GENDER, blank=True, default='')
+    date_of_birth = models.DateField(
+        null=True, blank=True,
+        help_text="Date of birth (YYYY-MM-DD). Used to generate the user's login ID.",
+    )
     profile_pic = models.ImageField(blank=True, null=True)
     avatar = models.CharField(max_length=10, blank=True, default='')
     address = models.TextField(blank=True, default='')

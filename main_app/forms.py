@@ -1,3 +1,5 @@
+from datetime import date
+
 from django import forms
 from django.forms.widgets import DateInput, TextInput
 
@@ -15,11 +17,40 @@ class FormSettings(forms.ModelForm):
 
 _MAX_PROFILE_PIC_BYTES = 5 * 1024 * 1024  # 5 MB
 
+# Sanity bounds for date of birth: rejects obviously bad data without
+# being strict about exact age (the centre accepts both kids and adults).
+_DOB_MIN = date(1900, 1, 1)
+
+
+def _validate_birthday(value):
+    if value is None:
+        return None
+    today = date.today()
+    if value > today:
+        raise forms.ValidationError("Date of birth cannot be in the future.")
+    if value < _DOB_MIN:
+        raise forms.ValidationError("Please enter a valid date of birth.")
+    return value
+
 
 class CustomUserForm(FormSettings):
     gender = forms.ChoiceField(choices=[('M', 'Male'), ('F', 'Female')])
     first_name = forms.CharField(required=True)
     last_name = forms.CharField(required=True)
+    date_of_birth = forms.DateField(
+        required=True,
+        label='Date of Birth',
+        widget=forms.DateInput(
+            attrs={
+                'type': 'date',
+                'class': 'form-control',
+                'max': date.today().isoformat(),
+            },
+            format='%Y-%m-%d',
+        ),
+        input_formats=['%Y-%m-%d'],
+        help_text='Format: YYYY-MM-DD. Used to generate the unique login ID.',
+    )
     address = forms.CharField(widget=forms.Textarea)
     password = forms.CharField(widget=forms.PasswordInput)
     profile_pic = forms.ImageField()
@@ -27,6 +58,12 @@ class CustomUserForm(FormSettings):
     def __init__(self, *args, **kwargs):
         super(CustomUserForm, self).__init__(*args, **kwargs)
         self.fields['profile_pic'].required = False
+        # Pre-fill DOB when editing an existing user.
+        instance = kwargs.get('instance')
+        if instance is not None:
+            user = getattr(instance, 'admin', instance)
+            if getattr(user, 'date_of_birth', None):
+                self.fields['date_of_birth'].initial = user.date_of_birth
 
     def clean_profile_pic(self):
         pic = self.cleaned_data.get('profile_pic')
@@ -34,18 +71,13 @@ class CustomUserForm(FormSettings):
             raise forms.ValidationError("Profile picture too large. Maximum size is 5 MB.")
         return pic
 
-        if kwargs.get('instance'):
-            instance = kwargs.get('instance').admin.__dict__
-            self.fields['password'].required = False
-            for field in CustomUserForm.Meta.fields:
-                if field in self.fields:
-                    self.fields[field].initial = instance.get(field)
-            if self.instance.pk is not None:
-                self.fields['password'].widget.attrs['placeholder'] = "Fill this only if you wish to update password"
+    def clean_date_of_birth(self):
+        return _validate_birthday(self.cleaned_data.get('date_of_birth'))
 
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'gender', 'password', 'profile_pic', 'address']
+        fields = ['first_name', 'last_name', 'gender', 'date_of_birth',
+                  'password', 'profile_pic', 'address']
 
 
 class StudentForm(CustomUserForm):
@@ -68,6 +100,8 @@ class StudentForm(CustomUserForm):
         super(StudentForm, self).__init__(*args, **kwargs)
         self.fields['status'].widget.attrs['class'] = 'form-control'
         self.fields['level'].widget.attrs['class'] = 'form-control'
+        # On edit, DOB is optional — existing accounts may not have one yet.
+        self.fields['date_of_birth'].required = False
         instance = kwargs.get('instance')
         if instance:
             self.fields['phone'].initial = instance.phone
@@ -113,6 +147,8 @@ class AddStudentForm(CustomUserForm):
         self.fields['phone'].widget.attrs['class'] = 'form-control'
         self.fields['status'].widget.attrs['class'] = 'form-control'
         self.fields['level'].widget.attrs['class'] = 'form-control'
+        # DOB is required on add — the login_id is derived from it.
+        self.fields['date_of_birth'].required = True
         if self.data.get('group'):
             self.fields['group'].queryset = Group.objects.filter(is_archived=False)
 
@@ -138,12 +174,15 @@ class AdminForm(CustomUserForm):
         self.fields['profile_pic'].required = False
         self.fields['gender'].required = False
         self.fields['address'].required = False
+        # Admins don't need a DOB — they log in by email, not a generated ID.
+        self.fields['date_of_birth'].required = False
         if kwargs.get('instance'):
             self.fields['email'].initial = kwargs['instance'].admin.email
 
     class Meta(CustomUserForm.Meta):
         model = Admin
-        fields = ['first_name', 'last_name', 'email', 'gender', 'password', 'profile_pic', 'address']
+        fields = ['first_name', 'last_name', 'email', 'gender', 'date_of_birth',
+                  'password', 'profile_pic', 'address']
 
 
 PREDEFINED_SUBJECTS = [
@@ -178,6 +217,16 @@ PREDEFINED_SUBJECTS = [
 
 
 class StaffForm(CustomUserForm):
+    phone = forms.CharField(
+        max_length=20, required=False, label="Phone Number",
+        widget=forms.TextInput(attrs={'placeholder': '+998 90 123 45 67', 'class': 'form-control'}),
+    )
+    specialization = forms.CharField(
+        max_length=200, required=False, label="Specialization",
+        widget=forms.TextInput(attrs={'class': 'form-control',
+            'placeholder': 'e.g. IELTS, Mathematics, Business English'}),
+    )
+
     def __init__(self, *args, **kwargs):
         super(StaffForm, self).__init__(*args, **kwargs)
 
@@ -276,19 +325,29 @@ class FeedbackStudentForm(FormSettings):
 class StudentEditForm(CustomUserForm):
     def __init__(self, *args, **kwargs):
         super(StudentEditForm, self).__init__(*args, **kwargs)
+        self.fields['date_of_birth'].required = False
 
     class Meta(CustomUserForm.Meta):
         model = Student
-        fields = CustomUserForm.Meta.fields 
+        fields = CustomUserForm.Meta.fields
 
 
 class StaffEditForm(CustomUserForm):
     def __init__(self, *args, **kwargs):
         super(StaffEditForm, self).__init__(*args, **kwargs)
+        self.fields['date_of_birth'].required = False
 
     class Meta(CustomUserForm.Meta):
         model = Staff
         fields = CustomUserForm.Meta.fields + ['course', 'phone', 'specialization']
+
+
+def _dob_widget():
+    return forms.DateInput(
+        attrs={'class': 'form-control', 'type': 'date',
+               'max': date.today().isoformat()},
+        format='%Y-%m-%d',
+    )
 
 
 class StudentProfileForm(forms.Form):
@@ -301,6 +360,10 @@ class StudentProfileForm(forms.Form):
         choices=[('', '—'), ('M', 'Male'), ('F', 'Female')],
         required=False, label='Gender',
         widget=forms.Select(attrs={'class': 'form-control'}))
+    date_of_birth = forms.DateField(
+        required=False, label='Date of Birth',
+        widget=_dob_widget(),
+        input_formats=['%Y-%m-%d'])
     phone = forms.CharField(max_length=20, required=False, label='Phone Number',
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+998 90 123 45 67'}))
     password = forms.CharField(required=False, label='New Password',
@@ -313,7 +376,11 @@ class StudentProfileForm(forms.Form):
             self.fields['first_name'].initial = instance.admin.first_name
             self.fields['last_name'].initial = instance.admin.last_name
             self.fields['gender'].initial = instance.admin.gender
+            self.fields['date_of_birth'].initial = instance.admin.date_of_birth
             self.fields['phone'].initial = instance.phone
+
+    def clean_date_of_birth(self):
+        return _validate_birthday(self.cleaned_data.get('date_of_birth'))
 
 
 class StaffProfileForm(forms.Form):
@@ -326,6 +393,10 @@ class StaffProfileForm(forms.Form):
         choices=[('', '—'), ('M', 'Male'), ('F', 'Female')],
         required=False, label='Gender',
         widget=forms.Select(attrs={'class': 'form-control'}))
+    date_of_birth = forms.DateField(
+        required=False, label='Date of Birth',
+        widget=_dob_widget(),
+        input_formats=['%Y-%m-%d'])
     phone = forms.CharField(max_length=20, required=False, label='Phone Number',
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+998 90 123 45 67'}))
     specialization = forms.CharField(max_length=200, required=False, label='Specialization',
@@ -341,8 +412,12 @@ class StaffProfileForm(forms.Form):
             self.fields['first_name'].initial = instance.admin.first_name
             self.fields['last_name'].initial = instance.admin.last_name
             self.fields['gender'].initial = instance.admin.gender
+            self.fields['date_of_birth'].initial = instance.admin.date_of_birth
             self.fields['phone'].initial = instance.phone
             self.fields['specialization'].initial = instance.specialization
+
+    def clean_date_of_birth(self):
+        return _validate_birthday(self.cleaned_data.get('date_of_birth'))
 
 
 class EditResultForm(FormSettings):

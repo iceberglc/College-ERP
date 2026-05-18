@@ -573,6 +573,9 @@ def student_view_profile(request):
                 admin.first_name = form.cleaned_data['first_name']
                 admin.last_name = form.cleaned_data['last_name']
                 admin.gender = form.cleaned_data.get('gender', '')
+                dob = form.cleaned_data.get('date_of_birth')
+                if dob is not None:
+                    admin.date_of_birth = dob
                 admin.save()
                 student.phone = form.cleaned_data.get('phone', '')
                 student.save()

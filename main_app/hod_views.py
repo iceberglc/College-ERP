@@ -30,19 +30,41 @@ def _derive_is_english(name):
     return any(kw in name_lower for kw in _ENGLISH_KEYWORDS)
 
 
-def _generate_login_id(prefix):
-    """Generate the next sequential login_id for the given prefix.
+def _generate_login_id(prefix, date_of_birth=None):
+    """Generate a unique login_id for a new student or teacher.
 
-    prefix='IC' → IC1000, IC1001, IC1002 … (students, start at 1000)
-    prefix='TC' → TC500,  TC501,  TC502  … (teachers, start at 500)
+    Birthday-based format (preferred):
+        {prefix}{MMDD}{NN}   e.g.  IC052401  →  ICEBERG · May 24 · #01
+                                   TC021207  →  Teacher · Feb 12 · #07
+        - MMDD : two-digit month + two-digit day of birth
+        - NN   : 01–99 collision suffix (rolls forward for shared birthdays)
 
-    No zero-padding. IDs are short, clean, and easy to type.
+    Sequential fallback (only when DOB is missing):
+        IC1000, IC1001 …  /  TC500, TC501 …
 
-    Existing IDs in the old zero-padded format (IC00005, TC0004) parse
-    as integers below the new starting values (1000 / 500) so they never
-    collide with newly generated IDs. Legacy STU-/TCH- format IDs are
-    excluded by the ^{prefix}\\d regex anchor (old format had a dash).
+    The new format is always exactly 6 digits after the prefix, so it
+    cannot collide with legacy IDs:
+        - Old zero-padded:  IC00005       (5 digits)
+        - Old sequential:   IC1000        (4 digits)
+        - Old dashed:       STU-0001      (different prefix)
+        - New birthday:     IC052401      (6 digits, MMDD + NN)
     """
+    if date_of_birth is not None:
+        mmdd = f'{date_of_birth.month:02d}{date_of_birth.day:02d}'
+        base = f'{prefix}{mmdd}'
+        existing = set(
+            CustomUser.objects
+            .filter(login_id__istartswith=base)
+            .values_list('login_id', flat=True)
+        )
+        existing_upper = {lid.upper() for lid in existing if lid}
+        for n in range(1, 100):
+            candidate = f'{base}{n:02d}'
+            if candidate.upper() not in existing_upper:
+                return candidate
+        # 99 students born on the same day at the same centre is implausible,
+        # but fall through to the sequential generator just in case.
+
     start = 1000 if prefix == 'IC' else 500
     pat = re.compile(rf'^{re.escape(prefix)}(\d+)$')
     existing = (
@@ -158,18 +180,20 @@ def add_staff(request):
             gender = form.cleaned_data.get('gender')
             password = form.cleaned_data.get('password')
             course = form.cleaned_data.get('course')
+            date_of_birth = form.cleaned_data.get('date_of_birth')
             passport = request.FILES.get('profile_pic')
             try:
                 passport_url = ''
                 if passport:
                     passport_url = default_storage.save(passport.name, passport)
-                login_id = _generate_login_id('TC')
+                login_id = _generate_login_id('TC', date_of_birth)
                 email = f"{login_id.lower()}@iceberg.internal"
                 user = CustomUser.objects.create_user(
                     email=email, password=password, user_type=2, first_name=first_name,
                     last_name=last_name, profile_pic=passport_url, login_id=login_id)
                 user.gender = gender
                 user.address = address
+                user.date_of_birth = date_of_birth
                 user.save()
                 staff_obj = Staff.objects.get(admin=user)
                 staff_obj.course = course
@@ -201,12 +225,13 @@ def add_student(request):
             password    = student_form.cleaned_data.get('password')
             course      = student_form.cleaned_data.get('course')
             group       = student_form.cleaned_data.get('group')
+            date_of_birth = student_form.cleaned_data.get('date_of_birth')
             passport    = request.FILES.get('profile_pic')
             try:
                 passport_url = ''
                 if passport:
                     passport_url = default_storage.save(passport.name, passport)
-                login_id = _generate_login_id('IC')
+                login_id = _generate_login_id('IC', date_of_birth)
                 email = f"{login_id.lower()}@iceberg.internal"
                 user = CustomUser.objects.create_user(
                     email=email, password=password, user_type=3,
@@ -214,6 +239,7 @@ def add_student(request):
                     profile_pic=passport_url, login_id=login_id)
                 user.gender = gender
                 user.address = address
+                user.date_of_birth = date_of_birth
                 user.save()
                 student = user.student
                 student.course = course
@@ -362,6 +388,9 @@ def edit_staff(request, staff_id):
                 user.last_name = last_name
                 user.gender = gender
                 user.address = address
+                dob = form.cleaned_data.get('date_of_birth')
+                if dob is not None:
+                    user.date_of_birth = dob
                 staff.course = course
                 staff.phone = form.cleaned_data.get('phone', '')
                 staff.specialization = form.cleaned_data.get('specialization', '')
@@ -406,6 +435,9 @@ def edit_student(request, student_id):
                 user.last_name = last_name
                 user.gender = gender
                 user.address = address
+                dob = form.cleaned_data.get('date_of_birth')
+                if dob is not None:
+                    user.date_of_birth = dob
                 student.course = course
                 student.phone = form.cleaned_data.get('phone', '')
                 student.status = form.cleaned_data.get('status', student.status)
@@ -688,6 +720,9 @@ def admin_view_profile(request):
                     custom_user.gender = gender
                 if address is not None:
                     custom_user.address = address
+                dob = form.cleaned_data.get('date_of_birth')
+                if dob is not None:
+                    custom_user.date_of_birth = dob
                 custom_user.save()
                 messages.success(request, "Profile Updated!")
                 return redirect(reverse('admin_view_profile'))

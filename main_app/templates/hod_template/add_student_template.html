@@ -69,9 +69,19 @@
           {{ form.gender }}
         </div>
         <div class="pf-field">
-          <label class="pf-label">{{ form.password.label }}</label>
-          {{ form.password }}
+          <label class="pf-label">
+            {{ form.date_of_birth.label }}
+            <span style="color:var(--ice-danger);">*</span>
+          </label>
+          {{ form.date_of_birth }}
+          {% if form.date_of_birth.errors %}<div class="pf-error">{{ form.date_of_birth.errors.0 }}</div>{% endif %}
+          <small class="pf-help">YYYY-MM-DD — used to generate the login ID (e.g. IC052401).</small>
         </div>
+      </div>
+
+      <div class="pf-field">
+        <label class="pf-label">{{ form.password.label }}</label>
+        {{ form.password }}
       </div>
 
       <div class="pf-field">
