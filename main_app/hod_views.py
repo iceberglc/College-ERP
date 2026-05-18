@@ -33,16 +33,18 @@ def _derive_is_english(name):
 def _generate_login_id(prefix):
     """Generate the next sequential login_id for the given prefix.
 
-    prefix='IC' → IC00001, IC00002 … (student — 5-digit zero-padded)
-    prefix='TC' → TC0001,  TC0002  … (teacher — 4-digit zero-padded)
+    prefix='IC' → IC1000, IC1001, IC1002 … (students, start at 1000)
+    prefix='TC' → TC500,  TC501,  TC502  … (teachers, start at 500)
 
-    Legacy IDs in the old STU-/TCH- format are left untouched; they don't
-    collide with the new IC/TC prefix because the old format contained a dash
-    and the new format contains only digits after the two-letter prefix.
-    The TC regex anchors on ^TC\\d to exclude legacy 'TCH-XXXX' IDs.
+    No zero-padding. IDs are short, clean, and easy to type.
+
+    Existing IDs in the old zero-padded format (IC00005, TC0004) parse
+    as integers below the new starting values (1000 / 500) so they never
+    collide with newly generated IDs. Legacy STU-/TCH- format IDs are
+    excluded by the ^{prefix}\\d regex anchor (old format had a dash).
     """
-    width = 5 if prefix == 'IC' else 4
-    pat   = re.compile(rf'^{re.escape(prefix)}(\d+)$')
+    start = 1000 if prefix == 'IC' else 500
+    pat = re.compile(rf'^{re.escape(prefix)}(\d+)$')
     existing = (
         CustomUser.objects
         .filter(login_id__regex=rf'^{re.escape(prefix)}\d')
@@ -53,10 +55,10 @@ def _generate_login_id(prefix):
         m = pat.match(lid)
         if m:
             used.add(int(m.group(1)))
-    n = 1
+    n = start
     while n in used:
         n += 1
-    return f'{prefix}{n:0{width}d}'
+    return f'{prefix}{n}'
 
 
 def _active_groups_for_enrollment():
