@@ -41,6 +41,8 @@
     <link rel="stylesheet" href="{% static 'dist/css/storefront-ui.css' %}">
     <!-- iceberg.css loads LAST so its premium UI patches take precedence -->
     <link rel="stylesheet" href="{% static 'dist/css/iceberg.css' %}">
+    <!-- bold layer: animated background, gradient titles, table interactivity (additive) -->
+    <link rel="stylesheet" href="{% static 'dist/css/iceberg-bold.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'dist/js/trend-chart.js' %}"></script>
     <style>
@@ -376,6 +378,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
     <script src="{% static 'dist/js/csrf-setup.js' %}"></script>
+    <!-- Iceberg interactivity: table search/sort, stat count-up, scroll reveal -->
+    <script src="{% static 'dist/js/iceberg-interactive.js' %}"></script>
 
     <script>
     /* ── Sidebar ─────────────────────────────────────────────────────────── */

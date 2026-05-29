@@ -1,0 +1,137 @@
+/* =====================================================
+   ICEBERG — Bold layer  (loads AFTER iceberg.css)
+   Purely ADDITIVE: intensifies the look without
+   overwriting the premium design system or fighting
+   the bespoke per-page styles. Uses existing tokens
+   (--navy / --cyan / --ice-*) and the .dark-mode model.
+   ===================================================== */
+
+/* ── Animated aurora background ───────────────────────── */
+@keyframes ice-aurora {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+@keyframes ice-blob {
+  0%,100% { transform: translate3d(0,0,0) scale(1); }
+  50%     { transform: translate3d(0,-26px,0) scale(1.05); }
+}
+
+body {
+  background: linear-gradient(125deg, #EAF1FF 0%, #E7F7FB 38%, #EEF2FF 70%, #E9F3FF 100%) !important;
+  background-size: 240% 240% !important;
+  animation: ice-aurora 28s ease infinite;
+}
+/* soft floating colour blobs behind the content */
+body::after {
+  content: '';
+  position: fixed;
+  inset: -12% -12% auto -12%;
+  height: 64vh;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(42% 56% at 16% 20%, rgba(6,182,212,.16), transparent 60%),
+    radial-gradient(40% 54% at 84% 12%, rgba(27,63,122,.14), transparent 60%);
+  animation: ice-blob 20s ease-in-out infinite;
+}
+/* keep real content above the decorative layer */
+.erpnext-navbar, .erpnext-sidebar, .erpnext-main,
+.bottom-nav, #ice-progress, #ice-overlay { position: relative; z-index: 1; }
+.erpnext-navbar { z-index: 1040; }
+.erpnext-sidebar { z-index: 1030; }
+.erpnext-main { background: transparent !important; }
+
+.dark-mode body, html.dark-mode body {
+  background: linear-gradient(125deg, #070D1A 0%, #0B1A33 45%, #08152B 100%) !important;
+  background-size: 240% 240% !important;
+}
+.dark-mode body::after, html.dark-mode body::after {
+  background:
+    radial-gradient(42% 56% at 16% 20%, rgba(34,211,238,.13), transparent 60%),
+    radial-gradient(40% 54% at 84% 12%, rgba(37,99,235,.15), transparent 60%);
+}
+
+/* ── Gradient page title ──────────────────────────────── */
+.page-title {
+  background: linear-gradient(120deg, var(--navy) 0%, var(--cyan-dk) 70%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -.5px;
+}
+.dark-mode .page-title {
+  background: linear-gradient(120deg, #93C5FD 0%, #22D3EE 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Stronger motion on the consistent dashboard widgets ── */
+.stat-card, .erpnext-card, .quick-action-btn {
+  transition: transform .25s cubic-bezier(.2,.7,.3,1), box-shadow .25s, border-color .25s;
+}
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 40px rgba(6,182,212,.22);
+}
+.erpnext-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+.quick-action-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 34px rgba(6,182,212,.22);
+}
+.quick-action-btn i { transition: transform .25s ease; }
+.quick-action-btn:hover i { transform: scale(1.18); }
+.small-box { transition: transform .25s cubic-bezier(.2,.7,.3,1), box-shadow .25s; }
+.small-box:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+.small-box .icon { transition: transform .3s ease; }
+.small-box:hover .icon { transform: scale(1.12) rotate(-6deg); }
+
+/* primary button glow on hover (keeps existing gradient) */
+.btn-primary:hover { box-shadow: 0 10px 26px rgba(6,182,212,.30) !important; }
+
+/* ── Reveal-on-scroll (added by iceberg-interactive.js) ── */
+.ice-reveal { opacity: 0; transform: translateY(22px);
+  transition: opacity .6s cubic-bezier(.2,.7,.3,1), transform .6s cubic-bezier(.2,.7,.3,1);
+  will-change: opacity, transform; }
+.ice-reveal.ice-in { opacity: 1; transform: none; }
+
+/* ── Data-table toolbar (search + sort) — injected by JS ── */
+.ice-table-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.ice-search-wrap { position: relative; flex: 1; max-width: 340px; min-width: 200px; }
+.ice-search-wrap i {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); font-size: 13px; pointer-events: none;
+}
+.ice-search {
+  width: 100%; padding: 9px 14px 9px 36px;
+  border: 1.5px solid var(--border); border-radius: var(--radius-md);
+  font: inherit; font-size: 13.5px; color: var(--text);
+  background: var(--surface); outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.ice-search:focus { border-color: var(--cyan); box-shadow: 0 0 0 4px rgba(6,182,212,.16); }
+.ice-row-count { font-size: 12px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
+th.ice-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+th.ice-sortable::after {
+  content: '\f0dc'; font-family: 'Font Awesome 5 Free'; font-weight: 900;
+  font-size: 9px; opacity: .35; margin-left: 6px;
+}
+th.ice-sortable.ice-asc::after  { content: '\f0de'; opacity: .9; color: var(--cyan-dk); }
+th.ice-sortable.ice-desc::after { content: '\f0dd'; opacity: .9; color: var(--cyan-dk); }
+.ice-no-results td {
+  text-align: center; color: var(--text-muted);
+  padding: 28px !important; font-style: italic;
+}
+.dark-mode .ice-search { background: var(--ice-surface2); border-color: var(--ice-border); color: var(--ice-text); }
+
+/* ── Respect reduced motion ───────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  body { animation: none !important; }
+  body::after { animation: none !important; }
+  .ice-reveal { opacity: 1 !important; transform: none !important; }
+}
