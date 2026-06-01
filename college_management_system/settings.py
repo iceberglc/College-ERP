@@ -174,8 +174,9 @@ _spaces_endpoint = os.environ.get(
     f'https://{_spaces_region}.digitaloceanspaces.com',
 )
 
-if _spaces_key and _spaces_secret and _spaces_bucket:
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+_use_spaces = bool(_spaces_key and _spaces_secret and _spaces_bucket)
+
+if _use_spaces:
     AWS_ACCESS_KEY_ID       = _spaces_key
     AWS_SECRET_ACCESS_KEY   = _spaces_secret
     AWS_STORAGE_BUCKET_NAME = _spaces_bucket
@@ -191,13 +192,31 @@ if _spaces_key and _spaces_secret and _spaces_bucket:
     )
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
 
+# ---------------------------------------------------------------------------
+# Storage backends — Django 4.2+ STORAGES API.
+# IMPORTANT: Django 6 removed the legacy STATICFILES_STORAGE and
+# DEFAULT_FILE_STORAGE settings. They are silently ignored, falling back to
+# plain local/unhashed storage, unless configured here in STORAGES.
+# ---------------------------------------------------------------------------
 if DEBUG or 'test' in sys.argv:
     # Plain storage: no hashing, works without running collectstatic.
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    _staticfiles_backend = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 else:
-    # Fingerprinted files for production. manifest_strict=False means missing
-    # entries fall back to the original path instead of raising ValueError.
-    STATICFILES_STORAGE = 'main_app.staticfiles_storage.NonStrictManifestStaticFilesStorage'
+    # Fingerprinted files for production (cache-busting). manifest_strict=False
+    # on the custom class makes missing entries fall back to the original path
+    # instead of raising ValueError.
+    _staticfiles_backend = 'main_app.staticfiles_storage.NonStrictManifestStaticFilesStorage'
+
+STORAGES = {
+    # Media uploads: DigitalOcean Spaces (S3) when configured, else local disk.
+    'default': {
+        'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage' if _use_spaces
+                   else 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': _staticfiles_backend,
+    },
+}
 
 # ---------------------------------------------------------------------------
 # Authentication
