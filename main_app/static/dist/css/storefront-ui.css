@@ -224,8 +224,11 @@ a {
 
 .erpnext-main {
   margin-left: var(--sidebar-width) !important;
-  padding: calc(var(--navbar-height) + 28px) 28px 96px !important;
-  min-height: 100vh;
+  /* NOTE: base .erpnext-main already has margin-top: var(--navbar-height) to
+     clear the fixed navbar. Do NOT add the navbar height to padding-top here
+     too, or the offset doubles and a ~88px gap opens under the navbar. */
+  padding: 28px 28px 96px !important;
+  min-height: calc(100vh - var(--navbar-height));
 }
 
 .sidebar-collapsed .erpnext-main {
@@ -709,7 +712,8 @@ body.dark-mode {
   .erpnext-main,
   .sidebar-collapsed .erpnext-main {
     margin-left: 0 !important;
-    padding: calc(var(--navbar-height) + 18px) 14px 92px !important;
+    /* base margin-top already clears the fixed navbar — don't double it here */
+    padding: 18px 14px 92px !important;
   }
 
   .page-header {
