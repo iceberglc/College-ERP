@@ -633,6 +633,11 @@ body {
 /* ── Main Content Area ────────────────────────────────── */
 .erpnext-main {
   background: var(--bg);
+  display: block;
+}
+
+.content-area {
+  width: 100%;
 }
 
 /* ── Page Header ─────────────────────────────────────── */
