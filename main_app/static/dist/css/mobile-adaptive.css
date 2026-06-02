@@ -201,8 +201,136 @@
 
 
 /* =====================================================================
-   B. APPLE "LIQUID GLASS" THEME  (.platform-apple)   — added in Phase 4
+   B. APPLE "LIQUID GLASS" THEME  (.platform-apple)
+
+   A CSS approximation of Apple's translucent material: backdrop blur +
+   saturation, layered translucency, hairline light borders, soft shadows,
+   large radii, and a gradient specular highlight. NOT true live refraction
+   — but coherent, readable, and 60fps. Applies at all widths (Mac/Safari
+   gets the look too), with an opaque @supports fallback.
    ===================================================================== */
+
+/* ── B1. Glass token system (light) ──────────────────────────────────*/
+.platform-apple {
+  --glass-blur:        20px;
+  --glass-blur-strong: 30px;
+  --glass-saturate:    180%;
+  --glass-fill:        rgba(255, 255, 255, 0.55);
+  --glass-fill-strong: rgba(255, 255, 255, 0.72);
+  --glass-hairline:    rgba(255, 255, 255, 0.70);
+  --glass-edge:        rgba(12, 31, 69, 0.08);
+  --glass-shadow:      0 8px 32px rgba(12, 31, 69, 0.14), 0 2px 8px rgba(12, 31, 69, 0.07);
+  --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 42%);
+  --glass-radius:      20px;
+  /* iOS-feel niceties */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── B2. Glass token system (dark) ───────────────────────────────────
+   Keyed off the app's existing .dark-mode class (the pre-paint theme
+   script adds it for an explicit dark choice AND for 'system' when the OS
+   is dark, so this also covers prefers-color-scheme). */
+.platform-apple.dark-mode {
+  --glass-fill:        rgba(18, 30, 54, 0.55);
+  --glass-fill-strong: rgba(18, 30, 54, 0.74);
+  --glass-hairline:    rgba(255, 255, 255, 0.16);
+  --glass-edge:        rgba(255, 255, 255, 0.06);
+  --glass-shadow:      0 10px 34px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.35);
+  --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 42%);
+}
+/* Safety net for users on 'system' if the class somehow isn't applied. */
+@media (prefers-color-scheme: dark) {
+  .platform-apple {
+    --glass-fill:        rgba(18, 30, 54, 0.55);
+    --glass-fill-strong: rgba(18, 30, 54, 0.74);
+    --glass-hairline:    rgba(255, 255, 255, 0.16);
+    --glass-edge:        rgba(255, 255, 255, 0.06);
+    --glass-shadow:      0 10px 34px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.35);
+    --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 42%);
+  }
+}
+
+/* ── B3. The glass material ──────────────────────────────────────────
+   Only inside @supports, so browsers without backdrop-filter keep the
+   opaque base surfaces from iceberg.css (readable fallback — never blur
+   with no fallback). A shared helper via a long selector list. */
+@supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
+
+  .platform-apple .erpnext-navbar,
+  .platform-apple .erpnext-sidebar,
+  .platform-apple .bottom-nav,
+  .platform-apple .dt-card,
+  .platform-apple .erpnext-card,
+  .platform-apple .stat-card,
+  .platform-apple .pcard,
+  .platform-apple .ice-modal {
+    background: var(--glass-fill-strong) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-hairline) !important;
+    box-shadow: inset 0 1px 0 var(--glass-hairline), var(--glass-shadow) !important;
+  }
+
+  /* Bars/drawer keep their edge geometry (no all-round border). */
+  .platform-apple .erpnext-navbar {
+    border-left: 0 !important; border-right: 0 !important; border-top: 0 !important;
+    border-bottom: 1px solid var(--glass-hairline) !important;
+  }
+  .platform-apple .erpnext-sidebar {
+    border-top: 0 !important; border-bottom: 0 !important; border-left: 0 !important;
+    border-right: 1px solid var(--glass-hairline) !important;
+    background: var(--glass-fill) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+  }
+
+  /* Specular highlight + larger radii on the "tile" surfaces. */
+  .platform-apple .dt-card,
+  .platform-apple .erpnext-card,
+  .platform-apple .stat-card,
+  .platform-apple .pcard,
+  .platform-apple .bottom-nav,
+  .platform-apple .ice-modal {
+    position: relative;
+    border-radius: var(--glass-radius) !important;
+    background-image: var(--glass-specular), none;
+    background-blend-mode: overlay;
+  }
+
+  /* Reflowed table-row cards become glass too (phones). */
+  @media (max-width: 600px) {
+    .platform-apple table.dt > tbody > tr,
+    .platform-apple table.data-table > tbody > tr,
+    .platform-apple table.table > tbody > tr {
+      background: var(--glass-fill-strong) !important;
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      border: 1px solid var(--glass-hairline) !important;
+      border-radius: var(--glass-radius) !important;
+      box-shadow: inset 0 1px 0 var(--glass-hairline), var(--glass-shadow) !important;
+    }
+    /* Cell separators softer over glass. */
+    .platform-apple table.dt > tbody > tr > td { border-bottom-color: var(--glass-edge); }
+  }
+
+  /* The modal backdrop gets a light blur instead of a flat dim. */
+  .platform-apple .ice-modal-overlay {
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+}
+
+/* ── B4. Buttons — glossy but solid (legibility first) ───────────────*/
+.platform-apple .btn,
+.platform-apple .notify-btn,
+.platform-apple .quick-action-btn {
+  border-radius: 14px;
+}
+.platform-apple .btn-primary {
+  background-image: var(--glass-specular), linear-gradient(180deg, var(--cyan), var(--cyan-dk));
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 6px 18px rgba(6, 182, 212, 0.30);
+}
 
 
 /* =====================================================================
