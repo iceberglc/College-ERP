@@ -15,6 +15,134 @@
    A. SHARED MOBILE FUNDAMENTALS
    ===================================================================== */
 
+/* Theme-aware icon tokens. These follow the actual app theme class/attribute
+   that the manual toggle sets on <html>, not the OS media query. */
+:root {
+  --ice-accent: var(--ice-cyan, #06B6D4);
+  --ice-accent-ink: var(--ice-cyan-dk, #0891B2);
+  --ice-icon-fg: #1E293B;
+  --ice-icon-muted: #475569;
+  --ice-icon-soft: #64748B;
+  --ice-icon-active: var(--ice-accent-ink);
+  --ice-icon-primary: #0C1F45;
+  --ice-icon-success: #047857;
+  --ice-icon-warning: #B45309;
+  --ice-icon-danger: #DC2626;
+  --ice-icon-info: #1D4ED8;
+  --ice-icon-purple: #6D28D9;
+}
+
+html.dark-mode,
+html[data-theme="dark"] {
+  --ice-icon-fg: #E2E8F0;
+  --ice-icon-muted: #B6C5D6;
+  --ice-icon-soft: #94AFC8;
+  --ice-icon-active: #67E8F9;
+  --ice-icon-primary: #CBD5E1;
+  --ice-icon-success: #6EE7B7;
+  --ice-icon-warning: #FCD34D;
+  --ice-icon-danger: #FCA5A5;
+  --ice-icon-info: #93C5FD;
+  --ice-icon-purple: #C4B5FD;
+}
+
+.nav-icon,
+.nav-arrow,
+.dark-mode .nav-icon,
+.dark-mode .nav-arrow {
+  color: var(--ice-icon-muted) !important;
+  opacity: 1;
+}
+
+.nav-link,
+.dark-mode .nav-link {
+  color: var(--ice-icon-fg) !important;
+}
+
+.nav-link:hover,
+.dark-mode .nav-link:hover {
+  color: var(--ice-icon-fg) !important;
+}
+
+.nav-link:hover .nav-icon,
+.nav-link:hover .nav-arrow,
+.dark-mode .nav-link:hover .nav-icon,
+.dark-mode .nav-link:hover .nav-arrow {
+  color: var(--ice-icon-fg) !important;
+}
+
+.nav-link.active .nav-icon,
+.nav-link.active .nav-arrow,
+.dark-mode .nav-link.active .nav-icon,
+.dark-mode .nav-link.active .nav-arrow {
+  color: var(--ice-icon-active) !important;
+}
+
+.navbar-toggle,
+.navbar-notification,
+.dark-mode .navbar-toggle,
+.dark-mode .navbar-notification {
+  color: var(--ice-icon-muted) !important;
+}
+
+.navbar-toggle:hover,
+.navbar-notification:hover,
+.dark-mode .navbar-toggle:hover,
+.dark-mode .navbar-notification:hover {
+  color: var(--ice-icon-fg) !important;
+}
+
+.navbar-toggle i,
+.navbar-notification i,
+.logout-btn i,
+.breadcrumb-item a i {
+  color: currentColor;
+}
+
+.card-title i,
+.page-card-header i,
+.trend-card-title i,
+.trend-card-empty i,
+.quick-action-btn i,
+.dark-mode .card-title i,
+.dark-mode .page-card-header i,
+.dark-mode .trend-card-title i,
+.dark-mode .trend-card-empty i,
+.dark-mode .quick-action-btn i {
+  color: var(--ice-icon-active) !important;
+}
+
+.quick-action-btn:hover i,
+.dark-mode .quick-action-btn:hover i {
+  color: var(--ice-icon-fg) !important;
+}
+
+.bottom-nav-item,
+.bottom-nav-item i,
+.dark-mode .bottom-nav-item,
+.dark-mode .bottom-nav-item i {
+  color: var(--ice-icon-muted) !important;
+}
+
+.bottom-nav-item.active,
+.bottom-nav-item.active i,
+.dark-mode .bottom-nav-item.active,
+.dark-mode .bottom-nav-item.active i {
+  color: var(--ice-icon-active) !important;
+}
+
+.stat-icon.primary,
+.stat-icon.bg-primary { color: var(--ice-icon-primary) !important; }
+.stat-icon.success,
+.stat-icon.bg-green { color: var(--ice-icon-success) !important; }
+.stat-icon.warning { color: var(--ice-icon-warning) !important; }
+.stat-icon.danger,
+.stat-icon.bg-red { color: var(--ice-icon-danger) !important; }
+.stat-icon.info,
+.stat-icon.bg-blue { color: var(--ice-icon-info) !important; }
+.stat-icon.cyan { color: var(--ice-icon-active) !important; }
+.stat-icon.bg-purple { color: var(--ice-icon-purple) !important; }
+
 /* ── A1. Safe areas (notch / home indicator) ─────────────────────────
    viewport-fit=cover lets content fill the display; reclaim the unsafe
    regions so nothing hides under the status bar, rounded corners, or the
