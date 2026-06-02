@@ -3,11 +3,8 @@ import math
 from datetime import datetime
 
 from django.contrib import messages
-from django.core.files.storage import default_storage
-from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import (HttpResponseRedirect, get_object_or_404,
-                              redirect, render)
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
@@ -1340,7 +1337,6 @@ def vocabulary_day_list(request):
 @student_only
 def vocabulary_day_detail(request, day_id):
     """Show the words for one vocabulary day and allow marking complete."""
-    from django.utils import timezone as tz
     student = get_object_or_404(Student, admin=request.user)
     day = get_object_or_404(VocabularyDay, id=day_id)
     enrolled = Enrollment.objects.filter(student=student, group=day.group, is_active=True).exists()
@@ -1382,7 +1378,6 @@ def vocabulary_day_complete(request, day_id):
 @student_only
 def vocabulary_day_flashcard(request, day_id):
     """Flashcard mode for a specific vocabulary day."""
-    from django.utils import timezone as tz
     student = get_object_or_404(Student, admin=request.user)
     day = get_object_or_404(VocabularyDay, id=day_id)
     enrolled = Enrollment.objects.filter(student=student, group=day.group, is_active=True).exists()

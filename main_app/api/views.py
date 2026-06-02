@@ -15,13 +15,13 @@ from ..models import (
     Enrollment, Group, Notification, ResultFile, Staff, Student,
     StudentResult, Submission,
 )
-from .permissions import IsAdmin, IsAdminOrTeacher, IsStudent, IsTeacher
+from .permissions import IsAdmin, IsAdminOrTeacher, IsStudent
 from .serializers import (
     AssignmentDetailSerializer, AssignmentSerializer, AttendanceSaveSerializer,
     AttendanceSerializer, ChangePasswordSerializer, CourseSerializer,
     EnrollmentSerializer, FcmTokenSerializer, GroupDetailSerializer,
     GroupSerializer, MeSerializer, NotificationSerializer, StudentResultSerializer,
-    StudentSummarySerializer, SubmissionSerializer, SubmitAssignmentSerializer,
+    SubmissionSerializer, SubmitAssignmentSerializer,
     UserSerializer,
 )
 

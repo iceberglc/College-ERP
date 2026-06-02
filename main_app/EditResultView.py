@@ -1,10 +1,7 @@
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import get_object_or_404, render
 from django.views import View
 from django.contrib import messages
 from .models import Group, Staff, Student, StudentResult
-from django.urls import reverse
-from django.http import JsonResponse
-import json
 
 
 class EditResultView(View):

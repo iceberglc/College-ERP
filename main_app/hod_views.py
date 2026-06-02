@@ -7,11 +7,9 @@ from django.contrib import messages
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, OperationalError, ProgrammingError, models, transaction
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import (HttpResponse, HttpResponseRedirect,
-                              get_object_or_404, redirect, render)
+from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
-from django.views.generic import UpdateView
 
 from .decorators import admin_only
 from .forms import *
@@ -124,7 +122,7 @@ def admin_home(request):
         student_count_list_in_course.append(Student.objects.filter(course_id=course.id).count())
 
     # Student attendance overview — 4 queries instead of O(3N+1)
-    from django.db.models import Count, Q
+    from django.db.models import Count
     students_qs = list(Student.objects.select_related('admin').all())
     student_ids = [s.id for s in students_qs]
 
@@ -1017,7 +1015,6 @@ def manage_group(request):
 
 @admin_only
 def admin_group_detail(request, group_id):
-    from django.db.models import Count, Q
     group = get_object_or_404(Group, id=group_id)
     enrollments = (
         Enrollment.objects
@@ -1036,7 +1033,7 @@ def admin_group_detail(request, group_id):
 
 def _notify_group_start_date(group):
     """Notify all enrolled active students that a group start date has been set/changed."""
-    from .models import Enrollment, Notification, Student
+    from .models import Enrollment, Notification
     if not group.start_date:
         return
     date_str = group.start_date.strftime('%B %d, %Y')
@@ -1388,7 +1385,7 @@ def _capture_season_snapshot(season):
     Wipes previous snapshots for this season and writes a new set.
     """
     from .student_views import (
-        _rank_score, _leaderboard_weights, _time_start, _assign_badges,
+        _rank_score, _leaderboard_weights, _assign_badges,
     )
     from django.db import transaction
 

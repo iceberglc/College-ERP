@@ -13,9 +13,8 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.urls import reverse_lazy
 
-from .EmailBackend import EmailBackend
 from .apps import create_recovery_admin_access
-from .models import Admin, Attendance, Enrollment, ResultFile, Session, Staff, Student, Subject
+from .models import Admin, Attendance, Staff, Student
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,7 @@
 import dj_database_url
 import os
 import sys
+from datetime import timedelta
 from pathlib import Path
 
 try:
@@ -239,9 +240,8 @@ AUTHENTICATION_BACKENDS = [
 # 5 failed attempts on the (username, IP) pair triggers a 15-minute lockout.
 # AxesStandaloneBackend lets us scope by username (so one attacker's IP storm
 # does not lock out the real user — both signals together gate the lockout).
-from datetime import timedelta as _td
 AXES_FAILURE_LIMIT = 5
-AXES_COOLOFF_TIME = _td(minutes=15)
+AXES_COOLOFF_TIME = timedelta(minutes=15)
 AXES_LOCK_OUT_AT_FAILURE = True
 AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_PARAMETERS = ['username', 'ip_address']
@@ -375,11 +375,9 @@ REST_FRAMEWORK = {
 # SimpleJWT configuration
 # ---------------------------------------------------------------------------
 
-from datetime import timedelta as _td_jwt
-
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': _td_jwt(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': _td_jwt(days=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,

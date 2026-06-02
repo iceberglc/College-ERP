@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
-    CustomUser, Admin, Staff, Student, Course, Book, Loan,
+    CustomUser, Staff, Student, Course, Book, Loan,
     Subject, Session, Branch, Group, Enrollment, Assignment,
     Submission, Notification,
 )

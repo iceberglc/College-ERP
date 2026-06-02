@@ -2,10 +2,9 @@ import json
 import logging
 
 from django.contrib import messages
-from django.core.files.storage import default_storage
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import (HttpResponseRedirect, get_object_or_404,redirect, render)
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -13,7 +12,7 @@ from django.views.decorators.http import require_POST
 from .decorators import staff_only
 from .forms import *
 from .models import *
-from . import forms, models
+from . import forms
 from datetime import date
 
 logger = logging.getLogger(__name__)

@@ -4,13 +4,12 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core import mail
-from django.test import TestCase, Client, override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from main_app.hod_views import _generate_login_id
 from main_app.models import (
     Course, Group, Student, Staff, Enrollment, Assignment,
-    Attendance, AttendanceReport,
 )
 
 
