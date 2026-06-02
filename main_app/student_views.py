@@ -506,7 +506,7 @@ def student_view_attendance(request):
             {"date": str(r.attendance.date), "status": r.status}
             for r in reports.order_by("attendance__date")
         ]
-        return JsonResponse(json.dumps(json_data), safe=False)
+        return JsonResponse(json_data, safe=False)
     except Exception:
         return JsonResponse({"error": "Unable to fetch attendance."}, status=400)
 

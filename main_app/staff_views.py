@@ -86,7 +86,7 @@ def get_students(request):
             }
             for e in enrollments
         ]
-        return JsonResponse(json.dumps(student_data), content_type="application/json", safe=False)
+        return JsonResponse(student_data, safe=False)
     except Exception:
         return JsonResponse({"error": "Unable to fetch students."}, status=400)
 
@@ -208,7 +208,7 @@ def get_student_attendance(request):
             }
             for r in reports
         ]
-        return JsonResponse(json.dumps(student_data), content_type="application/json", safe=False)
+        return JsonResponse(student_data, safe=False)
     except Exception:
         return JsonResponse({"error": "Unable to fetch student attendance."}, status=400)
 

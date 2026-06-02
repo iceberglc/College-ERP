@@ -682,12 +682,12 @@ def get_admin_attendance(request):
                 "student"
             )
             data = [{"status": r.status, "name": str(r.student)} for r in reports]
-            return JsonResponse(json.dumps(data), safe=False)
+            return JsonResponse(data, safe=False)
         # Return list of attendance dates for a group
         group = get_object_or_404(Group, id=group_id)
         dates = Attendance.objects.filter(group=group).order_by("-date")
         data = [{"id": a.id, "attendance_date": str(a.date)} for a in dates]
-        return JsonResponse(json.dumps(data), safe=False)
+        return JsonResponse(data, safe=False)
     except Exception:
         return JsonResponse({"error": "Unable to fetch attendance."}, status=400)
 

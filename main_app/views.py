@@ -208,7 +208,6 @@ class SafePasswordResetView(PasswordResetView):
 
 
 @login_required
-@login_required
 def get_attendance(request):
     group_id = request.POST.get("group")
     try:
@@ -217,7 +216,7 @@ def get_attendance(request):
         group = get_object_or_404(Group, id=group_id)
         attendance_qs = Attendance.objects.filter(group=group).order_by("-date")
         attendance_list = [{"id": a.id, "attendance_date": str(a.date)} for a in attendance_qs]
-        return JsonResponse(json.dumps(attendance_list), safe=False)
+        return JsonResponse(attendance_list, safe=False)
     except Exception:
         return JsonResponse({"error": "Unable to fetch attendance."}, status=400)
 

@@ -9,12 +9,14 @@ from django.urls import reverse
 
 from main_app.hod_views import _generate_login_id
 from main_app.models import (
-    Course,
-    Group,
-    Student,
-    Staff,
-    Enrollment,
+    Attendance,
+    AttendanceReport,
     Assignment,
+    Course,
+    Enrollment,
+    Group,
+    Staff,
+    Student,
 )
 
 
@@ -245,6 +247,62 @@ class LoginFlowResilienceTests(TestCase):
         self.assertEqual(response["Location"], "/login/")
 
 
+class AjaxJsonShapeTests(TestCase):
+    def setUp(self):
+        UserModel = get_user_model()
+        self.course = Course.objects.create(name="General English")
+        self.staff_user = UserModel.objects.create_user(
+            email="ajax-staff@example.com",
+            password="Pass123!",
+            first_name="Ajax",
+            last_name="Staff",
+            user_type="2",
+            gender="M",
+            address="",
+            profile_pic="",
+            login_id="TC70001",
+        )
+        self.staff = Staff.objects.get(admin=self.staff_user)
+        self.group = Group.objects.create(name="Ajax Group", course=self.course, teacher=self.staff)
+        self.student_user = UserModel.objects.create_user(
+            email="ajax-student@example.com",
+            password="Pass123!",
+            first_name="Ajax",
+            last_name="Student",
+            user_type="3",
+            gender="F",
+            address="",
+            profile_pic="",
+            login_id="IC70001",
+        )
+        self.student = Student.objects.get(admin=self.student_user)
+        Enrollment.objects.create(student=self.student, group=self.group, is_active=True)
+        self.attendance = Attendance.objects.create(group=self.group, date=date(2026, 1, 2))
+        AttendanceReport.objects.create(
+            attendance=self.attendance,
+            student=self.student,
+            status=AttendanceReport.PRESENT,
+        )
+
+    @override_settings(SECURE_SSL_REDIRECT=False)
+    def test_staff_student_roster_ajax_returns_json_array(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.post(reverse("get_students"), {"group": str(self.group.id)})
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIsInstance(payload, list)
+        self.assertEqual(payload[0]["id"], self.student.id)
+
+    @override_settings(SECURE_SSL_REDIRECT=False)
+    def test_attendance_date_ajax_returns_json_array(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.post(reverse("get_attendance"), {"group": str(self.group.id)})
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIsInstance(payload, list)
+        self.assertEqual(payload[0]["id"], self.attendance.id)
+
+
 class StudentPrivacyTests(TestCase):
     """Students must not be able to access other students' group data."""
 
@@ -325,6 +383,7 @@ class StudentPrivacyTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), list)
 
     @override_settings(SECURE_SSL_REDIRECT=False)
     def test_submit_assignment_blocks_cross_group(self):
