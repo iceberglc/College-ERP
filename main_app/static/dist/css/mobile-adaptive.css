@@ -1,0 +1,215 @@
+/* =====================================================================
+   MOBILE-ADAPTIVE UI  (loads LAST — after iceberg-bold.css)
+
+   Structure:
+     A. Shared mobile fundamentals  (all platforms)
+     B. Apple "Liquid Glass" theme  (.platform-apple)
+     C. Android / default theme     (.platform-android, .platform-other)
+     D. Motion & accessibility      (reduced-motion / reduced-transparency)
+
+   Platform classes are set on <html> by platform-detect.js before paint.
+   Everything keys off the existing design tokens in iceberg.css.
+   ===================================================================== */
+
+/* =====================================================================
+   A. SHARED MOBILE FUNDAMENTALS
+   ===================================================================== */
+
+/* ── A1. Safe areas (notch / home indicator) ─────────────────────────
+   viewport-fit=cover lets content fill the display; reclaim the unsafe
+   regions so nothing hides under the status bar, rounded corners, or the
+   home indicator. Insets are 0 on devices without them, so these are
+   harmless on desktop. !important is needed only where iceberg.css used
+   it on the same properties. */
+@supports (padding: max(0px)) {
+  .erpnext-navbar {
+    height: calc(var(--navbar-height) + env(safe-area-inset-top)) !important;
+    padding-top: env(safe-area-inset-top) !important;
+    padding-left: max(16px, env(safe-area-inset-left)) !important;
+    padding-right: max(16px, env(safe-area-inset-right)) !important;
+  }
+  .erpnext-main {
+    margin-top: calc(var(--navbar-height) + env(safe-area-inset-top));
+  }
+  .erpnext-sidebar {
+    top: calc(var(--navbar-height) + env(safe-area-inset-top));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (max-width: 768px) {
+  @supports (padding: max(0px)) {
+    /* Honour left/right insets (landscape notch) on the content padding. */
+    .erpnext-main {
+      padding-left: max(14px, env(safe-area-inset-left)) !important;
+      padding-right: max(14px, env(safe-area-inset-right)) !important;
+    }
+    /* Floating bottom-nav already clears the home indicator; make sure the
+       page can scroll its last content above it. */
+    .erpnext-main {
+      padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important;
+    }
+  }
+}
+
+/* ── A2. Content starts at the top on phones ─────────────────────────
+   Guard against the previously-fixed empty-viewport regression: the main
+   column is a normal in-flow block that begins directly under the navbar. */
+@media (max-width: 768px) {
+  .erpnext-main { display: block; }
+  .content-area { width: 100%; }
+}
+
+/* ── A3. Touch targets ───────────────────────────────────────────────
+   Baseline 44px (Apple HIG); the Android/other theme bumps to 48dp.
+   No hover-only affordances — all interactions are tap-driven already. */
+@media (max-width: 768px) {
+  .btn,
+  button.btn,
+  .ab-edit, .ab-warn, .ab-danger, .ab-success,
+  .bottom-nav-item,
+  .navbar-toggle,
+  .navbar-notification,
+  .navbar-user-avatar,
+  .logout-btn {
+    min-height: 44px;
+  }
+  /* Inline action buttons inside tables/cards: comfortable tap size. */
+  .notify-btn,
+  .dt .btn,
+  .data-table .btn,
+  td .btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  /* Form controls: easy to tap, no iOS zoom-on-focus (needs >=16px font). */
+  .form-control,
+  input[type="text"], input[type="email"], input[type="password"],
+  input[type="number"], input[type="date"], input[type="search"],
+  select, textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  textarea { min-height: 96px; }
+}
+
+/* ── A4. Data tables → labeled stacked cards on phones ───────────────
+   Tablet/desktop keep the real <table>. Below 600px each row becomes a
+   card and each cell shows its column label (injected by
+   responsive-tables.js as data-label). */
+@media (max-width: 600px) {
+  table.dt,
+  table.data-table,
+  table.table {
+    display: block;
+    width: 100%;
+    border-collapse: separate;
+  }
+
+  /* Hide the header row visually but keep it for assistive tech. */
+  table.dt > thead,
+  table.data-table > thead,
+  table.table > thead {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0; border: 0;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+
+  table.dt > tbody,
+  table.data-table > tbody,
+  table.table > tbody { display: block; width: 100%; }
+
+  /* Each row → a card. */
+  table.dt > tbody > tr,
+  table.data-table > tbody > tr,
+  table.table > tbody > tr {
+    display: block;
+    width: 100%;
+    margin: 0 0 12px;
+    padding: 6px 14px;
+    border: 1px solid var(--ice-border, #E4E7EC);
+    border-radius: var(--radius-lg, 14px);
+    background: var(--ice-surface, #fff);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(12,31,69,.08));
+  }
+
+  /* Each cell → a labeled row inside the card. */
+  table.dt > tbody > tr > td,
+  table.data-table > tbody > tr > td,
+  table.table > tbody > tr > td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    width: auto;
+    padding: 9px 0;
+    border: 0;
+    border-bottom: 1px solid var(--ice-border, #E4E7EC);
+    text-align: right;
+    white-space: normal;
+    word-break: break-word;
+  }
+  table.dt > tbody > tr > td:last-child,
+  table.data-table > tbody > tr > td:last-child,
+  table.table > tbody > tr > td:last-child { border-bottom: 0; }
+
+  table.dt > tbody > tr > td::before,
+  table.data-table > tbody > tr > td::before,
+  table.table > tbody > tr > td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    margin-right: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: var(--ice-muted, #64748B);
+    text-align: left;
+  }
+  /* Cells with no column label (or an action cell) span full width. */
+  table.dt > tbody > tr > td:not([data-label]),
+  table.data-table > tbody > tr > td:not([data-label]),
+  table.table > tbody > tr > td:not([data-label]) {
+    justify-content: flex-end;
+  }
+  table.dt > tbody > tr > td:not([data-label])::before,
+  table.data-table > tbody > tr > td:not([data-label])::before,
+  table.table > tbody > tr > td:not([data-label])::before { content: none; }
+
+  /* Action buttons inside a card cell: full-width, easy to hit. */
+  table.dt > tbody > tr > td .btn,
+  table.data-table > tbody > tr > td .btn,
+  table.table > tbody > tr > td .btn { min-width: 96px; }
+
+  /* The injected search toolbar / "no results" row stay full width. */
+  table.dt .ice-no-results td { display: block; text-align: center; }
+  table.dt .ice-no-results td::before { content: none; }
+
+  /* Drop the horizontal-scroll wrapper behaviour now that rows are cards. */
+  .dt-card { overflow-x: visible; }
+}
+
+/* ── A5. Misc mobile layout polish ───────────────────────────────────*/
+@media (max-width: 768px) {
+  /* Prevent accidental horizontal scrolling from wide children. */
+  html, body { overflow-x: hidden; }
+  /* Cards / page sections breathe a little less on small screens. */
+  .dt-card, .erpnext-card { border-radius: var(--radius-lg, 14px); }
+}
+
+
+/* =====================================================================
+   B. APPLE "LIQUID GLASS" THEME  (.platform-apple)   — added in Phase 4
+   ===================================================================== */
+
+
+/* =====================================================================
+   C. ANDROID / DEFAULT THEME  (.platform-android, .platform-other) — Phase 5
+   ===================================================================== */
+
+
+/* =====================================================================
+   D. MOTION & ACCESSIBILITY   — added in Phase 6
+   ===================================================================== */

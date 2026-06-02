@@ -6,7 +6,7 @@
     <script src="{% static 'dist/js/platform-detect.js' %}"></script>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{% block title %}Iceberg Study Center{% endblock title %}</title>
 
     <!-- ── Favicons ─────────────────────────────────────────────────────── -->
@@ -45,6 +45,8 @@
     <link rel="stylesheet" href="{% static 'dist/css/iceberg.css' %}">
     <!-- bold layer: animated background, gradient titles, table interactivity (additive) -->
     <link rel="stylesheet" href="{% static 'dist/css/iceberg-bold.css' %}">
+    <!-- adaptive mobile layer: safe areas, table→card reflow, platform glass/solid themes (loads LAST) -->
+    <link rel="stylesheet" href="{% static 'dist/css/mobile-adaptive.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'dist/js/trend-chart.js' %}"></script>
     <style>
@@ -382,6 +384,8 @@
     <script src="{% static 'dist/js/csrf-setup.js' %}"></script>
     <!-- Iceberg interactivity: table search/sort, stat count-up, scroll reveal -->
     <script src="{% static 'dist/js/iceberg-interactive.js' %}"></script>
+    <!-- Responsive tables: inject column labels so wide tables reflow to cards on phones -->
+    <script src="{% static 'dist/js/responsive-tables.js' %}"></script>
 
     <script>
     /* ── Sidebar ─────────────────────────────────────────────────────────── */
