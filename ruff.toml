@@ -1,0 +1,39 @@
+# Ruff configuration — linting + formatting for the Django backend.
+#
+# This is intentionally a "warn-level" setup: ruff is NOT wired into CI as a
+# blocking gate yet. Run it locally with:
+#
+#     pip install ruff      # dev-only; not in requirements.txt (not needed at runtime)
+#     ruff check .          # lint
+#     ruff format --check . # formatting check
+#
+# Once the existing code is clean (notably after the deferred wildcard-import
+# cleanup), a non-blocking CI job can be promoted to a required check.
+
+target-version = "py311"
+line-length = 100
+
+# Generated / vendored / non-source paths.
+extend-exclude = [
+    "migrations",
+    "staticfiles",
+    "main_app/static",
+    "public",
+    "twa",
+    "Showcase",
+]
+
+[lint]
+# Ruff's default rule set (pyflakes + a focused slice of pycodestyle).
+select = ["E4", "E7", "E9", "F"]
+
+# Wildcard imports (`from .models import *`) are tracked separately and will be
+# removed in a dedicated pass with manual page testing. Keep these quiet until
+# then so the rest of the lint output stays actionable.
+#   F403 — `import *` used; unable to detect undefined names
+#   F405 — name may be undefined, or defined from star imports
+ignore = ["F403", "F405"]
+
+[lint.per-file-ignores]
+# Settings legitimately builds config by importing for side effects.
+"college_management_system/settings.py" = ["F401"]
