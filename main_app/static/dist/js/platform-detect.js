@@ -1,7 +1,7 @@
 /* =====================================================================
-   Platform detection — sets an adaptive look class on <html>.
+   Platform detection + adaptive-look control.
 
-   Adds exactly one of:
+   Sets exactly one class on <html>:
      .platform-apple    iPhone / iPad / Mac (→ "Liquid Glass" theme)
      .platform-android  Android devices       (→ solid Material theme)
      .platform-other    everything / unknown  (→ solid Material theme)
@@ -9,32 +9,19 @@
    Loaded synchronously in <head> BEFORE the stylesheets so the class is
    present when CSS first matches (no flash of the wrong theme).
 
-   Manual override for testing (persisted in localStorage):
-     ?platform=apple | android | other   → force a look
+   Exposes window.IcePlatform so a visible toggle (sidebar) can change the
+   look live, and supports a URL override for testing:
+     ?platform=apple | android | other   → force + persist a look
      ?platform=auto                       → clear the override
    ===================================================================== */
 (function () {
   'use strict';
 
+  var KEY = 'ui_platform_override';
   var docEl = document.documentElement;
-  var cls = null;
 
-  /* ── Manual override (testing) ─────────────────────────────────────── */
-  try {
-    var q = new URLSearchParams(window.location.search).get('platform');
-    if (q === 'auto') {
-      localStorage.removeItem('ui_platform_override');
-    } else if (q === 'apple' || q === 'android' || q === 'other') {
-      localStorage.setItem('ui_platform_override', q);
-    }
-    var override = localStorage.getItem('ui_platform_override');
-    if (override === 'apple' || override === 'android' || override === 'other') {
-      cls = 'platform-' + override;
-    }
-  } catch (e) { /* localStorage/URL unavailable — fall through to detection */ }
-
-  /* ── Auto detection ────────────────────────────────────────────────── */
-  if (!cls) {
+  /* ── Auto detection from the user agent ────────────────────────────── */
+  function detect() {
     var ua = navigator.userAgent || '';
     var plat = navigator.platform || '';
     var maxTouch = navigator.maxTouchPoints || 0;
@@ -46,16 +33,57 @@
     var isiPadOS = isMac && maxTouch > 1;
     var isAndroid = /Android/.test(ua);
 
-    if (isIOS || isiPadOS || isMac) {
-      cls = 'platform-apple';
-    } else if (isAndroid) {
-      cls = 'platform-android';
-    } else {
-      // Uncertain → safe, readable, non-glass fallback.
-      cls = 'platform-other';
-    }
+    if (isIOS || isiPadOS || isMac) return 'apple';
+    if (isAndroid) return 'android';
+    return 'other'; // uncertain → safe, readable, non-glass fallback
   }
 
-  docEl.classList.add(cls);
-  docEl.setAttribute('data-platform', cls.slice('platform-'.length));
+  function currentOverride() {
+    try {
+      var v = localStorage.getItem(KEY);
+      return (v === 'apple' || v === 'android' || v === 'other') ? v : null;
+    } catch (e) { return null; }
+  }
+
+  function setClass(platform) {
+    docEl.classList.remove('platform-apple', 'platform-android', 'platform-other');
+    docEl.classList.add('platform-' + platform);
+    docEl.setAttribute('data-platform', platform);
+  }
+
+  /* Apply a preference live. value: 'apple' | 'android' | 'other' | 'auto'.
+     Persists (or clears) the override and swaps the <html> class. */
+  function apply(value) {
+    var resolved;
+    if (value === 'auto') {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      resolved = detect();
+    } else if (value === 'apple' || value === 'android' || value === 'other') {
+      try { localStorage.setItem(KEY, value); } catch (e) {}
+      resolved = value;
+    } else {
+      resolved = currentOverride() || detect();
+    }
+    setClass(resolved);
+    docEl.setAttribute('data-platform-pref', currentOverride() || 'auto');
+    return resolved;
+  }
+
+  /* ── URL override (testing) — persists or clears, then falls through ─ */
+  try {
+    var q = new URLSearchParams(window.location.search).get('platform');
+    if (q === 'auto') { localStorage.removeItem(KEY); }
+    else if (q === 'apple' || q === 'android' || q === 'other') { localStorage.setItem(KEY, q); }
+  } catch (e) { /* URL/localStorage unavailable */ }
+
+  /* ── Apply before paint ────────────────────────────────────────────── */
+  setClass(currentOverride() || detect());
+  docEl.setAttribute('data-platform-pref', currentOverride() || 'auto');
+
+  window.IcePlatform = {
+    detect: detect,
+    apply: apply,
+    current: function () { return docEl.getAttribute('data-platform'); },
+    pref: function () { return currentOverride() || 'auto'; }
+  };
 })();
