@@ -6,7 +6,7 @@
     <script src="{% static 'dist/js/platform-detect.js' %}"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Iceberg Study Center - Account Recovery</title>
+  <title>ICEBERG - Account Recovery</title>
   <link rel="shortcut icon" href="{% static 'image/favicon1.ico' %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
@@ -18,30 +18,45 @@
       --text: #111827;
       --muted: #667085;
       --border: #dbe3ef;
-      --primary: #2563eb;
-      --primary-dark: #1e40af;
-      --secondary: #0f766e;
+      --primary: #0C1F45;
+      --primary-dark: #071833;
+      --secondary: #0891B2;
+      --cyan: #06B6D4;
+      --cyan-dk: #0891B2;
     }
     body {
-      min-height: 100vh;
+      min-height: 100dvh;
       display: grid;
       place-items: center;
-      padding: 24px;
+      padding-top: max(24px, env(safe-area-inset-top));
+      padding-right: max(18px, env(safe-area-inset-right));
+      padding-bottom: max(28px, env(safe-area-inset-bottom));
+      padding-left: max(18px, env(safe-area-inset-left));
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 18% 14%, rgba(37, 99, 235, .16), transparent 24rem),
-        radial-gradient(circle at 84% 20%, rgba(15, 118, 110, .14), transparent 22rem),
-        linear-gradient(135deg, #eef4ff 0%, #f8fafc 52%, #edf7f5 100%);
+        radial-gradient(circle at 18% 10%, rgba(6, 182, 212, .16), transparent 24rem),
+        radial-gradient(circle at 86% 14%, rgba(12, 31, 69, .12), transparent 22rem),
+        linear-gradient(180deg, #F8FBFF 0%, #EEF4FB 100%);
     }
     .card {
       width: min(460px, 100%);
       padding: 40px;
       background: rgba(255, 255, 255, .94);
-      border: 1px solid rgba(255, 255, 255, .9);
+      border: 1px solid rgba(226, 232, 240, .88);
       border-radius: 24px;
-      box-shadow: 0 24px 70px rgba(15, 23, 42, .16);
-      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 70px rgba(12, 31, 69, .14), 0 2px 8px rgba(12, 31, 69, .06);
+    }
+    @supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
+      html.platform-apple .card {
+        background: rgba(255, 255, 255, .90);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+        backdrop-filter: blur(16px) saturate(150%);
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.74),
+          0 24px 70px rgba(12, 31, 69, .14),
+          0 2px 8px rgba(12, 31, 69, .06);
+      }
     }
     .brand-hero {
       margin-bottom: 30px;
@@ -53,7 +68,16 @@
       margin: 0 auto 14px;
       border-radius: 16px;
       background: linear-gradient(135deg, var(--primary), var(--secondary));
-      box-shadow: 0 18px 34px rgba(37, 99, 235, .24);
+      box-shadow: 0 18px 34px rgba(6, 182, 212, .20);
+      position: relative;
+      overflow: hidden;
+    }
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: 13px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,.62);
     }
     .brand-name {
       color: var(--text);
@@ -123,7 +147,7 @@
     input:focus,
     .form-group input:focus {
       border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, .13);
+      box-shadow: 0 0 0 4px rgba(6, 182, 212, .16);
     }
     .text-danger {
       color: #991b1b;
@@ -149,7 +173,7 @@
       text-align: center;
       text-decoration: none;
       cursor: pointer;
-      box-shadow: 0 18px 34px rgba(37, 99, 235, .22);
+      box-shadow: 0 14px 30px rgba(6, 101, 144, .24);
       transition: transform .12s, filter .15s;
     }
     .btn-primary:hover,
@@ -204,11 +228,62 @@
       font-size: 12px;
     }
     @media (max-width: 480px) {
-      body { padding: 0; }
+      body {
+        align-items: start;
+        padding-top: max(18px, env(safe-area-inset-top));
+      }
       .card {
-        min-height: 100vh;
-        border-radius: 0;
+        min-height: auto;
+        border-radius: 22px;
         padding: 34px 24px 28px;
+      }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --surface: #0E1D34;
+        --text: #E6EDF7;
+        --muted: #A8B7C8;
+        --border: rgba(255,255,255,.12);
+      }
+      body {
+        background:
+          radial-gradient(circle at 18% 10%, rgba(103, 232, 249, .11), transparent 24rem),
+          radial-gradient(circle at 86% 14%, rgba(59, 130, 246, .10), transparent 22rem),
+          linear-gradient(180deg, #0A1728 0%, #07101D 100%);
+      }
+      .card {
+        background: rgba(14,29,52,.96);
+        border-color: rgba(255,255,255,.12);
+        box-shadow: 0 24px 70px rgba(0,0,0,.42), 0 2px 8px rgba(0,0,0,.28);
+      }
+      input[type="email"],
+      input[type="password"],
+      input[type="text"],
+      .form-group input {
+        background: rgba(19,36,64,.96);
+        border-color: rgba(255,255,255,.13);
+        color: var(--text);
+      }
+      input:focus,
+      .form-group input:focus {
+        background: rgba(14,29,52,.98);
+      }
+      .btn-outline:hover { background: rgba(103,232,249,.08); }
+      .card-footer { border-top-color: rgba(255,255,255,.10); }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .card {
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+        background: var(--surface) !important;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
       }
     }
   </style>

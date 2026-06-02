@@ -8,44 +8,46 @@
 {% block content %}
 
 {# ── Greeting banner ────────────────────────────────────────────────────────── #}
-<div style="background:linear-gradient(135deg,#1B3F7A,#0891B2);border-radius:14px;padding:24px 28px;margin-bottom:24px;color:white;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-  <div>
-    <div style="font-size:13px;opacity:.75;margin-bottom:4px;font-weight:500;">Welcome back</div>
-    <div style="font-size:22px;font-weight:700;letter-spacing:-.3px;">{{ request.user.get_full_name }}</div>
-    <div style="font-size:13px;opacity:.75;margin-top:4px;">Teacher &nbsp;·&nbsp; Iceberg Study Center</div>
+<section class="teacher-hero ice-hero">
+  <div class="teacher-hero-inner ice-hero-grid">
+    <div>
+      <div class="teacher-hero-kicker ice-hero-kicker">Teacher command center</div>
+      <h1 class="teacher-hero-title ice-hero-title">{{ request.user.get_full_name }}</h1>
+      <p class="teacher-hero-subtitle ice-hero-subtitle">Manage your groups, attendance, results, assignments, vocabulary, and updates from one focused workspace.</p>
+    </div>
+    <div class="teacher-hero-actions ice-hero-actions">
+      <a href="{% url 'staff_take_attendance' %}" class="teacher-hero-action">
+        <i class="fas fa-check-circle"></i>Take Attendance
+      </a>
+      <a href="{% url 'staff_add_result' %}" class="teacher-hero-action">
+        <i class="fas fa-plus-circle"></i>Add Results
+      </a>
+    </div>
   </div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;">
-    <a href="{% url 'staff_take_attendance' %}" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px 16px;color:white;text-decoration:none;font-size:13px;font-weight:500;backdrop-filter:blur(4px);">
-      <i class="fas fa-check-circle me-1"></i> Take Attendance
-    </a>
-    <a href="{% url 'staff_add_result' %}" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px 16px;color:white;text-decoration:none;font-size:13px;font-weight:500;backdrop-filter:blur(4px);">
-      <i class="fas fa-plus-circle me-1"></i> Add Results
-    </a>
-  </div>
-</div>
+</section>
 
 {# ── KPI strip ──────────────────────────────────────────────────────────────── #}
 <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:24px;">
 
-  <div class="stat-card">
+  <div class="stat-card ice-stat-card">
     <div class="stat-icon primary"><i class="fas fa-user-graduate"></i></div>
     <div class="stat-number" style="color:var(--ice-navy);">{{ total_students }}</div>
     <p class="stat-label">My Students</p>
   </div>
 
-  <div class="stat-card">
+  <div class="stat-card ice-stat-card">
     <div class="stat-icon success"><i class="fas fa-calendar-check"></i></div>
     <div class="stat-number" style="color:var(--ice-success);">{{ total_attendance }}</div>
     <p class="stat-label">Attendance Sessions</p>
   </div>
 
-  <div class="stat-card">
+  <div class="stat-card ice-stat-card">
     <div class="stat-icon warning"><i class="fas fa-calendar-times"></i></div>
     <div class="stat-number" style="color:var(--ice-warning);">{{ total_leave }}</div>
     <p class="stat-label">Leave Requests</p>
   </div>
 
-  <div class="stat-card">
+  <div class="stat-card ice-stat-card">
     <div class="stat-icon cyan"><i class="fas fa-layer-group"></i></div>
     <div class="stat-number" style="color:var(--ice-cyan-dk);">{{ total_subject }}</div>
     <p class="stat-label">My Groups</p>
@@ -54,12 +56,12 @@
 </div>
 
 {# ── Quick actions ──────────────────────────────────────────────────────────── #}
-<div class="erpnext-card">
+<div class="erpnext-card ice-card">
   <div class="card-header">
     <h3 class="card-title"><i class="fas fa-bolt me-2" style="color:var(--ice-cyan);"></i>Quick Actions</h3>
   </div>
   <div class="card-body">
-    <div class="quick-action-grid">
+    <div class="quick-action-grid ice-action-grid">
       <a href="{% url 'staff_take_attendance' %}" class="quick-action-btn">
         <i class="fas fa-check-circle" style="color:var(--ice-success);"></i>Take Attendance
       </a>
@@ -89,7 +91,7 @@
 
   {% if groups %}
   <!-- My Groups with start date -->
-  <div class="dash-card" style="margin-top:16px;">
+    <div class="dash-card ice-list-card" style="margin-top:16px;">
     <div class="dash-card-header">
       <span><i class="fas fa-layer-group" style="color:var(--ice-cyan);margin-right:8px;"></i>My Groups</span>
     </div>
@@ -120,7 +122,7 @@
 <div class="row g-3 mt-1 mb-3">
 
   <div class="col-lg-4">
-    <div class="erpnext-card h-100">
+    <div class="erpnext-card ice-chart-card h-100">
       <div class="card-header">
         <h3 class="card-title"><i class="fas fa-chart-pie me-2" style="color:var(--ice-cyan);"></i>Attendance vs Leave</h3>
       </div>
@@ -131,7 +133,7 @@
   </div>
 
   <div class="col-lg-8">
-    <div class="erpnext-card h-100">
+    <div class="erpnext-card ice-chart-card h-100">
       <div class="card-header">
         <h3 class="card-title"><i class="fas fa-chart-bar me-2" style="color:var(--ice-cyan);"></i>Attendance Sessions per Group</h3>
       </div>

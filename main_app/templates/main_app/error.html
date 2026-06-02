@@ -14,13 +14,19 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(180deg, #DDEAFB 0%, #ECF3FC 50%, #FAFCFF 100%);
+      background:
+        radial-gradient(circle at 14% 8%, rgba(6,182,212,.16), transparent 24rem),
+        radial-gradient(circle at 90% 10%, rgba(12,31,69,.12), transparent 22rem),
+        linear-gradient(180deg, #F8FBFF 0%, #EEF4FB 100%);
       color: #0C1F45;
-      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding-top: max(24px, env(safe-area-inset-top));
+      padding-right: max(18px, env(safe-area-inset-right));
+      padding-bottom: max(28px, env(safe-area-inset-bottom));
+      padding-left: max(18px, env(safe-area-inset-left));
       -webkit-font-smoothing: antialiased;
     }
     .card {
@@ -28,10 +34,10 @@
       max-width: 480px;
       background: #fff;
       border: 1px solid rgba(216,227,242,.7);
-      border-radius: 20px;
+      border-radius: 24px;
       padding: 44px 36px 36px;
       text-align: center;
-      box-shadow: 0 10px 40px rgba(12,31,69,.10);
+      box-shadow: 0 24px 70px rgba(12,31,69,.14), 0 2px 8px rgba(12,31,69,.06);
     }
     .badge {
       display: inline-flex;
@@ -40,7 +46,7 @@
       width: 64px;
       height: 64px;
       border-radius: 16px;
-      background: linear-gradient(135deg, #1B3F7A, #0C1F45);
+      background: linear-gradient(135deg, #0C1F45, #0891B2);
       color: #fff;
       margin: 0 auto 18px;
       box-shadow: 0 8px 18px rgba(12,31,69,.18);
@@ -111,6 +117,68 @@
       text-transform: uppercase;
     }
     .brand span { color: #1B3F7A; }
+    @supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
+      html.platform-apple .card {
+        background: rgba(255,255,255,.90);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+        backdrop-filter: blur(16px) saturate(150%);
+        border-color: rgba(226,232,240,.78);
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.72),
+          0 24px 70px rgba(12,31,69,.14),
+          0 2px 8px rgba(12,31,69,.06);
+      }
+    }
+    @media (prefers-color-scheme: dark) {
+      body {
+        background:
+          radial-gradient(circle at 14% 8%, rgba(103,232,249,.11), transparent 24rem),
+          radial-gradient(circle at 90% 10%, rgba(59,130,246,.10), transparent 22rem),
+          linear-gradient(180deg, #0A1728 0%, #07101D 100%);
+        color: #E6EDF7;
+      }
+      .card {
+        background: rgba(14,29,52,.96);
+        border-color: rgba(255,255,255,.12);
+        box-shadow: 0 24px 70px rgba(0,0,0,.42), 0 2px 8px rgba(0,0,0,.28);
+      }
+      .code,
+      .title,
+      .btn-outline {
+        color: #E6EDF7;
+      }
+      .desc,
+      .brand {
+        color: #A8B7C8;
+      }
+      .btn-outline {
+        background: rgba(19,36,64,.96);
+        border-color: rgba(255,255,255,.12);
+      }
+      .btn-outline:hover {
+        background: rgba(103,232,249,.08);
+        color: #E6EDF7;
+      }
+      .brand {
+        border-top-color: rgba(255,255,255,.10);
+      }
+      .brand span { color: #67E8F9; }
+    }
+    @media (max-width: 420px) {
+      .card {
+        padding: 36px 24px 30px;
+        border-radius: 22px;
+      }
+      .code { font-size: 48px; }
+      .actions { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .card {
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+      }
+    }
   </style>
 </head>
 <body>

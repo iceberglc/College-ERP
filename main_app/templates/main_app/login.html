@@ -486,6 +486,104 @@
       .input-wrap input.input-error { animation: none !important; }
       * { transition: none !important; }
     }
+
+    /* ─────────────────────────────────────────────
+       PREMIUM AUTH POLISH
+    ───────────────────────────────────────────── */
+    body {
+      background:
+        radial-gradient(circle at 14% 8%, rgba(6,182,212,.18), transparent 24rem),
+        radial-gradient(circle at 92% 12%, rgba(27,63,122,.14), transparent 22rem),
+        linear-gradient(180deg, #F8FBFF 0%, #EEF4FB 100%);
+      padding-top: max(24px, env(safe-area-inset-top));
+      padding-right: max(18px, env(safe-area-inset-right));
+      padding-bottom: max(28px, env(safe-area-inset-bottom));
+      padding-left: max(18px, env(safe-area-inset-left));
+    }
+
+    .card {
+      border: 1px solid rgba(226,232,240,.88);
+      box-shadow: 0 24px 70px rgba(12,31,69,.14), 0 2px 8px rgba(12,31,69,.06);
+    }
+
+    .login-links {
+      display: flex;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .login-link {
+      color: #0891B2;
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .login-link:hover {
+      color: #0C1F45;
+      text-decoration: underline;
+    }
+
+    html.platform-apple .btn-signin {
+      background: linear-gradient(135deg, #0C1F45 0%, #0891B2 100%);
+      box-shadow: 0 12px 26px rgba(6, 101, 144, .26);
+    }
+
+    html.platform-android .card,
+    html.platform-other .card {
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: 0 12px 34px rgba(12,31,69,.13), 0 2px 6px rgba(12,31,69,.07);
+    }
+
+    html.platform-android .btn-signin,
+    html.platform-other .btn-signin {
+      min-height: 52px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0C1F45, #0891B2);
+      box-shadow: 0 10px 24px rgba(12,31,69,.22);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background:
+          radial-gradient(circle at 14% 8%, rgba(103,232,249,.12), transparent 24rem),
+          radial-gradient(circle at 92% 12%, rgba(59,130,246,.10), transparent 22rem),
+          linear-gradient(180deg, #0A1728 0%, #07101D 100%);
+        color: #E6EDF7;
+      }
+
+      .card {
+        background: rgba(14,29,52,.96);
+        border-color: rgba(255,255,255,.12);
+        box-shadow: 0 24px 70px rgba(0,0,0,.42), 0 2px 8px rgba(0,0,0,.28);
+      }
+
+      .card-title { color: #E6EDF7; }
+      .card-sub,
+      .field-label,
+      .footer { color: #A8B7C8; }
+
+      .input-wrap input {
+        background: rgba(19,36,64,.96);
+        border-color: rgba(255,255,255,.13);
+        color: #E6EDF7;
+      }
+
+      .input-wrap input:focus {
+        background: rgba(14,29,52,.98);
+      }
+
+      .input-wrap input::placeholder { color: #71849B; }
+      .login-link { color: #67E8F9; }
+      .login-link:hover { color: #E6EDF7; }
+    }
+
+    @media (max-width: 420px) {
+      body { justify-content: flex-start; padding-top: max(24px, env(safe-area-inset-top)); }
+      .logo-hero { margin-top: 4px; margin-bottom: 16px; }
+      .card { max-width: none; width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -570,6 +668,9 @@
 
       <div class="btn-wrap">
         <button type="submit" class="btn-signin">Sign In</button>
+      </div>
+      <div class="login-links">
+        <a href="{% url 'forgot_password' %}" class="login-link">Forgot password?</a>
       </div>
     </form>
   </div>

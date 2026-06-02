@@ -20,7 +20,11 @@
 
     var headers = Array.prototype.map.call(
       thead.rows[0].cells,
-      function (th) { return (th.textContent || '').trim(); }
+      function (th) {
+        return (th.getAttribute('data-label') || th.textContent || '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
     );
     if (!headers.length) return;
 
@@ -31,7 +35,10 @@
         Array.prototype.forEach.call(row.cells, function (cell, i) {
           if (cell.hasAttribute('data-label')) return;
           var label = headers[i];
-          if (label) cell.setAttribute('data-label', label);
+          if (!label) return;
+          // "Actions" cells are still labeled, but the CSS lets buttons wrap
+          // as a touch-friendly row on phones.
+          cell.setAttribute('data-label', label);
         });
       });
     });
@@ -39,14 +46,33 @@
 
   function run() {
     var tables = document.querySelectorAll(
-      'table.dt, table.data-table, table.table'
+      'table.dt, table.data-table, table.table, table.stu-table, table.pg-table, table.sea-tbl'
     );
     Array.prototype.forEach.call(tables, labelTable);
   }
 
+  function watch() {
+    if (!('MutationObserver' in window)) return;
+    var root = document.querySelector('.content-area') || document.body;
+    var pending = false;
+    var observer = new MutationObserver(function () {
+      if (pending) return;
+      pending = true;
+      window.requestAnimationFrame(function () {
+        pending = false;
+        run();
+      });
+    });
+    observer.observe(root, { childList: true, subtree: true });
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', run);
+    document.addEventListener('DOMContentLoaded', function () {
+      run();
+      watch();
+    });
   } else {
     run();
+    watch();
   }
 })();
