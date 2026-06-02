@@ -1,5 +1,5 @@
-# Web framework (upgraded from 3.1.1 → 5.x to support DRF 3.14+ and simplejwt 5.x)
-Django>=5.2
+# Web framework. Django 5.2 LTS matches the Python 3.11 production runtime.
+Django>=5.2,<6.0
 
 # WSGI server (production)
 gunicorn==20.0.4

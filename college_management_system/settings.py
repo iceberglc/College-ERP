@@ -4,12 +4,29 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 try:
     from dotenv import load_dotenv
 except ImportError:
     load_dotenv = None
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+_MANAGEMENT_COMMANDS_ALLOWING_INSECURE_DEFAULTS = {
+    "check",
+    "collectstatic",
+    "makemigrations",
+    "migrate",
+    "showmigrations",
+    "shell",
+    "test",
+}
+_ALLOW_INSECURE_CONFIG_DEFAULTS = (
+    len(sys.argv) > 1
+    and Path(sys.argv[0]).name == "manage.py"
+    and sys.argv[1] in _MANAGEMENT_COMMANDS_ALLOWING_INSECURE_DEFAULTS
+)
 
 # Load .env only when the file exists (local development).
 if load_dotenv is not None:
@@ -28,14 +45,19 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "False").strip().lower() not in ("0", "fa
 # before the developer has created their .env file.
 _secret_key_fallback = "f2zx8*lb*em*-*b+!&1lpp&$_9q9kmkar+l3x90do@s(+sr&x7"
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", _secret_key_fallback)
+if not DEBUG and SECRET_KEY == _secret_key_fallback and not _ALLOW_INSECURE_CONFIG_DEFAULTS:
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is False.")
 
 # Comma-separated list, e.g. "myapp.ondigitalocean.app,www.myschool.edu"
 # Falls back to '*' when not set so collectstatic and other build-time
 # management commands work without environment variables being available.
 _allowed_hosts_env = os.environ.get("DJANGO_ALLOWED_HOSTS", "").strip()
-ALLOWED_HOSTS = (
-    [h.strip() for h in _allowed_hosts_env.split(",") if h.strip()] if _allowed_hosts_env else ["*"]
-)
+if _allowed_hosts_env:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(",") if h.strip()]
+elif DEBUG or _ALLOW_INSECURE_CONFIG_DEFAULTS:
+    ALLOWED_HOSTS = ["*"]
+else:
+    raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set when DJANGO_DEBUG is False.")
 
 # ---------------------------------------------------------------------------
 # Application definition
@@ -134,7 +156,6 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
-USE_L10N = True
 USE_TZ = True
 
 # ---------------------------------------------------------------------------
