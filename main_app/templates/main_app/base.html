@@ -296,6 +296,10 @@
         {% endif %}
     </nav>
 
+    <!-- ── Page-level modals (rendered directly on <body>, outside .erpnext-main
+         stacking context, so fixed z-index values work correctly) ────────── -->
+    {% block body_modals %}{% endblock %}
+
     <!-- ── Scripts ────────────────────────────────────────────────────────── -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
