@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 from datetime import datetime
 
@@ -11,6 +12,8 @@ from django.utils import timezone
 from .decorators import student_only
 from .forms import *
 from .models import *
+
+logger = logging.getLogger(__name__)
 
 
 @student_only
@@ -613,6 +616,7 @@ def student_fcmtoken(request):
         student_user.save()
         return HttpResponse("True")
     except Exception as e:
+        logger.exception("student_fcmtoken save failed (%s)", e)
         return HttpResponse("False")
 
 
@@ -1498,7 +1502,6 @@ def student_progress(request):
     today = tz.localdate()
     days_30 = [(today - timedelta(days=i)) for i in range(29, -1, -1)]
     date_labels = [d.strftime('%b %d') for d in days_30]
-    date_set = set(days_30)
 
     # ── Vocabulary days completed per day (last 30 days) ─────────────────────
     completions_qs = dict(

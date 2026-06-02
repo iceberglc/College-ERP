@@ -563,6 +563,7 @@ def check_email_availability(request):
             return HttpResponse(True)
         return HttpResponse(False)
     except Exception as e:
+        logger.exception("check_email_availability failed (%s)", e)
         return HttpResponse(False)
 
 
@@ -584,6 +585,7 @@ def student_feedback_message(request):
             feedback.save()
             return HttpResponse(True)
         except Exception as e:
+            logger.exception("Failed to save feedback reply (%s)", e)
             return HttpResponse(False)
 
 
@@ -605,6 +607,7 @@ def staff_feedback_message(request):
             feedback.save()
             return HttpResponse(True)
         except Exception as e:
+            logger.exception("Failed to save feedback reply (%s)", e)
             return HttpResponse(False)
 
 
@@ -630,6 +633,7 @@ def view_staff_leave(request):
             leave.save()
             return HttpResponse(True)
         except Exception as e:
+            logger.exception("Failed to update leave status (%s)", e)
             return HttpResponse(False)
 
 
@@ -655,6 +659,7 @@ def view_student_leave(request):
             leave.save()
             return HttpResponse(True)
         except Exception as e:
+            logger.exception("Failed to update leave status (%s)", e)
             return HttpResponse(False)
 
 
@@ -782,6 +787,7 @@ def send_student_notification(request):
             logger.exception("Failed to send student notification push for student_id=%s", id)
         return HttpResponse("True")
     except Exception as e:
+        logger.exception("send_student_notification failed (%s)", e)
         return HttpResponse("False")
 
 
@@ -815,6 +821,7 @@ def send_staff_notification(request):
             logger.exception("Failed to send staff notification push for staff_id=%s", id)
         return HttpResponse("True")
     except Exception as e:
+        logger.exception("send_staff_notification failed (%s)", e)
         return HttpResponse("False")
 
 

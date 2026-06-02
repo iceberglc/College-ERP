@@ -360,6 +360,7 @@ def staff_fcmtoken(request):
         staff_user.save()
         return HttpResponse("True")
     except Exception as e:
+        logger.exception("staff_fcmtoken save failed (%s)", e)
         return HttpResponse("False")
 
 
