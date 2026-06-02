@@ -142,7 +142,6 @@ Ensure the following are installed on your system:
 | [Git](https://git-scm.com/) | Any recent | Version control |
 | [Python](https://www.python.org/downloads/) | 3.8+ | Runtime |
 | [pip](https://pip.pypa.io/) | Latest | Package manager |
-| [Conda](https://docs.conda.io/) *(optional)* | Any | Recommended env manager |
 
 You can verify your versions:
 
@@ -186,25 +185,7 @@ git remote -v
 
 ### Environment Setup
 
-Choose one of two methods:
-
-#### Option A — Conda (Recommended)
-
-A `college-erp.yml` file is included in the root. This sets up a complete
-environment with all dependencies:
-
-```bash
-conda env create -f college-erp.yml
-conda activate Django-env
-```
-
-To update the environment after pulling changes:
-
-```bash
-conda env update -f college-erp.yml --prune
-```
-
-#### Option B — Python venv
+#### Python venv
 
 **macOS / Linux:**
 ```bash
@@ -294,7 +275,6 @@ College-ERP/
 │
 ├── manage.py                       # Django management script
 ├── requirements.txt                # Python dependencies
-├── college-erp.yml                 # Conda environment definition
 ├── Procfile                        # Deployment config (PythonAnywhere)
 ├── db.sqlite3                      # SQLite database (development only)
 ├── .gitignore
@@ -494,7 +474,6 @@ Run through this checklist before opening your PR:
 
 **Dependencies**
 - [ ] If you added a new package, `requirements.txt` is updated
-- [ ] If using Conda, `college-erp.yml` is updated
 
 **Documentation**
 - [ ] New functions/classes have docstrings

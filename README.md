@@ -138,13 +138,7 @@ cd College-ERP
 
 #### 2️⃣ Create Virtual Environment
 
-**Option A: Using Conda (Recommended)**
-```bash
-conda env create -f college-erp.yml
-conda activate Django-env
-```
-
-**Option B: Using venv**
+**Using venv**
 
 <details>
 <summary>Windows</summary>
