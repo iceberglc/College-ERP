@@ -334,8 +334,115 @@
 
 
 /* =====================================================================
-   C. ANDROID / DEFAULT THEME  (.platform-android, .platform-other) — Phase 5
+   C. ANDROID / DEFAULT THEME  (.platform-android, .platform-other)
+
+   Material-influenced: solid elevated surfaces (NO glass/blur), real
+   elevation shadows, clear press/ripple feedback, larger touch targets.
+   Same components and tokens as the Apple theme, realized with solids.
    ===================================================================== */
+
+/* ── C1. Elevation tokens (light) ────────────────────────────────────*/
+.platform-android,
+.platform-other {
+  --elev-1: 0 1px 2px rgba(12, 31, 69, 0.10), 0 1px 3px rgba(12, 31, 69, 0.06);
+  --elev-2: 0 2px 6px rgba(12, 31, 69, 0.12), 0 1px 2px rgba(12, 31, 69, 0.08);
+  --elev-3: 0 8px 18px rgba(12, 31, 69, 0.16), 0 2px 6px rgba(12, 31, 69, 0.10);
+  --md-radius: 16px;
+}
+.platform-android.dark-mode,
+.platform-other.dark-mode {
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --elev-2: 0 2px 6px rgba(0, 0, 0, 0.50), 0 1px 2px rgba(0, 0, 0, 0.40);
+  --elev-3: 0 8px 20px rgba(0, 0, 0, 0.60), 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* ── C2. Solid elevated surfaces (explicitly no glass) ───────────────*/
+.platform-android .erpnext-navbar,
+.platform-other  .erpnext-navbar {
+  background: var(--ice-surface, #fff) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border-bottom: 1px solid var(--ice-border, #E4E7EC) !important;
+  box-shadow: var(--elev-2) !important;
+}
+
+.platform-android .dt-card,
+.platform-android .erpnext-card,
+.platform-android .stat-card,
+.platform-android .pcard,
+.platform-other  .dt-card,
+.platform-other  .erpnext-card,
+.platform-other  .stat-card,
+.platform-other  .pcard {
+  background: var(--ice-surface, #fff) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 1px solid var(--ice-border, #E4E7EC) !important;
+  border-radius: var(--md-radius) !important;
+  box-shadow: var(--elev-1) !important;
+}
+
+/* The default bottom-nav is a glass pill (iceberg) — make it a solid,
+   elevated Material bar. */
+.platform-android .bottom-nav,
+.platform-other  .bottom-nav {
+  background: var(--ice-surface, #fff) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 1px solid var(--ice-border, #E4E7EC) !important;
+  box-shadow: var(--elev-3) !important;
+}
+
+/* Reflowed table-row cards: solid + elevation (phones). */
+@media (max-width: 600px) {
+  .platform-android table.dt > tbody > tr,
+  .platform-android table.data-table > tbody > tr,
+  .platform-android table.table > tbody > tr,
+  .platform-other  table.dt > tbody > tr,
+  .platform-other  table.data-table > tbody > tr,
+  .platform-other  table.table > tbody > tr {
+    background: var(--ice-surface, #fff) !important;
+    border: 1px solid var(--ice-border, #E4E7EC) !important;
+    border-radius: var(--md-radius) !important;
+    box-shadow: var(--elev-1) !important;
+  }
+}
+
+/* ── C3. Touch targets — 48dp (Material) on phones ───────────────────*/
+@media (max-width: 768px) {
+  .platform-android .btn,
+  .platform-android .bottom-nav-item,
+  .platform-android .navbar-toggle,
+  .platform-android .form-control,
+  .platform-android select,
+  .platform-other  .btn,
+  .platform-other  .bottom-nav-item,
+  .platform-other  .navbar-toggle,
+  .platform-other  .form-control,
+  .platform-other  select {
+    min-height: 48px;
+  }
+}
+
+/* ── C4. Press feedback (snappy, transform-only) ─────────────────────
+   Ripple is already provided globally (erpnext-style.css + base.html JS);
+   add a crisp Material press-scale. Easing/duration tuned in Phase 6. */
+.platform-android .btn,
+.platform-android .quick-action-btn,
+.platform-android .bottom-nav-item,
+.platform-other  .btn,
+.platform-other  .quick-action-btn,
+.platform-other  .bottom-nav-item {
+  border-radius: 12px;
+}
+.platform-android .btn:active,
+.platform-android .quick-action-btn:active,
+.platform-android .bottom-nav-item:active,
+.platform-other  .btn:active,
+.platform-other  .quick-action-btn:active,
+.platform-other  .bottom-nav-item:active {
+  transform: scale(0.97);
+}
 
 
 /* =====================================================================
