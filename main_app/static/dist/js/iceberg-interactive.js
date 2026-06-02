@@ -167,9 +167,31 @@
     });
   }
 
+  /* ── 4. Bottom-nav active pill feedback ─────────────── */
+  function initBottomNav() {
+    var bnav = document.getElementById('bottom-nav');
+    if (!bnav) return;
+
+    bnav.addEventListener('click', function (event) {
+      var item = event.target.closest('a.bottom-nav-item');
+      if (!item || !bnav.contains(item) || item.classList.contains('active')) return;
+
+      var href = item.getAttribute('href') || '';
+      if (!href || href === '#') return;
+
+      setTimeout(function () {
+        bnav.querySelectorAll('.bottom-nav-item.active').forEach(function (activeItem) {
+          activeItem.classList.remove('active');
+        });
+        item.classList.add('active');
+      }, 0);
+    });
+  }
+
   ready(function () {
     initCountUp();
     initReveal();
     initTables();
+    initBottomNav();
   });
 })();
