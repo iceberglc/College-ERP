@@ -35,9 +35,15 @@ body::after {
     radial-gradient(40% 54% at 84% 12%, rgba(27,63,122,.14), transparent 60%);
   animation: ice-blob 20s ease-in-out infinite;
 }
-/* keep real content above the decorative layer */
-.erpnext-navbar, .erpnext-sidebar, .erpnext-main,
-.bottom-nav, #ice-progress, #ice-overlay { position: relative; z-index: 1; }
+/* Keep real content above the decorative body::after layer.
+   IMPORTANT: only .erpnext-main needs position:relative here — it is the one
+   element that is otherwise position:static, so without it the fixed,
+   z-index:0 body::after would paint over the page content.
+   The navbar / sidebar / bottom-nav / progress / overlay are ALREADY
+   position:fixed with z-index well above 0, so they must NOT be re-declared
+   position:relative — doing so drops the fixed sidebar back into normal flow,
+   where its full ~100vh height pushes all page content down by a viewport. */
+.erpnext-main { position: relative; z-index: 1; }
 .erpnext-navbar { z-index: 1040; }
 .erpnext-sidebar { z-index: 1030; }
 .erpnext-main { background: transparent !important; }
