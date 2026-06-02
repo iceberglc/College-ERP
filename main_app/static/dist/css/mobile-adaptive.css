@@ -446,5 +446,106 @@
 
 
 /* =====================================================================
-   D. MOTION & ACCESSIBILITY   — added in Phase 6
+   D. MOTION & ACCESSIBILITY
+
+   Platform-tuned easing on transform/opacity only (never layout props).
+   Apple: gentle spring; Material: shorter, snappier standard easing.
+   Fully respects prefers-reduced-motion and prefers-reduced-transparency.
    ===================================================================== */
+
+/* ── D1. Easing + duration tokens ────────────────────────────────────*/
+.platform-apple {
+  --motion-ease: cubic-bezier(0.32, 0.72, 0, 1);   /* gentle iOS-like spring */
+  --motion-dur:  0.42s;
+  --press-scale: 0.96;
+  --press-dur:   0.28s;
+}
+.platform-android,
+.platform-other {
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);        /* Material standard */
+  --motion-dur:  0.2s;
+  --press-scale: 0.97;
+  --press-dur:   0.13s;
+}
+
+/* ── D2. Drawer / overlay presentation ───────────────────────────────
+   Reuse the existing translateX drawer; just retime it per platform. */
+.platform-apple   .erpnext-sidebar,
+.platform-android .erpnext-sidebar,
+.platform-other   .erpnext-sidebar {
+  transition: transform var(--motion-dur) var(--motion-ease),
+              background .25s ease, border-color .25s ease !important;
+}
+.sidebar-overlay {
+  transition: opacity var(--motion-dur, .25s) var(--motion-ease, ease);
+}
+
+/* ── D3. Button / nav press feedback (transform + opacity only) ──────*/
+.platform-apple .btn,
+.platform-apple .quick-action-btn,
+.platform-apple .bottom-nav-item,
+.platform-android .btn,
+.platform-android .quick-action-btn,
+.platform-android .bottom-nav-item,
+.platform-other .btn,
+.platform-other .quick-action-btn,
+.platform-other .bottom-nav-item {
+  transition: transform var(--press-dur) var(--press-ease, var(--motion-ease)),
+              box-shadow var(--press-dur) var(--motion-ease),
+              background-color .2s var(--motion-ease);
+}
+.platform-apple .btn:active,
+.platform-apple .quick-action-btn:active,
+.platform-apple .bottom-nav-item:active {
+  transform: scale(var(--press-scale));
+}
+
+/* Bottom-nav icon settle animation picks up the platform easing. */
+.platform-apple .bottom-nav-item i,
+.platform-android .bottom-nav-item i,
+.platform-other .bottom-nav-item i {
+  transition: transform var(--motion-dur) var(--motion-ease);
+}
+
+/* ── D4. prefers-reduced-motion → disable non-essential motion ───────*/
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .platform-apple .btn:active,
+  .platform-apple .quick-action-btn:active,
+  .platform-apple .bottom-nav-item:active,
+  .platform-android .btn:active,
+  .platform-other .btn:active {
+    transform: none !important;
+  }
+}
+
+/* ── D5. prefers-reduced-transparency → drop glass, use opaque ───────
+   For users who reduce transparency, swap the Apple glass for the opaque
+   solid surface so nothing relies on a translucent blur. */
+@media (prefers-reduced-transparency: reduce) {
+  .platform-apple .erpnext-navbar,
+  .platform-apple .erpnext-sidebar,
+  .platform-apple .bottom-nav,
+  .platform-apple .dt-card,
+  .platform-apple .erpnext-card,
+  .platform-apple .stat-card,
+  .platform-apple .pcard,
+  .platform-apple .ice-modal,
+  .platform-apple table.dt > tbody > tr,
+  .platform-apple table.data-table > tbody > tr,
+  .platform-apple table.table > tbody > tr {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: var(--ice-surface, #fff) !important;
+    background-image: none !important;
+  }
+  .platform-apple .ice-modal-overlay {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
