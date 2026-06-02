@@ -6,7 +6,7 @@ from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 
 
 _LOAN_PERIOD_DAYS = 14
@@ -20,8 +20,6 @@ def _default_loan_due_date():
 def expiry():
     # Retained for historical migration compatibility (0001_initial.py references this)
     return datetime.today() + timedelta(days=14)
-
-
 
 
 class CustomUserManager(UserManager):
@@ -58,24 +56,28 @@ class CustomUser(AbstractUser):
     # String keys so CharField comparisons are always consistent.
     # Integer keys (the original) caused `1 == '1'` → False in Python 3,
     # which broke login redirects and get_user_type_display().
-    USER_TYPE = (('1', "HOD"), ('2', "Staff"), ('3', "Student"))
+    USER_TYPE = (("1", "HOD"), ("2", "Staff"), ("3", "Student"))
     GENDER = [("M", "Male"), ("F", "Female")]
 
     username = None  # Removed username, using email instead
     email = models.EmailField(unique=True)
     login_id = models.CharField(
-        max_length=20, unique=True, null=True, blank=True,
+        max_length=20,
+        unique=True,
+        null=True,
+        blank=True,
         help_text="Unique ID for staff/student login. Leave blank for admin (uses email).",
     )
-    user_type = models.CharField(default='1', choices=USER_TYPE, max_length=1)
-    gender = models.CharField(max_length=1, choices=GENDER, blank=True, default='')
+    user_type = models.CharField(default="1", choices=USER_TYPE, max_length=1)
+    gender = models.CharField(max_length=1, choices=GENDER, blank=True, default="")
     date_of_birth = models.DateField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
         help_text="Date of birth (YYYY-MM-DD). Used to generate the user's login ID.",
     )
     profile_pic = models.ImageField(blank=True, null=True)
-    avatar = models.CharField(max_length=10, blank=True, default='')
-    address = models.TextField(blank=True, default='')
+    avatar = models.CharField(max_length=10, blank=True, default="")
+    address = models.TextField(blank=True, default="")
     fcm_token = models.TextField(default="")  # For firebase notifications
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -84,12 +86,11 @@ class CustomUser(AbstractUser):
     objects = CustomUserManager()
 
     def __str__(self):
-        return  self.first_name + " " + self.last_name
+        return self.first_name + " " + self.last_name
 
 
 class Admin(models.Model):
     admin = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-
 
 
 class Course(models.Model):
@@ -105,6 +106,7 @@ class Course(models.Model):
     def __str__(self):
         return self.name
 
+
 class Book(models.Model):
     name = models.CharField(max_length=200)
     author = models.CharField(max_length=200)
@@ -112,37 +114,39 @@ class Book(models.Model):
     category = models.CharField(max_length=50)
 
     def __str__(self):
-        return str(self.name) + " ["+str(self.isbn)+']'
+        return str(self.name) + " [" + str(self.isbn) + "]"
 
 
 class Student(models.Model):
-    STATUS_ACTIVE = 'active'
-    STATUS_INACTIVE = 'inactive'
-    STATUS_SUSPENDED = 'suspended'
+    STATUS_ACTIVE = "active"
+    STATUS_INACTIVE = "inactive"
+    STATUS_SUSPENDED = "suspended"
     STATUS_CHOICES = [
-        (STATUS_ACTIVE, 'Active'),
-        (STATUS_INACTIVE, 'Inactive'),
-        (STATUS_SUSPENDED, 'Suspended'),
+        (STATUS_ACTIVE, "Active"),
+        (STATUS_INACTIVE, "Inactive"),
+        (STATUS_SUSPENDED, "Suspended"),
     ]
 
-    LEVEL_CHOICES = [(i, f'Level {i}') for i in range(1, 7)]
+    LEVEL_CHOICES = [(i, f"Level {i}") for i in range(1, 7)]
 
-    THEME_DARK = 'dark'
-    THEME_BRIGHT = 'bright'
-    THEME_SYSTEM = 'system'
+    THEME_DARK = "dark"
+    THEME_BRIGHT = "bright"
+    THEME_SYSTEM = "system"
     THEME_CHOICES = [
-        (THEME_DARK, 'Dark'),
-        (THEME_BRIGHT, 'Bright'),
-        (THEME_SYSTEM, 'System Default'),
+        (THEME_DARK, "Dark"),
+        (THEME_BRIGHT, "Bright"),
+        (THEME_SYSTEM, "System Default"),
     ]
 
     admin = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=False)
-    phone = models.CharField(max_length=20, blank=True, default='')
+    phone = models.CharField(max_length=20, blank=True, default="")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     theme = models.CharField(max_length=10, choices=THEME_CHOICES, default=THEME_SYSTEM)
     level = models.PositiveSmallIntegerField(
-        choices=LEVEL_CHOICES, null=True, blank=True,
+        choices=LEVEL_CHOICES,
+        null=True,
+        blank=True,
         help_text="English proficiency level (1–6). Only applies to English-program students.",
     )
 
@@ -157,12 +161,17 @@ class Student(models.Model):
     def is_english_student(self):
         return bool(self.course and self.course.is_english)
 
+
 class Staff(models.Model):
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=False)
     admin = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=20, blank=True, default='')
-    specialization = models.CharField(max_length=200, blank=True, default='',
-                                      help_text="e.g. IELTS, Mathematics, Business English")
+    phone = models.CharField(max_length=20, blank=True, default="")
+    specialization = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="e.g. IELTS, Mathematics, Business English",
+    )
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -178,8 +187,8 @@ class Subject(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['course']),
-            models.Index(fields=['staff']),
+            models.Index(fields=["course"]),
+            models.Index(fields=["staff"]),
         ]
 
     def __str__(self):
@@ -187,13 +196,13 @@ class Subject(models.Model):
 
 
 class Attendance(models.Model):
-    group = models.ForeignKey('Group', on_delete=models.CASCADE, null=True, blank=True)
+    group = models.ForeignKey("Group", on_delete=models.CASCADE, null=True, blank=True)
     date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('group', 'date')
+        unique_together = ("group", "date")
 
     def __str__(self):
         return f"{self.group.name} · {self.date}"
@@ -203,7 +212,7 @@ class AttendanceReport(models.Model):
     ABSENT = 0
     PRESENT = 1
     LATE = 2
-    STATUS_CHOICES = ((ABSENT, 'Absent'), (PRESENT, 'Present'), (LATE, 'Late'))
+    STATUS_CHOICES = ((ABSENT, "Absent"), (PRESENT, "Present"), (LATE, "Late"))
 
     student = models.ForeignKey(Student, on_delete=models.DO_NOTHING)
     attendance = models.ForeignKey(Attendance, on_delete=models.CASCADE)
@@ -213,8 +222,8 @@ class AttendanceReport(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['student']),
-            models.Index(fields=['attendance']),
+            models.Index(fields=["student"]),
+            models.Index(fields=["attendance"]),
         ]
 
 
@@ -222,7 +231,7 @@ class LeaveReportStudent(models.Model):
     PENDING = 0
     APPROVED = 1
     REJECTED = -1
-    LEAVE_STATUS = ((PENDING, 'Pending'), (APPROVED, 'Approved'), (REJECTED, 'Rejected'))
+    LEAVE_STATUS = ((PENDING, "Pending"), (APPROVED, "Approved"), (REJECTED, "Rejected"))
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     date = models.DateField(null=True, blank=True)
@@ -236,7 +245,7 @@ class LeaveReportStaff(models.Model):
     PENDING = 0
     APPROVED = 1
     REJECTED = -1
-    LEAVE_STATUS = ((PENDING, 'Pending'), (APPROVED, 'Approved'), (REJECTED, 'Rejected'))
+    LEAVE_STATUS = ((PENDING, "Pending"), (APPROVED, "Approved"), (REJECTED, "Rejected"))
 
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
     date = models.DateField(null=True, blank=True)
@@ -263,34 +272,36 @@ class FeedbackStaff(models.Model):
 
 
 class Notification(models.Model):
-    ATTENDANCE = 'attendance'
-    RESULT = 'result'
-    ANNOUNCEMENT = 'announcement'
-    HOMEWORK = 'homework'
-    VOCABULARY = 'vocabulary'
-    GENERAL = 'general'
+    ATTENDANCE = "attendance"
+    RESULT = "result"
+    ANNOUNCEMENT = "announcement"
+    HOMEWORK = "homework"
+    VOCABULARY = "vocabulary"
+    GENERAL = "general"
     CATEGORY_CHOICES = [
-        (ATTENDANCE, 'Attendance'),
-        (RESULT, 'Result'),
-        (ANNOUNCEMENT, 'Announcement'),
-        (HOMEWORK, 'Homework'),
-        (VOCABULARY, 'Vocabulary'),
-        (GENERAL, 'General'),
+        (ATTENDANCE, "Attendance"),
+        (RESULT, "Result"),
+        (ANNOUNCEMENT, "Announcement"),
+        (HOMEWORK, "Homework"),
+        (VOCABULARY, "Vocabulary"),
+        (GENERAL, "General"),
     ]
 
-    recipient = models.ForeignKey(CustomUser, on_delete=models.CASCADE,
-                                  related_name='notifications')
+    recipient = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="notifications"
+    )
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default=GENERAL)
     message = models.TextField()
-    link = models.CharField(max_length=500, blank=True, default='',
-                            help_text='Optional URL the notification links to')
+    link = models.CharField(
+        max_length=500, blank=True, default="", help_text="Optional URL the notification links to"
+    )
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['recipient', 'is_read']),
+            models.Index(fields=["recipient", "is_read"]),
         ]
 
     def __str__(self):
@@ -299,15 +310,15 @@ class Notification(models.Model):
 
 class StudentResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    group = models.ForeignKey('Group', on_delete=models.CASCADE, null=True, blank=True)
+    group = models.ForeignKey("Group", on_delete=models.CASCADE, null=True, blank=True)
     test = models.FloatField(default=0)
     exam = models.FloatField(default=0)
-    comment = models.TextField(blank=True, default='')
+    comment = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('student', 'group')
+        unique_together = ("student", "group")
 
 
 @receiver(post_save, sender=CustomUser)
@@ -323,11 +334,11 @@ def create_user_profile(sender, instance, created, **kwargs):
     if not created:
         return
     user_type = str(instance.user_type)
-    if user_type == '1':
+    if user_type == "1":
         Admin.objects.get_or_create(admin=instance)
-    elif user_type == '2':
+    elif user_type == "2":
         Staff.objects.get_or_create(admin=instance)
-    elif user_type == '3':
+    elif user_type == "3":
         Student.objects.get_or_create(admin=instance)
 
 
@@ -349,13 +360,16 @@ class Group(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     teacher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
-    room = models.CharField(max_length=50, blank=True, default='',
-                            help_text="Classroom or room number, e.g. Room 3A")
-    schedule = models.CharField(max_length=200, blank=True, default='',
-                                help_text="e.g. Mon/Wed 10:00–12:00")
+    room = models.CharField(
+        max_length=50, blank=True, default="", help_text="Classroom or room number, e.g. Room 3A"
+    )
+    schedule = models.CharField(
+        max_length=200, blank=True, default="", help_text="e.g. Mon/Wed 10:00–12:00"
+    )
     capacity = models.PositiveIntegerField(default=20)
-    start_date = models.DateField(null=True, blank=True,
-                                  help_text="The date when this group starts classes")
+    start_date = models.DateField(
+        null=True, blank=True, help_text="The date when this group starts classes"
+    )
     is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -371,10 +385,10 @@ class Enrollment(models.Model):
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        unique_together = ('student', 'group')
+        unique_together = ("student", "group")
         indexes = [
-            models.Index(fields=['student']),
-            models.Index(fields=['group']),
+            models.Index(fields=["student"]),
+            models.Index(fields=["group"]),
         ]
 
     def __str__(self):
@@ -398,13 +412,13 @@ class Assignment(models.Model):
 class Submission(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    file = models.FileField(upload_to='submissions/', null=True, blank=True)
+    file = models.FileField(upload_to="submissions/", null=True, blank=True)
     note = models.TextField(blank=True, default="")
     submitted_at = models.DateTimeField(auto_now_add=True)
     grade = models.FloatField(null=True, blank=True)
 
     class Meta:
-        unique_together = ('assignment', 'student')
+        unique_together = ("assignment", "student")
 
     def __str__(self):
         return f"{self.student} → {self.assignment}"
@@ -413,14 +427,14 @@ class Submission(models.Model):
 class ResultFile(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, blank=True)
-    file = models.FileField(upload_to='results/')
+    file = models.FileField(upload_to="results/")
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, default="")
     uploaded_by = models.ForeignKey(Staff, on_delete=models.CASCADE)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-uploaded_at']
+        ordering = ["-uploaded_at"]
 
     def __str__(self):
         return self.title
@@ -428,23 +442,26 @@ class ResultFile(models.Model):
     @property
     def filename(self):
         import os
-        return os.path.basename(self.file.name) if self.file else ''
+
+        return os.path.basename(self.file.name) if self.file else ""
 
 
 class PasswordResetCode(models.Model):
     """One-time 6-digit code for the custom password-recovery flow."""
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE,
-                             related_name='password_reset_codes')
-    code_hash = models.CharField(max_length=64)   # SHA-256 hex of the raw digit code
+
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="password_reset_codes"
+    )
+    code_hash = models.CharField(max_length=64)  # SHA-256 hex of the raw digit code
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     used = models.BooleanField(default=False)
     attempts = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['user', 'used', 'expires_at']),
+            models.Index(fields=["user", "used", "expires_at"]),
         ]
 
     def __str__(self):
@@ -460,26 +477,25 @@ class Loan(models.Model):
     prevents the same book from being on loan to the same student twice
     simultaneously (returned_at IS NULL = active loan).
     """
-    student = models.ForeignKey(Student, on_delete=models.PROTECT,
-                                related_name='loans')
-    book = models.ForeignKey(Book, on_delete=models.PROTECT,
-                             related_name='loans')
+
+    student = models.ForeignKey(Student, on_delete=models.PROTECT, related_name="loans")
+    book = models.ForeignKey(Book, on_delete=models.PROTECT, related_name="loans")
     issued_on = models.DateField(default=timezone.localdate)
     due_on = models.DateField(default=_default_loan_due_date)
     returned_on = models.DateField(null=True, blank=True)
     fine_paid = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['-issued_on']
+        ordering = ["-issued_on"]
         indexes = [
-            models.Index(fields=['student']),
-            models.Index(fields=['returned_on']),
+            models.Index(fields=["student"]),
+            models.Index(fields=["returned_on"]),
         ]
         constraints = [
             models.UniqueConstraint(
-                fields=['student', 'book'],
+                fields=["student", "book"],
                 condition=Q(returned_on__isnull=True),
-                name='one_active_loan_per_student_book',
+                name="one_active_loan_per_student_book",
             ),
         ]
 
@@ -513,42 +529,47 @@ class Loan(models.Model):
 class VocabularyDay(models.Model):
     """A teacher-curated vocabulary set for a group on a specific day number."""
 
-    SCOPE_GROUP = 'group'
-    SCOPE_ALL   = 'all'
+    SCOPE_GROUP = "group"
+    SCOPE_ALL = "all"
     SCOPE_CHOICES = [
-        (SCOPE_GROUP, 'Assigned group only'),
-        (SCOPE_ALL,   'All students'),
+        (SCOPE_GROUP, "Assigned group only"),
+        (SCOPE_ALL, "All students"),
     ]
 
-    group = models.ForeignKey('Group', on_delete=models.CASCADE, related_name='vocabulary_days')
-    day_number = models.PositiveIntegerField(help_text='Day 1, Day 2, …')
-    title = models.CharField(max_length=200, blank=True, default='',
-                             help_text='Optional title, e.g. "Describing People"')
+    group = models.ForeignKey("Group", on_delete=models.CASCADE, related_name="vocabulary_days")
+    day_number = models.PositiveIntegerField(help_text="Day 1, Day 2, …")
+    title = models.CharField(
+        max_length=200, blank=True, default="", help_text='Optional title, e.g. "Describing People"'
+    )
     level = models.PositiveSmallIntegerField(
-        null=True, blank=True,
-        help_text='Target level (1–6). Leave blank to inherit the group default.',
+        null=True,
+        blank=True,
+        help_text="Target level (1–6). Leave blank to inherit the group default.",
     )
     release_at = models.DateTimeField(
-        help_text='Words become visible to students at this date/time.',
+        help_text="Words become visible to students at this date/time.",
     )
     release_scope = models.CharField(
         max_length=10,
         choices=SCOPE_CHOICES,
         default=SCOPE_GROUP,
-        help_text='Who can see this vocabulary day after it is released.',
+        help_text="Who can see this vocabulary day after it is released.",
     )
-    notes = models.TextField(blank=True, default='',
-                             help_text='Private teaching notes (not shown to students).')
-    created_by = models.ForeignKey('Staff', on_delete=models.CASCADE,
-                                   related_name='vocabulary_days')
-    notified_students = models.ManyToManyField('Student', blank=True,
-                                               related_name='notified_vocab_days')
+    notes = models.TextField(
+        blank=True, default="", help_text="Private teaching notes (not shown to students)."
+    )
+    created_by = models.ForeignKey(
+        "Staff", on_delete=models.CASCADE, related_name="vocabulary_days"
+    )
+    notified_students = models.ManyToManyField(
+        "Student", blank=True, related_name="notified_vocab_days"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['day_number']
-        unique_together = ('group', 'day_number')
+        ordering = ["day_number"]
+        unique_together = ("group", "day_number")
 
     def __str__(self):
         return f"{self.group.name} — Day {self.day_number}"
@@ -564,18 +585,21 @@ class VocabularyDay(models.Model):
 
 class VocabularyDayWord(models.Model):
     """One vocabulary item inside a VocabularyDay."""
-    day = models.ForeignKey(VocabularyDay, on_delete=models.CASCADE, related_name='words')
+
+    day = models.ForeignKey(VocabularyDay, on_delete=models.CASCADE, related_name="words")
     word = models.CharField(max_length=200)
     meaning = models.TextField()
-    example_sentence = models.TextField(blank=True, default='')
+    example_sentence = models.TextField(blank=True, default="")
     pronunciation_note = models.CharField(
-        max_length=300, blank=True, default='',
-        help_text='IPA or phonetic hint, e.g. /ˈɛfərt/',
+        max_length=300,
+        blank=True,
+        default="",
+        help_text="IPA or phonetic hint, e.g. /ˈɛfərt/",
     )
     order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        ordering = ['order', 'id']
+        ordering = ["order", "id"]
 
     def __str__(self):
         return f"Day {self.day.day_number} — {self.word}"
@@ -583,14 +607,13 @@ class VocabularyDayWord(models.Model):
 
 class VocabularyDayCompletion(models.Model):
     """Records that a student finished reviewing a vocabulary day."""
-    student = models.ForeignKey('Student', on_delete=models.CASCADE,
-                                related_name='day_completions')
-    day = models.ForeignKey(VocabularyDay, on_delete=models.CASCADE,
-                            related_name='completions')
+
+    student = models.ForeignKey("Student", on_delete=models.CASCADE, related_name="day_completions")
+    day = models.ForeignKey(VocabularyDay, on_delete=models.CASCADE, related_name="completions")
     completed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('student', 'day')
+        unique_together = ("student", "day")
 
     def __str__(self):
         return f"{self.student} ✓ Day {self.day.day_number}"
@@ -598,17 +621,18 @@ class VocabularyDayCompletion(models.Model):
 
 class VocabularyQuizResult(models.Model):
     """Saves the outcome of one quiz session (tied to a VocabularyDay)."""
-    student = models.ForeignKey('Student', on_delete=models.CASCADE,
-                                related_name='quiz_results')
-    day = models.ForeignKey(VocabularyDay, on_delete=models.SET_NULL,
-                            null=True, blank=True, related_name='quiz_results')
-    score = models.FloatField(help_text='Percentage 0–100')
+
+    student = models.ForeignKey("Student", on_delete=models.CASCADE, related_name="quiz_results")
+    day = models.ForeignKey(
+        VocabularyDay, on_delete=models.SET_NULL, null=True, blank=True, related_name="quiz_results"
+    )
+    score = models.FloatField(help_text="Percentage 0–100")
     correct = models.PositiveIntegerField(default=0)
     total = models.PositiveIntegerField(default=0)
     taken_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-taken_at']
+        ordering = ["-taken_at"]
 
     def __str__(self):
         return f"{self.student} — {self.score:.0f}% ({self.taken_at.date()})"
@@ -616,20 +640,22 @@ class VocabularyQuizResult(models.Model):
 
 # ── Leaderboard configuration & history ─────────────────────────────────────
 
+
 class LeaderboardSettings(models.Model):
     """
     Singleton row holding ranking weights and metric toggles.
     Use LeaderboardSettings.get() to read; admin form writes the same row.
     """
+
     attendance_weight = models.PositiveSmallIntegerField(default=25)
-    homework_weight   = models.PositiveSmallIntegerField(default=25)
-    quizzes_weight    = models.PositiveSmallIntegerField(default=25)
-    results_weight    = models.PositiveSmallIntegerField(default=25)
+    homework_weight = models.PositiveSmallIntegerField(default=25)
+    quizzes_weight = models.PositiveSmallIntegerField(default=25)
+    results_weight = models.PositiveSmallIntegerField(default=25)
     enable_attendance = models.BooleanField(default=True)
-    enable_homework   = models.BooleanField(default=True)
-    enable_quizzes    = models.BooleanField(default=True)
-    enable_results    = models.BooleanField(default=True)
-    updated_at        = models.DateTimeField(auto_now=True)
+    enable_homework = models.BooleanField(default=True)
+    enable_quizzes = models.BooleanField(default=True)
+    enable_results = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Leaderboard Settings"
@@ -647,10 +673,14 @@ class LeaderboardSettings(models.Model):
     def normalized_weights(self):
         """Return {metric: weight} for ENABLED metrics, normalized so values sum to 1."""
         raw = {}
-        if self.enable_attendance: raw['attendance'] = self.attendance_weight
-        if self.enable_homework:   raw['homework']   = self.homework_weight
-        if self.enable_quizzes:    raw['quizzes']    = self.quizzes_weight
-        if self.enable_results:    raw['results']    = self.results_weight
+        if self.enable_attendance:
+            raw["attendance"] = self.attendance_weight
+        if self.enable_homework:
+            raw["homework"] = self.homework_weight
+        if self.enable_quizzes:
+            raw["quizzes"] = self.quizzes_weight
+        if self.enable_results:
+            raw["results"] = self.results_weight
         total = sum(raw.values())
         if total == 0:
             # Avoid divide-by-zero — fall back to equal weights across what's enabled
@@ -664,25 +694,26 @@ class LeaderboardSettings(models.Model):
 
 class LeaderboardSeason(models.Model):
     """A snapshot period — admin creates seasons, snapshots freeze the rankings."""
-    PERIOD_WEEKLY  = 'weekly'
-    PERIOD_MONTHLY = 'monthly'
-    PERIOD_CUSTOM  = 'custom'
+
+    PERIOD_WEEKLY = "weekly"
+    PERIOD_MONTHLY = "monthly"
+    PERIOD_CUSTOM = "custom"
     PERIOD_CHOICES = [
-        (PERIOD_WEEKLY,  'Weekly'),
-        (PERIOD_MONTHLY, 'Monthly'),
-        (PERIOD_CUSTOM,  'Custom'),
+        (PERIOD_WEEKLY, "Weekly"),
+        (PERIOD_MONTHLY, "Monthly"),
+        (PERIOD_CUSTOM, "Custom"),
     ]
-    name        = models.CharField(max_length=120, help_text='e.g. "October 2026"')
-    period      = models.CharField(max_length=12, choices=PERIOD_CHOICES, default=PERIOD_MONTHLY)
-    start_date  = models.DateField()
-    end_date    = models.DateField(null=True, blank=True,
-                                   help_text='Leave blank for ongoing season')
-    is_active   = models.BooleanField(default=True,
-                                      help_text='Snapshots are only captured for active seasons')
-    created_at  = models.DateTimeField(auto_now_add=True)
+    name = models.CharField(max_length=120, help_text='e.g. "October 2026"')
+    period = models.CharField(max_length=12, choices=PERIOD_CHOICES, default=PERIOD_MONTHLY)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True, help_text="Leave blank for ongoing season")
+    is_active = models.BooleanField(
+        default=True, help_text="Snapshots are only captured for active seasons"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-start_date', '-id']
+        ordering = ["-start_date", "-id"]
 
     def __str__(self):
         return self.name
@@ -690,25 +721,28 @@ class LeaderboardSeason(models.Model):
 
 class LeaderboardSnapshot(models.Model):
     """One frozen row per student per season."""
-    season         = models.ForeignKey(LeaderboardSeason, on_delete=models.CASCADE,
-                                       related_name='snapshots')
-    student        = models.ForeignKey('Student', on_delete=models.CASCADE,
-                                       related_name='leaderboard_snapshots')
-    rank           = models.PositiveIntegerField()
-    score          = models.FloatField()
+
+    season = models.ForeignKey(
+        LeaderboardSeason, on_delete=models.CASCADE, related_name="snapshots"
+    )
+    student = models.ForeignKey(
+        "Student", on_delete=models.CASCADE, related_name="leaderboard_snapshots"
+    )
+    rank = models.PositiveIntegerField()
+    score = models.FloatField()
     attendance_pct = models.FloatField(null=True, blank=True)
-    homework_pct   = models.FloatField(null=True, blank=True)
-    quizzes_pct    = models.FloatField(null=True, blank=True)
-    results_pct    = models.FloatField(null=True, blank=True)
-    badge          = models.CharField(max_length=60, blank=True, default='')
-    captured_at    = models.DateTimeField(auto_now_add=True)
+    homework_pct = models.FloatField(null=True, blank=True)
+    quizzes_pct = models.FloatField(null=True, blank=True)
+    results_pct = models.FloatField(null=True, blank=True)
+    badge = models.CharField(max_length=60, blank=True, default="")
+    captured_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('season', 'student')
-        ordering = ['season', 'rank']
+        unique_together = ("season", "student")
+        ordering = ["season", "rank"]
         indexes = [
-            models.Index(fields=['season', 'rank']),
-            models.Index(fields=['student', 'season']),
+            models.Index(fields=["season", "rank"]),
+            models.Index(fields=["student", "season"]),
         ]
 
     def __str__(self):
@@ -717,39 +751,47 @@ class LeaderboardSnapshot(models.Model):
 
 class DashboardStory(models.Model):
     """Short-form content cards shown in the horizontal stories strip on the student dashboard."""
-    TYPE_ANNOUNCEMENT = 'announcement'
-    TYPE_VOCAB        = 'vocab'
-    TYPE_EVENT        = 'event'
-    TYPE_TIP          = 'tip'
-    TYPE_CHALLENGE    = 'challenge'
-    TYPE_UPDATE       = 'update'
+
+    TYPE_ANNOUNCEMENT = "announcement"
+    TYPE_VOCAB = "vocab"
+    TYPE_EVENT = "event"
+    TYPE_TIP = "tip"
+    TYPE_CHALLENGE = "challenge"
+    TYPE_UPDATE = "update"
     STORY_TYPES = [
-        (TYPE_ANNOUNCEMENT, 'Announcement'),
-        (TYPE_VOCAB,        'Vocabulary Tip'),
-        (TYPE_EVENT,        'Event'),
-        (TYPE_TIP,          'Study Tip'),
-        (TYPE_CHALLENGE,    'Challenge'),
-        (TYPE_UPDATE,       'Teacher Update'),
+        (TYPE_ANNOUNCEMENT, "Announcement"),
+        (TYPE_VOCAB, "Vocabulary Tip"),
+        (TYPE_EVENT, "Event"),
+        (TYPE_TIP, "Study Tip"),
+        (TYPE_CHALLENGE, "Challenge"),
+        (TYPE_UPDATE, "Teacher Update"),
     ]
 
-    title      = models.CharField(max_length=120)
-    body       = models.TextField(blank=True)
-    image      = models.ImageField(upload_to='stories/', null=True, blank=True)
+    title = models.CharField(max_length=120)
+    body = models.TextField(blank=True)
+    image = models.ImageField(upload_to="stories/", null=True, blank=True)
     story_type = models.CharField(max_length=20, choices=STORY_TYPES, default=TYPE_ANNOUNCEMENT)
-    emoji      = models.CharField(max_length=8, blank=True, default='📢',
-                                  help_text='Emoji shown when no image is uploaded')
-    bg_color   = models.CharField(max_length=7, blank=True, default='#0C1F45',
-                                  help_text='Card background colour (hex) used when no image')
-    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='stories')
-    target_groups = models.ManyToManyField('Group', blank=True,
-                                           help_text='Leave empty to show to all students')
-    is_active  = models.BooleanField(default=True)
-    expires_at = models.DateTimeField(null=True, blank=True,
-                                      help_text='Story is hidden after this date/time')
+    emoji = models.CharField(
+        max_length=8, blank=True, default="📢", help_text="Emoji shown when no image is uploaded"
+    )
+    bg_color = models.CharField(
+        max_length=7,
+        blank=True,
+        default="#0C1F45",
+        help_text="Card background colour (hex) used when no image",
+    )
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="stories")
+    target_groups = models.ManyToManyField(
+        "Group", blank=True, help_text="Leave empty to show to all students"
+    )
+    is_active = models.BooleanField(default=True)
+    expires_at = models.DateTimeField(
+        null=True, blank=True, help_text="Story is hidden after this date/time"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
 
     def __str__(self):
         return self.title
@@ -767,6 +809,7 @@ class DashboardStory(models.Model):
         try:
             # `.path` raises NotImplementedError on remote storage backends
             import os
+
             return os.path.exists(self.image.path)
         except (NotImplementedError, ValueError, AttributeError):
             # Remote backend — assume the file is there.
@@ -776,8 +819,8 @@ class DashboardStory(models.Model):
     def safe_image_url(self):
         """Return the image URL, or empty string if the file isn't accessible."""
         if not self.has_valid_image:
-            return ''
+            return ""
         try:
             return self.image.url
         except (ValueError, AttributeError):
-            return ''
+            return ""

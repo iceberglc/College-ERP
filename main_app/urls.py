@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.urls import path
 
 from main_app.EditResultView import EditResultView
@@ -21,229 +22,300 @@ from . import hod_views, password_recovery, staff_views, student_views, views
 
 urlpatterns = [
     # Password recovery (custom code-based flow)
-    path("forgot-password/", password_recovery.forgot_password, name='forgot_password'),
-    path("verify-reset-code/", password_recovery.verify_reset_code, name='verify_reset_code'),
-    path("resend-code/", password_recovery.resend_code, name='resend_code'),
-    path("reset-password/", password_recovery.reset_password, name='reset_password'),
-    path("password-reset-success/", password_recovery.password_reset_success, name='password_reset_success'),
-
-    path("health/", views.health, name='health'),
-    path("", views.login_page, name='entry_page'),
-    path("login/", views.login_page, name='login_page'),
-    path("get_attendance", views.get_attendance, name='get_attendance'),
-    path("firebase-messaging-sw.js", views.showFirebaseJS, name='showFirebaseJS'),
-    path("doLogin/", views.doLogin, name='user_login'),
-    path("logout_user/", views.logout_user, name='user_logout'),
-    path("admin/home/", hod_views.admin_home, name='admin_home'),
-    path("staff/add", hod_views.add_staff, name='add_staff'),
-    path("course/add", hod_views.add_course, name='add_course'),
-    path("send_student_notification/", hod_views.send_student_notification,
-         name='send_student_notification'),
-    path("send_staff_notification/", hod_views.send_staff_notification,
-         name='send_staff_notification'),
-    path("add_session/", hod_views.add_session, name='add_session'),
-    path("admin_notify_student", hod_views.admin_notify_student,
-         name='admin_notify_student'),
-    path("admin_notify_staff", hod_views.admin_notify_staff,
-         name='admin_notify_staff'),
-    path("admin_view_profile", hod_views.admin_view_profile,
-         name='admin_view_profile'),
-    path("check_email_availability", hod_views.check_email_availability,
-         name="check_email_availability"),
-    path("session/manage/", hod_views.manage_session, name='manage_session'),
-    path("session/edit/<int:session_id>",
-         hod_views.edit_session, name='edit_session'),
-    path("student/view/feedback/", hod_views.student_feedback_message,
-         name="student_feedback_message",),
-    path("staff/view/feedback/", hod_views.staff_feedback_message,
-         name="staff_feedback_message",),
-    path("student/view/leave/", hod_views.view_student_leave,
-         name="view_student_leave",),
-    path("staff/view/leave/", hod_views.view_staff_leave, name="view_staff_leave",),
-    path("attendance/view/", hod_views.admin_view_attendance,
-         name="admin_view_attendance",),
-    path("attendance/fetch/", hod_views.get_admin_attendance,
-         name='get_admin_attendance'),
-    path("student/add/", hod_views.add_student, name='add_student'),
-    path("subject/add/", hod_views.add_subject, name='add_subject'),
-    path("staff/manage/", hod_views.manage_staff, name='manage_staff'),
-    path("student/manage/", hod_views.manage_student, name='manage_student'),
-    path("course/manage/", hod_views.manage_course, name='manage_course'),
-    path("subject/manage/", hod_views.manage_subject, name='manage_subject'),
-    path("staff/edit/<int:staff_id>", hod_views.edit_staff, name='edit_staff'),
-    path("staff/delete/<int:staff_id>",
-         hod_views.delete_staff, name='delete_staff'),
-
-    path("course/delete/<int:course_id>",
-         hod_views.delete_course, name='delete_course'),
-
-    path("subject/delete/<int:subject_id>",
-         hod_views.delete_subject, name='delete_subject'),
-
-    path("session/delete/<int:session_id>",
-         hod_views.delete_session, name='delete_session'),
-
-    path("student/delete/<int:student_id>",
-         hod_views.delete_student, name='delete_student'),
-    path("student/edit/<int:student_id>",
-         hod_views.edit_student, name='edit_student'),
-    path("course/edit/<int:course_id>",
-         hod_views.edit_course, name='edit_course'),
-    path("course/toggle-active/<int:course_id>",
-         hod_views.toggle_course_active, name='toggle_course_active'),
-    path("subject/edit/<int:subject_id>",
-         hod_views.edit_subject, name='edit_subject'),
-
+    path("forgot-password/", password_recovery.forgot_password, name="forgot_password"),
+    path("verify-reset-code/", password_recovery.verify_reset_code, name="verify_reset_code"),
+    path("resend-code/", password_recovery.resend_code, name="resend_code"),
+    path("reset-password/", password_recovery.reset_password, name="reset_password"),
+    path(
+        "password-reset-success/",
+        password_recovery.password_reset_success,
+        name="password_reset_success",
+    ),
+    path("health/", views.health, name="health"),
+    path("", views.login_page, name="entry_page"),
+    path("login/", views.login_page, name="login_page"),
+    path("get_attendance", views.get_attendance, name="get_attendance"),
+    path("firebase-messaging-sw.js", views.showFirebaseJS, name="showFirebaseJS"),
+    path("doLogin/", views.doLogin, name="user_login"),
+    path("logout_user/", views.logout_user, name="user_logout"),
+    path("admin/home/", hod_views.admin_home, name="admin_home"),
+    path("staff/add", hod_views.add_staff, name="add_staff"),
+    path("course/add", hod_views.add_course, name="add_course"),
+    path(
+        "send_student_notification/",
+        hod_views.send_student_notification,
+        name="send_student_notification",
+    ),
+    path(
+        "send_staff_notification/",
+        hod_views.send_staff_notification,
+        name="send_staff_notification",
+    ),
+    path("add_session/", hod_views.add_session, name="add_session"),
+    path("admin_notify_student", hod_views.admin_notify_student, name="admin_notify_student"),
+    path("admin_notify_staff", hod_views.admin_notify_staff, name="admin_notify_staff"),
+    path("admin_view_profile", hod_views.admin_view_profile, name="admin_view_profile"),
+    path(
+        "check_email_availability",
+        hod_views.check_email_availability,
+        name="check_email_availability",
+    ),
+    path("session/manage/", hod_views.manage_session, name="manage_session"),
+    path("session/edit/<int:session_id>", hod_views.edit_session, name="edit_session"),
+    path(
+        "student/view/feedback/",
+        hod_views.student_feedback_message,
+        name="student_feedback_message",
+    ),
+    path(
+        "staff/view/feedback/",
+        hod_views.staff_feedback_message,
+        name="staff_feedback_message",
+    ),
+    path(
+        "student/view/leave/",
+        hod_views.view_student_leave,
+        name="view_student_leave",
+    ),
+    path(
+        "staff/view/leave/",
+        hod_views.view_staff_leave,
+        name="view_staff_leave",
+    ),
+    path(
+        "attendance/view/",
+        hod_views.admin_view_attendance,
+        name="admin_view_attendance",
+    ),
+    path("attendance/fetch/", hod_views.get_admin_attendance, name="get_admin_attendance"),
+    path("student/add/", hod_views.add_student, name="add_student"),
+    path("subject/add/", hod_views.add_subject, name="add_subject"),
+    path("staff/manage/", hod_views.manage_staff, name="manage_staff"),
+    path("student/manage/", hod_views.manage_student, name="manage_student"),
+    path("course/manage/", hod_views.manage_course, name="manage_course"),
+    path("subject/manage/", hod_views.manage_subject, name="manage_subject"),
+    path("staff/edit/<int:staff_id>", hod_views.edit_staff, name="edit_staff"),
+    path("staff/delete/<int:staff_id>", hod_views.delete_staff, name="delete_staff"),
+    path("course/delete/<int:course_id>", hod_views.delete_course, name="delete_course"),
+    path("subject/delete/<int:subject_id>", hod_views.delete_subject, name="delete_subject"),
+    path("session/delete/<int:session_id>", hod_views.delete_session, name="delete_session"),
+    path("student/delete/<int:student_id>", hod_views.delete_student, name="delete_student"),
+    path("student/edit/<int:student_id>", hod_views.edit_student, name="edit_student"),
+    path("course/edit/<int:course_id>", hod_views.edit_course, name="edit_course"),
+    path(
+        "course/toggle-active/<int:course_id>",
+        hod_views.toggle_course_active,
+        name="toggle_course_active",
+    ),
+    path("subject/edit/<int:subject_id>", hod_views.edit_subject, name="edit_subject"),
     # Branch
-    path("branch/manage/", hod_views.manage_branch, name='manage_branch'),
-    path("branch/add/", hod_views.add_branch, name='add_branch'),
-    path("branch/edit/<int:branch_id>", hod_views.edit_branch, name='edit_branch'),
-    path("branch/delete/<int:branch_id>", hod_views.delete_branch, name='delete_branch'),
-
+    path("branch/manage/", hod_views.manage_branch, name="manage_branch"),
+    path("branch/add/", hod_views.add_branch, name="add_branch"),
+    path("branch/edit/<int:branch_id>", hod_views.edit_branch, name="edit_branch"),
+    path("branch/delete/<int:branch_id>", hod_views.delete_branch, name="delete_branch"),
     # Group
-    path("group/manage/", hod_views.manage_group, name='manage_group'),
-    path("group/add/", hod_views.add_group, name='add_group'),
-    path("group/edit/<int:group_id>", hod_views.edit_group, name='edit_group'),
-    path("group/delete/<int:group_id>", hod_views.delete_group, name='delete_group'),
-    path("group/archive/<int:group_id>", hod_views.archive_group, name='archive_group'),
-    path("group/<int:group_id>/students/", hod_views.admin_group_detail, name='admin_group_detail'),
-
+    path("group/manage/", hod_views.manage_group, name="manage_group"),
+    path("group/add/", hod_views.add_group, name="add_group"),
+    path("group/edit/<int:group_id>", hod_views.edit_group, name="edit_group"),
+    path("group/delete/<int:group_id>", hod_views.delete_group, name="delete_group"),
+    path("group/archive/<int:group_id>", hod_views.archive_group, name="archive_group"),
+    path("group/<int:group_id>/students/", hod_views.admin_group_detail, name="admin_group_detail"),
     # Enrollment
-    path("enrollment/manage/", hod_views.manage_enrollment, name='manage_enrollment'),
-    path("enrollment/add/", hod_views.add_enrollment, name='add_enrollment'),
-    path("enrollment/delete/<int:enrollment_id>", hod_views.delete_enrollment, name='delete_enrollment'),
-    path("enrollment/group-info/", hod_views.get_group_info, name='get_group_info'),
-
+    path("enrollment/manage/", hod_views.manage_enrollment, name="manage_enrollment"),
+    path("enrollment/add/", hod_views.add_enrollment, name="add_enrollment"),
+    path(
+        "enrollment/delete/<int:enrollment_id>",
+        hod_views.delete_enrollment,
+        name="delete_enrollment",
+    ),
+    path("enrollment/group-info/", hod_views.get_group_info, name="get_group_info"),
     # Staff
-    path("staff/home/", staff_views.staff_home, name='staff_home'),
-    path("staff/apply/leave/", staff_views.staff_apply_leave,
-         name='staff_apply_leave'),
-    path("staff/feedback/", staff_views.staff_feedback, name='staff_feedback'),
-    path("staff/view/profile/", staff_views.staff_view_profile,
-         name='staff_view_profile'),
-    path("staff/attendance/take/", staff_views.staff_take_attendance,
-         name='staff_take_attendance'),
-    path("staff/attendance/update/", staff_views.staff_update_attendance,
-         name='staff_update_attendance'),
-    path("staff/get_students/", staff_views.get_students, name='get_students'),
-     path("staff/addbook/", staff_views.add_book, name="add_book"),
+    path("staff/home/", staff_views.staff_home, name="staff_home"),
+    path("staff/apply/leave/", staff_views.staff_apply_leave, name="staff_apply_leave"),
+    path("staff/feedback/", staff_views.staff_feedback, name="staff_feedback"),
+    path("staff/view/profile/", staff_views.staff_view_profile, name="staff_view_profile"),
+    path("staff/attendance/take/", staff_views.staff_take_attendance, name="staff_take_attendance"),
+    path(
+        "staff/attendance/update/",
+        staff_views.staff_update_attendance,
+        name="staff_update_attendance",
+    ),
+    path("staff/get_students/", staff_views.get_students, name="get_students"),
+    path("staff/addbook/", staff_views.add_book, name="add_book"),
     path("staff/issue_book/", staff_views.issue_book, name="issue_book"),
     path("staff/view_issued_book/", staff_views.view_issued_book, name="view_issued_book"),
     path("staff/return_book/<int:loan_id>/", staff_views.return_book, name="return_book"),
-
-
-
-    path("staff/attendance/fetch/", staff_views.get_student_attendance,
-         name='get_student_attendance'),
-    path("staff/attendance/save/",
-         staff_views.save_attendance, name='save_attendance'),
-    path("staff/attendance/update_save/",
-         staff_views.update_attendance, name='update_attendance'),
-    path("staff/fcmtoken/", staff_views.staff_fcmtoken, name='staff_fcmtoken'),
-    path("staff/view/notification/", staff_views.staff_view_notification,
-         name="staff_view_notification"),
-    path("staff/result/add/", staff_views.staff_add_result, name='staff_add_result'),
-    path("staff/result/edit/", EditResultView.as_view(),
-         name='edit_student_result'),
-    path('staff/result/fetch/', staff_views.fetch_student_result,
-         name='fetch_student_result'),
-
-
-
+    path(
+        "staff/attendance/fetch/", staff_views.get_student_attendance, name="get_student_attendance"
+    ),
+    path("staff/attendance/save/", staff_views.save_attendance, name="save_attendance"),
+    path("staff/attendance/update_save/", staff_views.update_attendance, name="update_attendance"),
+    path("staff/fcmtoken/", staff_views.staff_fcmtoken, name="staff_fcmtoken"),
+    path(
+        "staff/view/notification/",
+        staff_views.staff_view_notification,
+        name="staff_view_notification",
+    ),
+    path("staff/result/add/", staff_views.staff_add_result, name="staff_add_result"),
+    path("staff/result/edit/", EditResultView.as_view(), name="edit_student_result"),
+    path("staff/result/fetch/", staff_views.fetch_student_result, name="fetch_student_result"),
     # Student
-    path("student/home/", student_views.student_home, name='student_home'),
-    path("student/view/attendance/", student_views.student_view_attendance,
-         name='student_view_attendance'),
-    path("student/apply/leave/", student_views.student_apply_leave,
-         name='student_apply_leave'),
-    path("student/feedback/", student_views.student_feedback,
-         name='student_feedback'),
-    path("student/view/profile/", student_views.student_view_profile,
-         name='student_view_profile'),
-    path("student/fcmtoken/", student_views.student_fcmtoken,
-         name='student_fcmtoken'),
-    path("student/save-theme/", student_views.student_save_theme,
-         name='student_save_theme'),
-     # path('student/todo',student_views.todo,name='todo'),
-
-     
-     path("student/viewbooks/", student_views.view_books, name="view_books"),
-
-    path("student/view/notification/", student_views.student_view_notification,
-         name="student_view_notification"),
-    path('student/view/result/', student_views.student_view_result,
-         name='student_view_result'),
-
+    path("student/home/", student_views.student_home, name="student_home"),
+    path(
+        "student/view/attendance/",
+        student_views.student_view_attendance,
+        name="student_view_attendance",
+    ),
+    path("student/apply/leave/", student_views.student_apply_leave, name="student_apply_leave"),
+    path("student/feedback/", student_views.student_feedback, name="student_feedback"),
+    path("student/view/profile/", student_views.student_view_profile, name="student_view_profile"),
+    path("student/fcmtoken/", student_views.student_fcmtoken, name="student_fcmtoken"),
+    path("student/save-theme/", student_views.student_save_theme, name="student_save_theme"),
+    # path('student/todo',student_views.todo,name='todo'),
+    path("student/viewbooks/", student_views.view_books, name="view_books"),
+    path(
+        "student/view/notification/",
+        student_views.student_view_notification,
+        name="student_view_notification",
+    ),
+    path("student/view/result/", student_views.student_view_result, name="student_view_result"),
     # Assignments (Teacher)
-    path("staff/assignments/", staff_views.staff_assignments, name='staff_assignments'),
-    path("staff/assignment/add/", staff_views.add_assignment, name='add_assignment'),
-    path("staff/assignment/edit/<int:assignment_id>", staff_views.edit_assignment, name='edit_assignment'),
-    path("staff/assignment/delete/<int:assignment_id>", staff_views.delete_assignment, name='delete_assignment'),
-    path("staff/assignment/<int:assignment_id>/submissions/", staff_views.view_submissions, name='view_submissions'),
-    path("staff/submission/<int:submission_id>/grade/", staff_views.grade_submission, name='grade_submission'),
-
+    path("staff/assignments/", staff_views.staff_assignments, name="staff_assignments"),
+    path("staff/assignment/add/", staff_views.add_assignment, name="add_assignment"),
+    path(
+        "staff/assignment/edit/<int:assignment_id>",
+        staff_views.edit_assignment,
+        name="edit_assignment",
+    ),
+    path(
+        "staff/assignment/delete/<int:assignment_id>",
+        staff_views.delete_assignment,
+        name="delete_assignment",
+    ),
+    path(
+        "staff/assignment/<int:assignment_id>/submissions/",
+        staff_views.view_submissions,
+        name="view_submissions",
+    ),
+    path(
+        "staff/submission/<int:submission_id>/grade/",
+        staff_views.grade_submission,
+        name="grade_submission",
+    ),
     # Assignments (Student)
-    path("student/assignments/", student_views.student_assignments, name='student_assignments'),
-    path("student/assignment/<int:assignment_id>/submit/", student_views.submit_assignment, name='submit_assignment'),
-
+    path("student/assignments/", student_views.student_assignments, name="student_assignments"),
+    path(
+        "student/assignment/<int:assignment_id>/submit/",
+        student_views.submit_assignment,
+        name="submit_assignment",
+    ),
     # Result Files (Staff)
-    path("staff/result/files/", staff_views.staff_result_files, name='staff_result_files'),
-    path("staff/result/upload-file/", staff_views.upload_result_file, name='upload_result_file'),
-    path("staff/result/delete-file/<int:file_id>/", staff_views.delete_result_file, name='delete_result_file'),
-
+    path("staff/result/files/", staff_views.staff_result_files, name="staff_result_files"),
+    path("staff/result/upload-file/", staff_views.upload_result_file, name="upload_result_file"),
+    path(
+        "staff/result/delete-file/<int:file_id>/",
+        staff_views.delete_result_file,
+        name="delete_result_file",
+    ),
     # Result Files (Student)
-    path("student/result/files/", student_views.student_result_files, name='student_result_files'),
-
+    path("student/result/files/", student_views.student_result_files, name="student_result_files"),
     # Leaderboard (Student)
-    path("student/leaderboard/", student_views.student_leaderboard, name='student_leaderboard'),
-    path("student/leaderboard/history/", student_views.student_leaderboard_history, name='student_leaderboard_history'),
-    path("student/leaderboard/season/<int:season_id>/", student_views.student_leaderboard_season, name='student_leaderboard_season'),
-
+    path("student/leaderboard/", student_views.student_leaderboard, name="student_leaderboard"),
+    path(
+        "student/leaderboard/history/",
+        student_views.student_leaderboard_history,
+        name="student_leaderboard_history",
+    ),
+    path(
+        "student/leaderboard/season/<int:season_id>/",
+        student_views.student_leaderboard_season,
+        name="student_leaderboard_season",
+    ),
     # Leaderboard (Admin)
-    path("admin/leaderboard/settings/", hod_views.admin_leaderboard_settings, name='admin_leaderboard_settings'),
-    path("admin/leaderboard/seasons/", hod_views.admin_manage_seasons, name='admin_manage_seasons'),
-
+    path(
+        "admin/leaderboard/settings/",
+        hod_views.admin_leaderboard_settings,
+        name="admin_leaderboard_settings",
+    ),
+    path("admin/leaderboard/seasons/", hod_views.admin_manage_seasons, name="admin_manage_seasons"),
     # AJAX helpers (admin)
-    path("ajax/teachers-for-course/", hod_views.get_teachers_for_course, name='get_teachers_for_course'),
-    path("ajax/groups-for-teacher/", hod_views.get_groups_for_teacher, name='get_groups_for_teacher'),
-
+    path(
+        "ajax/teachers-for-course/",
+        hod_views.get_teachers_for_course,
+        name="get_teachers_for_course",
+    ),
+    path(
+        "ajax/groups-for-teacher/", hod_views.get_groups_for_teacher, name="get_groups_for_teacher"
+    ),
     # AJAX helpers (staff)
-    path("staff/ajax/teachers-for-course/", staff_views.staff_get_teachers_for_course, name='staff_get_teachers_for_course'),
-    path("staff/ajax/groups-for-teacher/", staff_views.staff_get_groups_for_teacher, name='staff_get_groups_for_teacher'),
-
+    path(
+        "staff/ajax/teachers-for-course/",
+        staff_views.staff_get_teachers_for_course,
+        name="staff_get_teachers_for_course",
+    ),
+    path(
+        "staff/ajax/groups-for-teacher/",
+        staff_views.staff_get_groups_for_teacher,
+        name="staff_get_groups_for_teacher",
+    ),
     # Vocabulary Days (Student)
-    path('student/vocabulary-days/', student_views.vocabulary_day_list, name='vocabulary_day_list'),
-    path('student/vocabulary-days/<int:day_id>/', student_views.vocabulary_day_detail, name='vocabulary_day_detail'),
-    path('student/vocabulary-days/<int:day_id>/complete/', student_views.vocabulary_day_complete, name='vocabulary_day_complete'),
-    path('student/vocabulary-days/<int:day_id>/flashcard/', student_views.vocabulary_day_flashcard, name='vocabulary_day_flashcard'),
-    path('student/vocabulary-days/<int:day_id>/quiz/', student_views.vocabulary_day_quiz, name='vocabulary_day_quiz'),
-    path('student/vocabulary-days/<int:day_id>/quiz/save/', student_views.save_quiz_result, name='save_quiz_result'),
-
+    path("student/vocabulary-days/", student_views.vocabulary_day_list, name="vocabulary_day_list"),
+    path(
+        "student/vocabulary-days/<int:day_id>/",
+        student_views.vocabulary_day_detail,
+        name="vocabulary_day_detail",
+    ),
+    path(
+        "student/vocabulary-days/<int:day_id>/complete/",
+        student_views.vocabulary_day_complete,
+        name="vocabulary_day_complete",
+    ),
+    path(
+        "student/vocabulary-days/<int:day_id>/flashcard/",
+        student_views.vocabulary_day_flashcard,
+        name="vocabulary_day_flashcard",
+    ),
+    path(
+        "student/vocabulary-days/<int:day_id>/quiz/",
+        student_views.vocabulary_day_quiz,
+        name="vocabulary_day_quiz",
+    ),
+    path(
+        "student/vocabulary-days/<int:day_id>/quiz/save/",
+        student_views.save_quiz_result,
+        name="save_quiz_result",
+    ),
     # Progress page (Student)
-    path('student/progress/', student_views.student_progress, name='student_progress'),
-
+    path("student/progress/", student_views.student_progress, name="student_progress"),
     # Avatar (all user types — lives in views.py to bypass role middleware)
-    path('profile/save-avatar/', views.save_avatar, name='save_avatar'),
-
+    path("profile/save-avatar/", views.save_avatar, name="save_avatar"),
     # Result file download — in views.py so the role middleware never blocks it
-    path('result/download/<int:file_id>/', views.result_file_download, name='result_file_download'),
-
+    path("result/download/<int:file_id>/", views.result_file_download, name="result_file_download"),
     # Vocabulary Days (Staff)
-    path('staff/vocabulary-days/', staff_views.staff_vocabulary_days, name='staff_vocabulary_days'),
-    path('staff/vocabulary-days/add/', staff_views.add_vocabulary_day, name='add_vocabulary_day'),
-    path('staff/vocabulary-days/<int:day_id>/', staff_views.staff_vocabulary_day_detail, name='staff_vocabulary_day_detail'),
-    path('staff/vocabulary-days/<int:day_id>/edit/', staff_views.edit_vocabulary_day, name='edit_vocabulary_day'),
-    path('staff/vocabulary-days/<int:day_id>/delete/', staff_views.delete_vocabulary_day, name='delete_vocabulary_day'),
-
+    path("staff/vocabulary-days/", staff_views.staff_vocabulary_days, name="staff_vocabulary_days"),
+    path("staff/vocabulary-days/add/", staff_views.add_vocabulary_day, name="add_vocabulary_day"),
+    path(
+        "staff/vocabulary-days/<int:day_id>/",
+        staff_views.staff_vocabulary_day_detail,
+        name="staff_vocabulary_day_detail",
+    ),
+    path(
+        "staff/vocabulary-days/<int:day_id>/edit/",
+        staff_views.edit_vocabulary_day,
+        name="edit_vocabulary_day",
+    ),
+    path(
+        "staff/vocabulary-days/<int:day_id>/delete/",
+        staff_views.delete_vocabulary_day,
+        name="delete_vocabulary_day",
+    ),
     # Vocabulary Days (Admin/HOD)
-    path('admin/vocabulary-days/', hod_views.manage_vocabulary_days, name='manage_vocabulary_days'),
-
+    path("admin/vocabulary-days/", hod_views.manage_vocabulary_days, name="manage_vocabulary_days"),
     # Dashboard Stories (Admin/HOD)
-    path('admin/stories/', hod_views.manage_stories, name='manage_stories'),
-    path('admin/stories/add/', hod_views.add_story, name='add_story'),
-    path('admin/stories/<int:story_id>/edit/', hod_views.edit_story, name='edit_story'),
-    path('admin/stories/<int:story_id>/delete/', hod_views.delete_story, name='delete_story'),
-
+    path("admin/stories/", hod_views.manage_stories, name="manage_stories"),
+    path("admin/stories/add/", hod_views.add_story, name="add_story"),
+    path("admin/stories/<int:story_id>/edit/", hod_views.edit_story, name="edit_story"),
+    path("admin/stories/<int:story_id>/delete/", hod_views.delete_story, name="delete_story"),
     # Dashboard Stories (Staff)
-    path('staff/stories/post/', staff_views.staff_create_story, name='staff_create_story'),
+    path("staff/stories/post/", staff_views.staff_create_story, name="staff_create_story"),
 ]

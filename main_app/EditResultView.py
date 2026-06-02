@@ -13,17 +13,21 @@ class EditResultView(View):
 
     def get(self, request, *args, **kwargs):
         groups = self._groups(request)
-        return render(request, self.template, {
-            'groups': groups,
-            'page_title': "Edit Student Result",
-        })
+        return render(
+            request,
+            self.template,
+            {
+                "groups": groups,
+                "page_title": "Edit Student Result",
+            },
+        )
 
     def post(self, request, *args, **kwargs):
         groups = self._groups(request)
-        group_id = request.POST.get('group')
-        student_id = request.POST.get('student')
-        test = request.POST.get('test')
-        exam = request.POST.get('exam')
+        group_id = request.POST.get("group")
+        student_id = request.POST.get("student")
+        test = request.POST.get("test")
+        exam = request.POST.get("exam")
 
         try:
             group = get_object_or_404(Group, id=group_id)
@@ -38,7 +42,11 @@ class EditResultView(View):
         except Exception as e:
             messages.warning(request, f"Could not update: {e}")
 
-        return render(request, self.template, {
-            'groups': groups,
-            'page_title': "Edit Student Result",
-        })
+        return render(
+            request,
+            self.template,
+            {
+                "groups": groups,
+                "page_title": "Edit Student Result",
+            },
+        )

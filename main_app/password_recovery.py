@@ -46,6 +46,7 @@ _EXPIRY_MINUTES = 10
 
 # ── Internal helpers ────────────────────────────────────────────────────────────
 
+
 def _hash_code(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
 
@@ -64,7 +65,7 @@ def _send_code_email(to_email: str, code: str) -> None:
             f"This code expires in {_EXPIRY_MINUTES} minutes.\n\n"
             "If you did not request a password reset, please ignore this email."
         ),
-        from_email=None,          # uses DEFAULT_FROM_EMAIL from settings
+        from_email=None,  # uses DEFAULT_FROM_EMAIL from settings
         recipient_list=[to_email],
         fail_silently=False,
     )
@@ -72,11 +73,12 @@ def _send_code_email(to_email: str, code: str) -> None:
 
 
 def _clear_reset_session(request) -> None:
-    for key in ('_prc_uid', '_prc_code_id_verified'):
+    for key in ("_prc_uid", "_prc_code_id_verified"):
         request.session.pop(key, None)
 
 
 # ── Views ───────────────────────────────────────────────────────────────────────
+
 
 def forgot_password(request):
     """
@@ -86,14 +88,17 @@ def forgot_password(request):
     ALWAYS redirect to the verify page, regardless of whether the email
     exists.  This prevents enumeration.
     """
-    if request.method != 'POST':
-        email = request.GET.get('email', '').strip().lower()
-        return render(request, 'registration/forgot_password.html', {'email': email})
+    if request.method != "POST":
+        email = request.GET.get("email", "").strip().lower()
+        return render(request, "registration/forgot_password.html", {"email": email})
 
-    email = request.POST.get('email', '').strip().lower()
+    email = request.POST.get("email", "").strip().lower()
     if not email:
-        return render(request, 'registration/forgot_password.html',
-                      {'error': 'Please enter your email address.'})
+        return render(
+            request,
+            "registration/forgot_password.html",
+            {"error": "Please enter your email address."},
+        )
 
     logger.info("[PRC] Forgot-password submitted for: %s", email)
 
@@ -103,13 +108,10 @@ def forgot_password(request):
         logger.info("[PRC] User found: id=%s", user.id)
 
         one_hour_ago = timezone.now() - timedelta(hours=1)
-        recent = PasswordResetCode.objects.filter(
-            user=user, created_at__gte=one_hour_ago
-        ).count()
+        recent = PasswordResetCode.objects.filter(user=user, created_at__gte=one_hour_ago).count()
 
         if recent >= _MAX_CODES_PER_HOUR:
-            logger.warning("[PRC] Rate limit hit for user id=%s (%d in last hour)",
-                           user.id, recent)
+            logger.warning("[PRC] Rate limit hit for user id=%s (%d in last hour)", user.id, recent)
         else:
             code = f"{secrets.randbelow(1_000_000):06d}"
             expires_at = timezone.now() + timedelta(minutes=_EXPIRY_MINUTES)
@@ -124,7 +126,7 @@ def forgot_password(request):
                 _send_code_email(user.email, code)
             except Exception as exc:
                 logger.error("[PRC] Email send failed for %s: %s", email, exc, exc_info=True)
-                obj.delete()   # Don't count a failed send against the rate limit.
+                obj.delete()  # Don't count a failed send against the rate limit.
             else:
                 # Always log the code so it's findable in server/DO logs.
                 logger.warning("[PRC] Verification code for %s: %s", email, code)
@@ -132,17 +134,18 @@ def forgot_password(request):
                 # page can display it directly — removes the need for real SMTP
                 # during development and testing.
                 if settings.DEBUG:
-                    request.session['_prc_dev_code'] = code
+                    request.session["_prc_dev_code"] = code
 
     except CustomUser.DoesNotExist:
         logger.info("[PRC] Email not registered: %s", email)
     except Exception as exc:
-        logger.error("[PRC] Unexpected error in forgot_password for %s: %s",
-                     email, exc, exc_info=True)
+        logger.error(
+            "[PRC] Unexpected error in forgot_password for %s: %s", email, exc, exc_info=True
+        )
 
     # Always redirect — never reveal whether the address was registered.
-    qs = urlencode({'email': email})
-    return redirect(f'/verify-reset-code/?{qs}')
+    qs = urlencode({"email": email})
+    return redirect(f"/verify-reset-code/?{qs}")
 
 
 def verify_reset_code(request):
@@ -153,21 +156,21 @@ def verify_reset_code(request):
     POST: Validate code against the latest active code for that email.
           On success: store uid + code id in session, redirect to reset_password.
     """
-    if request.method == 'GET':
-        email = request.GET.get('email', '').strip().lower()
-        ctx = {'email': email}
+    if request.method == "GET":
+        email = request.GET.get("email", "").strip().lower()
+        ctx = {"email": email}
         if settings.DEBUG:
-            ctx['dev_code'] = request.session.pop('_prc_dev_code', None)
-        return render(request, 'registration/verify_reset_code.html', ctx)
+            ctx["dev_code"] = request.session.pop("_prc_dev_code", None)
+        return render(request, "registration/verify_reset_code.html", ctx)
 
     # ── POST ──────────────────────────────────────────────────────────────────
-    email = request.POST.get('email', '').strip().lower()
-    submitted_code = request.POST.get('code', '').strip()
-    ctx = {'email': email}
+    email = request.POST.get("email", "").strip().lower()
+    submitted_code = request.POST.get("code", "").strip()
+    ctx = {"email": email}
 
     if not email or not submitted_code:
-        ctx['error'] = 'Please enter both your email address and the verification code.'
-        return render(request, 'registration/verify_reset_code.html', ctx)
+        ctx["error"] = "Please enter both your email address and the verification code."
+        return render(request, "registration/verify_reset_code.html", ctx)
 
     logger.info("[PRC] Code verification attempt for: %s", email)
 
@@ -177,64 +180,65 @@ def verify_reset_code(request):
     except CustomUser.DoesNotExist:
         logger.info("[PRC] Verify: email not found: %s", email)
         # Generic error — don't reveal the email isn't registered.
-        ctx['error'] = 'Invalid verification code.'
-        return render(request, 'registration/verify_reset_code.html', ctx)
+        ctx["error"] = "Invalid verification code."
+        return render(request, "registration/verify_reset_code.html", ctx)
 
     # Find the latest code for this user (regardless of expiry/used status,
     # so we can return the most relevant error message).
     try:
-        obj = PasswordResetCode.objects.filter(user=user).order_by('-created_at').first()
+        obj = PasswordResetCode.objects.filter(user=user).order_by("-created_at").first()
     except Exception as exc:
         logger.error("[PRC] DB error fetching code for user id=%s: %s", user.id, exc, exc_info=True)
-        ctx['error'] = 'A server error occurred. Please try again or request a new code.'
-        ctx['show_resend'] = True
-        return render(request, 'registration/verify_reset_code.html', ctx)
+        ctx["error"] = "A server error occurred. Please try again or request a new code."
+        ctx["show_resend"] = True
+        return render(request, "registration/verify_reset_code.html", ctx)
 
     if obj is None:
         logger.info("[PRC] No code exists for user id=%s", user.id)
-        ctx['error'] = 'No verification code found. Please request a new one.'
-        ctx['show_resend'] = True
-        return render(request, 'registration/verify_reset_code.html', ctx)
+        ctx["error"] = "No verification code found. Please request a new one."
+        ctx["show_resend"] = True
+        return render(request, "registration/verify_reset_code.html", ctx)
 
     # Specific failure checks — in order of priority.
     if obj.used:
         logger.info("[PRC] Code id=%s already used", obj.id)
-        ctx['error'] = 'This verification code has already been used.'
-        ctx['show_resend'] = True
-        return render(request, 'registration/verify_reset_code.html', ctx)
+        ctx["error"] = "This verification code has already been used."
+        ctx["show_resend"] = True
+        return render(request, "registration/verify_reset_code.html", ctx)
 
     if timezone.now() > obj.expires_at:
         logger.info("[PRC] Code id=%s expired at %s", obj.id, obj.expires_at)
-        ctx['error'] = 'This verification code has expired. Please request a new one.'
-        ctx['show_resend'] = True
-        return render(request, 'registration/verify_reset_code.html', ctx)
+        ctx["error"] = "This verification code has expired. Please request a new one."
+        ctx["show_resend"] = True
+        return render(request, "registration/verify_reset_code.html", ctx)
 
     if obj.attempts >= _MAX_ATTEMPTS:
         logger.warning("[PRC] Code id=%s locked after %d attempts", obj.id, obj.attempts)
-        ctx['error'] = 'Too many wrong attempts. Please request a new code.'
-        ctx['show_resend'] = True
-        return render(request, 'registration/verify_reset_code.html', ctx)
+        ctx["error"] = "Too many wrong attempts. Please request a new code."
+        ctx["show_resend"] = True
+        return render(request, "registration/verify_reset_code.html", ctx)
 
     # Check the code itself.
     if not _codes_match(submitted_code, obj.code_hash):
         obj.attempts += 1
-        obj.save(update_fields=['attempts'])
+        obj.save(update_fields=["attempts"])
         remaining = _MAX_ATTEMPTS - obj.attempts
-        logger.info("[PRC] Wrong code for id=%s; attempts=%d remaining=%d",
-                    obj.id, obj.attempts, remaining)
-        ctx['error'] = (
+        logger.info(
+            "[PRC] Wrong code for id=%s; attempts=%d remaining=%d", obj.id, obj.attempts, remaining
+        )
+        ctx["error"] = (
             f"Invalid verification code. "
             f"{remaining} attempt{'s' if remaining != 1 else ''} remaining."
         )
-        return render(request, 'registration/verify_reset_code.html', ctx)
+        return render(request, "registration/verify_reset_code.html", ctx)
 
     # ── Code correct ──────────────────────────────────────────────────────────
     logger.info("[PRC] Code id=%s verified for user id=%s", obj.id, user.id)
     _clear_reset_session(request)
-    request.session['_prc_uid'] = user.id
-    request.session['_prc_code_id_verified'] = obj.id
+    request.session["_prc_uid"] = user.id
+    request.session["_prc_code_id_verified"] = obj.id
 
-    return redirect('reset_password')
+    return redirect("reset_password")
 
 
 def reset_password(request):
@@ -244,35 +248,35 @@ def reset_password(request):
     Gated by session keys set in verify_reset_code.
     Redirects to the login page with a success message on completion.
     """
-    uid = request.session.get('_prc_uid')
-    code_id = request.session.get('_prc_code_id_verified')
+    uid = request.session.get("_prc_uid")
+    code_id = request.session.get("_prc_code_id_verified")
 
     if not uid or not code_id:
         logger.warning("[PRC] reset_password accessed without valid session")
-        return redirect('forgot_password')
+        return redirect("forgot_password")
 
     try:
-        obj = PasswordResetCode.objects.select_related('user').get(
+        obj = PasswordResetCode.objects.select_related("user").get(
             id=code_id, user_id=uid, used=False
         )
     except PasswordResetCode.DoesNotExist:
         logger.warning("[PRC] Code id=%s not found or already used (uid=%s)", code_id, uid)
         _clear_reset_session(request)
-        return redirect('forgot_password')
+        return redirect("forgot_password")
 
     user = obj.user
 
-    if request.method != 'POST':
-        return render(request, 'registration/reset_password.html')
+    if request.method != "POST":
+        return render(request, "registration/reset_password.html")
 
-    password1 = request.POST.get('password1', '')
-    password2 = request.POST.get('password2', '')
+    password1 = request.POST.get("password1", "")
+    password2 = request.POST.get("password2", "")
     errors = []
 
     if not password1:
-        errors.append('Password cannot be empty.')
+        errors.append("Password cannot be empty.")
     elif password1 != password2:
-        errors.append('Passwords do not match.')
+        errors.append("Passwords do not match.")
     else:
         try:
             validate_password(password1, user)
@@ -280,29 +284,26 @@ def reset_password(request):
             errors.extend(exc.messages)
 
     if errors:
-        return render(request, 'registration/reset_password.html', {'errors': errors})
+        return render(request, "registration/reset_password.html", {"errors": errors})
 
     # Save new password.
     user.set_password(password1)
-    user.save(update_fields=['password'])
+    user.save(update_fields=["password"])
 
     # Mark code as used so it cannot be reused.
     obj.used = True
-    obj.save(update_fields=['used'])
+    obj.save(update_fields=["used"])
 
     logger.info("[PRC] Password reset successful for user id=%s", user.id)
     _clear_reset_session(request)
 
-    messages.success(
-        request,
-        "Your password has been reset successfully. Please log in."
-    )
-    return redirect('login_page')
+    messages.success(request, "Your password has been reset successfully. Please log in.")
+    return redirect("login_page")
 
 
 def password_reset_success(request):
     """Kept for backwards-compatibility; login page now shows the success message."""
-    return render(request, 'registration/password_reset_success.html')
+    return render(request, "registration/password_reset_success.html")
 
 
 def resend_code(request):
@@ -310,11 +311,11 @@ def resend_code(request):
     POST-only: re-generate and send a verification code without the forgot_password form step.
     Used by the inline "Send a new one" POST form on the verify page.
     """
-    if request.method != 'POST':
-        return redirect('forgot_password')
-    email = request.POST.get('email', '').strip().lower()
+    if request.method != "POST":
+        return redirect("forgot_password")
+    email = request.POST.get("email", "").strip().lower()
     if not email:
-        return redirect('forgot_password')
+        return redirect("forgot_password")
 
     logger.info("[PRC] Resend requested for: %s", email)
     try:
@@ -327,7 +328,9 @@ def resend_code(request):
             code = f"{secrets.randbelow(1_000_000):06d}"
             expires_at = timezone.now() + timedelta(minutes=_EXPIRY_MINUTES)
             obj = PasswordResetCode.objects.create(
-                user=user, code_hash=_hash_code(code), expires_at=expires_at,
+                user=user,
+                code_hash=_hash_code(code),
+                expires_at=expires_at,
             )
             try:
                 _send_code_email(user.email, code)
@@ -337,12 +340,13 @@ def resend_code(request):
             else:
                 logger.warning("[PRC] Resend code for %s: %s", email, code)
                 if settings.DEBUG:
-                    request.session['_prc_dev_code'] = code
+                    request.session["_prc_dev_code"] = code
     except CustomUser.DoesNotExist:
         logger.info("[PRC] Resend: email not found: %s", email)
     except Exception as exc:
         logger.error("[PRC] Resend unexpected error for %s: %s", email, exc, exc_info=True)
 
     from urllib.parse import urlencode
-    qs = urlencode({'email': email})
-    return redirect(f'/verify-reset-code/?{qs}')
+
+    qs = urlencode({"email": email})
+    return redirect(f"/verify-reset-code/?{qs}")
