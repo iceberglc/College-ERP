@@ -50,91 +50,16 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'dist/js/trend-chart.js' %}"></script>
     <style>
-/* ── ICEBERG Premium Page Transitions ───────────────────────────────── */
-
-/* Progress bar with glow + shimmer */
-#ice-progress {
-  position: fixed; top: 0; left: 0; z-index: 9999;
-  height: 3px; width: 0%; pointer-events: none;
-  background: linear-gradient(90deg, #0891B2, #06B6D4, #38BDF8, #06B6D4, #0891B2);
-  background-size: 300% 100%;
-  box-shadow: 0 0 10px rgba(6,182,212,.75), 0 1px 4px rgba(6,182,212,.35);
-  border-radius: 0 3px 3px 0;
-  opacity: 0;
-  transition: width .22s cubic-bezier(.4,0,.2,1), opacity .15s ease;
+/* ── ICEBERG page enter (subtle, calm) ──────────────────────────────── */
+/* A single short fade on first paint of the main content. No exit
+   animations, no navigation delay, no overlay — navigation is instant. */
+@keyframes iceContentIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
 }
-#ice-progress.ice-active {
-  opacity: 1;
-  animation: iceBarPulse 1.5s ease-in-out infinite;
+#main-content > .content-area {
+  animation: iceContentIn .2s ease both;
 }
-@keyframes iceBarPulse {
-  0%,100% { background-position: 0% 0; }
-  50%      { background-position: 100% 0; }
-}
-
-/* Barely-visible loading overlay — keeps layout from flashing white */
-#ice-overlay {
-  position: fixed; inset: 0; z-index: 9990;
-  background: transparent; pointer-events: none;
-  transition: background .15s ease;
-}
-#ice-overlay.ice-active       { background: rgba(12,31,69,.025); }
-.dark-mode #ice-overlay.ice-active { background: rgba(0,0,0,.06); }
-
-/* Transform-origin for scale animations */
-.ice-exit-up, .ice-exit-left, .ice-exit-right,
-.ice-enter-up, .ice-enter-down, .ice-enter-left, .ice-enter-right {
-  transform-origin: top center;
-}
-
-/* ── Exit keyframes (mobile: no blur) ── */
-@keyframes iceExitUp {
-  from { opacity: 1;    transform: scale(1)     translateY(0);    }
-  to   { opacity: 0.65; transform: scale(0.985) translateY(-4px); }
-}
-@keyframes iceExitLeft {
-  from { opacity: 1;   transform: scale(1)     translateX(0);     }
-  to   { opacity: 0.5; transform: scale(0.988) translateX(-24px); }
-}
-@keyframes iceExitRight {
-  from { opacity: 1;   transform: scale(1)     translateX(0);    }
-  to   { opacity: 0.5; transform: scale(0.988) translateX(24px); }
-}
-
-/* Desktop: enrich exit-up with blur */
-@media (min-width: 769px) {
-  @keyframes iceExitUp {
-    from { opacity: 1;    transform: scale(1)     translateY(0);    filter: blur(0px); }
-    to   { opacity: 0.65; transform: scale(0.985) translateY(-4px); filter: blur(3px); }
-  }
-}
-
-/* ── Enter keyframes ── */
-@keyframes iceEnterUp {
-  from { opacity: 0; transform: scale(0.985) translateY(14px); }
-  to   { opacity: 1; transform: scale(1)     translateY(0);    }
-}
-@keyframes iceEnterDown {
-  from { opacity: 0; transform: scale(0.985) translateY(-10px); }
-  to   { opacity: 1; transform: scale(1)     translateY(0);     }
-}
-@keyframes iceEnterRight {
-  from { opacity: 0; transform: scale(0.988) translateX(28px); }
-  to   { opacity: 1; transform: scale(1)     translateX(0);    }
-}
-@keyframes iceEnterLeft {
-  from { opacity: 0; transform: scale(0.988) translateX(-28px); }
-  to   { opacity: 1; transform: scale(1)     translateX(0);     }
-}
-
-/* ── Animation classes ── */
-.ice-exit-up    { animation: iceExitUp    .26s cubic-bezier(.4,0,.2,1)  both; }
-.ice-exit-left  { animation: iceExitLeft  .22s cubic-bezier(.4,0,.2,1)  both; }
-.ice-exit-right { animation: iceExitRight .22s cubic-bezier(.4,0,.2,1)  both; }
-.ice-enter-up    { animation: iceEnterUp    .44s cubic-bezier(.22,1,.36,1) both; }
-.ice-enter-down  { animation: iceEnterDown  .40s cubic-bezier(.22,1,.36,1) both; }
-.ice-enter-right { animation: iceEnterRight .40s cubic-bezier(.22,1,.36,1) both; }
-.ice-enter-left  { animation: iceEnterLeft  .40s cubic-bezier(.22,1,.36,1) both; }
 
 /* ── Skeleton shimmer (for slow-loading content) ── */
 .ice-skel {
@@ -160,12 +85,7 @@
 
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-  .ice-exit-up, .ice-exit-left, .ice-exit-right,
-  .ice-enter-up, .ice-enter-down, .ice-enter-left, .ice-enter-right {
-    animation: none !important; opacity: 1 !important;
-    transform: none !important; filter: none !important;
-  }
-  #ice-progress { transition: none; animation: none; }
+  #main-content > .content-area { animation: none !important; }
   .ice-skel { animation: none; }
 }
     </style>
@@ -194,8 +114,6 @@
 </head>
 
 <body id="stu-body">
-    <div id="ice-progress"></div>
-    <div id="ice-overlay"></div>
     <!-- ── Top Navbar ──────────────────────────────────────────────────────── -->
     <nav class="erpnext-navbar">
         <div class="navbar-left">
@@ -488,23 +406,6 @@
     </script>
 
     <script>
-    /* ── Button ripple effect ────────────────────────────────────────────── */
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest('.btn, .quick-action-btn, .sidebar-logout-btn');
-        if (!btn) return;
-        var r = document.createElement('span');
-        r.className = 'ripple';
-        var rect = btn.getBoundingClientRect();
-        var size = Math.max(rect.width, rect.height);
-        r.style.cssText = 'width:' + size + 'px;height:' + size + 'px;left:' +
-            (e.clientX - rect.left - size / 2) + 'px;top:' +
-            (e.clientY - rect.top - size / 2) + 'px;';
-        btn.appendChild(r);
-        setTimeout(function () { r.remove(); }, 600);
-    });
-    </script>
-
-    <script>
 /* ── ICEBERG Premium Page Transitions ──────────────────────────────── */
 (function () {
   'use strict';
@@ -595,7 +496,10 @@
     var raw = a.getAttribute('href') || '';
     if (/^(mailto:|tel:|javascript:)/i.test(raw)) return false;
     if (a.hasAttribute('download') || a.hasAttribute('data-no-transition')) return false;
-    return true;
+    // Page-transition interception is disabled: links navigate natively and
+    // instantly (no artificial delay, exit animation, or loading overlay).
+    // A subtle CSS fade on .content-area handles the page-enter feel.
+    return false;
   }
 
   /* ── Click interceptor ─────────────────────────────────────────────── */

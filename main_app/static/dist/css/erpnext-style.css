@@ -528,9 +528,7 @@ body {
 }
 
 .erpnext-card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
-}
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);}
 
 .card-header {
   padding: 24px;
@@ -592,8 +590,8 @@ body {
 }
 
 .stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(27, 63, 122, 0.10);
 }
 
 .stat-card:nth-child(1)::before { background: var(--primary-color); }
@@ -808,9 +806,7 @@ body {
 .btn-primary:hover {
   background: linear-gradient(135deg, #4c52ff 0%, #3d42cc 100%);
   border-color: #4c52ff;
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(94, 100, 255, 0.4);
+  color: #fff;  box-shadow: 0 4px 8px rgba(94, 100, 255, 0.4);
 }
 
 .btn-primary:active {
@@ -837,9 +833,7 @@ body {
 .btn-success:hover {
   background: linear-gradient(135deg, #1e7e34 0%, #155724 100%);
   border-color: #1e7e34;
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
+  color: #fff;  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
 }
 
 .btn-warning {
@@ -852,9 +846,7 @@ body {
 .btn-warning:hover {
   background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
   border-color: #e0a800;
-  color: #212529;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4);
+  color: #212529;  box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4);
 }
 
 .btn-danger {
@@ -867,9 +859,7 @@ body {
 .btn-danger:hover {
   background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
   border-color: #c82333;
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
+  color: #fff;  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
 }
 
 .btn-secondary {
@@ -882,9 +872,7 @@ body {
 .btn-secondary:hover {
   background: linear-gradient(135deg, #5a6268 0%, #4e555b 100%);
   border-color: #5a6268;
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4);
+  color: #fff;  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4);
 }
 
 .btn-outline-primary {
@@ -2050,27 +2038,13 @@ body {
   box-shadow: none;
 }
 
-/* Ripple effect on buttons */
-.btn { position: relative; overflow: hidden; }
-.btn .ripple {
-  position: absolute;
-  border-radius: 50%;
-  transform: scale(0);
-  animation: ripple .5s linear;
-  background: rgba(255,255,255,.3);
-  pointer-events: none;
-}
-@keyframes ripple {
-  to { transform: scale(4); opacity: 0; }
-}
-
 /* Quick-action grid buttons */
 .quick-action-btn {
   transition: background .15s ease, transform .1s ease, box-shadow .15s ease;
 }
 .quick-action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(27,63,122,.12);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(27,63,122,.08);
 }
 .quick-action-btn:active {
   transform: translateY(0);
@@ -2078,11 +2052,11 @@ body {
 
 /* Stat cards */
 .stat-card {
-  transition: transform .2s ease, box-shadow .2s ease;
+  transition: transform .18s ease, box-shadow .18s ease;
 }
 .stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 28px rgba(27,63,122,.13) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(27,63,122,.10) !important;
 }
 
 /* erpnext-card hover */

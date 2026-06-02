@@ -6,23 +6,14 @@
    (--navy / --cyan / --ice-*) and the .dark-mode model.
    ===================================================== */
 
-/* ── Animated aurora background ───────────────────────── */
-@keyframes ice-aurora {
-  0%   { background-position: 0%   50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0%   50%; }
-}
-@keyframes ice-blob {
-  0%,100% { transform: translate3d(0,0,0) scale(1); }
-  50%     { transform: translate3d(0,-26px,0) scale(1.05); }
-}
-
+/* ── Calm static background ───────────────────────────── */
+/* Soft fixed gradient — no animation. Keeps the premium pale-blue feel
+   without the constantly-moving aurora/floating-blob motion. */
 body {
   background: linear-gradient(125deg, #EAF1FF 0%, #E7F7FB 38%, #EEF2FF 70%, #E9F3FF 100%) !important;
-  background-size: 240% 240% !important;
-  animation: ice-aurora 28s ease infinite;
+  background-attachment: fixed;
 }
-/* soft floating colour blobs behind the content */
+/* soft static colour wash behind the content (no movement) */
 body::after {
   content: '';
   position: fixed;
@@ -31,9 +22,8 @@ body::after {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(42% 56% at 16% 20%, rgba(6,182,212,.16), transparent 60%),
-    radial-gradient(40% 54% at 84% 12%, rgba(27,63,122,.14), transparent 60%);
-  animation: ice-blob 20s ease-in-out infinite;
+    radial-gradient(42% 56% at 16% 20%, rgba(6,182,212,.12), transparent 60%),
+    radial-gradient(40% 54% at 84% 12%, rgba(27,63,122,.10), transparent 60%);
 }
 /* Keep real content above the decorative body::after layer.
    IMPORTANT: only .erpnext-main needs position:relative here — it is the one
@@ -50,12 +40,12 @@ body::after {
 
 .dark-mode body, html.dark-mode body {
   background: linear-gradient(125deg, #070D1A 0%, #0B1A33 45%, #08152B 100%) !important;
-  background-size: 240% 240% !important;
+  background-attachment: fixed;
 }
 .dark-mode body::after, html.dark-mode body::after {
   background:
-    radial-gradient(42% 56% at 16% 20%, rgba(34,211,238,.13), transparent 60%),
-    radial-gradient(40% 54% at 84% 12%, rgba(37,99,235,.15), transparent 60%);
+    radial-gradient(42% 56% at 16% 20%, rgba(34,211,238,.10), transparent 60%),
+    radial-gradient(40% 54% at 84% 12%, rgba(37,99,235,.12), transparent 60%);
 }
 
 /* ── Gradient page title ──────────────────────────────── */
@@ -71,35 +61,37 @@ body::after {
   -webkit-text-fill-color: transparent;
 }
 
-/* ── Stronger motion on the consistent dashboard widgets ── */
+/* ── Subtle hover feedback on dashboard widgets ──────────── */
+/* Calm: gentle shadow + border change, only a 1px lift. No glow,
+   no icon scaling/rotating. Hover lift is disabled on touch devices
+   further down so cards stay flat on phones/tablets. */
 .stat-card, .erpnext-card, .quick-action-btn {
-  transition: transform .25s cubic-bezier(.2,.7,.3,1), box-shadow .25s, border-color .25s;
+  transition: box-shadow .18s ease, border-color .18s ease, transform .18s ease;
 }
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 16px 40px rgba(6,182,212,.22);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(27,63,122,.10);
 }
 .erpnext-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(27,63,122,.10);
 }
 .quick-action-btn:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 14px 34px rgba(6,182,212,.22);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(27,63,122,.08);
 }
-.quick-action-btn i { transition: transform .25s ease; }
-.quick-action-btn:hover i { transform: scale(1.18); }
-.small-box { transition: transform .25s cubic-bezier(.2,.7,.3,1), box-shadow .25s; }
-.small-box:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
-.small-box .icon { transition: transform .3s ease; }
-.small-box:hover .icon { transform: scale(1.12) rotate(-6deg); }
+.small-box { transition: box-shadow .18s ease, transform .18s ease; }
+.small-box:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(27,63,122,.14); }
 
-/* primary button glow on hover (keeps existing gradient) */
-.btn-primary:hover { box-shadow: 0 10px 26px rgba(6,182,212,.30) !important; }
+/* Flatten hover lift on touch / coarse-pointer devices (phones, tablets) */
+@media (hover: none), (pointer: coarse) {
+  .stat-card:hover, .erpnext-card:hover,
+  .quick-action-btn:hover, .small-box:hover { transform: none; }
+}
 
 /* ── Reveal-on-scroll (added by iceberg-interactive.js) ── */
-.ice-reveal { opacity: 0; transform: translateY(22px);
-  transition: opacity .6s cubic-bezier(.2,.7,.3,1), transform .6s cubic-bezier(.2,.7,.3,1);
+.ice-reveal { opacity: 0; transform: translateY(10px);
+  transition: opacity .35s ease, transform .35s ease;
   will-change: opacity, transform; }
 .ice-reveal.ice-in { opacity: 1; transform: none; }
 
