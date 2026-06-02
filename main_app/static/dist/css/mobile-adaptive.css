@@ -348,19 +348,26 @@ html[data-theme="dark"] {
 
 /* ── B1. Glass token system (light) ──────────────────────────────────*/
 .platform-apple {
-  --glass-blur:        30px;
-  --glass-blur-strong: 44px;
-  --glass-saturate:    230%;
-  --glass-fill:        rgba(255, 255, 255, 0.66);
-  --glass-fill-strong: rgba(255, 255, 255, 0.80);
+  --glass-blur:        16px;
+  --glass-blur-strong: 22px;
+  --glass-saturate:    150%;
+  --glass-fill:        rgba(255, 255, 255, 0.88);
+  --glass-fill-strong: rgba(255, 255, 255, 0.94);
   --glass-solid-fill:  var(--ice-surface, #FFFFFF);
-  --glass-hairline:    rgba(255, 255, 255, 0.88);
-  --glass-edge:        rgba(12, 31, 69, 0.10);
-  --glass-inner-low:   rgba(12, 31, 69, 0.04);
-  --glass-shadow:      0 18px 46px rgba(12, 31, 69, 0.20), 0 5px 16px rgba(12, 31, 69, 0.10);
-  --glass-tint:        linear-gradient(180deg, rgba(224,247,250,0.22), rgba(255,255,255,0.08));
-  --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.28) 18%, rgba(255,255,255,0) 54%);
-  --glass-radius:      20px;
+  --glass-hairline:    rgba(255, 255, 255, 0.72);
+  --glass-edge:        rgba(12, 31, 69, 0.13);
+  --glass-inner-low:   rgba(12, 31, 69, 0.05);
+  --glass-shadow:      0 12px 30px rgba(12, 31, 69, 0.12), 0 2px 8px rgba(12, 31, 69, 0.06);
+  --glass-shadow-soft: 0 6px 18px rgba(12, 31, 69, 0.09), 0 1px 3px rgba(12, 31, 69, 0.05);
+  --glass-tint:        linear-gradient(180deg, rgba(248, 253, 255, 0.28), rgba(255, 255, 255, 0));
+  --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.10) 24%, rgba(255,255,255,0) 58%);
+  --glass-radius:      18px;
+  --apple-page-bg:     #F4F7FB;
+  --apple-page-bg-2:   #EEF4F9;
+  --apple-text:        #0F172A;
+  --apple-muted:       #526173;
+  --apple-control-fill: rgba(248, 250, 252, 0.96);
+  color-scheme: light;
   /* iOS-feel niceties */
   -webkit-tap-highlight-color: transparent;
 }
@@ -370,15 +377,22 @@ html[data-theme="dark"] {
    media query here, or manual bright mode can inherit dark glass tokens. */
 html.platform-apple.dark-mode,
 html.platform-apple[data-theme="dark"] {
-  --glass-fill:        rgba(13, 27, 47, 0.68);
-  --glass-fill-strong: rgba(13, 27, 47, 0.82);
+  --glass-fill:        rgba(14, 29, 52, 0.86);
+  --glass-fill-strong: rgba(14, 29, 52, 0.93);
   --glass-solid-fill:  var(--ice-surface, #0E1D34);
-  --glass-hairline:    rgba(255, 255, 255, 0.22);
-  --glass-edge:        rgba(255, 255, 255, 0.08);
+  --glass-hairline:    rgba(255, 255, 255, 0.15);
+  --glass-edge:        rgba(255, 255, 255, 0.12);
   --glass-inner-low:   rgba(0, 0, 0, 0.18);
-  --glass-shadow:      0 18px 48px rgba(0, 0, 0, 0.58), 0 5px 16px rgba(0, 0, 0, 0.38);
-  --glass-tint:        linear-gradient(180deg, rgba(103,232,249,0.09), rgba(255,255,255,0.025));
-  --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0) 56%);
+  --glass-shadow:      0 14px 34px rgba(0, 0, 0, 0.40), 0 2px 8px rgba(0, 0, 0, 0.26);
+  --glass-shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.30), 0 1px 4px rgba(0, 0, 0, 0.22);
+  --glass-tint:        linear-gradient(180deg, rgba(103,232,249,0.055), rgba(255,255,255,0.012));
+  --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.045) 25%, rgba(255,255,255,0) 58%);
+  --apple-page-bg:     #07101D;
+  --apple-page-bg-2:   #0A1728;
+  --apple-text:        #E6EDF7;
+  --apple-muted:       #A8B7C8;
+  --apple-control-fill: rgba(19, 36, 64, 0.96);
+  color-scheme: dark;
 }
 
 /* ── B3. The glass material ──────────────────────────────────────────
@@ -393,6 +407,40 @@ html.platform-apple[data-theme="dark"] {
   .platform-apple .erpnext-card,
   .platform-apple .stat-card,
   .platform-apple .pcard,
+  .platform-apple .quick-action-btn,
+  .platform-apple .page-card,
+  .platform-apple .table-card,
+  .platform-apple .prof-card,
+  .platform-apple .profile-card,
+  .platform-apple .group-card,
+  .platform-apple .stu-card,
+  .platform-apple .day-card,
+  .platform-apple .empty-state,
+  .platform-apple .trend-card,
+  .platform-apple .dash-card,
+  .platform-apple .att-alltime-tile,
+  .platform-apple .att-card,
+  .platform-apple .rec-row,
+  .platform-apple .rp-card,
+  .platform-apple .rp-chart-card,
+  .platform-apple .rp-empty,
+  .platform-apple .vdl-card,
+  .platform-apple .vdl-empty,
+  .platform-apple .pg-stat-tile,
+  .platform-apple .pg-chart-card,
+  .platform-apple .pg-exam-card,
+  .platform-apple .pg-empty,
+  .platform-apple .lb-modebar,
+  .platform-apple .lb-filters,
+  .platform-apple .lb-pod,
+  .platform-apple .lb-myrank,
+  .platform-apple .lb-list,
+  .platform-apple .lb-history-strip,
+  .platform-apple .lbh-section,
+  .platform-apple .lbh-empty,
+  .platform-apple .lbs-list,
+  .platform-apple .lbs-pod,
+  .platform-apple .lbs-empty,
   .platform-apple .ice-modal {
     background: var(--glass-solid-fill) !important;
     background-image: none !important;
@@ -422,27 +470,63 @@ html.platform-apple[data-theme="dark"] {
   .platform-apple .erpnext-card,
   .platform-apple .stat-card,
   .platform-apple .pcard,
+  .platform-apple .quick-action-btn,
+  .platform-apple .page-card,
+  .platform-apple .table-card,
+  .platform-apple .prof-card,
+  .platform-apple .profile-card,
+  .platform-apple .group-card,
+  .platform-apple .stu-card,
+  .platform-apple .day-card,
+  .platform-apple .empty-state,
+  .platform-apple .trend-card,
+  .platform-apple .dash-card,
+  .platform-apple .att-alltime-tile,
+  .platform-apple .att-card,
+  .platform-apple .rec-row,
+  .platform-apple .rp-card,
+  .platform-apple .rp-chart-card,
+  .platform-apple .rp-empty,
+  .platform-apple .vdl-card,
+  .platform-apple .vdl-empty,
+  .platform-apple .pg-stat-tile,
+  .platform-apple .pg-chart-card,
+  .platform-apple .pg-exam-card,
+  .platform-apple .pg-empty,
+  .platform-apple .lb-modebar,
+  .platform-apple .lb-filters,
+  .platform-apple .lb-pod,
+  .platform-apple .lb-myrank,
+  .platform-apple .lb-list,
+  .platform-apple .lb-history-strip,
+  .platform-apple .lbh-section,
+  .platform-apple .lbh-empty,
+  .platform-apple .lbs-list,
+  .platform-apple .lbs-pod,
+  .platform-apple .lbs-empty,
   .platform-apple .ice-modal {
     background-color: var(--glass-fill-strong) !important;
     background-image: var(--glass-specular), var(--glass-tint) !important;
-    background-blend-mode: screen, normal;
+    background-blend-mode: normal, normal;
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     border: 1px solid var(--glass-edge) !important;
-    box-shadow: inset 0 1px 0 var(--glass-hairline), inset 0 -1px 0 var(--glass-inner-low), var(--glass-shadow) !important;
+    box-shadow: inset 0 1px 0 var(--glass-hairline), inset 0 -1px 0 var(--glass-inner-low), var(--glass-shadow-soft) !important;
   }
 
   /* Bars/drawer keep their edge geometry (no all-round border). */
   .platform-apple .erpnext-navbar {
     border-left: 0 !important; border-right: 0 !important; border-top: 0 !important;
     border-bottom: 1px solid var(--glass-edge) !important;
+    box-shadow: inset 0 -1px 0 var(--glass-inner-low), 0 8px 22px rgba(12, 31, 69, 0.08) !important;
   }
   .platform-apple .erpnext-sidebar {
     border-top: 0 !important; border-bottom: 0 !important; border-left: 0 !important;
     border-right: 1px solid var(--glass-edge) !important;
-    background-color: var(--glass-fill) !important;
+    background-color: var(--glass-fill-strong) !important;
     -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
     backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
+    box-shadow: 8px 0 28px rgba(12, 31, 69, 0.12) !important;
   }
 
   /* Specular highlight + larger radii on the "tile" surfaces. */
@@ -450,6 +534,26 @@ html.platform-apple[data-theme="dark"] {
   .platform-apple .erpnext-card,
   .platform-apple .stat-card,
   .platform-apple .pcard,
+  .platform-apple .quick-action-btn,
+  .platform-apple .page-card,
+  .platform-apple .table-card,
+  .platform-apple .prof-card,
+  .platform-apple .profile-card,
+  .platform-apple .group-card,
+  .platform-apple .stu-card,
+  .platform-apple .day-card,
+  .platform-apple .empty-state,
+  .platform-apple .trend-card,
+  .platform-apple .dash-card,
+  .platform-apple .att-card,
+  .platform-apple .rp-card,
+  .platform-apple .rp-chart-card,
+  .platform-apple .vdl-card,
+  .platform-apple .pg-chart-card,
+  .platform-apple .pg-exam-card,
+  .platform-apple .lb-modebar,
+  .platform-apple .lb-filters,
+  .platform-apple .lb-list,
   .platform-apple .bottom-nav,
   .platform-apple .ice-modal {
     position: relative;
@@ -463,12 +567,12 @@ html.platform-apple[data-theme="dark"] {
     .platform-apple table.table > tbody > tr {
       background-color: var(--glass-fill-strong) !important;
       background-image: var(--glass-specular), var(--glass-tint) !important;
-      background-blend-mode: screen, normal;
+      background-blend-mode: normal, normal;
       -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
       backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
       border: 1px solid var(--glass-edge) !important;
       border-radius: var(--glass-radius) !important;
-      box-shadow: inset 0 1px 0 var(--glass-hairline), inset 0 -1px 0 var(--glass-inner-low), var(--glass-shadow) !important;
+      box-shadow: inset 0 1px 0 var(--glass-hairline), inset 0 -1px 0 var(--glass-inner-low), var(--glass-shadow-soft) !important;
     }
     /* Cell separators softer over glass. */
     .platform-apple table.dt > tbody > tr > td { border-bottom-color: var(--glass-edge); }
@@ -476,8 +580,9 @@ html.platform-apple[data-theme="dark"] {
 
   /* The modal backdrop gets a light blur instead of a flat dim. */
   .platform-apple .ice-modal-overlay {
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+    background: rgba(15, 23, 42, 0.28);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
   }
 }
 
@@ -488,9 +593,298 @@ html.platform-apple[data-theme="dark"] {
   border-radius: 14px;
 }
 .platform-apple .btn-primary {
-  background-image: var(--glass-specular), linear-gradient(180deg, var(--cyan), var(--cyan-dk));
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: 0 6px 18px rgba(6, 182, 212, 0.30);
+  background-image: linear-gradient(180deg, #0EA5E9, var(--cyan-dk)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.34) !important;
+  box-shadow: 0 7px 18px rgba(6, 182, 212, 0.22) !important;
+}
+
+/* ── B5. Apple readability and component consistency ────────────────*/
+.platform-apple body {
+  color: var(--apple-text);
+}
+
+.platform-apple .erpnext-main,
+.platform-apple .dash,
+.platform-apple .lb,
+.platform-apple .att,
+.platform-apple .rp,
+.platform-apple .vdl,
+.platform-apple .pg,
+.platform-apple .lbh,
+.platform-apple .lbs {
+  background: linear-gradient(180deg, var(--apple-page-bg) 0%, var(--apple-page-bg-2) 100%) !important;
+}
+
+.platform-apple body::after {
+  opacity: 0.36;
+}
+
+.platform-apple .page-title,
+.platform-apple .card-title,
+.platform-apple .dt-title,
+.platform-apple .table-card-title,
+.platform-apple .page-card-title,
+.platform-apple .prof-card-hd,
+.platform-apple .stu-card-title,
+.platform-apple .trend-card-title,
+.platform-apple .stat-number,
+.platform-apple .profile-name,
+.platform-apple .profile-meta-value {
+  color: var(--apple-text) !important;
+}
+
+.platform-apple .page-subtitle,
+.platform-apple .breadcrumb-item a,
+.platform-apple .dt-count,
+.platform-apple .page-card-subtitle,
+.platform-apple .card-subtitle,
+.platform-apple .text-muted,
+.platform-apple .stat-label,
+.platform-apple .trend-pill-lbl {
+  color: var(--apple-muted) !important;
+}
+
+.platform-apple .erpnext-card .card-header,
+.platform-apple .erpnext-card .card-body,
+.platform-apple .dt-header,
+.platform-apple .page-card-header,
+.platform-apple .table-card-header,
+.platform-apple .table-card-head,
+.platform-apple .prof-card-hd,
+.platform-apple .pcard-header,
+.platform-apple .pcard-body,
+.platform-apple .stu-card-header,
+.platform-apple .gc-body,
+.platform-apple .day-card-body,
+.platform-apple .lb-list-hd,
+.platform-apple .dash-card-header,
+.platform-apple .ice-modal-header,
+.platform-apple .ice-modal-footer {
+  background: rgba(248, 250, 252, 0.72) !important;
+  border-color: var(--glass-edge) !important;
+}
+
+html.platform-apple.dark-mode .erpnext-card .card-header,
+html.platform-apple.dark-mode .erpnext-card .card-body,
+html.platform-apple.dark-mode .dt-header,
+html.platform-apple.dark-mode .page-card-header,
+html.platform-apple.dark-mode .table-card-header,
+html.platform-apple.dark-mode .table-card-head,
+html.platform-apple.dark-mode .prof-card-hd,
+html.platform-apple.dark-mode .pcard-header,
+html.platform-apple.dark-mode .pcard-body,
+html.platform-apple.dark-mode .stu-card-header,
+html.platform-apple.dark-mode .gc-body,
+html.platform-apple.dark-mode .day-card-body,
+html.platform-apple.dark-mode .lb-list-hd,
+html.platform-apple.dark-mode .dash-card-header,
+html.platform-apple.dark-mode .ice-modal-header,
+html.platform-apple.dark-mode .ice-modal-footer {
+  background: rgba(19, 36, 64, 0.62) !important;
+}
+
+.platform-apple .form-control,
+.platform-apple .form-select,
+.platform-apple .pf-field .form-control,
+.platform-apple .pf-field select.form-control,
+.platform-apple .pf-field textarea.form-control,
+.platform-apple .dt-search,
+.platform-apple .ice-search,
+.platform-apple .att-control {
+  background-color: var(--apple-control-fill) !important;
+  border-color: var(--glass-edge) !important;
+  border-radius: 12px !important;
+  color: var(--apple-text) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45) !important;
+}
+
+.platform-apple .form-control:focus,
+.platform-apple .form-select:focus,
+.platform-apple .pf-field .form-control:focus,
+.platform-apple .dt-search:focus,
+.platform-apple .ice-search:focus,
+.platform-apple .att-control:focus {
+  background-color: var(--glass-solid-fill) !important;
+  border-color: rgba(6, 182, 212, 0.68) !important;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.13) !important;
+}
+
+.platform-apple .table thead th,
+.platform-apple .dt th,
+.platform-apple .data-table th,
+.platform-apple .stu-table th,
+.platform-apple .pg-table th {
+  background: rgba(248, 250, 252, 0.82) !important;
+  color: var(--apple-muted) !important;
+  border-color: var(--glass-edge) !important;
+}
+
+html.platform-apple.dark-mode .table thead th,
+html.platform-apple.dark-mode .dt th,
+html.platform-apple.dark-mode .data-table th,
+html.platform-apple.dark-mode .stu-table th,
+html.platform-apple.dark-mode .pg-table th {
+  background: rgba(19, 36, 64, 0.82) !important;
+}
+
+.platform-apple .table tbody td,
+.platform-apple .dt td,
+.platform-apple .data-table td,
+.platform-apple .stu-table td,
+.platform-apple .pg-table td {
+  color: var(--apple-text) !important;
+  border-color: rgba(12, 31, 69, 0.08) !important;
+}
+
+html.platform-apple.dark-mode .table tbody td,
+html.platform-apple.dark-mode .dt td,
+html.platform-apple.dark-mode .data-table td,
+html.platform-apple.dark-mode .stu-table td,
+html.platform-apple.dark-mode .pg-table td {
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+
+.platform-apple .nav-link {
+  border-radius: 12px !important;
+}
+
+.platform-apple .nav-link:hover {
+  background: rgba(12, 31, 69, 0.055) !important;
+}
+
+.platform-apple .nav-link.active {
+  background: rgba(6, 182, 212, 0.13) !important;
+  box-shadow: inset 0 0 0 1px rgba(6, 182, 212, 0.18) !important;
+}
+
+html.platform-apple.dark-mode .nav-link:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+html.platform-apple.dark-mode .nav-link.active {
+  background: rgba(103, 232, 249, 0.13) !important;
+}
+
+.platform-apple .dash-rankbadge,
+.platform-apple .dash-hstat,
+.platform-apple .att-hstat,
+.platform-apple .rp-hstat,
+.platform-apple .vdl-hstat,
+.platform-apple .pg-hstat {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12) !important;
+}
+
+.platform-apple .dash-rankbadge,
+.platform-apple .dash-rankbadge::before,
+.platform-apple .dash-rankbadge::after {
+  animation-duration: 8s !important;
+}
+
+/* ── B6. Apple responsive layout refinements ───────────────────────*/
+@media (max-width: 768px) {
+  .platform-apple .erpnext-navbar {
+    padding-left: max(12px, env(safe-area-inset-left)) !important;
+    padding-right: max(12px, env(safe-area-inset-right)) !important;
+  }
+
+  .platform-apple .bottom-nav {
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    width: min(430px, calc(100vw - 20px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+    height: 70px;
+    padding: 5px;
+    box-shadow: inset 0 1px 0 var(--glass-hairline), 0 12px 28px rgba(12, 31, 69, 0.16) !important;
+  }
+
+  .platform-apple .bottom-nav-item {
+    min-height: 58px;
+    height: 58px;
+    padding-left: 1px;
+    padding-right: 1px;
+  }
+
+  .platform-apple .bottom-nav-item span:not(.notif-dot) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .platform-apple .erpnext-card,
+  .platform-apple .dt-card,
+  .platform-apple .page-card,
+  .platform-apple .table-card,
+  .platform-apple .prof-card,
+  .platform-apple .pcard,
+  .platform-apple .trend-card {
+    margin-bottom: 16px;
+  }
+
+  .platform-apple .stats-grid {
+    gap: 12px !important;
+  }
+
+  .platform-apple .stat-card {
+    padding: 16px !important;
+    min-width: 0;
+  }
+
+  .platform-apple .stat-number {
+    font-size: 24px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .platform-apple .bottom-nav {
+    width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
+    height: 68px;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .platform-apple .bottom-nav-item {
+    min-height: 56px;
+    height: 56px;
+    gap: 3px;
+  }
+
+  .platform-apple .bottom-nav-item i {
+    font-size: 19px;
+  }
+
+  .platform-apple .bottom-nav-item span:not(.notif-dot) {
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .platform-apple .navbar-logo-text {
+    font-size: 14px !important;
+    letter-spacing: 1px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1180px) {
+  .platform-apple .erpnext-main {
+    padding: 20px 22px 28px !important;
+  }
+
+  .platform-apple .stats-grid,
+  .platform-apple .quick-action-grid {
+    gap: 14px;
+  }
+}
+
+@media (min-width: 1181px) {
+  .platform-apple .erpnext-main {
+    padding: 22px 28px 32px !important;
+  }
+
+  .platform-apple .dt-card,
+  .platform-apple .erpnext-card,
+  .platform-apple .page-card,
+  .platform-apple .table-card,
+  .platform-apple .trend-card {
+    border-radius: 18px !important;
+  }
 }
 
 
@@ -826,6 +1220,40 @@ html.platform-apple[data-theme="dark"] {
   .platform-apple .stat-card,
   .platform-apple .pcard,
   .platform-apple .ice-modal,
+  .platform-apple .quick-action-btn,
+  .platform-apple .page-card,
+  .platform-apple .table-card,
+  .platform-apple .prof-card,
+  .platform-apple .profile-card,
+  .platform-apple .group-card,
+  .platform-apple .stu-card,
+  .platform-apple .day-card,
+  .platform-apple .empty-state,
+  .platform-apple .trend-card,
+  .platform-apple .dash-card,
+  .platform-apple .att-alltime-tile,
+  .platform-apple .att-card,
+  .platform-apple .rec-row,
+  .platform-apple .rp-card,
+  .platform-apple .rp-chart-card,
+  .platform-apple .rp-empty,
+  .platform-apple .vdl-card,
+  .platform-apple .vdl-empty,
+  .platform-apple .pg-stat-tile,
+  .platform-apple .pg-chart-card,
+  .platform-apple .pg-exam-card,
+  .platform-apple .pg-empty,
+  .platform-apple .lb-modebar,
+  .platform-apple .lb-filters,
+  .platform-apple .lb-pod,
+  .platform-apple .lb-myrank,
+  .platform-apple .lb-list,
+  .platform-apple .lb-history-strip,
+  .platform-apple .lbh-section,
+  .platform-apple .lbh-empty,
+  .platform-apple .lbs-list,
+  .platform-apple .lbs-pod,
+  .platform-apple .lbs-empty,
   .platform-apple table.dt > tbody > tr,
   .platform-apple table.data-table > tbody > tr,
   .platform-apple table.table > tbody > tr {

@@ -325,6 +325,158 @@
       .logo-card { width: 172px; }
     }
 
+    /* ─────────────────────────────────────────────
+       APPLE LIQUID GLASS
+       Platform-scoped so Android keeps the current solid look.
+    ───────────────────────────────────────────── */
+    html.platform-apple {
+      color-scheme: light;
+    }
+
+    html.platform-apple body {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 34%),
+        linear-gradient(135deg, #F7FAFD 0%, #EDF4FA 100%);
+      padding-top: max(28px, env(safe-area-inset-top));
+      padding-right: max(18px, env(safe-area-inset-right));
+      padding-bottom: max(34px, env(safe-area-inset-bottom));
+      padding-left: max(18px, env(safe-area-inset-left));
+    }
+
+    html.platform-apple .logo-card {
+      border-radius: 24px;
+      box-shadow:
+        0 10px 28px rgba(12,31,69,.13),
+        0 2px 7px rgba(12,31,69,.08);
+      animation: none;
+    }
+
+    html.platform-apple .logo-card::after {
+      opacity: .34;
+      animation-duration: 9s;
+    }
+
+    html.platform-apple .card {
+      background: rgba(255,255,255,.94);
+      border: 1px solid rgba(12,31,69,.12);
+      border-radius: 24px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.76),
+        0 18px 44px rgba(12,31,69,.13),
+        0 3px 10px rgba(12,31,69,.06);
+    }
+
+    @supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
+      html.platform-apple .card {
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+        backdrop-filter: blur(16px) saturate(150%);
+        background-image:
+          linear-gradient(135deg, rgba(255,255,255,.32), rgba(255,255,255,0) 54%),
+          linear-gradient(180deg, rgba(248,253,255,.22), rgba(255,255,255,0));
+      }
+    }
+
+    html.platform-apple .card-title {
+      color: #0F172A;
+    }
+
+    html.platform-apple .card-sub,
+    html.platform-apple .field-label,
+    html.platform-apple .footer {
+      color: #526173;
+    }
+
+    html.platform-apple .input-wrap input {
+      background: rgba(248,250,252,.96);
+      border-color: rgba(12,31,69,.13);
+      border-radius: 14px;
+      color: #0F172A;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
+    }
+
+    html.platform-apple .input-wrap input:focus {
+      background: #fff;
+      border-color: rgba(6,182,212,.68);
+      box-shadow: 0 0 0 4px rgba(6,182,212,.13);
+    }
+
+    html.platform-apple .pw-btn {
+      color: #718096;
+    }
+
+    html.platform-apple .btn-signin {
+      background: linear-gradient(180deg, #0EA5E9 0%, #0891B2 100%);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 14px;
+      box-shadow: 0 8px 20px rgba(6,182,212,.22);
+    }
+
+    html.platform-apple .btn-signin:hover {
+      box-shadow: 0 10px 24px rgba(6,182,212,.26);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      html.platform-apple {
+        color-scheme: dark;
+      }
+
+      html.platform-apple body {
+        background:
+          linear-gradient(180deg, rgba(103,232,249,.055), rgba(255,255,255,0) 38%),
+          linear-gradient(135deg, #07101D 0%, #0A1728 100%);
+        color: #E6EDF7;
+      }
+
+      html.platform-apple .card {
+        background: rgba(14,29,52,.93);
+        border-color: rgba(255,255,255,.12);
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.14),
+          0 18px 44px rgba(0,0,0,.40),
+          0 2px 8px rgba(0,0,0,.24);
+      }
+
+      html.platform-apple .card-title {
+        color: #E6EDF7;
+      }
+
+      html.platform-apple .card-sub,
+      html.platform-apple .field-label,
+      html.platform-apple .footer {
+        color: #A8B7C8;
+      }
+
+      html.platform-apple .input-wrap input {
+        background: rgba(19,36,64,.96);
+        border-color: rgba(255,255,255,.12);
+        color: #E6EDF7;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+      }
+
+      html.platform-apple .input-wrap input:focus {
+        background: rgba(14,29,52,.98);
+      }
+
+      html.platform-apple .input-wrap input::placeholder {
+        color: #6F8298;
+      }
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+      html.platform-apple .card {
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+        background: #fff !important;
+        background-image: none !important;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        html.platform-apple .card {
+          background: #0E1D34 !important;
+        }
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .logo-hero, .logo-float, .logo-card, .card, .field, .btn-wrap, .footer {
         animation: none !important;
