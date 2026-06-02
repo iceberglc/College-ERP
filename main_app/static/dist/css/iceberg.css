@@ -2095,6 +2095,36 @@ textarea.form-control { height: auto; min-height: 90px; }
   appearance: none;
 }
 .ice-field textarea { min-height: 96px; resize: vertical; }
+
+/* File / image upload — style the native picker into the design system */
+.ice-field input[type="file"] {
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ice-muted);
+  cursor: pointer;
+}
+.ice-field input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ice-navy);
+  background: var(--ice-surface);
+  border: 1.5px solid var(--ice-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.ice-field input[type="file"]::file-selector-button:hover {
+  background: rgba(27,63,122,.06);
+  border-color: var(--ice-navy);
+}
+.dark-mode .ice-field input[type="file"] { color: var(--ice-muted); }
+.dark-mode .ice-field input[type="file"]::file-selector-button {
+  background: var(--ice-surface2); color: #93C5FD; border-color: var(--ice-border);
+}
+
 .ice-select,
 .ice-field select {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%2364748B' d='M1 1l5 5 5-5'/></svg>");
@@ -2153,14 +2183,12 @@ textarea.form-control { height: auto; min-height: 90px; }
 }
 .ice-btn-secondary:hover { background: var(--ice-surface2); border-color: var(--ice-navy); color: var(--ice-navy); }
 
-/* Sticky submit bar on phones so it isn't hidden behind bottom nav */
+/* On phones the submit bar stacks full-width and sits in normal flow at the
+   end of the card (the floating bottom nav has its own safe-area spacing). */
 @media (max-width: 560px) {
-  .ice-submit-bar.is-sticky {
-    position: sticky;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
-    z-index: 5;
-    box-shadow: 0 -4px 16px rgba(27,63,122,.08);
-  }
+  .ice-submit-bar { flex-direction: column; }
+  .ice-submit-bar .ice-btn-primary,
+  .ice-submit-bar .ice-btn-secondary { width: 100%; }
 }
 
 /* ── Profile header ────────────────────────────────────────────────── */
