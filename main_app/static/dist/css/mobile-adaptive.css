@@ -206,9 +206,16 @@ html[data-theme="dark"] {
   .bottom-nav-item,
   .navbar-toggle,
   .navbar-notification,
-  .navbar-user-avatar,
   .logout-btn {
     min-height: 44px;
+  }
+  /* Avatar must stay a perfect circle — expand tap area via padding, not min-height */
+  .navbar-user-avatar {
+    width: 36px !important;
+    height: 36px !important;
+    min-height: unset !important;
+    aspect-ratio: 1 / 1 !important;
+    padding: 4px !important;
   }
   /* Inline action buttons inside tables/cards: comfortable tap size. */
   .notify-btn,

@@ -225,8 +225,10 @@ body {
 
 /* Profile avatar in navbar — small clean circle */
 .navbar-user-avatar {
-  width: 32px !important;
-  height: 32px !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-height: unset !important;
+  aspect-ratio: 1 / 1 !important;
   border-radius: 50% !important;
   background: linear-gradient(135deg, #1B3F7A, #0891B2) !important;
   border: none !important;
@@ -235,19 +237,23 @@ body {
   align-items: center !important;
   justify-content: center !important;
   color: #fff !important;
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
+  line-height: 1 !important;
   text-decoration: none !important;
   overflow: hidden !important;
   flex-shrink: 0 !important;
+  padding: 0 !important;
   transition: opacity .15s !important;
 }
 .navbar-user-avatar:hover { opacity: .85 !important; }
 .navbar-user-avatar img {
-  width: 32px !important;
-  height: 32px !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-height: unset !important;
   border-radius: 50% !important;
   object-fit: cover !important;
+  aspect-ratio: 1 / 1 !important;
 }
 /* Initials span inside avatar */
 .navbar-user-avatar span {
