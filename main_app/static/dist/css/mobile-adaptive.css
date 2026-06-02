@@ -340,48 +340,71 @@ html[data-theme="dark"] {
 
 /* ── B1. Glass token system (light) ──────────────────────────────────*/
 .platform-apple {
-  --glass-blur:        20px;
-  --glass-blur-strong: 30px;
-  --glass-saturate:    180%;
-  --glass-fill:        rgba(255, 255, 255, 0.55);
-  --glass-fill-strong: rgba(255, 255, 255, 0.72);
-  --glass-hairline:    rgba(255, 255, 255, 0.70);
-  --glass-edge:        rgba(12, 31, 69, 0.08);
-  --glass-shadow:      0 8px 32px rgba(12, 31, 69, 0.14), 0 2px 8px rgba(12, 31, 69, 0.07);
-  --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 42%);
+  --glass-blur:        30px;
+  --glass-blur-strong: 44px;
+  --glass-saturate:    230%;
+  --glass-fill:        rgba(255, 255, 255, 0.66);
+  --glass-fill-strong: rgba(255, 255, 255, 0.80);
+  --glass-solid-fill:  var(--ice-surface, #FFFFFF);
+  --glass-hairline:    rgba(255, 255, 255, 0.88);
+  --glass-edge:        rgba(12, 31, 69, 0.10);
+  --glass-inner-low:   rgba(12, 31, 69, 0.04);
+  --glass-shadow:      0 18px 46px rgba(12, 31, 69, 0.20), 0 5px 16px rgba(12, 31, 69, 0.10);
+  --glass-tint:        linear-gradient(180deg, rgba(224,247,250,0.22), rgba(255,255,255,0.08));
+  --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.28) 18%, rgba(255,255,255,0) 54%);
   --glass-radius:      20px;
   /* iOS-feel niceties */
   -webkit-tap-highlight-color: transparent;
 }
 
 /* ── B2. Glass token system (dark) ───────────────────────────────────
-   Keyed off the app's existing .dark-mode class (the pre-paint theme
-   script adds it for an explicit dark choice AND for 'system' when the OS
-   is dark, so this also covers prefers-color-scheme). */
-.platform-apple.dark-mode {
-  --glass-fill:        rgba(18, 30, 54, 0.55);
-  --glass-fill-strong: rgba(18, 30, 54, 0.74);
-  --glass-hairline:    rgba(255, 255, 255, 0.16);
-  --glass-edge:        rgba(255, 255, 255, 0.06);
-  --glass-shadow:      0 10px 34px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.35);
-  --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 42%);
-}
-/* Safety net for users on 'system' if the class somehow isn't applied. */
-@media (prefers-color-scheme: dark) {
-  .platform-apple {
-    --glass-fill:        rgba(18, 30, 54, 0.55);
-    --glass-fill-strong: rgba(18, 30, 54, 0.74);
-    --glass-hairline:    rgba(255, 255, 255, 0.16);
-    --glass-edge:        rgba(255, 255, 255, 0.06);
-    --glass-shadow:      0 10px 34px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.35);
-    --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 42%);
-  }
+   Keyed off the app's actual active theme on <html>. Do not use the OS
+   media query here, or manual bright mode can inherit dark glass tokens. */
+html.platform-apple.dark-mode,
+html.platform-apple[data-theme="dark"] {
+  --glass-fill:        rgba(13, 27, 47, 0.68);
+  --glass-fill-strong: rgba(13, 27, 47, 0.82);
+  --glass-solid-fill:  var(--ice-surface, #0E1D34);
+  --glass-hairline:    rgba(255, 255, 255, 0.22);
+  --glass-edge:        rgba(255, 255, 255, 0.08);
+  --glass-inner-low:   rgba(0, 0, 0, 0.18);
+  --glass-shadow:      0 18px 48px rgba(0, 0, 0, 0.58), 0 5px 16px rgba(0, 0, 0, 0.38);
+  --glass-tint:        linear-gradient(180deg, rgba(103,232,249,0.09), rgba(255,255,255,0.025));
+  --glass-specular:    linear-gradient(135deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0) 56%);
 }
 
 /* ── B3. The glass material ──────────────────────────────────────────
    Only inside @supports, so browsers without backdrop-filter keep the
    opaque base surfaces from iceberg.css (readable fallback — never blur
    with no fallback). A shared helper via a long selector list. */
+@supports not ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
+  .platform-apple .erpnext-navbar,
+  .platform-apple .erpnext-sidebar,
+  .platform-apple .bottom-nav,
+  .platform-apple .dt-card,
+  .platform-apple .erpnext-card,
+  .platform-apple .stat-card,
+  .platform-apple .pcard,
+  .platform-apple .ice-modal {
+    background: var(--glass-solid-fill) !important;
+    background-image: none !important;
+    border: 1px solid var(--ice-border, #E4E7EC) !important;
+    box-shadow: var(--shadow-md, 0 4px 14px rgba(12,31,69,.10)) !important;
+  }
+
+  .platform-apple .erpnext-navbar {
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-top: 0 !important;
+  }
+
+  .platform-apple .erpnext-sidebar {
+    border-top: 0 !important;
+    border-bottom: 0 !important;
+    border-left: 0 !important;
+  }
+}
+
 @supports ((-webkit-backdrop-filter: blur(2px)) or (backdrop-filter: blur(2px))) {
 
   .platform-apple .erpnext-navbar,
@@ -392,22 +415,24 @@ html[data-theme="dark"] {
   .platform-apple .stat-card,
   .platform-apple .pcard,
   .platform-apple .ice-modal {
-    background: var(--glass-fill-strong) !important;
+    background-color: var(--glass-fill-strong) !important;
+    background-image: var(--glass-specular), var(--glass-tint) !important;
+    background-blend-mode: screen, normal;
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-    border: 1px solid var(--glass-hairline) !important;
-    box-shadow: inset 0 1px 0 var(--glass-hairline), var(--glass-shadow) !important;
+    border: 1px solid var(--glass-edge) !important;
+    box-shadow: inset 0 1px 0 var(--glass-hairline), inset 0 -1px 0 var(--glass-inner-low), var(--glass-shadow) !important;
   }
 
   /* Bars/drawer keep their edge geometry (no all-round border). */
   .platform-apple .erpnext-navbar {
     border-left: 0 !important; border-right: 0 !important; border-top: 0 !important;
-    border-bottom: 1px solid var(--glass-hairline) !important;
+    border-bottom: 1px solid var(--glass-edge) !important;
   }
   .platform-apple .erpnext-sidebar {
     border-top: 0 !important; border-bottom: 0 !important; border-left: 0 !important;
-    border-right: 1px solid var(--glass-hairline) !important;
-    background: var(--glass-fill) !important;
+    border-right: 1px solid var(--glass-edge) !important;
+    background-color: var(--glass-fill) !important;
     -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
     backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
   }
@@ -421,8 +446,6 @@ html[data-theme="dark"] {
   .platform-apple .ice-modal {
     position: relative;
     border-radius: var(--glass-radius) !important;
-    background-image: var(--glass-specular), none;
-    background-blend-mode: overlay;
   }
 
   /* Reflowed table-row cards become glass too (phones). */
@@ -430,12 +453,14 @@ html[data-theme="dark"] {
     .platform-apple table.dt > tbody > tr,
     .platform-apple table.data-table > tbody > tr,
     .platform-apple table.table > tbody > tr {
-      background: var(--glass-fill-strong) !important;
+      background-color: var(--glass-fill-strong) !important;
+      background-image: var(--glass-specular), var(--glass-tint) !important;
+      background-blend-mode: screen, normal;
       -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
       backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-      border: 1px solid var(--glass-hairline) !important;
+      border: 1px solid var(--glass-edge) !important;
       border-radius: var(--glass-radius) !important;
-      box-shadow: inset 0 1px 0 var(--glass-hairline), var(--glass-shadow) !important;
+      box-shadow: inset 0 1px 0 var(--glass-hairline), inset 0 -1px 0 var(--glass-inner-low), var(--glass-shadow) !important;
     }
     /* Cell separators softer over glass. */
     .platform-apple table.dt > tbody > tr > td { border-bottom-color: var(--glass-edge); }
@@ -669,7 +694,7 @@ html[data-theme="dark"] {
   .platform-apple table.table > tbody > tr {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
-    background: var(--ice-surface, #fff) !important;
+    background: var(--glass-solid-fill, var(--ice-surface, #fff)) !important;
     background-image: none !important;
   }
   .platform-apple .ice-modal-overlay {
