@@ -2456,3 +2456,218 @@ canvas[id$="Chart"] {
     animation: none !important;
   }
 }
+
+/* Final theme contrast guard.
+   This file loads last, so keep the shared chrome readable even when older
+   AdminLTE/ERPNext theme rules use broad span/icon selectors. */
+html[data-theme="bright"],
+html.bright-mode {
+  color-scheme: light;
+  --ice-icon-fg: #0C1F45;
+  --ice-icon-muted: #475569;
+  --ice-icon-soft: #64748B;
+  --ice-icon-active: #0891B2;
+  --ice-body-text: #0C1F45;
+  --ice-body-muted: #64748B;
+}
+
+html[data-theme="dark"],
+html.dark-mode {
+  color-scheme: dark;
+  --ice-icon-fg: #E2E8F0;
+  --ice-icon-muted: #B6C5D6;
+  --ice-icon-soft: #94AFC8;
+  --ice-icon-active: #67E8F9;
+  --ice-body-text: #E2E8F0;
+  --ice-body-muted: #94AFC8;
+}
+
+html[data-theme="bright"] body,
+body.bright-mode {
+  color: var(--ice-body-text) !important;
+}
+
+html[data-theme="dark"] body,
+body.dark-mode {
+  color: var(--ice-body-text) !important;
+}
+
+html[data-theme="bright"] .text-muted,
+html[data-theme="bright"] .page-subtitle,
+html[data-theme="bright"] .breadcrumb-item,
+html[data-theme="bright"] .breadcrumb-item.active,
+html[data-theme="bright"] .sidebar-user-info small,
+body.bright-mode .text-muted,
+body.bright-mode .page-subtitle,
+body.bright-mode .breadcrumb-item,
+body.bright-mode .breadcrumb-item.active,
+body.bright-mode .sidebar-user-info small {
+  color: var(--ice-body-muted) !important;
+}
+
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] .page-subtitle,
+html[data-theme="dark"] .breadcrumb-item,
+html[data-theme="dark"] .sidebar-user-info small,
+body.dark-mode .text-muted,
+body.dark-mode .page-subtitle,
+body.dark-mode .breadcrumb-item,
+body.dark-mode .sidebar-user-info small {
+  color: var(--ice-body-muted) !important;
+}
+
+html[data-theme="bright"] .page-title,
+html[data-theme="bright"] .sidebar-user-info h6,
+html[data-theme="bright"] .card-title,
+html[data-theme="bright"] .table-card-title,
+html[data-theme="bright"] .data-table td,
+body.bright-mode .page-title,
+body.bright-mode .sidebar-user-info h6,
+body.bright-mode .card-title,
+body.bright-mode .table-card-title,
+body.bright-mode .data-table td {
+  color: var(--ice-body-text) !important;
+}
+
+html[data-theme="dark"] .page-title,
+html[data-theme="dark"] .sidebar-user-info h6,
+html[data-theme="dark"] .card-title,
+html[data-theme="dark"] .table-card-title,
+body.dark-mode .page-title,
+body.dark-mode .sidebar-user-info h6,
+body.dark-mode .card-title,
+body.dark-mode .table-card-title {
+  color: var(--ice-body-text) !important;
+}
+
+html[data-theme="bright"] .navbar-toggle,
+html[data-theme="bright"] .navbar-notification,
+html[data-theme="bright"] .breadcrumb-item a,
+html[data-theme="bright"] .nav-link,
+html[data-theme="bright"] .bottom-nav-item,
+body.bright-mode .navbar-toggle,
+body.bright-mode .navbar-notification,
+body.bright-mode .breadcrumb-item a,
+body.bright-mode .nav-link,
+body.bright-mode .bottom-nav-item {
+  color: var(--ice-icon-muted) !important;
+}
+
+html[data-theme="dark"] .navbar-toggle,
+html[data-theme="dark"] .navbar-notification,
+html[data-theme="dark"] .breadcrumb-item a,
+html[data-theme="dark"] .nav-link,
+html[data-theme="dark"] .bottom-nav-item,
+body.dark-mode .navbar-toggle,
+body.dark-mode .navbar-notification,
+body.dark-mode .breadcrumb-item a,
+body.dark-mode .nav-link,
+body.dark-mode .bottom-nav-item {
+  color: var(--ice-icon-muted) !important;
+}
+
+html[data-theme="bright"] .nav-link:hover,
+html[data-theme="bright"] .navbar-toggle:hover,
+html[data-theme="bright"] .navbar-notification:hover,
+body.bright-mode .nav-link:hover,
+body.bright-mode .navbar-toggle:hover,
+body.bright-mode .navbar-notification:hover {
+  color: var(--ice-icon-fg) !important;
+}
+
+html[data-theme="dark"] .nav-link:hover,
+html[data-theme="dark"] .navbar-toggle:hover,
+html[data-theme="dark"] .navbar-notification:hover,
+body.dark-mode .nav-link:hover,
+body.dark-mode .navbar-toggle:hover,
+body.dark-mode .navbar-notification:hover {
+  color: var(--ice-icon-fg) !important;
+}
+
+html[data-theme="bright"] .nav-icon,
+html[data-theme="bright"] .nav-arrow,
+html[data-theme="bright"] .navbar-toggle i,
+html[data-theme="bright"] .navbar-notification i,
+html[data-theme="bright"] .breadcrumb-item a i,
+body.bright-mode .nav-icon,
+body.bright-mode .nav-arrow,
+body.bright-mode .navbar-toggle i,
+body.bright-mode .navbar-notification i,
+body.bright-mode .breadcrumb-item a i,
+html[data-theme="dark"] .nav-icon,
+html[data-theme="dark"] .nav-arrow,
+html[data-theme="dark"] .navbar-toggle i,
+html[data-theme="dark"] .navbar-notification i,
+html[data-theme="dark"] .breadcrumb-item a i,
+body.dark-mode .nav-icon,
+body.dark-mode .nav-arrow,
+body.dark-mode .navbar-toggle i,
+body.dark-mode .navbar-notification i,
+body.dark-mode .breadcrumb-item a i {
+  color: currentColor !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="bright"] .nav-link .nav-icon,
+html[data-theme="bright"] .nav-link .nav-arrow,
+body.bright-mode .nav-link .nav-icon,
+body.bright-mode .nav-link .nav-arrow {
+  color: var(--ice-icon-soft) !important;
+}
+
+html[data-theme="dark"] .nav-link .nav-icon,
+html[data-theme="dark"] .nav-link .nav-arrow,
+body.dark-mode .nav-link .nav-icon,
+body.dark-mode .nav-link .nav-arrow {
+  color: var(--ice-icon-muted) !important;
+}
+
+html[data-theme="bright"] .nav-link:hover .nav-icon,
+html[data-theme="bright"] .nav-link:hover .nav-arrow,
+html[data-theme="bright"] .nav-link.active,
+html[data-theme="bright"] .nav-link.active .nav-icon,
+html[data-theme="bright"] .nav-link.active .nav-arrow,
+html[data-theme="bright"] .bottom-nav-item.active,
+html[data-theme="bright"] .bottom-nav-item.active i,
+body.bright-mode .nav-link:hover .nav-icon,
+body.bright-mode .nav-link:hover .nav-arrow,
+body.bright-mode .nav-link.active,
+body.bright-mode .nav-link.active .nav-icon,
+body.bright-mode .nav-link.active .nav-arrow,
+body.bright-mode .bottom-nav-item.active,
+body.bright-mode .bottom-nav-item.active i,
+html[data-theme="dark"] .nav-link:hover .nav-icon,
+html[data-theme="dark"] .nav-link:hover .nav-arrow,
+html[data-theme="dark"] .nav-link.active,
+html[data-theme="dark"] .nav-link.active .nav-icon,
+html[data-theme="dark"] .nav-link.active .nav-arrow,
+html[data-theme="dark"] .bottom-nav-item.active,
+html[data-theme="dark"] .bottom-nav-item.active i,
+body.dark-mode .nav-link:hover .nav-icon,
+body.dark-mode .nav-link:hover .nav-arrow,
+body.dark-mode .nav-link.active,
+body.dark-mode .nav-link.active .nav-icon,
+body.dark-mode .nav-link.active .nav-arrow,
+body.dark-mode .bottom-nav-item.active,
+body.dark-mode .bottom-nav-item.active i {
+  color: var(--ice-icon-active) !important;
+}
+
+html[data-theme="bright"] .card-title i,
+html[data-theme="bright"] .page-card-header i,
+html[data-theme="bright"] .trend-card-title i,
+html[data-theme="bright"] .quick-action-btn i,
+body.bright-mode .card-title i,
+body.bright-mode .page-card-header i,
+body.bright-mode .trend-card-title i,
+body.bright-mode .quick-action-btn i,
+html[data-theme="dark"] .card-title i,
+html[data-theme="dark"] .page-card-header i,
+html[data-theme="dark"] .trend-card-title i,
+html[data-theme="dark"] .quick-action-btn i,
+body.dark-mode .card-title i,
+body.dark-mode .page-card-header i,
+body.dark-mode .trend-card-title i,
+body.dark-mode .quick-action-btn i {
+  color: var(--ice-icon-active) !important;
+}

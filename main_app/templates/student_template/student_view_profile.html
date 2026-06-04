@@ -298,23 +298,20 @@ function saveAvatar(){
   var CSRF2='{{ csrf_token }}';
 
   function applyTheme(theme){
-    var root=document.documentElement;
-    root.removeAttribute('data-theme');
-    root.classList.remove('dark-mode');
-    document.body.classList.remove('dark-mode','bright-mode');
-    if(theme==='dark'){
-      root.setAttribute('data-theme','dark');
-      root.classList.add('dark-mode');
-      document.body.classList.add('dark-mode');
-    } else if(theme==='bright'){
-      root.setAttribute('data-theme','bright');
-    } else {
-      if(window.matchMedia('(prefers-color-scheme: dark)').matches){
-        root.setAttribute('data-theme','dark');
-        root.classList.add('dark-mode');
-        document.body.classList.add('dark-mode');
-      }
+    var resolved = theme;
+    if(theme==='system'){
+      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'bright';
     }
+    if(window.iceApplyThemeState){
+      window.iceApplyThemeState(resolved);
+      return;
+    }
+    var root=document.documentElement;
+    root.setAttribute('data-theme', resolved);
+    root.classList.toggle('dark-mode', resolved==='dark');
+    root.classList.toggle('bright-mode', resolved==='bright');
+    document.body.classList.toggle('dark-mode', resolved==='dark');
+    document.body.classList.toggle('bright-mode', resolved==='bright');
   }
 
   document.querySelectorAll('.theme-btn').forEach(function(btn){

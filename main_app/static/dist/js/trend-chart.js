@@ -15,7 +15,9 @@
   'use strict';
 
   function isDark() {
-    return document.body.classList.contains('dark-mode');
+    return document.documentElement.getAttribute('data-theme') === 'dark' ||
+      document.documentElement.classList.contains('dark-mode') ||
+      document.body.classList.contains('dark-mode');
   }
 
   function makeGradient(ctx, color, height) {

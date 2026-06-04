@@ -157,8 +157,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const GREEN = '#10B981';
   const RED   = '#EF4444';
 
-  function textColor() { return document.body.classList.contains('dark-mode') ? '#CBD5E1' : '#334155'; }
-  function gridColor() { return document.body.classList.contains('dark-mode') ? '#1E2E4A' : '#EFF6FF'; }
+  function isDarkTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ||
+      document.documentElement.classList.contains('dark-mode') ||
+      document.body.classList.contains('dark-mode');
+  }
+  function textColor() { return isDarkTheme() ? '#CBD5E1' : '#334155'; }
+  function gridColor() { return isDarkTheme() ? '#1E2E4A' : '#EFF6FF'; }
 
   /* Attendance vs Leave doughnut */
   new Chart(document.getElementById('pieChart'), {
