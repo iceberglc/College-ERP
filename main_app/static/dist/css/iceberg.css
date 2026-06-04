@@ -225,8 +225,10 @@ body {
 
 /* Profile avatar in navbar — small clean circle */
 .navbar-user-avatar {
-  width: 32px !important;
-  height: 32px !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-height: unset !important;
+  aspect-ratio: 1 / 1 !important;
   border-radius: 50% !important;
   background: linear-gradient(135deg, #1B3F7A, #0891B2) !important;
   border: none !important;
@@ -235,19 +237,23 @@ body {
   align-items: center !important;
   justify-content: center !important;
   color: #fff !important;
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
+  line-height: 1 !important;
   text-decoration: none !important;
   overflow: hidden !important;
   flex-shrink: 0 !important;
+  padding: 0 !important;
   transition: opacity .15s !important;
 }
 .navbar-user-avatar:hover { opacity: .85 !important; }
 .navbar-user-avatar img {
-  width: 32px !important;
-  height: 32px !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-height: unset !important;
   border-radius: 50% !important;
   object-fit: cover !important;
+  aspect-ratio: 1 / 1 !important;
 }
 /* Initials span inside avatar */
 .navbar-user-avatar span {
@@ -2032,3 +2038,256 @@ textarea.form-control { height: auto; min-height: 90px; }
   color: var(--text-muted, #94A3B8);
   margin-top: 3px;
 }
+
+/* =====================================================================
+   ICEBERG — Reusable form / profile / info components
+   Design-system primitives so pages stop hand-rolling inline styles.
+   All use existing tokens (--ice-*) and support .dark-mode.
+   Tap targets meet 44px (iOS) / 48px (Android) on touch devices.
+   ===================================================================== */
+
+/* ── Form card + grid ──────────────────────────────────────────────── */
+.ice-form-card {
+  max-width: 880px;
+  margin: 0 auto;
+  background: var(--ice-surface);
+  border: 1px solid var(--ice-border);
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(27,63,122,.06);
+  overflow: hidden;
+}
+.ice-form-card .ice-form-body { padding: 22px; }
+
+/* Responsive auto-fit grid — single column on phones, multi on larger */
+.ice-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.ice-form-grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.ice-form-grid .span-2 { grid-column: 1 / -1; }
+@media (max-width: 560px) {
+  .ice-form-grid, .ice-form-grid.cols-2 { grid-template-columns: 1fr; }
+}
+
+/* ── Field + label + control ───────────────────────────────────────── */
+.ice-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ice-field > label,
+.ice-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--ice-muted);
+}
+.ice-field-req { color: var(--ice-danger); margin-left: 2px; }
+
+.ice-input,
+.ice-select,
+.ice-field input,
+.ice-field select,
+.ice-field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ice-text);
+  background: var(--ice-surface2);
+  border: 1.5px solid var(--ice-border);
+  border-radius: 10px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.ice-field textarea { min-height: 96px; resize: vertical; }
+
+/* ── Native file / image picker — styled app-wide ──────────────────────
+   Covers every form context (ice forms, .pf-field add/edit pages, and the
+   .field-wrap profile pages) so the profile-pic upload never looks like a
+   raw browser control. */
+.ice-field input[type="file"],
+.pf-field input[type="file"],
+.field-wrap input[type="file"],
+input[type="file"].form-control {
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ice-muted);
+  cursor: pointer;
+}
+.ice-field input[type="file"]::file-selector-button,
+.pf-field input[type="file"]::file-selector-button,
+.field-wrap input[type="file"]::file-selector-button,
+input[type="file"].form-control::file-selector-button {
+  margin-right: 12px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ice-navy);
+  background: var(--ice-surface);
+  border: 1.5px solid var(--ice-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.ice-field input[type="file"]::file-selector-button:hover,
+.pf-field input[type="file"]::file-selector-button:hover,
+.field-wrap input[type="file"]::file-selector-button:hover,
+input[type="file"].form-control::file-selector-button:hover {
+  background: rgba(27,63,122,.06);
+  border-color: var(--ice-navy);
+}
+.dark-mode .ice-field input[type="file"]::file-selector-button,
+.dark-mode .pf-field input[type="file"]::file-selector-button,
+.dark-mode .field-wrap input[type="file"]::file-selector-button,
+.dark-mode input[type="file"].form-control::file-selector-button {
+  background: var(--ice-surface2); color: #93C5FD; border-color: var(--ice-border);
+}
+
+.ice-select,
+.ice-field select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%2364748B' d='M1 1l5 5 5-5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+}
+.ice-input:focus,
+.ice-select:focus,
+.ice-field input:focus,
+.ice-field select:focus,
+.ice-field textarea:focus {
+  outline: none;
+  border-color: var(--ice-cyan);
+  box-shadow: 0 0 0 3px rgba(6,182,212,.15);
+}
+.ice-input.is-invalid,
+.ice-field input.is-invalid,
+.ice-field select.is-invalid { border-color: var(--ice-danger); }
+
+.ice-field-help { font-size: 12px; color: var(--ice-muted); }
+.ice-field-error { font-size: 12px; font-weight: 600; color: var(--ice-danger); }
+
+/* Android needs a slightly taller touch target */
+.platform-android .ice-input,
+.platform-android .ice-select,
+.platform-android .ice-field input,
+.platform-android .ice-field select { min-height: 48px; }
+
+/* ── Submit bar ────────────────────────────────────────────────────── */
+.ice-submit-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 18px 22px;
+  border-top: 1px solid var(--ice-border);
+  background: var(--ice-surface2);
+}
+.ice-submit-bar .ice-btn-primary { flex: 1; min-width: 160px; }
+.ice-btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 46px; padding: 12px 22px;
+  font-size: 14px; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, var(--ice-navy-dk, #132E5E), var(--ice-navy));
+  border: none; border-radius: 11px; cursor: pointer;
+  transition: opacity .15s ease, box-shadow .15s ease;
+}
+.ice-btn-primary:hover { opacity: .94; color: #fff; }
+.ice-btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 46px; padding: 12px 22px;
+  font-size: 14px; font-weight: 600; color: var(--ice-navy);
+  background: var(--ice-surface); border: 1.5px solid var(--ice-border);
+  border-radius: 11px; cursor: pointer; text-decoration: none;
+  transition: background .15s ease, border-color .15s ease;
+}
+.ice-btn-secondary:hover { background: var(--ice-surface2); border-color: var(--ice-navy); color: var(--ice-navy); }
+
+/* On phones the submit bar stacks full-width and sits in normal flow at the
+   end of the card (the floating bottom nav has its own safe-area spacing). */
+@media (max-width: 560px) {
+  .ice-submit-bar { flex-direction: column; }
+  .ice-submit-bar .ice-btn-primary,
+  .ice-submit-bar .ice-btn-secondary { width: 100%; }
+}
+
+/* ── Profile header ────────────────────────────────────────────────── */
+.ice-profile-header {
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  padding: 26px 24px; color: #fff;
+  background: linear-gradient(135deg, #0C1F45 0%, var(--ice-navy) 100%);
+  border-radius: 18px;
+  box-shadow: 0 8px 26px rgba(12,31,69,.20);
+}
+.ice-profile-header .ice-profile-avatar {
+  width: 76px; height: 76px; border-radius: 18px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 800; color: #fff;
+  background: rgba(255,255,255,.14);
+  border: 2px solid rgba(255,255,255,.25);
+  object-fit: cover; overflow: hidden;
+}
+.ice-profile-name { font-size: 21px; font-weight: 800; margin: 0 0 4px; }
+.ice-profile-meta { font-size: 13px; opacity: .8; margin: 0; }
+
+/* ── Profile / info cards ──────────────────────────────────────────── */
+.ice-profile-card,
+.ice-info-card {
+  background: var(--ice-surface);
+  border: 1px solid var(--ice-border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(27,63,122,.05);
+}
+.ice-info-card-head,
+.ice-profile-card-head {
+  display: flex; align-items: center; gap: 9px;
+  padding: 14px 18px;
+  background: var(--ice-surface2);
+  border-bottom: 1px solid var(--ice-border);
+  font-size: 13px; font-weight: 700; color: var(--ice-text);
+}
+.ice-info-card-head i,
+.ice-profile-card-head i { color: var(--ice-cyan); }
+.ice-info-card-body,
+.ice-profile-card-body { padding: 18px; }
+
+/* Read-only info rows (label / value) */
+.ice-info-row {
+  display: flex; justify-content: space-between; gap: 16px;
+  padding: 10px 0; border-bottom: 1px solid var(--ice-border);
+}
+.ice-info-row:last-child { border-bottom: none; }
+.ice-info-row .k { font-size: 12px; font-weight: 600; color: var(--ice-muted); }
+.ice-info-row .v { font-size: 14px; font-weight: 600; color: var(--ice-text); text-align: right; word-break: break-word; }
+
+/* ── Badge (subtle, status-safe) ───────────────────────────────────── */
+.ice-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; line-height: 1.6;
+  background: rgba(27,63,122,.10); color: var(--ice-navy);
+}
+.ice-badge i { font-size: 9px; }
+.ice-badge.is-success { background: rgba(16,185,129,.12); color: #047857; }
+.ice-badge.is-warning { background: rgba(245,158,11,.14); color: #92400e; }
+.ice-badge.is-danger  { background: rgba(239,68,68,.12);  color: #991b1b; }
+.ice-badge.is-info    { background: rgba(6,182,212,.12);  color: var(--ice-cyan-dk); }
+.ice-badge.is-cyan    { background: rgba(255,255,255,.16); color: #fff; }
+
+/* ── Dark-mode tuning ──────────────────────────────────────────────── */
+.dark-mode .ice-form-card,
+.dark-mode .ice-profile-card,
+.dark-mode .ice-info-card { background: var(--ice-surface); border-color: var(--ice-border); }
+.dark-mode .ice-input,
+.dark-mode .ice-select,
+.dark-mode .ice-field input,
+.dark-mode .ice-field select,
+.dark-mode .ice-field textarea {
+  background: var(--ice-surface2); border-color: var(--ice-border); color: var(--ice-text);
+}
+.dark-mode .ice-submit-bar,
+.dark-mode .ice-info-card-head,
+.dark-mode .ice-profile-card-head { background: var(--ice-surface2); border-color: var(--ice-border); }
+.dark-mode .ice-btn-secondary { color: #93C5FD; border-color: var(--ice-border); background: var(--ice-surface); }
+.dark-mode .ice-badge { background: rgba(147,197,253,.12); color: #93C5FD; }

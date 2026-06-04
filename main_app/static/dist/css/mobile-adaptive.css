@@ -206,9 +206,16 @@ html[data-theme="dark"] {
   .bottom-nav-item,
   .navbar-toggle,
   .navbar-notification,
-  .navbar-user-avatar,
   .logout-btn {
     min-height: 44px;
+  }
+  /* Avatar must stay a perfect circle — expand tap area via padding, not min-height */
+  .navbar-user-avatar {
+    width: 36px !important;
+    height: 36px !important;
+    min-height: unset !important;
+    aspect-ratio: 1 / 1 !important;
+    padding: 4px !important;
   }
   /* Inline action buttons inside tables/cards: comfortable tap size. */
   .notify-btn,
@@ -2293,12 +2300,11 @@ canvas[id$="Chart"] {
     min-height: 48px;
   }
 
+  /* Submit footer sits in normal flow at the end of the card. It used to be
+     position:sticky 86px above the bottom, which floated it up over the last
+     field (e.g. the profile-pic upload) and left an empty gap in the card. */
   .pf-footer {
-    position: sticky;
-    bottom: calc(86px + env(safe-area-inset-bottom));
-    z-index: 6;
     border-top-color: var(--ice-border) !important;
-    box-shadow: 0 -10px 22px rgba(12, 31, 69, 0.06);
   }
 
   .erpnext-card .card-body:has(canvas),

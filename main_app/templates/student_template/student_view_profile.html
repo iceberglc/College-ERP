@@ -110,24 +110,26 @@
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="prof-page">
-
-  <!-- Avatar picker modal -->
-  <div class="avatar-modal-overlay" id="avatar-modal">
-    <div class="avatar-modal">
-      <div class="avatar-modal-header">
-        <h3><i class="fas fa-smile me-2" style="color:var(--ice-cyan);"></i>Choose Your Avatar</h3>
-        <button class="avatar-modal-close" onclick="closeAvatarModal()"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="avatar-grid" id="avatar-grid"></div>
-      <div class="avatar-modal-footer">
-        <button class="avatar-cancel-btn" onclick="closeAvatarModal()">Cancel</button>
-        <button class="avatar-save-btn" onclick="saveAvatar()"><i class="fas fa-check me-1"></i>Save Avatar</button>
-      </div>
+{% block body_modals %}
+<!-- Avatar picker modal — rendered on <body> to escape .erpnext-main stacking context -->
+<div class="avatar-modal-overlay" id="avatar-modal">
+  <div class="avatar-modal">
+    <div class="avatar-modal-header">
+      <h3><i class="fas fa-smile me-2" style="color:var(--ice-cyan);"></i>Choose Your Avatar</h3>
+      <button class="avatar-modal-close" onclick="closeAvatarModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="avatar-grid" id="avatar-grid"></div>
+    <div class="avatar-modal-footer">
+      <button class="avatar-cancel-btn" onclick="closeAvatarModal()">Cancel</button>
+      <button class="avatar-save-btn" onclick="saveAvatar()"><i class="fas fa-check me-1"></i>Save Avatar</button>
     </div>
   </div>
-  <div class="avatar-toast" id="avatar-toast"><i class="fas fa-check-circle me-1"></i>Avatar saved!</div>
+</div>
+<div class="avatar-toast" id="avatar-toast"><i class="fas fa-check-circle me-1"></i>Avatar saved!</div>
+{% endblock body_modals %}
+
+{% block content %}
+<div class="prof-page">
 
   <!-- Hero -->
   <div class="prof-hero">
