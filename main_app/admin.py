@@ -12,6 +12,9 @@ from .models import (
     Branch,
     Group,
     Enrollment,
+    ChatThread,
+    ChatMessage,
+    ChatReadState,
     Assignment,
     Submission,
     Notification,
@@ -106,6 +109,33 @@ admin.site.register(Session)
 admin.site.register(Branch)
 admin.site.register(Group)
 admin.site.register(Enrollment)
+
+
+@admin.register(ChatThread)
+class ChatThreadAdmin(admin.ModelAdmin):
+    list_display = ("group", "updated_at", "created_at")
+    search_fields = ("group__name",)
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ("thread", "sender", "created_at", "preview")
+    list_filter = ("created_at",)
+    search_fields = ("body", "sender__email", "sender__first_name", "sender__last_name", "thread__group__name")
+    readonly_fields = ("created_at",)
+
+    def preview(self, obj):
+        return obj.body[:80]
+
+
+@admin.register(ChatReadState)
+class ChatReadStateAdmin(admin.ModelAdmin):
+    list_display = ("thread", "user", "last_read_at", "updated_at")
+    search_fields = ("thread__group__name", "user__email", "user__first_name", "user__last_name")
+    readonly_fields = ("updated_at",)
+
+
 admin.site.register(Assignment)
 admin.site.register(Submission)
 admin.site.register(Notification)

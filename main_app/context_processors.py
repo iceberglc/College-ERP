@@ -1,8 +1,10 @@
 from .models import Notification
+from .messaging import unread_message_count
 
 
 def notification_count(request):
     count = 0
+    message_count = 0
     if request.user.is_authenticated:
         try:
             count = Notification.objects.filter(
@@ -11,7 +13,11 @@ def notification_count(request):
             ).count()
         except Exception:
             pass
-    return {"unread_notification_count": count}
+        try:
+            message_count = unread_message_count(request.user)
+        except Exception:
+            pass
+    return {"unread_notification_count": count, "unread_message_count": message_count}
 
 
 def student_theme(request):

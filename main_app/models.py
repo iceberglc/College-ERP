@@ -2,7 +2,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import UserManager
 from django.dispatch import receiver
 from django.db.models.signals import post_save
-from django.db import models
+from django.db import OperationalError, ProgrammingError, models
 from django.db.models import Q
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
@@ -393,6 +393,65 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f"{self.student} → {self.group}"
+
+
+class ChatThread(models.Model):
+    """Persistent group conversation for a class group."""
+
+    group = models.OneToOneField(Group, on_delete=models.CASCADE, related_name="chat_thread")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["group__name"]
+        indexes = [
+            models.Index(fields=["updated_at"]),
+        ]
+
+    def __str__(self):
+        return f"Chat - {self.group.name}"
+
+
+class ChatMessage(models.Model):
+    thread = models.ForeignKey(ChatThread, on_delete=models.CASCADE, related_name="messages")
+    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="chat_messages")
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["thread", "created_at"]),
+            models.Index(fields=["sender", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.sender.email} -> {self.thread.group.name}: {self.body[:50]}"
+
+
+class ChatReadState(models.Model):
+    thread = models.ForeignKey(ChatThread, on_delete=models.CASCADE, related_name="read_states")
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="chat_read_states")
+    last_read_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("thread", "user")
+        indexes = [
+            models.Index(fields=["user", "thread"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.email} read {self.thread.group.name}"
+
+
+@receiver(post_save, sender=Group)
+def create_group_chat_thread(sender, instance, created, **kwargs):
+    if created:
+        try:
+            ChatThread.objects.get_or_create(group=instance)
+        except (OperationalError, ProgrammingError):
+            pass
 
 
 class Assignment(models.Model):

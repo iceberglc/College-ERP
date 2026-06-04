@@ -1,0 +1,415 @@
+{% extends 'main_app/base.html' %}
+
+{% block title %}Messages - Iceberg Study Center{% endblock %}
+{% block page_title %}Messages{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Messages</li>{% endblock %}
+
+{% block custom_css %}
+<style>
+.msg-shell {
+  display: grid;
+  grid-template-columns: minmax(250px, 330px) minmax(0, 1fr);
+  gap: 16px;
+  min-height: calc(100vh - 180px);
+}
+.msg-threads,
+.msg-chat {
+  background: var(--ice-surface);
+  border: 1px solid var(--ice-border);
+  box-shadow: var(--ice-card-shadow);
+}
+.msg-threads {
+  border-radius: 16px;
+  overflow: hidden;
+  min-height: 480px;
+}
+.msg-thread-head,
+.msg-chat-head {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--ice-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.msg-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ice-text);
+}
+.msg-sub {
+  color: var(--ice-muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.msg-thread-list {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 6px;
+  max-height: calc(100vh - 250px);
+  overflow-y: auto;
+}
+.msg-thread {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 12px;
+  color: var(--ice-text);
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+.msg-thread:hover {
+  background: var(--ice-surface2);
+  color: var(--ice-text);
+  text-decoration: none;
+}
+.msg-thread.active {
+  background: rgba(6, 182, 212, .10);
+  border-color: rgba(6, 182, 212, .22);
+}
+.msg-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0C1F45, #0891B2);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.msg-thread-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ice-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.msg-thread-meta,
+.msg-thread-preview {
+  font-size: 11.5px;
+  color: var(--ice-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.msg-unread {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ice-danger);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+.msg-chat {
+  border-radius: 16px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.msg-chat-head-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 280px;
+}
+.msg-head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.msg-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  background: var(--ice-surface2);
+  color: var(--ice-muted);
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.msg-body {
+  flex: 1;
+  padding: 18px;
+  overflow-y: auto;
+  max-height: calc(100vh - 330px);
+  min-height: 340px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(6,182,212,.05), transparent 18rem),
+    var(--ice-surface);
+}
+.msg-row {
+  display: flex;
+  margin-bottom: 12px;
+}
+.msg-row.mine {
+  justify-content: flex-end;
+}
+.msg-bubble {
+  max-width: min(680px, 78%);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: var(--ice-surface2);
+  border: 1px solid var(--ice-border);
+  color: var(--ice-text);
+}
+.msg-row.mine .msg-bubble {
+  background: linear-gradient(135deg, #0C1F45, #0891B2);
+  color: #fff;
+  border-color: transparent;
+}
+.msg-bubble-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 5px;
+  font-size: 11px;
+  color: var(--ice-muted);
+}
+.msg-row.mine .msg-bubble-head {
+  color: rgba(255,255,255,.75);
+}
+.msg-sender {
+  font-weight: 800;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.msg-text {
+  font-size: 13.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.msg-composer {
+  border-top: 1px solid var(--ice-border);
+  padding: 12px;
+  background: var(--ice-surface);
+  border-radius: 0 0 16px 16px;
+}
+.msg-composer textarea {
+  resize: vertical;
+  min-height: 72px;
+  max-height: 180px;
+}
+.msg-composer-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+.msg-empty {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ice-muted);
+  text-align: center;
+  padding: 24px;
+}
+.msg-empty i {
+  font-size: 34px;
+  color: var(--ice-cyan);
+  margin-bottom: 12px;
+}
+.dark-mode .msg-threads,
+.dark-mode .msg-chat,
+.dark-mode .msg-composer {
+  background: var(--ice-surface);
+  border-color: var(--ice-border);
+}
+.dark-mode .msg-thread.active {
+  background: rgba(103, 232, 249, .10);
+  border-color: rgba(103, 232, 249, .22);
+}
+.dark-mode .msg-bubble {
+  background: #111F35;
+}
+@media (max-width: 900px) {
+  .msg-shell {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .msg-chat-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .msg-thread-list {
+    max-height: 280px;
+  }
+  .msg-body {
+    max-height: none;
+    min-height: 360px;
+  }
+  .msg-bubble {
+    max-width: 88%;
+  }
+}
+@media (max-width: 640px) {
+  .msg-shell {
+    gap: 12px;
+  }
+  .msg-thread-head,
+  .msg-chat-head {
+    padding: 14px;
+  }
+  .msg-body {
+    padding: 12px;
+    min-height: 320px;
+  }
+  .msg-bubble {
+    max-width: 94%;
+  }
+  .msg-pill {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .msg-composer textarea {
+    font-size: 16px;
+  }
+}
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+<div class="msg-shell">
+  <aside class="msg-threads">
+    <div class="msg-thread-head">
+      <div>
+        <h2 class="msg-title">Group Chats</h2>
+        <div class="msg-sub">{{ thread_cards|length }} conversation{{ thread_cards|length|pluralize }}</div>
+      </div>
+      <i class="fas fa-comments" style="color:var(--ice-cyan);"></i>
+    </div>
+
+    {% if thread_cards %}
+    <div class="msg-thread-list">
+      {% for card in thread_cards %}
+      <a href="{% url 'message_thread' card.group.id %}"
+         class="msg-thread {% if active_group and active_group.id == card.group.id %}active{% endif %}">
+        <span class="msg-avatar">{{ card.group.name|first|upper }}</span>
+        <span style="min-width:0;">
+          <span class="msg-thread-name">{{ card.group.name }}</span>
+          <span class="msg-thread-meta">
+            {% if card.group.teacher %}
+              {{ card.group.teacher.admin.get_full_name|default:card.group.teacher.admin.email }}
+            {% else %}
+              No teacher assigned
+            {% endif %}
+            - {{ card.group.active_student_count|default:0 }} student{{ card.group.active_student_count|default:0|pluralize }}
+          </span>
+          <span class="msg-thread-preview">
+            {% if card.last_message %}
+              {{ card.last_message.sender.get_full_name|default:card.last_message.sender.email }}: {{ card.last_message.body }}
+            {% else %}
+              No messages yet
+            {% endif %}
+          </span>
+        </span>
+        {% if card.unread_count > 0 %}
+        <span class="msg-unread">{{ card.unread_count }}</span>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="msg-empty">
+      <i class="fas fa-comment-slash"></i>
+      <strong>No group chats available</strong>
+      <span>You will see chats here once you are assigned to a group.</span>
+    </div>
+    {% endif %}
+  </aside>
+
+  <section class="msg-chat">
+    {% if active_group %}
+    <div class="msg-chat-head">
+      <div class="msg-chat-head-left">
+        <span class="msg-avatar">{{ active_group.name|first|upper }}</span>
+        <div style="min-width:0;">
+          <h2 class="msg-title">{{ active_group.name }}</h2>
+          <div class="msg-head-meta">
+            <span class="msg-pill"><i class="fas fa-user-tie"></i>
+              {% if active_group.teacher %}
+                {{ active_group.teacher.admin.get_full_name|default:active_group.teacher.admin.email }}
+              {% else %}
+                No teacher
+              {% endif %}
+            </span>
+            <span class="msg-pill"><i class="fas fa-users"></i>{{ active_group.active_student_count|default:0 }} student{{ active_group.active_student_count|default:0|pluralize }}</span>
+            {% if active_group.course %}<span class="msg-pill"><i class="fas fa-graduation-cap"></i>{{ active_group.course.name }}</span>{% endif %}
+          </div>
+        </div>
+      </div>
+      {% if user.user_type == '1' %}
+      <span class="msg-pill"><i class="fas fa-shield-alt"></i>Admin access</span>
+      {% endif %}
+    </div>
+
+    <div class="msg-body" id="msg-body">
+      {% if chat_messages %}
+        {% for msg in chat_messages %}
+        <div class="msg-row {% if msg.sender_id == request.user.id %}mine{% endif %}" {% if forloop.last %}id="latest"{% endif %}>
+          <div class="msg-bubble">
+            <div class="msg-bubble-head">
+              <span class="msg-sender">
+                {{ msg.sender.get_full_name|default:msg.sender.email }}
+                {% if msg.sender.user_type == '1' %} - Admin{% elif msg.sender.user_type == '2' %} - Teacher{% else %} - Student{% endif %}
+              </span>
+              <span>{{ msg.created_at|date:"M j, H:i" }}</span>
+            </div>
+            <div class="msg-text">{{ msg.body }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="msg-empty">
+        <i class="fas fa-comments"></i>
+        <strong>No messages yet</strong>
+        <span>Start the group conversation below.</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <form method="post" class="msg-composer" action="{% url 'message_thread' active_group.id %}">
+      {% csrf_token %}
+      <label for="chat-body" class="form-label">Message</label>
+      <textarea id="chat-body" name="body" class="form-control" maxlength="4000" placeholder="Write a message to this group..." required></textarea>
+      <div class="msg-composer-actions">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane me-1"></i>Send</button>
+      </div>
+    </form>
+    {% else %}
+    <div class="msg-empty">
+      <i class="fas fa-comments"></i>
+      <strong>Select a group chat</strong>
+      <span>Your available group conversations will appear on the left.</span>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var latest = document.getElementById('latest');
+  if (latest) latest.scrollIntoView({ block: 'end' });
+});
+</script>
+{% endblock custom_js %}

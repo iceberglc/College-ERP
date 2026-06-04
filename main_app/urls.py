@@ -18,7 +18,7 @@ from django.urls import path
 
 from main_app.EditResultView import EditResultView
 
-from . import hod_views, password_recovery, staff_views, student_views, views
+from . import hod_views, messaging_views, password_recovery, staff_views, student_views, views
 
 urlpatterns = [
     # Password recovery (custom code-based flow)
@@ -34,6 +34,8 @@ urlpatterns = [
     path("health/", views.health, name="health"),
     path("", views.login_page, name="entry_page"),
     path("login/", views.login_page, name="login_page"),
+    path("messages/", messaging_views.messages_home, name="messages"),
+    path("messages/group/<int:group_id>/", messaging_views.messages_home, name="message_thread"),
     path("get_attendance", views.get_attendance, name="get_attendance"),
     path("firebase-messaging-sw.js", views.showFirebaseJS, name="showFirebaseJS"),
     path("doLogin/", views.doLogin, name="user_login"),

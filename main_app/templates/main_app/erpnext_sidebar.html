@@ -155,18 +155,13 @@
         <h6 class="nav-section-title">Communication</h6>
 
         <div class="nav-item">
-            {% url 'admin_notify_staff' as admin_notify_staff %}
-            <a href="{{ admin_notify_staff }}" class="nav-link {% if admin_notify_staff == request.path %}active{% endif %}">
-                <i class="nav-icon fas fa-bell"></i>
-                <span class="nav-text">Notify Teachers</span>
-            </a>
-        </div>
-
-        <div class="nav-item">
-            {% url 'admin_notify_student' as admin_notify_student %}
-            <a href="{{ admin_notify_student }}" class="nav-link {% if admin_notify_student == request.path %}active{% endif %}">
-                <i class="nav-icon fas fa-bullhorn"></i>
-                <span class="nav-text">Notify Students</span>
+            {% url 'messages' as messages_url %}
+            <a href="{{ messages_url }}" class="nav-link {% if 'messages' in request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-comments"></i>
+                <span class="nav-text">Group Messages</span>
+                {% if unread_message_count > 0 %}
+                <span class="badge badge-danger badge-pill ml-auto">{{ unread_message_count }}</span>
+                {% endif %}
             </a>
         </div>
 
@@ -363,6 +358,17 @@
         <h6 class="nav-section-title">Communication</h6>
 
         <div class="nav-item">
+            {% url 'messages' as messages_url %}
+            <a href="{{ messages_url }}" class="nav-link {% if 'messages' in request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-comments"></i>
+                <span class="nav-text">Group Messages</span>
+                {% if unread_message_count > 0 %}
+                <span class="badge badge-danger badge-pill ml-auto">{{ unread_message_count }}</span>
+                {% endif %}
+            </a>
+        </div>
+
+        <div class="nav-item">
             {% url 'staff_view_notification' as staff_view_notification %}
             <a href="{{ staff_view_notification }}" class="nav-link {% if staff_view_notification == request.path %}active{% endif %}">
                 <i class="nav-icon fas fa-bell"></i>
@@ -479,6 +485,17 @@
 
         <h6 class="nav-section-title">Communication</h6>
         
+        <div class="nav-item">
+            {% url 'messages' as messages_url %}
+            <a href="{{ messages_url }}" class="nav-link {% if 'messages' in request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-comments"></i>
+                <span class="nav-text">Group Messages</span>
+                {% if unread_message_count > 0 %}
+                <span class="badge badge-danger badge-pill ml-auto">{{ unread_message_count }}</span>
+                {% endif %}
+            </a>
+        </div>
+
         <div class="nav-item">
             {% url 'student_view_notification' as student_view_notification %}
             <a href="{{ student_view_notification }}" class="nav-link {% if student_view_notification == request.path %}active{% endif %}">

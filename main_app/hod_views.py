@@ -735,16 +735,12 @@ def admin_view_profile(request):
 
 @admin_only
 def admin_notify_staff(request):
-    staff = CustomUser.objects.filter(user_type=2)
-    context = {"page_title": "Notify Teachers", "allStaff": staff}
-    return render(request, "hod_template/staff_notification.html", context)
+    return redirect(reverse("messages"))
 
 
 @admin_only
 def admin_notify_student(request):
-    student = CustomUser.objects.filter(user_type=3)
-    context = {"page_title": "Notify Students", "students": student}
-    return render(request, "hod_template/student_notification.html", context)
+    return redirect(reverse("messages"))
 
 
 @admin_only
