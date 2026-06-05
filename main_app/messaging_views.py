@@ -43,6 +43,7 @@ def _thread_cards_for_user(user):
 @require_http_methods(["GET", "POST"])
 def messages_home(request, group_id=None):
     thread_cards = _thread_cards_for_user(request.user)
+    explicit_thread_selected = group_id is not None
     active_group = None
     active_thread = None
 
@@ -101,5 +102,6 @@ def messages_home(request, group_id=None):
         "active_group": active_group,
         "active_thread": active_thread,
         "chat_messages": chat_messages,
+        "explicit_thread_selected": explicit_thread_selected,
     }
     return render(request, "main_app/messages.html", context)

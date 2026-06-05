@@ -64,6 +64,105 @@
   overflow-y: auto;
 }
 
+.msg-hub-mobile,
+.msg-back-btn {
+  display: none;
+}
+
+.msg-hub-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.msg-hub-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 4px 8px;
+  color: var(--ice-muted);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.msg-hub-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: var(--ice-text);
+  background: var(--ice-surface2);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.msg-hub-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 58px;
+  padding: 11px 12px;
+  border: 1px solid var(--ice-border);
+  border-radius: 14px;
+  color: var(--ice-text);
+  background: var(--ice-surface);
+  text-decoration: none;
+}
+
+.msg-hub-card:hover,
+.msg-hub-card:focus {
+  color: var(--ice-text);
+  text-decoration: none;
+  background: var(--ice-surface2);
+}
+
+.msg-hub-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  color: var(--ice-cyan);
+  background: rgba(6, 182, 212, .12);
+  font-size: 17px;
+}
+
+.msg-hub-card-title,
+.msg-hub-card-sub {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.msg-hub-card-title {
+  color: var(--ice-text);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.msg-hub-card-sub {
+  margin-top: 2px;
+  color: var(--ice-muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.msg-hub-card-chevron {
+  color: var(--ice-muted);
+  font-size: 13px;
+}
+
 .msg-thread {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr) auto;
@@ -160,6 +259,30 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
+}
+
+.msg-back-btn {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--ice-border);
+  border-radius: 999px;
+  color: var(--ice-text);
+  background: var(--ice-surface2);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.msg-back-btn:hover,
+.msg-back-btn:focus {
+  color: var(--ice-text);
+  text-decoration: none;
+  background: rgba(6, 182, 212, .12);
 }
 
 .msg-head-meta {
@@ -349,108 +472,216 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
+  #main-content:has(.msg-shell) {
+    position: relative !important;
+    z-index: 5000 !important;
+    padding: 0 !important;
+  }
+
+  #main-content:has(.msg-shell) > .page-header,
+  #main-content:has(.msg-shell) > .messages-container {
+    display: none !important;
+  }
+
+  #main-content:has(.msg-shell) > .content-area {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
   .msg-shell {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-height: auto;
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    display: block;
+    width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+    background:
+      radial-gradient(circle at 18% 0%, rgba(6, 182, 212, .12), transparent 16rem),
+      linear-gradient(180deg, var(--ice-page-bg-2, #f8fbff), var(--ice-page-bg, #eef4fb));
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+
+  .msg-shell.is-hub .msg-chat,
+  .msg-shell.is-conversation .msg-threads {
+    display: none;
   }
 
   .msg-threads,
   .msg-chat {
-    border-radius: 12px;
-    box-shadow: 0 12px 28px rgba(12, 31, 69, .10);
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .msg-threads {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .msg-chat {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .msg-hub-mobile {
+    display: block;
+  }
+
+  .msg-hub-section-title.msg-hub-mobile {
+    display: flex;
   }
 
   .msg-panel-head,
   .msg-chat-head {
-    padding: 12px;
-  }
-
-  .msg-panel-head {
+    padding: 4px 2px 14px;
     border-bottom: 0;
   }
 
+  .msg-panel-head {
+    align-items: flex-start;
+  }
+
   .msg-title {
-    font-size: 14px;
+    font-size: 20px;
+    letter-spacing: 0;
   }
 
   .msg-sub {
-    font-size: 11px;
-  }
-
-  .msg-thread-list {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(220px, 78vw);
-    gap: 8px;
-    padding: 0 10px 10px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-padding-inline: 10px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .msg-thread-list::-webkit-scrollbar {
-    display: none;
-  }
-
-  .msg-thread {
-    scroll-snap-align: start;
-    grid-template-columns: 38px minmax(0, 1fr) auto;
-    gap: 9px;
-    padding: 9px;
-    border-color: rgba(148, 163, 184, .20);
-    background: var(--ice-surface);
-  }
-
-  .msg-avatar {
-    width: 38px;
-    height: 38px;
-    flex-basis: 38px;
-    border-radius: 10px;
-    font-size: 14px;
-  }
-
-  .msg-thread-name {
     font-size: 12.5px;
   }
 
-  .msg-thread-meta,
-  .msg-thread-preview {
-    font-size: 10.5px;
+  .msg-thread-list {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 10px;
+    min-height: auto;
+    padding: 0;
+    overflow: visible;
   }
 
-  .msg-chat {
-    height: clamp(300px, calc(100vh - 376px - env(safe-area-inset-bottom)), 620px);
-    height: clamp(300px, calc(100dvh - 376px - env(safe-area-inset-bottom)), 620px);
-    min-height: 0;
+  .msg-thread,
+  .msg-hub-card {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    min-height: 68px;
+    padding: 12px;
+    border-color: rgba(148, 163, 184, .22);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .88);
+    box-shadow: 0 10px 26px rgba(12, 31, 69, .08);
+  }
+
+  .msg-shell.is-hub .msg-thread.active {
+    border-color: rgba(148, 163, 184, .22);
+    background: rgba(255, 255, 255, .88);
+  }
+
+  .msg-thread:active,
+  .msg-hub-card:active,
+  .msg-back-btn:active,
+  .msg-composer-actions .btn:active {
+    transform: scale(.985);
+  }
+
+  .msg-avatar,
+  .msg-hub-card-icon {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+    border-radius: 15px;
+    font-size: 16px;
+  }
+
+  .msg-thread-name,
+  .msg-hub-card-title {
+    font-size: 14px;
+  }
+
+  .msg-thread-meta,
+  .msg-thread-preview,
+  .msg-hub-card-sub {
+    font-size: 12px;
+  }
+
+  .msg-hub-section {
+    margin-top: 4px;
+  }
+
+  .msg-hub-section-title {
+    margin: 20px 4px 9px;
+  }
+
+  .msg-unread,
+  .msg-hub-count {
+    min-width: 26px;
+    height: 26px;
+  }
+
+  .msg-back-btn {
+    display: inline-flex;
+    flex: 0 0 auto;
+    min-width: 46px;
+    min-height: 46px;
   }
 
   .msg-chat-head {
     align-items: flex-start;
+    gap: 10px;
+    flex: 0 0 auto;
   }
 
   .msg-chat-head-left {
+    display: grid;
+    grid-template-columns: auto 48px minmax(0, 1fr);
     flex: 1 1 100%;
     gap: 10px;
+    align-items: center;
+    width: 100%;
+  }
+
+  .msg-chat-title .msg-title {
+    font-size: 17px;
+    line-height: 1.18;
   }
 
   .msg-head-meta {
-    gap: 5px;
+    gap: 6px;
   }
 
   .msg-pill {
-    padding: 4px 8px;
-    font-size: 10.5px;
+    min-height: 32px;
+    padding: 7px 10px;
+    font-size: 11.5px;
   }
 
   .msg-body {
+    flex: 1 1 auto;
     min-height: 0;
-    padding: 14px 10px;
+    margin: 0 -2px;
+    padding: 14px 2px 12px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: transparent;
   }
 
   .msg-row {
@@ -458,62 +689,65 @@
   }
 
   .msg-bubble {
-    max-width: 90%;
-    padding: 10px 11px;
-    border-radius: 15px 15px 15px 6px;
-    box-shadow: 0 6px 16px rgba(12, 31, 69, .07);
+    max-width: 88%;
+    padding: 10px 12px;
+    border-radius: 17px 17px 17px 7px;
+    box-shadow: 0 7px 18px rgba(12, 31, 69, .08);
   }
 
   .msg-row.mine .msg-bubble {
-    border-radius: 15px 15px 6px 15px;
+    border-radius: 17px 17px 7px 17px;
   }
 
   .msg-bubble-head {
     gap: 8px;
-    font-size: 10.5px;
+    font-size: 11px;
   }
 
   .msg-text {
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.5;
   }
 
   .msg-composer {
-    position: sticky;
-    bottom: 0;
+    position: static;
     z-index: 2;
-    grid-template-columns: minmax(0, 1fr) 50px;
-    gap: 8px;
-    padding: 9px;
-    box-shadow: 0 -8px 18px rgba(12, 31, 69, .06);
+    flex: 0 0 auto;
+    grid-template-columns: minmax(0, 1fr) 52px;
+    gap: 9px;
+    padding: 10px 0 0;
+    border-top: 1px solid rgba(148, 163, 184, .24);
+    background: transparent;
+    box-shadow: none;
   }
 
   .msg-composer textarea {
-    min-height: 48px;
-    max-height: 96px;
+    min-height: 52px;
+    max-height: 116px;
     resize: none;
-    border-radius: 10px;
-    font-size: 16px;
-    padding: 11px 12px;
+    border-radius: 16px;
+    font-size: 16px !important;
+    line-height: 1.45;
+    padding: 13px 14px;
   }
 
   .msg-composer-actions .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 50px;
-    min-width: 50px;
-    min-height: 48px;
-    height: 48px;
+    width: 52px;
+    min-width: 52px;
+    min-height: 52px;
+    height: 52px;
     padding: 0;
     overflow: hidden;
-    border-radius: 10px;
+    border-radius: 16px;
     font-size: 0 !important;
   }
 
   .msg-composer-actions .btn i {
     margin: 0 !important;
-    font-size: 16px !important;
+    font-size: 17px !important;
   }
 
   .msg-empty {
@@ -521,24 +755,29 @@
     padding: 20px;
   }
 
-  .dark-mode .msg-thread {
+  .dark-mode .msg-shell {
+    background:
+      radial-gradient(circle at 18% 0%, rgba(34, 211, 238, .10), transparent 16rem),
+      linear-gradient(180deg, #07101f, #0b1426);
+  }
+
+  .dark-mode .msg-thread,
+  .dark-mode .msg-hub-card,
+  .dark-mode .msg-shell.is-hub .msg-thread.active {
     border-color: rgba(148, 163, 184, .16);
-    background: var(--ice-surface);
+    background: rgba(17, 29, 53, .92);
   }
 }
 
-@media (max-width: 420px) {
-  .msg-thread-list {
-    grid-auto-columns: minmax(206px, 82vw);
-  }
+@media (max-width: 480px) {
 
   .msg-panel-head,
   .msg-chat-head {
-    padding: 11px;
+    padding: 2px 0 12px;
   }
 
   .msg-body {
-    padding: 12px 9px;
+    padding: 12px 0;
   }
 
   .msg-bubble {
@@ -555,14 +794,27 @@
 {% endblock custom_css %}
 
 {% block content %}
-<div class="msg-shell">
+{% if user.user_type == '1' %}
+  {% url 'admin_view_profile' as profile_url %}
+{% elif user.user_type == '2' %}
+  {% url 'staff_view_profile' as profile_url %}
+{% else %}
+  {% url 'student_view_profile' as profile_url %}
+{% endif %}
+
+<div class="msg-shell {% if explicit_thread_selected %}is-conversation{% else %}is-hub{% endif %}">
   <aside class="msg-threads" aria-label="Group chats">
     <div class="msg-panel-head">
       <div>
-        <h2 class="msg-title">Group Chats</h2>
-        <div class="msg-sub">{{ thread_cards|length }} conversation{{ thread_cards|length|pluralize }}</div>
+        <h2 class="msg-title">Messages</h2>
+        <div class="msg-sub">{{ thread_cards|length }} channel{{ thread_cards|length|pluralize }}</div>
       </div>
       <i class="fas fa-comments" style="color:var(--ice-cyan);" aria-hidden="true"></i>
+    </div>
+
+    <div class="msg-hub-section-title msg-hub-mobile">
+      <span>Channels</span>
+      <span class="msg-hub-count">{{ thread_cards|length }}</span>
     </div>
 
     {% if thread_cards %}
@@ -602,12 +854,63 @@
       <span>You will see chats here once you are assigned to a group.</span>
     </div>
     {% endif %}
+
+    <div class="msg-hub-mobile">
+      <div class="msg-hub-section">
+        <div class="msg-hub-section-title">
+          <span>DMs</span>
+          <span class="msg-hub-count">0</span>
+        </div>
+        <div class="msg-hub-card" aria-disabled="true">
+          <span class="msg-hub-card-icon" aria-hidden="true"><i class="fas fa-user-friends"></i></span>
+          <span>
+            <span class="msg-hub-card-title">Direct Messages</span>
+            <span class="msg-hub-card-sub">Private chats will appear here.</span>
+          </span>
+          <span class="msg-hub-card-chevron" aria-hidden="true"><i class="fas fa-lock"></i></span>
+        </div>
+      </div>
+
+      <div class="msg-hub-section">
+        <div class="msg-hub-section-title">
+          <span>User Profile</span>
+        </div>
+        <a href="{{ profile_url }}" class="msg-hub-card">
+          <span class="msg-hub-card-icon" aria-hidden="true"><i class="fas fa-user"></i></span>
+          <span>
+            <span class="msg-hub-card-title">{{ request.user.get_full_name|default:request.user.email }}</span>
+            <span class="msg-hub-card-sub">
+              {% if request.user.user_type == '1' %}Admin{% elif request.user.user_type == '2' %}Teacher{% else %}Student{% endif %} profile
+            </span>
+          </span>
+          <span class="msg-hub-card-chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+        </a>
+      </div>
+
+      <div class="msg-hub-section">
+        <div class="msg-hub-section-title">
+          <span>Upcoming Events</span>
+        </div>
+        <div class="msg-hub-card" aria-disabled="true">
+          <span class="msg-hub-card-icon" aria-hidden="true"><i class="fas fa-calendar-day"></i></span>
+          <span>
+            <span class="msg-hub-card-title">No scheduled events</span>
+            <span class="msg-hub-card-sub">Class reminders will appear here.</span>
+          </span>
+          <span class="msg-hub-card-chevron" aria-hidden="true"><i class="fas fa-clock"></i></span>
+        </div>
+      </div>
+    </div>
   </aside>
 
   <section class="msg-chat" aria-label="Active conversation">
     {% if active_group %}
     <div class="msg-chat-head">
       <div class="msg-chat-head-left">
+        <a href="{% url 'messages' %}" class="msg-back-btn" aria-label="Back to message hub">
+          <i class="fas fa-chevron-left" aria-hidden="true"></i>
+          <span>Back</span>
+        </a>
         <span class="msg-avatar" aria-hidden="true">{{ active_group.name|first|upper }}</span>
         <div class="msg-chat-title">
           <h2 class="msg-title">{{ active_group.name }}</h2>

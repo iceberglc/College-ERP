@@ -680,6 +680,22 @@ class GroupMessagingTests(TestCase):
         self.assertTrue(ChatThread.objects.filter(group=self.group_b).exists())
 
     @override_settings(**_BASE_OVERRIDES)
+    def test_messages_mobile_hub_and_conversation_states_render(self):
+        self.client.force_login(self.student_a_user)
+
+        hub_response = self.client.get(reverse("messages"))
+        self.assertEqual(hub_response.status_code, 200)
+        self.assertContains(hub_response, 'class="msg-shell is-hub"')
+        self.assertContains(hub_response, "Channels")
+        self.assertContains(hub_response, "Direct Messages")
+        self.assertContains(hub_response, "Upcoming Events")
+
+        thread_response = self.client.get(reverse("message_thread", args=[self.group_a.id]))
+        self.assertEqual(thread_response.status_code, 200)
+        self.assertContains(thread_response, 'class="msg-shell is-conversation"')
+        self.assertContains(thread_response, 'class="msg-back-btn"')
+
+    @override_settings(**_BASE_OVERRIDES)
     def test_student_can_post_to_own_group_and_teacher_reads(self):
         self.client.force_login(self.student_a_user)
         response = self.client.post(
