@@ -26,6 +26,9 @@ services:
       - key: DJANGO_ALLOWED_HOSTS
         scope: RUN_AND_BUILD_TIME
         value: "${APP_DOMAIN}"
+      - key: REGISTRATION_LEADS_API_TOKEN
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
       # ── Database ──────────────────────────────────────────────────────────
       - key: DATABASE_URL
         scope: RUN_AND_BUILD_TIME

@@ -35,6 +35,11 @@ urlpatterns = [
     path("", views.login_page, name="entry_page"),
     path("login/", views.login_page, name="login_page"),
     path(
+        "public/registration-leads",
+        public_views.registration_leads_receiver,
+        name="public_registration_leads_no_slash",
+    ),
+    path(
         "public/registration-leads/",
         public_views.registration_leads_receiver,
         name="public_registration_leads",

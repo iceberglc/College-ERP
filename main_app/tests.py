@@ -175,6 +175,138 @@ class RegistrationLeadReceiverTests(TestCase):
         self.assertEqual(lead.social_handle, "@publicstudent")
         self.assertEqual(lead.user_agent, "website-test-client")
 
+    @override_settings(**_BASE_OVERRIDES, REGISTRATION_LEADS_API_TOKEN="secret-token")
+    def test_receiver_accepts_minimal_name_and_phone_payload(self):
+        response = self.client.post(
+            reverse("public_registration_leads"),
+            data=json.dumps(
+                {
+                    "full_name": "Minimal Website Lead",
+                    "phone": "+998901112233",
+                }
+            ),
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer secret-token",
+        )
+        self.assertEqual(response.status_code, 201)
+        lead = RegistrationLead.objects.get()
+        self.assertEqual(lead.full_name, "Minimal Website Lead")
+        self.assertEqual(lead.phone, "+998901112233")
+        self.assertEqual(lead.program, "")
+        self.assertEqual(lead.email, "")
+        self.assertEqual(lead.parent_phone, "")
+        self.assertEqual(lead.source, "website")
+
+    @override_settings(**_BASE_OVERRIDES, REGISTRATION_LEADS_API_TOKEN="secret-token")
+    def test_receiver_accepts_optional_website_fields(self):
+        response = self.client.post(
+            reverse("public_registration_leads"),
+            data=json.dumps(
+                {
+                    "full_name": "Optional Website Lead",
+                    "phone": "+998901112244",
+                    "course": "General English",
+                    "date_of_birth": "",
+                    "parent_phone": "+998909998877",
+                    "email": "lead@example.com",
+                    "branch": "Main",
+                    "preferred_schedule": "Evening",
+                    "social_source": "instagram",
+                    "social_handle": "@optional",
+                    "utm_source": "meta",
+                    "utm_medium": "paid-social",
+                    "utm_campaign": "summer-intake",
+                    "message": "Please call after 5pm",
+                    "submitted_at": "2026-06-05T12:00:00Z",
+                }
+            ),
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer secret-token",
+        )
+        self.assertEqual(response.status_code, 201)
+        lead = RegistrationLead.objects.get()
+        self.assertEqual(lead.program, "General English")
+        self.assertEqual(lead.parent_phone, "+998909998877")
+        self.assertEqual(lead.email, "lead@example.com")
+        self.assertEqual(lead.branch, "Main")
+        self.assertEqual(lead.preferred_schedule, "Evening")
+        self.assertEqual(lead.source, "instagram")
+        self.assertEqual(lead.social_handle, "@optional")
+        self.assertEqual(lead.utm_source, "meta")
+        self.assertEqual(lead.utm_medium, "paid-social")
+        self.assertEqual(lead.utm_campaign, "summer-intake")
+        self.assertEqual(lead.message, "Please call after 5pm")
+        self.assertEqual(lead.raw_payload["date_of_birth"], "")
+        self.assertEqual(lead.raw_payload["submitted_at"], "2026-06-05T12:00:00Z")
+
+    @override_settings(**_BASE_OVERRIDES, REGISTRATION_LEADS_API_TOKEN="secret-token")
+    def test_receiver_requires_name_and_phone_only(self):
+        missing_name = self.client.post(
+            reverse("public_registration_leads"),
+            data=json.dumps({"phone": "+998901112233", "course": "Optional Course"}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer secret-token",
+        )
+        self.assertEqual(missing_name.status_code, 400)
+        self.assertEqual(missing_name.json()["detail"], "full_name is required.")
+
+        missing_phone = self.client.post(
+            reverse("public_registration_leads"),
+            data=json.dumps(
+                {
+                    "full_name": "No Phone Lead",
+                    "email": "lead@example.com",
+                    "parent_phone": "+998909998877",
+                    "date_of_birth": "2010-01-02",
+                }
+            ),
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer secret-token",
+        )
+        self.assertEqual(missing_phone.status_code, 400)
+        self.assertEqual(missing_phone.json()["detail"], "phone is required.")
+        self.assertEqual(RegistrationLead.objects.count(), 0)
+
+    @override_settings(**_BASE_OVERRIDES, REGISTRATION_LEADS_API_TOKEN="secret-token")
+    def test_receiver_accepts_slashless_url_and_registration_token_header(self):
+        response = self.client.post(
+            "/public/registration-leads",
+            data={
+                "Full Name": "Website Form Student",
+                "Phone Number": "+998977777777",
+                "Course Name": "Speaking Club",
+                "Preferred Time": "Evening",
+            },
+            HTTP_X_REGISTRATION_TOKEN="secret-token",
+        )
+        self.assertEqual(response.status_code, 201)
+        lead = RegistrationLead.objects.get()
+        self.assertEqual(lead.full_name, "Website Form Student")
+        self.assertEqual(lead.phone, "+998977777777")
+        self.assertEqual(lead.program, "Speaking Club")
+        self.assertEqual(lead.preferred_schedule, "Evening")
+
+    @override_settings(**_BASE_OVERRIDES, REGISTRATION_LEADS_API_TOKEN="secret-token")
+    def test_receiver_accepts_text_plain_json_and_redacts_body_token(self):
+        response = self.client.post(
+            reverse("public_registration_leads"),
+            data=json.dumps(
+                {
+                    "Name": "Loose Fetch Student",
+                    "WhatsApp Number": "+998936666666",
+                    "Selected Course": "General English",
+                    "apiKey": "secret-token",
+                }
+            ),
+            content_type="text/plain",
+        )
+        self.assertEqual(response.status_code, 201)
+        lead = RegistrationLead.objects.get()
+        self.assertEqual(lead.full_name, "Loose Fetch Student")
+        self.assertEqual(lead.phone, "+998936666666")
+        self.assertEqual(lead.program, "General English")
+        self.assertEqual(lead.raw_payload["apiKey"], "[redacted]")
+
     @override_settings(**_BASE_OVERRIDES, REGISTRATION_LEADS_API_TOKEN="")
     def test_receiver_accepts_form_encoded_payload_when_token_not_configured(self):
         response = self.client.post(
@@ -182,6 +314,7 @@ class RegistrationLeadReceiverTests(TestCase):
             data={
                 "first_name": "Form",
                 "last_name": "Lead",
+                "phone": "+998900000001",
                 "parent_phone": "+998991111111",
                 "program": "General English",
             },
@@ -189,6 +322,7 @@ class RegistrationLeadReceiverTests(TestCase):
         self.assertEqual(response.status_code, 201)
         lead = RegistrationLead.objects.get()
         self.assertEqual(lead.full_name, "Form Lead")
+        self.assertEqual(lead.phone, "+998900000001")
         self.assertEqual(lead.parent_phone, "+998991111111")
         self.assertEqual(lead.program, "General English")
 

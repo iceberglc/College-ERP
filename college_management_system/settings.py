@@ -438,7 +438,9 @@ CORS_ALLOW_HEADERS = [
     "dnt",
     "origin",
     "user-agent",
+    "x-api-key",
     "x-csrftoken",
+    "x-registration-token",
     "x-requested-with",
 ]
 

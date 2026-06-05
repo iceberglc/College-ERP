@@ -59,7 +59,7 @@ class LoginCheckMiddleWare(MiddlewareMixin):
                 or modulename.startswith("django.contrib.auth")
                 or request.path.startswith("/accounts/")
                 or request.path.startswith("/admin/")
-                or request.path.startswith("/public/registration-leads/")
+                or request.path in ("/public/registration-leads", "/public/registration-leads/")
                 or request.path == "/health/"
                 # FCM service worker — browsers fetch this before login.
                 or request.path == "/firebase-messaging-sw.js"
