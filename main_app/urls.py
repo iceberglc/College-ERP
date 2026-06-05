@@ -18,7 +18,7 @@ from django.urls import path
 
 from main_app.EditResultView import EditResultView
 
-from . import hod_views, messaging_views, password_recovery, staff_views, student_views, views
+from . import hod_views, messaging_views, password_recovery, public_views, staff_views, student_views, views
 
 urlpatterns = [
     # Password recovery (custom code-based flow)
@@ -34,6 +34,11 @@ urlpatterns = [
     path("health/", views.health, name="health"),
     path("", views.login_page, name="entry_page"),
     path("login/", views.login_page, name="login_page"),
+    path(
+        "public/registration-leads/",
+        public_views.registration_leads_receiver,
+        name="public_registration_leads",
+    ),
     path("messages/", messaging_views.messages_home, name="messages"),
     path("messages/group/<int:group_id>/", messaging_views.messages_home, name="message_thread"),
     path("get_attendance", views.get_attendance, name="get_attendance"),
@@ -94,6 +99,11 @@ urlpatterns = [
     path("subject/add/", hod_views.add_subject, name="add_subject"),
     path("staff/manage/", hod_views.manage_staff, name="manage_staff"),
     path("student/manage/", hod_views.manage_student, name="manage_student"),
+    path(
+        "admin/registration-leads/",
+        hod_views.manage_registration_leads,
+        name="manage_registration_leads",
+    ),
     path("course/manage/", hod_views.manage_course, name="manage_course"),
     path("subject/manage/", hod_views.manage_subject, name="manage_subject"),
     path("staff/edit/<int:staff_id>", hod_views.edit_staff, name="edit_staff"),

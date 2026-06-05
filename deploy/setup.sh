@@ -6,7 +6,7 @@
 # ============================================================
 set -euo pipefail
 
-DOMAIN="iceberglc.com"
+DOMAIN="app.iceberglc.com"
 APP_USER="iceberg"
 APP_DIR="/home/$APP_USER/College-ERP"
 REPO="https://github.com/Jahongir359/College-ERP.git"   # update if needed
@@ -41,7 +41,7 @@ if [ ! -f "$APP_DIR/.env" ]; then
     SECRET=$(python3 -c "import secrets; print(secrets.token_urlsafe(50))")
     sed -i "s|change-me-to-a-long-random-string|$SECRET|" "$APP_DIR/.env"
     sed -i "s|DJANGO_DEBUG=True|DJANGO_DEBUG=False|" "$APP_DIR/.env"
-    sed -i "s|DJANGO_ALLOWED_HOSTS=|DJANGO_ALLOWED_HOSTS=$DOMAIN,www.$DOMAIN|" "$APP_DIR/.env"
+    sed -i "s|DJANGO_ALLOWED_HOSTS=.*|DJANGO_ALLOWED_HOSTS=$DOMAIN|" "$APP_DIR/.env"
     echo ""
     echo "⚠  Edit $APP_DIR/.env and set:"
     echo "     DATABASE_URL, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD"
@@ -61,13 +61,13 @@ systemctl daemon-reload
 systemctl enable gunicorn-iceberg
 
 echo "▶  Configuring Nginx…"
-cp "$APP_DIR/deploy/nginx.conf" /etc/nginx/sites-available/iceberglc
-ln -sf /etc/nginx/sites-available/iceberglc /etc/nginx/sites-enabled/iceberglc
+cp "$APP_DIR/deploy/nginx.conf" /etc/nginx/sites-available/iceberg-erp
+ln -sf /etc/nginx/sites-available/iceberg-erp /etc/nginx/sites-enabled/iceberg-erp
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 
 echo "▶  Obtaining SSL certificate…"
-certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" --non-interactive --agree-tos \
+certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos \
     --email admin@iceberglc.com --redirect
 
 echo "▶  Starting Gunicorn…"

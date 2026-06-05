@@ -303,6 +303,71 @@ def add_student(request):
 
 
 @admin_only
+def manage_registration_leads(request):
+    if request.method == "POST":
+        lead = get_object_or_404(RegistrationLead, id=request.POST.get("lead_id"))
+        status = request.POST.get("status", lead.status)
+        if status in dict(RegistrationLead.STATUS_CHOICES):
+            lead.status = status
+        lead.admin_notes = request.POST.get("admin_notes", "").strip()
+        lead.save(update_fields=["status", "admin_notes", "updated_at"])
+        messages.success(request, "Registration lead updated.")
+        query_string = request.POST.get("next", "")
+        return redirect(reverse("manage_registration_leads") + query_string)
+
+    leads = RegistrationLead.objects.all()
+    status_filter = request.GET.get("status", "").strip()
+    source_filter = request.GET.get("source", "").strip()
+    search = request.GET.get("q", "").strip()
+
+    if status_filter:
+        leads = leads.filter(status=status_filter)
+    if source_filter:
+        leads = leads.filter(source__iexact=source_filter)
+    if search:
+        leads = leads.filter(
+            models.Q(full_name__icontains=search)
+            | models.Q(first_name__icontains=search)
+            | models.Q(last_name__icontains=search)
+            | models.Q(phone__icontains=search)
+            | models.Q(parent_phone__icontains=search)
+            | models.Q(email__icontains=search)
+            | models.Q(program__icontains=search)
+            | models.Q(social_handle__icontains=search)
+        )
+
+    status_counts = {
+        row["status"]: row["count"]
+        for row in RegistrationLead.objects.values("status").annotate(count=models.Count("id"))
+    }
+    status_summary = [
+        {"value": value, "label": label, "count": status_counts.get(value, 0)}
+        for value, label in RegistrationLead.STATUS_CHOICES
+    ]
+    sources = (
+        RegistrationLead.objects.exclude(source="")
+        .values_list("source", flat=True)
+        .distinct()
+        .order_by("source")
+    )
+
+    return render(
+        request,
+        "hod_template/manage_registration_leads.html",
+        {
+            "page_title": "Registration Leads",
+            "leads": leads[:250],
+            "status_choices": RegistrationLead.STATUS_CHOICES,
+            "status_summary": status_summary,
+            "sources": sources,
+            "status_filter": status_filter,
+            "source_filter": source_filter,
+            "search": search,
+        },
+    )
+
+
+@admin_only
 def add_course(request):
     form = CourseForm(request.POST or None)
     context = {"form": form, "page_title": "Add Course"}

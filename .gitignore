@@ -18,6 +18,7 @@ media/
 # Environments
 .vscode
 .env
+.env.local
 .venv
 .venv-1/
 env/

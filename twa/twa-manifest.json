@@ -1,6 +1,6 @@
 {
   "packageId": "com.iceberglc.app",
-  "host": "iceberglc.com",
+  "host": "app.iceberglc.com",
   "name": "ICEBERG LC",
   "launcherName": "ICEBERG",
   "display": "standalone",
@@ -13,9 +13,9 @@
   "backgroundColor": "#EEF3FB",
   "enableNotifications": false,
   "startUrl": "/?source=twa",
-  "iconUrl": "https://iceberglc.com/android-chrome-512x512.png",
-  "maskableIconUrl": "https://iceberglc.com/android-chrome-512x512.png",
-  "monochromeIconUrl": "https://iceberglc.com/android-chrome-512x512.png",
+  "iconUrl": "https://app.iceberglc.com/android-chrome-512x512.png",
+  "maskableIconUrl": "https://app.iceberglc.com/android-chrome-512x512.png",
+  "monochromeIconUrl": "https://app.iceberglc.com/android-chrome-512x512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "iceberg-lc.keystore",
@@ -25,10 +25,10 @@
   "appVersionName": "1.0.0",
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://iceberglc.com/manifest.json",
+  "webManifestUrl": "https://app.iceberglc.com/manifest.json",
   "isChromeOSOnly": false,
   "isMetaQuest": false,
-  "fullScopeUrl": "https://iceberglc.com/",
+  "fullScopeUrl": "https://app.iceberglc.com/",
   "minSdkVersion": 21,
   "targetSdkVersion": 34
 }

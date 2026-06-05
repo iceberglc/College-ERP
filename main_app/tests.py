@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import date
 from unittest.mock import patch
@@ -19,6 +20,7 @@ from main_app.models import (
     Course,
     Enrollment,
     Group,
+    RegistrationLead,
     Staff,
     Student,
 )
@@ -132,6 +134,88 @@ class LoginPageTests(TestCase):
     def test_unauthenticated_blocked_from_admin_home(self):
         response = self.client.get(reverse("admin_home"))
         self.assertNotEqual(response.status_code, 200)
+
+class RegistrationLeadReceiverTests(TestCase):
+    @override_settings(**_BASE_OVERRIDES, REGISTRATION_LEADS_API_TOKEN="secret-token")
+    def test_receiver_requires_configured_bearer_token(self):
+        response = self.client.post(
+            reverse("public_registration_leads"),
+            data=json.dumps({"full_name": "Public Student", "phone": "+998901234567"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(RegistrationLead.objects.count(), 0)
+
+    @override_settings(**_BASE_OVERRIDES, REGISTRATION_LEADS_API_TOKEN="secret-token")
+    def test_receiver_stores_json_registration_lead(self):
+        response = self.client.post(
+            reverse("public_registration_leads"),
+            data=json.dumps(
+                {
+                    "full_name": "Public Student",
+                    "phone": "+998901234567",
+                    "course": "IELTS Academic",
+                    "source": "instagram",
+                    "utm_campaign": "summer-intake",
+                    "social_handle": "@publicstudent",
+                }
+            ),
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer secret-token",
+            HTTP_USER_AGENT="website-test-client",
+            REMOTE_ADDR="127.0.0.5",
+        )
+        self.assertEqual(response.status_code, 201)
+        lead = RegistrationLead.objects.get()
+        self.assertEqual(lead.full_name, "Public Student")
+        self.assertEqual(lead.phone, "+998901234567")
+        self.assertEqual(lead.program, "IELTS Academic")
+        self.assertEqual(lead.source, "instagram")
+        self.assertEqual(lead.utm_campaign, "summer-intake")
+        self.assertEqual(lead.social_handle, "@publicstudent")
+        self.assertEqual(lead.user_agent, "website-test-client")
+
+    @override_settings(**_BASE_OVERRIDES, REGISTRATION_LEADS_API_TOKEN="")
+    def test_receiver_accepts_form_encoded_payload_when_token_not_configured(self):
+        response = self.client.post(
+            reverse("public_registration_leads"),
+            data={
+                "first_name": "Form",
+                "last_name": "Lead",
+                "parent_phone": "+998991111111",
+                "program": "General English",
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        lead = RegistrationLead.objects.get()
+        self.assertEqual(lead.full_name, "Form Lead")
+        self.assertEqual(lead.parent_phone, "+998991111111")
+        self.assertEqual(lead.program, "General English")
+
+    @override_settings(**_BASE_OVERRIDES)
+    def test_admin_can_view_registration_leads(self):
+        UserModel = get_user_model()
+        admin = UserModel.objects.create_user(
+            email="lead-admin@example.com",
+            password="AdminPass123!",
+            first_name="Lead",
+            last_name="Admin",
+            user_type="1",
+            gender="M",
+            address="",
+            profile_pic="",
+        )
+        RegistrationLead.objects.create(
+            full_name="Dashboard Lead",
+            phone="+998900000000",
+            program="Speaking",
+            source="facebook",
+        )
+        self.client.force_login(admin)
+        response = self.client.get(reverse("manage_registration_leads"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dashboard Lead")
+        self.assertContains(response, "facebook")
 
 
 class PasswordResetFlowTests(TestCase):

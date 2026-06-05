@@ -18,6 +18,7 @@ from .models import (
     Assignment,
     Submission,
     Notification,
+    RegistrationLead,
 )
 
 
@@ -139,3 +140,20 @@ class ChatReadStateAdmin(admin.ModelAdmin):
 admin.site.register(Assignment)
 admin.site.register(Submission)
 admin.site.register(Notification)
+
+
+@admin.register(RegistrationLead)
+class RegistrationLeadAdmin(admin.ModelAdmin):
+    list_display = ("full_name", "phone", "program", "source", "status", "created_at")
+    list_filter = ("status", "source", "created_at")
+    search_fields = (
+        "full_name",
+        "first_name",
+        "last_name",
+        "phone",
+        "parent_phone",
+        "email",
+        "program",
+        "social_handle",
+    )
+    readonly_fields = ("raw_payload", "remote_addr", "user_agent", "created_at", "updated_at")

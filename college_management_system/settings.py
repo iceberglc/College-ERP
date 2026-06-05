@@ -297,6 +297,10 @@ DEFAULT_FROM_EMAIL = os.environ.get(
     "DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "noreply@iceberg-erp.local"
 )
 
+# Token expected by the public lead receiver. The external website should send:
+# Authorization: Bearer <REGISTRATION_LEADS_API_TOKEN>
+REGISTRATION_LEADS_API_TOKEN = os.environ.get("REGISTRATION_LEADS_API_TOKEN", "").strip()
+
 if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     # Full SMTP — used in production when credentials are configured.
     EMAIL_BACKEND = "main_app.mail_backends.CompatibleSMTPEmailBackend"

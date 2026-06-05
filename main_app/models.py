@@ -308,6 +308,63 @@ class Notification(models.Model):
         return f"[{self.category}] → {self.recipient.email}: {self.message[:50]}"
 
 
+class RegistrationLead(models.Model):
+    STATUS_NEW = "new"
+    STATUS_CONTACTED = "contacted"
+    STATUS_CONVERTED = "converted"
+    STATUS_REJECTED = "rejected"
+    STATUS_CHOICES = [
+        (STATUS_NEW, "New"),
+        (STATUS_CONTACTED, "Contacted"),
+        (STATUS_CONVERTED, "Converted"),
+        (STATUS_REJECTED, "Rejected"),
+    ]
+
+    full_name = models.CharField(max_length=160, blank=True, default="")
+    first_name = models.CharField(max_length=80, blank=True, default="")
+    last_name = models.CharField(max_length=80, blank=True, default="")
+    email = models.EmailField(blank=True, default="")
+    phone = models.CharField(max_length=40, blank=True, default="")
+    parent_phone = models.CharField(max_length=40, blank=True, default="")
+    program = models.CharField(max_length=140, blank=True, default="")
+    branch = models.CharField(max_length=140, blank=True, default="")
+    preferred_schedule = models.CharField(max_length=160, blank=True, default="")
+    source = models.CharField(max_length=80, blank=True, default="website")
+    social_handle = models.CharField(max_length=120, blank=True, default="")
+    campaign = models.CharField(max_length=160, blank=True, default="")
+    utm_source = models.CharField(max_length=120, blank=True, default="")
+    utm_medium = models.CharField(max_length=120, blank=True, default="")
+    utm_campaign = models.CharField(max_length=160, blank=True, default="")
+    referrer = models.CharField(max_length=500, blank=True, default="")
+    message = models.TextField(blank=True, default="")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_NEW)
+    admin_notes = models.TextField(blank=True, default="")
+    assigned_to = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_registration_leads",
+    )
+    raw_payload = models.JSONField(blank=True, default=dict)
+    remote_addr = models.CharField(max_length=80, blank=True, default="")
+    user_agent = models.CharField(max_length=500, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "created_at"]),
+            models.Index(fields=["source", "created_at"]),
+            models.Index(fields=["phone"]),
+            models.Index(fields=["email"]),
+        ]
+
+    def __str__(self):
+        return self.full_name or self.phone or self.email or f"Lead #{self.pk}"
+
+
 class StudentResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     group = models.ForeignKey("Group", on_delete=models.CASCADE, null=True, blank=True)

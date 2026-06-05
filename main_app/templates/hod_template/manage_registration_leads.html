@@ -1,0 +1,272 @@
+{% extends 'main_app/base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Registration Leads</li>{% endblock %}
+
+{% block custom_css %}
+<style>
+  .lead-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .lead-stat {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: var(--ice-card-shadow);
+  }
+  .lead-stat strong {
+    display: block;
+    color: var(--ice-text);
+    font-size: 24px;
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+  .lead-stat span {
+    color: var(--ice-muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+  }
+  .lead-toolbar {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) 170px 170px auto;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 16px;
+  }
+  .lead-card {
+    background: var(--ice-surface);
+    border: 1px solid var(--ice-border);
+    border-radius: 16px;
+    box-shadow: var(--ice-card-shadow);
+    overflow: hidden;
+  }
+  .lead-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+  }
+  .lead-table th {
+    color: var(--ice-muted);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--ice-border);
+    background: var(--ice-surface2);
+  }
+  .lead-table td {
+    vertical-align: top;
+    padding: 14px;
+    border-bottom: 1px solid var(--ice-border);
+    color: var(--ice-text);
+    font-size: 13px;
+  }
+  .lead-table tr:last-child td {
+    border-bottom: 0;
+  }
+  .lead-name {
+    font-weight: 900;
+    color: var(--ice-text);
+    margin-bottom: 4px;
+  }
+  .lead-meta,
+  .lead-small {
+    color: var(--ice-muted);
+    font-size: 11.5px;
+    line-height: 1.45;
+  }
+  .lead-source {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 999px;
+    padding: 4px 9px;
+    background: rgba(6, 182, 212, .10);
+    color: var(--ice-cyan-dk);
+    font-size: 11px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .lead-status {
+    min-width: 130px;
+  }
+  .lead-notes {
+    min-width: 190px;
+    min-height: 58px;
+    resize: vertical;
+    font-size: 12px;
+  }
+  .lead-update {
+    display: grid;
+    gap: 8px;
+  }
+  .lead-empty {
+    padding: 44px 18px;
+    text-align: center;
+    color: var(--ice-muted);
+  }
+  .lead-empty i {
+    display: block;
+    color: var(--ice-cyan);
+    font-size: 32px;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 900px) {
+    .lead-toolbar {
+      grid-template-columns: 1fr 1fr;
+    }
+    .lead-toolbar .btn {
+      grid-column: span 2;
+    }
+  }
+  @media (max-width: 640px) {
+    .lead-toolbar {
+      grid-template-columns: 1fr;
+    }
+    .lead-toolbar .btn {
+      grid-column: auto;
+    }
+    .lead-card {
+      border: 0;
+      box-shadow: none;
+      background: transparent;
+    }
+    .lead-table,
+    .lead-table tbody,
+    .lead-table tr,
+    .lead-table td {
+      display: block;
+      width: 100%;
+    }
+    .lead-table thead {
+      display: none;
+    }
+    .lead-table tr {
+      background: var(--ice-surface);
+      border: 1px solid var(--ice-border);
+      border-radius: 14px;
+      box-shadow: var(--ice-card-shadow);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .lead-table td {
+      border-bottom: 0;
+      padding: 12px 14px;
+    }
+    .lead-status,
+    .lead-notes {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lead-summary">
+  {% for item in status_summary %}
+  <a class="lead-stat" href="{% url 'manage_registration_leads' %}?status={{ item.value }}" style="text-decoration:none;">
+    <strong>{{ item.count }}</strong>
+    <span>{{ item.label }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<form method="get" class="lead-toolbar">
+  <div>
+    <label class="form-label">Search</label>
+    <input class="form-control" type="search" name="q" value="{{ search }}" placeholder="Name, phone, email, program...">
+  </div>
+  <div>
+    <label class="form-label">Status</label>
+    <select class="form-control" name="status">
+      <option value="">All statuses</option>
+      {% for value, label in status_choices %}
+      <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="form-label">Source</label>
+    <select class="form-control" name="source">
+      <option value="">All sources</option>
+      {% for source in sources %}
+      <option value="{{ source }}" {% if source_filter == source %}selected{% endif %}>{{ source }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-primary" type="submit"><i class="fas fa-filter me-1"></i>Filter</button>
+</form>
+
+<div class="lead-card">
+  {% if leads %}
+  <table class="lead-table">
+    <thead>
+      <tr>
+        <th>Registrant</th>
+        <th>Interest</th>
+        <th>Source</th>
+        <th>Submitted</th>
+        <th>Follow-up</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lead in leads %}
+      <tr>
+        <td>
+          <div class="lead-name">{{ lead.full_name }}</div>
+          {% if lead.phone %}<div class="lead-meta"><i class="fas fa-phone me-1"></i>{{ lead.phone }}</div>{% endif %}
+          {% if lead.parent_phone %}<div class="lead-meta"><i class="fas fa-user-friends me-1"></i>{{ lead.parent_phone }}</div>{% endif %}
+          {% if lead.email %}<div class="lead-meta"><i class="fas fa-envelope me-1"></i>{{ lead.email }}</div>{% endif %}
+          {% if lead.social_handle %}<div class="lead-meta"><i class="fas fa-at me-1"></i>{{ lead.social_handle }}</div>{% endif %}
+        </td>
+        <td>
+          {% if lead.program %}<div class="lead-name">{{ lead.program }}</div>{% endif %}
+          {% if lead.branch %}<div class="lead-small"><strong>Branch:</strong> {{ lead.branch }}</div>{% endif %}
+          {% if lead.preferred_schedule %}<div class="lead-small"><strong>Schedule:</strong> {{ lead.preferred_schedule }}</div>{% endif %}
+          {% if lead.message %}<div class="lead-small" style="margin-top:6px;">{{ lead.message }}</div>{% endif %}
+        </td>
+        <td>
+          <span class="lead-source"><i class="fas fa-bullhorn"></i>{{ lead.source|default:"website" }}</span>
+          {% if lead.campaign %}<div class="lead-small"><strong>Campaign:</strong> {{ lead.campaign }}</div>{% endif %}
+          {% if lead.utm_campaign %}<div class="lead-small"><strong>UTM:</strong> {{ lead.utm_campaign }}</div>{% endif %}
+          {% if lead.referrer %}<div class="lead-small">{{ lead.referrer|truncatechars:80 }}</div>{% endif %}
+        </td>
+        <td>
+          <div class="lead-name">{{ lead.created_at|date:"M j, Y" }}</div>
+          <div class="lead-small">{{ lead.created_at|date:"H:i" }}</div>
+          {% if lead.remote_addr %}<div class="lead-small" style="margin-top:6px;">IP {{ lead.remote_addr }}</div>{% endif %}
+        </td>
+        <td>
+          <form method="post" class="lead-update">
+            {% csrf_token %}
+            <input type="hidden" name="lead_id" value="{{ lead.id }}">
+            <input type="hidden" name="next" value="?status={{ status_filter }}&source={{ source_filter }}&q={{ search }}">
+            <select class="form-control lead-status" name="status">
+              {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if lead.status == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <textarea class="form-control lead-notes" name="admin_notes" placeholder="Follow-up notes...">{{ lead.admin_notes }}</textarea>
+            <button class="btn btn-sm btn-primary" type="submit"><i class="fas fa-save me-1"></i>Update</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="lead-empty">
+    <i class="fas fa-user-clock"></i>
+    <strong>No registration leads found</strong>
+    <div>New website registrations will appear here after the external form posts to the ERP endpoint.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

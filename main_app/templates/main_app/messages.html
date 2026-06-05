@@ -8,529 +8,547 @@
 <style>
 .msg-shell {
   display: grid;
-  grid-template-columns: minmax(250px, 330px) minmax(0, 1fr);
-  gap: 16px;
-  min-height: calc(100vh - 180px);
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 14px;
+  min-height: calc(100vh - 190px);
+  min-height: calc(100dvh - 190px);
 }
+
 .msg-threads,
 .msg-chat {
-  background: var(--ice-surface);
+  min-width: 0;
   border: 1px solid var(--ice-border);
+  border-radius: 12px;
+  background: var(--ice-surface);
   box-shadow: var(--ice-card-shadow);
 }
+
 .msg-threads {
-  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  min-height: 480px;
 }
-.msg-thread-head,
+
+.msg-panel-head,
 .msg-chat-head {
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--ice-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ice-border);
 }
+
 .msg-title {
   margin: 0;
+  color: var(--ice-text);
   font-size: 15px;
   font-weight: 800;
-  color: var(--ice-text);
+  line-height: 1.25;
 }
+
 .msg-sub {
+  margin-top: 3px;
   color: var(--ice-muted);
   font-size: 12px;
-  margin-top: 2px;
+  line-height: 1.35;
 }
+
 .msg-thread-list {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
-  padding: 8px;
   gap: 6px;
-  max-height: calc(100vh - 250px);
+  min-height: 0;
+  padding: 8px;
   overflow-y: auto;
 }
+
 .msg-thread {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
+  min-width: 0;
   padding: 10px;
-  border-radius: 12px;
-  color: var(--ice-text);
-  text-decoration: none;
   border: 1px solid transparent;
-}
-.msg-thread:hover {
-  background: var(--ice-surface2);
+  border-radius: 10px;
   color: var(--ice-text);
   text-decoration: none;
 }
-.msg-thread.active {
-  background: rgba(6, 182, 212, .10);
-  border-color: rgba(6, 182, 212, .22);
+
+.msg-thread:hover,
+.msg-thread:focus {
+  color: var(--ice-text);
+  text-decoration: none;
+  background: var(--ice-surface2);
 }
+
+.msg-thread.active {
+  border-color: rgba(6, 182, 212, .28);
+  background: rgba(6, 182, 212, .10);
+}
+
 .msg-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 42px;
   height: 42px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #0C1F45, #0891B2);
+  flex: 0 0 42px;
+  border-radius: 10px;
   color: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  background: linear-gradient(135deg, #0c1f45, #0891b2);
+  font-size: 15px;
   font-weight: 800;
-  flex-shrink: 0;
 }
-.msg-thread-name {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--ice-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+
+.msg-thread-main,
+.msg-chat-title {
+  min-width: 0;
 }
+
+.msg-thread-name,
 .msg-thread-meta,
 .msg-thread-preview {
-  font-size: 11.5px;
-  color: var(--ice-muted);
-  white-space: nowrap;
+  display: block;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+.msg-thread-name {
+  color: var(--ice-text);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.msg-thread-meta,
+.msg-thread-preview {
+  color: var(--ice-muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
 .msg-unread {
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--ice-danger);
-  color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 7px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--ice-danger);
   font-size: 11px;
   font-weight: 800;
 }
+
 .msg-chat {
-  border-radius: 16px;
-  min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
+
+.msg-chat-head {
+  flex-wrap: wrap;
+}
+
 .msg-chat-head-left {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
-  flex: 1 1 280px;
 }
+
 .msg-head-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 6px;
 }
+
 .msg-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  border-radius: 999px;
-  background: var(--ice-surface2);
-  color: var(--ice-muted);
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
   padding: 4px 9px;
+  border-radius: 999px;
+  color: var(--ice-muted);
+  background: var(--ice-surface2);
   font-size: 11px;
   font-weight: 700;
+  line-height: 1.25;
 }
+
+.msg-pill span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .msg-body {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 18px;
   overflow-y: auto;
-  max-height: calc(100vh - 330px);
-  min-height: 340px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(6,182,212,.05), transparent 18rem),
+    linear-gradient(180deg, rgba(6, 182, 212, .05), transparent 180px),
     var(--ice-surface);
 }
+
 .msg-row {
   display: flex;
   margin-bottom: 12px;
 }
+
 .msg-row.mine {
   justify-content: flex-end;
 }
+
 .msg-bubble {
   max-width: min(680px, 78%);
-  border-radius: 14px;
   padding: 10px 12px;
-  background: var(--ice-surface2);
   border: 1px solid var(--ice-border);
+  border-radius: 13px;
   color: var(--ice-text);
+  background: var(--ice-surface2);
 }
+
 .msg-row.mine .msg-bubble {
-  background: linear-gradient(135deg, #0C1F45, #0891B2);
   color: #fff;
   border-color: transparent;
+  background: linear-gradient(135deg, #0c1f45, #0891b2);
 }
+
 .msg-bubble-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 5px;
-  font-size: 11px;
   color: var(--ice-muted);
+  font-size: 11px;
+  line-height: 1.35;
 }
+
 .msg-row.mine .msg-bubble-head {
-  color: rgba(255,255,255,.75);
+  color: rgba(255, 255, 255, .78);
 }
+
 .msg-sender {
-  font-weight: 800;
   min-width: 0;
+  font-weight: 800;
   overflow-wrap: anywhere;
 }
+
+.msg-time {
+  flex: 0 0 auto;
+}
+
 .msg-text {
+  color: inherit;
   font-size: 13.5px;
   line-height: 1.55;
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
+
 .msg-composer {
-  border-top: 1px solid var(--ice-border);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
   padding: 12px;
+  border-top: 1px solid var(--ice-border);
   background: var(--ice-surface);
-  border-radius: 0 0 16px 16px;
 }
+
+.msg-composer .form-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .msg-composer textarea {
+  min-height: 50px;
+  max-height: 140px;
   resize: vertical;
-  min-height: 72px;
-  max-height: 180px;
+  border-radius: 10px;
+  font-size: 15px;
+  line-height: 1.4;
 }
-.msg-composer-actions {
-  margin-top: 10px;
-  display: flex;
-  justify-content: flex-end;
+
+.msg-composer-actions .btn {
+  min-height: 50px;
+  border-radius: 10px;
+  font-weight: 800;
+  white-space: nowrap;
 }
+
 .msg-empty {
-  min-height: 320px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 280px;
+  padding: 24px;
   color: var(--ice-muted);
   text-align: center;
-  padding: 24px;
 }
+
 .msg-empty i {
-  font-size: 34px;
-  color: var(--ice-cyan);
   margin-bottom: 12px;
+  color: var(--ice-cyan);
+  font-size: 34px;
 }
+
+.msg-empty strong {
+  color: var(--ice-text);
+}
+
 .dark-mode .msg-threads,
 .dark-mode .msg-chat,
 .dark-mode .msg-composer {
   background: var(--ice-surface);
   border-color: var(--ice-border);
 }
+
 .dark-mode .msg-thread.active {
+  border-color: rgba(103, 232, 249, .28);
   background: rgba(103, 232, 249, .10);
-  border-color: rgba(103, 232, 249, .22);
 }
+
 .dark-mode .msg-bubble {
-  background: #111F35;
+  background: #111f35;
 }
-@media (min-width: 769px) and (max-width: 1180px) {
-  .msg-shell {
-    grid-template-columns: minmax(218px, 285px) minmax(0, 1fr);
-    gap: 12px;
-    min-height: calc(100dvh - 168px);
-  }
+
+@media (min-width: 769px) {
   .msg-threads,
   .msg-chat {
-    border-radius: 18px;
+    max-height: calc(100vh - 190px);
+    max-height: calc(100dvh - 190px);
   }
-  .msg-thread-head,
-  .msg-chat-head {
-    padding: 14px 15px;
+}
+
+@media (max-width: 980px) and (min-width: 769px) {
+  .msg-shell {
+    grid-template-columns: minmax(230px, 290px) minmax(0, 1fr);
+    gap: 10px;
   }
-  .msg-thread-list {
-    max-height: calc(100dvh - 244px);
-    padding: 8px;
-  }
-  .msg-thread {
-    grid-template-columns: 38px minmax(0, 1fr) auto;
-    padding: 9px;
-  }
-  .msg-avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 11px;
-  }
-  .msg-chat-head {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-  .msg-body {
-    min-height: 430px;
-    max-height: calc(100dvh - 316px);
-    padding: 16px;
-  }
+
   .msg-bubble {
     max-width: 84%;
   }
-  .msg-composer textarea {
-    min-height: 64px;
-  }
 }
+
 @media (max-width: 768px) {
   .msg-shell {
-    --msg-mobile-bottom-clearance: calc(124px + env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
     gap: 10px;
     min-height: auto;
   }
-  .msg-threads {
-    min-height: auto;
-    border-radius: 20px;
-    box-shadow: 0 14px 36px rgba(12, 31, 69, .10);
+
+  .msg-threads,
+  .msg-chat {
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(12, 31, 69, .10);
   }
-  .msg-thread-head {
-    padding: 12px 14px 8px;
+
+  .msg-panel-head,
+  .msg-chat-head {
+    padding: 12px;
+  }
+
+  .msg-panel-head {
     border-bottom: 0;
   }
+
   .msg-title {
     font-size: 14px;
   }
+
   .msg-sub {
     font-size: 11px;
   }
+
   .msg-thread-list {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: minmax(218px, 78vw);
-    gap: 10px;
-    max-height: none;
+    grid-auto-columns: minmax(220px, 78vw);
+    gap: 8px;
+    padding: 0 10px 10px;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 0 12px 12px;
-    scroll-padding-inline: 12px;
+    scroll-padding-inline: 10px;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
+
   .msg-thread-list::-webkit-scrollbar {
     display: none;
   }
+
   .msg-thread {
     scroll-snap-align: start;
     grid-template-columns: 38px minmax(0, 1fr) auto;
     gap: 9px;
-    padding: 10px;
-    border-radius: 16px;
+    padding: 9px;
     border-color: rgba(148, 163, 184, .20);
-    background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(249,250,251,.96));
-    box-shadow: 0 10px 24px rgba(12, 31, 69, .08);
+    background: var(--ice-surface);
   }
-  .msg-thread.active {
-    background:
-      linear-gradient(180deg, rgba(6, 182, 212, .16), rgba(255,255,255,.96));
-    border-color: rgba(6, 182, 212, .34);
-  }
+
   .msg-avatar {
     width: 38px;
     height: 38px;
-    border-radius: 12px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 8px 18px rgba(8, 145, 178, .20);
+    flex-basis: 38px;
+    border-radius: 10px;
+    font-size: 14px;
   }
+
   .msg-thread-name {
     font-size: 12.5px;
   }
+
   .msg-thread-meta,
   .msg-thread-preview {
     font-size: 10.5px;
   }
+
   .msg-chat {
-    border-radius: 22px;
-    overflow: hidden;
-    box-shadow: 0 18px 44px rgba(12, 31, 69, .12);
+    height: clamp(300px, calc(100vh - 376px - env(safe-area-inset-bottom)), 620px);
+    height: clamp(300px, calc(100dvh - 376px - env(safe-area-inset-bottom)), 620px);
+    min-height: 0;
   }
+
   .msg-chat-head {
     align-items: flex-start;
-    flex-wrap: wrap;
-    padding: 13px 14px;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,.98), rgba(249,250,251,.95));
   }
+
   .msg-chat-head-left {
+    flex: 1 1 100%;
     gap: 10px;
-    flex-basis: 100%;
   }
+
   .msg-head-meta {
-    gap: 6px;
-    margin-top: 6px;
+    gap: 5px;
   }
+
   .msg-pill {
-    max-width: 100%;
     padding: 4px 8px;
     font-size: 10.5px;
-    overflow-wrap: anywhere;
   }
+
   .msg-body {
-    max-height: none;
-    min-height: 52vh;
-    min-height: 52dvh;
-    padding: 16px 12px 88px;
-    background:
-      linear-gradient(180deg, rgba(6, 182, 212, .055), transparent 170px),
-      radial-gradient(circle at 0% 100%, rgba(27, 63, 122, .06), transparent 210px),
-      var(--ice-surface);
+    min-height: 0;
+    padding: 14px 10px;
   }
+
   .msg-row {
     margin-bottom: 10px;
   }
+
   .msg-bubble {
-    max-width: 88%;
-    border-radius: 18px 18px 18px 7px;
-    padding: 10px 12px;
-    box-shadow: 0 7px 18px rgba(12, 31, 69, .07);
+    max-width: 90%;
+    padding: 10px 11px;
+    border-radius: 15px 15px 15px 6px;
+    box-shadow: 0 6px 16px rgba(12, 31, 69, .07);
   }
+
   .msg-row.mine .msg-bubble {
-    border-radius: 18px 18px 7px 18px;
-    box-shadow: 0 9px 20px rgba(8, 145, 178, .20);
+    border-radius: 15px 15px 6px 15px;
   }
+
   .msg-bubble-head {
     gap: 8px;
-    margin-bottom: 6px;
     font-size: 10.5px;
   }
+
   .msg-text {
     font-size: 13px;
     line-height: 1.5;
   }
+
   .msg-composer {
-    position: fixed;
-    left: max(12px, env(safe-area-inset-left));
-    right: max(12px, env(safe-area-inset-right));
-    bottom: var(--msg-mobile-bottom-clearance);
-    z-index: 1050;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 52px;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    grid-template-columns: minmax(0, 1fr) 50px;
     gap: 8px;
-    align-items: end;
-    margin: 0;
-    padding: 8px;
-    border: 1px solid rgba(148, 163, 184, .22);
-    border-radius: 20px;
-    background: rgba(255,255,255,.94);
-    backdrop-filter: blur(18px) saturate(170%);
-    -webkit-backdrop-filter: blur(18px) saturate(170%);
-    box-shadow: 0 14px 34px rgba(12, 31, 69, .18);
+    padding: 9px;
+    box-shadow: 0 -8px 18px rgba(12, 31, 69, .06);
   }
-  .msg-composer .form-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
+
   .msg-composer textarea {
     min-height: 48px;
     max-height: 96px;
     resize: none;
-    border-radius: 15px;
-    border-color: rgba(148, 163, 184, .30);
+    border-radius: 10px;
     font-size: 16px;
-    line-height: 1.4;
     padding: 11px 12px;
   }
-  .msg-composer-actions {
-    margin-top: 0;
-  }
+
   .msg-composer-actions .btn {
-    width: 52px;
-    min-width: 52px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    min-width: 50px;
     min-height: 48px;
     height: 48px;
-    border-radius: 15px;
-    font-weight: 800;
-    font-size: 0 !important;
     padding: 0;
     overflow: hidden;
+    border-radius: 10px;
+    font-size: 0 !important;
   }
+
   .msg-composer-actions .btn i {
     margin: 0 !important;
     font-size: 16px !important;
   }
+
   .msg-empty {
-    min-height: 260px;
+    min-height: 240px;
     padding: 20px;
   }
+
+  .dark-mode .msg-thread {
+    border-color: rgba(148, 163, 184, .16);
+    background: var(--ice-surface);
+  }
 }
-@media (max-width: 480px) {
-  .msg-shell {
-    gap: 8px;
-  }
+
+@media (max-width: 420px) {
   .msg-thread-list {
-    grid-auto-columns: minmax(204px, 82vw);
-    padding-inline: 10px;
+    grid-auto-columns: minmax(206px, 82vw);
   }
-  .msg-thread {
-    padding: 9px;
+
+  .msg-panel-head,
+  .msg-chat-head {
+    padding: 11px;
   }
-  .msg-chat {
-    margin-inline: -2px;
-  }
+
   .msg-body {
-    min-height: 50vh;
-    min-height: 50dvh;
-    padding: 14px 10px 86px;
+    padding: 12px 9px;
   }
+
   .msg-bubble {
-    max-width: 92%;
+    max-width: 94%;
   }
+
   .msg-bubble-head {
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
-  }
-}
-@media (max-width: 360px) {
-  .msg-thread-list {
-    grid-auto-columns: minmax(190px, 84vw);
-  }
-  .msg-chat-head,
-  .msg-thread-head {
-    padding-inline: 11px;
-  }
-  .msg-composer {
-    padding: 9px;
-  }
-  .msg-bubble {
-    max-width: 95%;
-  }
-}
-@media (max-width: 768px) {
-  .dark-mode .msg-thread {
-    background: linear-gradient(180deg, rgba(17,31,53,.96), rgba(12,25,43,.98));
-    border-color: rgba(148, 163, 184, .16);
-    box-shadow: 0 10px 26px rgba(0, 0, 0, .25);
-  }
-  .dark-mode .msg-thread.active {
-    background: linear-gradient(180deg, rgba(6, 182, 212, .18), rgba(17,31,53,.98));
-    border-color: rgba(103, 232, 249, .34);
-  }
-  .dark-mode .msg-chat-head,
-  .dark-mode .msg-composer {
-    background: rgba(8, 18, 31, .94);
-  }
-  .dark-mode .msg-body {
-    background:
-      linear-gradient(180deg, rgba(103, 232, 249, .055), transparent 170px),
-      radial-gradient(circle at 0% 100%, rgba(42, 91, 168, .12), transparent 210px),
-      var(--ice-surface);
   }
 }
 </style>
@@ -538,13 +556,13 @@
 
 {% block content %}
 <div class="msg-shell">
-  <aside class="msg-threads">
-    <div class="msg-thread-head">
+  <aside class="msg-threads" aria-label="Group chats">
+    <div class="msg-panel-head">
       <div>
         <h2 class="msg-title">Group Chats</h2>
         <div class="msg-sub">{{ thread_cards|length }} conversation{{ thread_cards|length|pluralize }}</div>
       </div>
-      <i class="fas fa-comments" style="color:var(--ice-cyan);"></i>
+      <i class="fas fa-comments" style="color:var(--ice-cyan);" aria-hidden="true"></i>
     </div>
 
     {% if thread_cards %}
@@ -552,8 +570,8 @@
       {% for card in thread_cards %}
       <a href="{% url 'message_thread' card.group.id %}"
          class="msg-thread {% if active_group and active_group.id == card.group.id %}active{% endif %}">
-        <span class="msg-avatar">{{ card.group.name|first|upper }}</span>
-        <span style="min-width:0;">
+        <span class="msg-avatar" aria-hidden="true">{{ card.group.name|first|upper }}</span>
+        <span class="msg-thread-main">
           <span class="msg-thread-name">{{ card.group.name }}</span>
           <span class="msg-thread-meta">
             {% if card.group.teacher %}
@@ -572,42 +590,44 @@
           </span>
         </span>
         {% if card.unread_count > 0 %}
-        <span class="msg-unread">{{ card.unread_count }}</span>
+        <span class="msg-unread" aria-label="{{ card.unread_count }} unread">{{ card.unread_count }}</span>
         {% endif %}
       </a>
       {% endfor %}
     </div>
     {% else %}
     <div class="msg-empty">
-      <i class="fas fa-comment-slash"></i>
+      <i class="fas fa-comment-slash" aria-hidden="true"></i>
       <strong>No group chats available</strong>
       <span>You will see chats here once you are assigned to a group.</span>
     </div>
     {% endif %}
   </aside>
 
-  <section class="msg-chat">
+  <section class="msg-chat" aria-label="Active conversation">
     {% if active_group %}
     <div class="msg-chat-head">
       <div class="msg-chat-head-left">
-        <span class="msg-avatar">{{ active_group.name|first|upper }}</span>
-        <div style="min-width:0;">
+        <span class="msg-avatar" aria-hidden="true">{{ active_group.name|first|upper }}</span>
+        <div class="msg-chat-title">
           <h2 class="msg-title">{{ active_group.name }}</h2>
           <div class="msg-head-meta">
-            <span class="msg-pill"><i class="fas fa-user-tie"></i>
-              {% if active_group.teacher %}
-                {{ active_group.teacher.admin.get_full_name|default:active_group.teacher.admin.email }}
-              {% else %}
-                No teacher
-              {% endif %}
+            <span class="msg-pill"><i class="fas fa-user-tie" aria-hidden="true"></i>
+              <span>
+                {% if active_group.teacher %}
+                  {{ active_group.teacher.admin.get_full_name|default:active_group.teacher.admin.email }}
+                {% else %}
+                  No teacher
+                {% endif %}
+              </span>
             </span>
-            <span class="msg-pill"><i class="fas fa-users"></i>{{ active_group.active_student_count|default:0 }} student{{ active_group.active_student_count|default:0|pluralize }}</span>
-            {% if active_group.course %}<span class="msg-pill"><i class="fas fa-graduation-cap"></i>{{ active_group.course.name }}</span>{% endif %}
+            <span class="msg-pill"><i class="fas fa-users" aria-hidden="true"></i><span>{{ active_group.active_student_count|default:0 }} student{{ active_group.active_student_count|default:0|pluralize }}</span></span>
+            {% if active_group.course %}<span class="msg-pill"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>{{ active_group.course.name }}</span></span>{% endif %}
           </div>
         </div>
       </div>
       {% if user.user_type == '1' %}
-      <span class="msg-pill"><i class="fas fa-shield-alt"></i>Admin access</span>
+      <span class="msg-pill"><i class="fas fa-shield-alt" aria-hidden="true"></i><span>Admin access</span></span>
       {% endif %}
     </div>
 
@@ -621,7 +641,7 @@
                 {{ msg.sender.get_full_name|default:msg.sender.email }}
                 {% if msg.sender.user_type == '1' %} - Admin{% elif msg.sender.user_type == '2' %} - Teacher{% else %} - Student{% endif %}
               </span>
-              <span>{{ msg.created_at|date:"M j, H:i" }}</span>
+              <span class="msg-time">{{ msg.created_at|date:"M j, H:i" }}</span>
             </div>
             <div class="msg-text">{{ msg.body }}</div>
           </div>
@@ -629,7 +649,7 @@
         {% endfor %}
       {% else %}
       <div class="msg-empty">
-        <i class="fas fa-comments"></i>
+        <i class="fas fa-comments" aria-hidden="true"></i>
         <strong>No messages yet</strong>
         <span>Start the group conversation below.</span>
       </div>
@@ -639,14 +659,14 @@
     <form method="post" class="msg-composer" action="{% url 'message_thread' active_group.id %}">
       {% csrf_token %}
       <label for="chat-body" class="form-label">Message</label>
-      <textarea id="chat-body" name="body" class="form-control" maxlength="4000" placeholder="Write a message to this group..." required></textarea>
+      <textarea id="chat-body" name="body" class="form-control" maxlength="4000" placeholder="Write a message..." required></textarea>
       <div class="msg-composer-actions">
-        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane me-1"></i>Send</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane me-1" aria-hidden="true"></i>Send</button>
       </div>
     </form>
     {% else %}
     <div class="msg-empty">
-      <i class="fas fa-comments"></i>
+      <i class="fas fa-comments" aria-hidden="true"></i>
       <strong>Select a group chat</strong>
       <span>Your available group conversations will appear on the left.</span>
     </div>
@@ -658,8 +678,10 @@
 {% block custom_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  var body = document.getElementById('msg-body');
   var latest = document.getElementById('latest');
-  if (latest) latest.scrollIntoView({ block: 'end' });
+  if (body) body.scrollTop = body.scrollHeight;
+  if (latest && window.location.hash === '#latest') latest.scrollIntoView({ block: 'end' });
 });
 </script>
 {% endblock custom_js %}
