@@ -105,11 +105,16 @@ function closeModal() { document.getElementById('reply_modal').classList.remove(
 function submitReply() {
   const id = document.getElementById('leave_id').value;
   const status = document.getElementById('reply_leave_status').value;
-  if (!status) { alert('Please select a decision.'); return; }
+  const modalStatus = document.getElementById('modal_status');
+  if (!status) {
+    modalStatus.style.display = 'block';
+    window.iceShowInlineAlert(modalStatus, 'Please select a decision.', 'warning');
+    return;
+  }
 
   const btn = document.getElementById('reply_btn');
   btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving…';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
 
   fetch("{% url 'view_staff_leave' %}", {
     method: 'POST',
@@ -119,20 +124,19 @@ function submitReply() {
   .then(r => r.text())
   .then(resp => {
     if (resp === 'True') {
-      document.getElementById('modal_status').innerHTML =
-        '<div class="alert alert-success mb-0"><i class="fas fa-check-circle me-1"></i> Response saved.</div>';
-      document.getElementById('modal_status').style.display = 'block';
+      modalStatus.style.display = 'block';
+      window.iceShowInlineAlert(modalStatus, 'Response saved.', 'success');
       setTimeout(() => { closeModal(); location.reload(); }, 1200);
     } else {
-      document.getElementById('modal_status').innerHTML =
-        '<div class="alert alert-danger mb-0">Failed to save response. Try again.</div>';
-      document.getElementById('modal_status').style.display = 'block';
+      modalStatus.style.display = 'block';
+      window.iceShowInlineAlert(modalStatus, 'Failed to save response. Try again.', 'error');
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-check me-1"></i> Submit';
     }
   })
   .catch(() => {
-    alert('Network error.');
+    modalStatus.style.display = 'block';
+    window.iceShowInlineAlert(modalStatus, "Couldn't load data. Please try again.", 'error');
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-check me-1"></i> Submit';
   });

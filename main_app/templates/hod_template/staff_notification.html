@@ -109,11 +109,16 @@ function closeModal() { document.getElementById('notify_modal').classList.remove
 function sendNotification() {
   const id = document.getElementById('notify_staff_id').value;
   const message = document.getElementById('notify_message').value.trim();
-  if (!message) { alert('Please enter a message.'); return; }
+  const status = document.getElementById('modal_status');
+  if (!message) {
+    status.style.display = 'block';
+    window.iceShowInlineAlert(status, 'Please enter a message.', 'warning');
+    return;
+  }
 
   const btn = document.getElementById('send_btn');
   btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending…';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending...';
 
   fetch("{% url 'send_staff_notification' %}", {
     method: 'POST',
@@ -123,20 +128,19 @@ function sendNotification() {
   .then(r => r.text())
   .then(resp => {
     if (resp === 'True') {
-      document.getElementById('modal_status').innerHTML =
-        '<div class="alert alert-success mb-0"><i class="fas fa-check-circle me-1"></i> Notification sent.</div>';
-      document.getElementById('modal_status').style.display = 'block';
+      status.style.display = 'block';
+      window.iceShowInlineAlert(status, 'Notification sent.', 'success');
       setTimeout(() => { closeModal(); }, 1400);
     } else {
-      document.getElementById('modal_status').innerHTML =
-        '<div class="alert alert-danger mb-0">Could not send notification. Try again.</div>';
-      document.getElementById('modal_status').style.display = 'block';
+      status.style.display = 'block';
+      window.iceShowInlineAlert(status, "Couldn't send notification. Please try again.", 'error');
       btn.disabled = false;
       btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Send';
     }
   })
   .catch(() => {
-    alert('Network error.');
+    status.style.display = 'block';
+    window.iceShowInlineAlert(status, "Couldn't load data. Please try again.", 'error');
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Send';
   });

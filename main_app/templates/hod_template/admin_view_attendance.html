@@ -2,119 +2,215 @@
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock %}
 
+{% block custom_css %}
+<style>
+  .admin-att-shell {
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  .admin-att-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .admin-att-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 12px;
+  }
+  .admin-att-card {
+    display: grid;
+    gap: 8px;
+    min-height: 126px;
+    padding: 14px;
+    border: 1px solid var(--ice-polish-border);
+    border-radius: 18px;
+    color: var(--ice-polish-text);
+    background: var(--ice-polish-surface);
+    box-shadow: var(--ice-polish-shadow-soft);
+  }
+  .admin-att-card i {
+    color: var(--ice-polish-cyan);
+    font-size: 24px;
+  }
+  .admin-att-name {
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.25;
+  }
+  @media (max-width: 768px) {
+    .admin-att-controls {
+      grid-template-columns: 1fr;
+    }
+    .admin-att-results {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="max-width:900px; margin:0 auto; display:grid; gap:20px;">
-
-  <!-- Filter Card -->
-  <div class="dt-card">
-    <div class="dt-header">
-      <div class="dt-title"><i class="fas fa-search me-2"></i>{{ page_title }}</div>
-    </div>
-    <div style="padding:20px;">
-      <label class="pf-label"><i class="fas fa-layer-group me-1"></i>Select Group</label>
-      <select id="group" class="form-control" style="border-radius:9px; border:1.5px solid var(--ice-border); margin-bottom:14px;">
-        <option value="">— Choose a group —</option>
-        {% for g in groups %}
-        <option value="{{ g.id }}">{{ g.name }}{% if g.teacher %} · {{ g.teacher }}{% endif %}</option>
-        {% endfor %}
-      </select>
-      <button type="button" id="fetch_dates_btn" class="btn btn-primary" style="width:100%;">
-        <i class="fas fa-calendar-alt me-1"></i> Load Attendance Dates
-      </button>
-    </div>
-
-    <div id="date_section" style="display:none; padding:0 20px 20px; border-top:1px solid var(--ice-border); padding-top:16px;">
-      <label class="pf-label"><i class="fas fa-calendar-day me-1"></i>Attendance Date</label>
-      <select id="attendance_date" class="form-control" style="border-radius:9px; border:1.5px solid var(--ice-border); margin-bottom:12px;"></select>
-      <button type="button" id="fetch_students_btn" class="btn btn-secondary" style="width:100%;">
-        <i class="fas fa-users me-1"></i> View Attendance for this Date
-      </button>
-    </div>
-  </div>
-
-  <!-- Results Card -->
-  <div id="student_section" class="dt-card" style="display:none;">
-    <div class="dt-header">
-      <div class="dt-title"><i class="fas fa-clipboard-list me-2"></i>Attendance Results</div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <span class="sb sb-success">Present: <strong id="cnt_present">0</strong></span>
-        <span class="sb sb-warning">Late: <strong id="cnt_late">0</strong></span>
-        <span class="sb sb-danger">Absent: <strong id="cnt_absent">0</strong></span>
+<div class="ice-mobile-page admin-att-shell">
+  <section class="ice-hero">
+    <div class="ice-hero__main">
+      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-clipboard-list"></i></span>
+      <div class="ice-hero__copy">
+        <h2 class="ice-hero__title">{{ page_title }}</h2>
+        <p class="ice-hero__subtitle">Select a group, choose an attendance date, then review student statuses.</p>
       </div>
     </div>
-    <div id="student_data" style="padding:16px 20px; display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px;"></div>
+  </section>
+
+  <div class="ice-stepper" aria-label="Attendance steps">
+    <div class="ice-stepper__step"><span class="ice-stepper__num">1</span><span>Select group</span></div>
+    <div class="ice-stepper__step"><span class="ice-stepper__num">2</span><span>Select date</span></div>
+    <div class="ice-stepper__step"><span class="ice-stepper__num">3</span><span>View attendance</span></div>
   </div>
 
+  <div class="ice-form-section">
+    <div id="attendance_status"></div>
+    <div class="admin-att-controls">
+      <div>
+        <label class="form-label" for="group"><i class="fas fa-layer-group me-1"></i>Group</label>
+        <select id="group" class="form-control">
+          <option value="">Choose a group</option>
+          {% for g in groups %}
+          <option value="{{ g.id }}">{{ g.name }}{% if g.teacher %} - {{ g.teacher }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="display:flex; align-items:end;">
+        <button type="button" id="fetch_dates_btn" class="ice-action ice-action--primary" style="width:100%;">
+          <i class="fas fa-calendar-alt" aria-hidden="true"></i> Load Dates
+        </button>
+      </div>
+    </div>
+
+    <div id="date_section" class="admin-att-controls" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--ice-polish-border);">
+      <div>
+        <label class="form-label" for="attendance_date"><i class="fas fa-calendar-day me-1"></i>Attendance Date</label>
+        <select id="attendance_date" class="form-control"></select>
+      </div>
+      <div style="display:flex; align-items:end;">
+        <button type="button" id="fetch_students_btn" class="ice-action" style="width:100%;">
+          <i class="fas fa-users" aria-hidden="true"></i> View Attendance
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <section id="student_section" class="ice-form-section" style="display:none;">
+    <div class="ice-hero__actions" style="justify-content:space-between; margin-bottom:14px;">
+      <h3 class="ice-form-section__title" style="margin:0;"><i class="fas fa-users me-2"></i>Attendance Results</h3>
+      <div class="ice-actions" style="margin:0;">
+        <span class="ice-chip ice-chip--success"><i class="fas fa-check" aria-hidden="true"></i><span>Present: <strong id="cnt_present">0</strong></span></span>
+        <span class="ice-chip ice-chip--warning"><i class="fas fa-clock" aria-hidden="true"></i><span>Late: <strong id="cnt_late">0</strong></span></span>
+        <span class="ice-chip ice-chip--danger"><i class="fas fa-times" aria-hidden="true"></i><span>Absent: <strong id="cnt_absent">0</strong></span></span>
+      </div>
+    </div>
+    <div id="student_data" class="admin-att-results"></div>
+  </section>
 </div>
 {% endblock %}
 
 {% block custom_js %}
-<style>
-.att-card {
-  border-radius: 10px; padding: 12px 10px; text-align: center;
-  color: #fff; font-size: 12px; line-height: 1.4;
-}
-.att-present { background: linear-gradient(135deg,#10B981,#059669); }
-.att-late    { background: linear-gradient(135deg,#F59E0B,#D97706); }
-.att-absent  { background: linear-gradient(135deg,#EF4444,#DC2626); }
-</style>
 <script>
 const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? '';
+const statusBox = document.getElementById('attendance_status');
+
+function asArray(data) {
+  if (Array.isArray(data)) return data;
+  if (typeof data === 'string') {
+    try { return JSON.parse(data); } catch (e) { return []; }
+  }
+  return [];
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, function (char) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
+  });
+}
+
+function showStatus(message, type) {
+  window.iceShowInlineAlert(statusBox, message, type || 'info');
+}
+
+function clearStatus() {
+  statusBox.innerHTML = '';
+}
+
+function setLoading(message) {
+  statusBox.innerHTML = '<div class="ice-loading-state" style="padding:18px;"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><strong>Loading</strong><span>' + message + '</span></div>';
+}
 
 document.getElementById('fetch_dates_btn').addEventListener('click', function () {
   const group = document.getElementById('group').value;
-  if (!group) { alert('Please select a group.'); return; }
+  if (!group) { showStatus('Please select a group.', 'warning'); return; }
+
+  setLoading('Loading attendance dates...');
+  document.getElementById('date_section').style.display = 'none';
+  document.getElementById('student_section').style.display = 'none';
 
   fetch("{% url 'get_admin_attendance' %}", {
     method: 'POST',
     headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ group })
   })
-  .then(r => r.json())
+  .then(r => r.ok ? r.json() : Promise.reject())
   .then(data => {
-    const arr = JSON.parse(data);
-    if (!arr.length) { alert('No attendance records for this group yet.'); return; }
+    const arr = asArray(data);
+    if (!arr.length) {
+      showStatus('No attendance dates found for this group.', 'warning');
+      return;
+    }
     const sel = document.getElementById('attendance_date');
     sel.innerHTML = arr.map(a => `<option value="${a.id}">${a.attendance_date}</option>`).join('');
-    document.getElementById('date_section').style.display = 'block';
-    document.getElementById('student_section').style.display = 'none';
+    document.getElementById('date_section').style.display = 'grid';
+    clearStatus();
   })
-  .catch(() => alert('Error loading dates.'));
+  .catch(() => showStatus("Couldn't load data. Please try again.", 'error'));
 });
 
 document.getElementById('fetch_students_btn').addEventListener('click', function () {
   const attendance_date_id = document.getElementById('attendance_date').value;
-  if (!attendance_date_id) { alert('Please select a date.'); return; }
+  if (!attendance_date_id) { showStatus('Please select a date.', 'warning'); return; }
 
+  setLoading('Loading attendance records...');
   fetch("{% url 'get_admin_attendance' %}", {
     method: 'POST',
     headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ attendance_date_id })
   })
-  .then(r => r.json())
+  .then(r => r.ok ? r.json() : Promise.reject())
   .then(data => {
-    const arr = JSON.parse(data);
-    if (!arr.length) { alert('No student data for this date.'); return; }
+    const arr = asArray(data);
+    if (!arr.length) {
+      showStatus('No student data for this date.', 'warning');
+      document.getElementById('student_section').style.display = 'none';
+      return;
+    }
     let present = 0, late = 0, absent = 0, html = '';
     arr.forEach(s => {
       const st = parseInt(s.status, 10);
-      let cls, label;
-      if (st === 1)      { cls = 'att-present'; label = 'Present'; present++; }
-      else if (st === 2) { cls = 'att-late';    label = 'Late';    late++;    }
-      else               { cls = 'att-absent';  label = 'Absent';  absent++;  }
-      html += `<div class="att-card ${cls}">
-        <i class="fas fa-user mb-1 d-block" style="font-size:20px; opacity:.9;"></i>
-        <strong>${s.name}</strong>
-        <div style="font-size:11px; opacity:.85; margin-top:2px;">${label}</div>
-      </div>`;
+      let chip, label, icon;
+      if (st === 1)      { chip = 'ice-chip--success'; label = 'Present'; icon = 'fa-check-circle'; present++; }
+      else if (st === 2) { chip = 'ice-chip--warning'; label = 'Late'; icon = 'fa-clock'; late++; }
+      else               { chip = 'ice-chip--danger'; label = 'Absent'; icon = 'fa-times-circle'; absent++; }
+      html += `<article class="admin-att-card">
+        <i class="fas fa-user" aria-hidden="true"></i>
+        <div class="admin-att-name">${escapeHtml(s.name)}</div>
+        <span class="ice-chip ${chip}"><i class="fas ${icon}" aria-hidden="true"></i><span>${label}</span></span>
+      </article>`;
     });
     document.getElementById('student_data').innerHTML = html;
     document.getElementById('cnt_present').textContent = present;
-    document.getElementById('cnt_late').textContent    = late;
-    document.getElementById('cnt_absent').textContent  = absent;
+    document.getElementById('cnt_late').textContent = late;
+    document.getElementById('cnt_absent').textContent = absent;
     document.getElementById('student_section').style.display = 'block';
+    clearStatus();
   })
-  .catch(() => alert('Error loading attendance.'));
+  .catch(() => showStatus("Couldn't load data. Please try again.", 'error'));
 });
 </script>
 {% endblock %}

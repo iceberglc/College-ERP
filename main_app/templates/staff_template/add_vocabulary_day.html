@@ -10,16 +10,16 @@
 {% block custom_css %}
 <style>
 .avd-wrap { max-width:900px; }
-.avd-card { background:#fff; border-radius:18px; box-shadow:0 4px 20px rgba(12,31,69,.08); overflow:hidden; margin-bottom:22px; }
+.avd-card { background:var(--ice-polish-surface); border:1px solid var(--ice-polish-border); border-radius:18px; box-shadow:var(--ice-polish-shadow-soft); overflow:hidden; margin-bottom:22px; }
 .avd-card-head {
-  padding:18px 22px; border-bottom:1px solid #E8EDF5;
+  padding:18px 22px; border-bottom:1px solid var(--ice-polish-border);
   display:flex; align-items:center; gap:10px;
   background:linear-gradient(135deg,#0C1F45,#1B3F7A); color:#fff;
 }
 .avd-card-head h3 { font-size:15px; font-weight:700; margin:0; }
 .avd-card-body { padding:22px; }
 
-.pf-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#64748B; margin-bottom:5px; display:block; }
+.pf-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ice-polish-muted); margin-bottom:5px; display:block; }
 .pf-field { margin-bottom:16px; }
 .pf-error { font-size:12px; color:#DC2626; margin-top:4px; }
 .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -29,12 +29,12 @@
 #word-table { width:100%; border-collapse:collapse; }
 #word-table thead th {
   padding:8px 10px; font-size:10px; font-weight:800; text-transform:uppercase;
-  letter-spacing:.06em; color:#64748B; background:#F8FAFC; border-bottom:2px solid #E8EDF5;
+  letter-spacing:.06em; color:var(--ice-polish-muted); background:var(--ice-polish-surface-2); border-bottom:2px solid var(--ice-polish-border);
   text-align:left;
 }
-#word-table tbody tr { border-bottom:1px solid #F1F5F9; }
+#word-table tbody tr { border-bottom:1px solid var(--ice-polish-border); }
 #word-table td { padding:6px 6px; vertical-align:top; }
-.word-input { width:100%; border:1.5px solid #D1DCF0; border-radius:8px; padding:7px 10px; font-size:13px; color:#0F172A; font-family:inherit; background:#fff; }
+.word-input { width:100%; border:1.5px solid var(--ice-polish-border); border-radius:8px; padding:7px 10px; font-size:16px; color:var(--ice-polish-text); font-family:inherit; background:var(--ice-polish-surface); }
 .word-input:focus { outline:none; border-color:#1B3F7A; box-shadow:0 0 0 3px rgba(27,63,122,.12); }
 .btn-del-row { width:30px; height:30px; border:none; background:#FEF2F2; color:#DC2626; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; transition:background .12s; }
 .btn-del-row:hover { background:#DC2626; color:#fff; }
@@ -42,27 +42,27 @@
 
 .btn-add-row {
   display:inline-flex; align-items:center; gap:6px;
-  padding:9px 16px; border-radius:9px; border:1.5px dashed #1B3F7A;
-  background:transparent; color:#1B3F7A; font-size:13px; font-weight:600;
+  padding:9px 16px; border-radius:9px; border:1.5px dashed var(--ice-polish-cyan);
+  background:transparent; color:var(--ice-polish-cyan); font-size:13px; font-weight:600;
   cursor:pointer; transition:all .12s; margin-top:10px;
 }
-.btn-add-row:hover { background:#EEF4FF; }
+.btn-add-row:hover { background:rgba(6,182,212,.1); }
 
 /* Audience selector */
 .scope-options { display:flex; gap:12px; flex-wrap:wrap; margin-top:4px; }
 .scope-option {
   display:flex; align-items:center; gap:10px;
   padding:11px 16px; border-radius:11px;
-  border:1.5px solid #D1DCF0; background:#F8FAFC;
+  border:1.5px solid var(--ice-polish-border); background:var(--ice-polish-surface-2);
   cursor:pointer; transition:border-color .15s, background .15s;
   flex:1; min-width:160px;
 }
 .scope-option:has(input:checked) {
-  border-color:#1B3F7A; background:#EEF4FF;
+  border-color:var(--ice-polish-cyan); background:rgba(6,182,212,.1);
 }
 .scope-option input[type=radio] { accent-color:#1B3F7A; width:16px; height:16px; flex-shrink:0; }
-.scope-label { font-size:13px; font-weight:600; color:#0C1F45; line-height:1.2; }
-.scope-label small { display:block; font-size:11px; font-weight:400; color:#64748B; margin-top:2px; }
+.scope-label { font-size:13px; font-weight:600; color:var(--ice-polish-text); line-height:1.2; }
+.scope-label small { display:block; font-size:11px; font-weight:400; color:var(--ice-polish-muted); margin-top:2px; }
 
 .btn-submit {
   padding:12px 32px; border-radius:10px; border:none;
@@ -70,10 +70,10 @@
   font-size:14px; font-weight:700; cursor:pointer; transition:opacity .15s;
 }
 .btn-submit:hover { opacity:.88; }
-.btn-cancel { padding:12px 20px; border-radius:10px; border:1.5px solid #D1DCF0; background:#fff; color:#64748B; font-size:13px; font-weight:600; text-decoration:none; transition:border-color .15s; }
+.btn-cancel { padding:12px 20px; border-radius:10px; border:1.5px solid var(--ice-polish-border); background:var(--ice-polish-surface); color:var(--ice-polish-muted); font-size:13px; font-weight:600; text-decoration:none; transition:border-color .15s; }
 .btn-cancel:hover { border-color:#1B3F7A; color:#1B3F7A; }
 
-.word-tip { font-size:11.5px; color:#64748B; background:#F8FAFC; border-radius:8px; padding:8px 12px; margin-bottom:12px; }
+.word-tip { font-size:11.5px; color:var(--ice-polish-muted); background:var(--ice-polish-surface-2); border-radius:8px; padding:8px 12px; margin-bottom:12px; }
 </style>
 {% endblock %}
 
@@ -153,6 +153,7 @@
       </div>
       <div class="avd-card-body">
         <p class="word-tip"><i class="fas fa-lightbulb"></i>&nbsp;Add 30–50 words. Each word needs at least a <strong>word</strong> and a <strong>meaning</strong>. Example and pronunciation are optional.</p>
+        <div id="word_status"></div>
         <div style="overflow-x:auto;">
           <table id="word-table">
             <thead>
@@ -273,7 +274,7 @@
     });
     if (words.length === 0) {
       e.preventDefault();
-      alert('Please add at least one word with both a word and a meaning.');
+      window.iceShowInlineAlert(document.getElementById('word_status'), 'Please add at least one word with both a word and a meaning.', 'warning');
       return;
     }
     document.getElementById('words_json').value = JSON.stringify(words);

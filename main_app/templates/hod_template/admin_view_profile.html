@@ -11,6 +11,12 @@
       <div class="page-card-subtitle">Update your admin profile information</div>
     </div>
   </div>
+  <div id="password_notice" style="display:none; padding:0 20px 14px;">
+    <div class="ice-inline-alert ice-inline-alert--warning">
+      <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+      <span>After a successful password update, your session will end and you will need to log in again.</span>
+    </div>
+  </div>
   {% include "main_app/form_template.html" with messages=messages form=form button_text="Update Profile" %}
 </div>
 {% endblock %}
@@ -20,12 +26,9 @@
 (function () {
   var pwField = document.getElementById('id_password');
   if (pwField) {
-    var notified = false;
-    pwField.addEventListener('change', function () {
-      if (!notified) {
-        notified = true;
-        alert('After a successful profile update:\n\nYour session will be terminated and you will need to log in again.');
-      }
+    pwField.addEventListener('input', function () {
+      var notice = document.getElementById('password_notice');
+      if (notice) notice.style.display = pwField.value ? 'block' : 'none';
     });
   }
 })();

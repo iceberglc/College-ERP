@@ -5,16 +5,20 @@
 
 {% block custom_css %}
 <style>
+  .lead-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
   .lead-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
     gap: 12px;
-    margin-bottom: 16px;
   }
   .lead-stat {
     background: var(--ice-surface);
     border: 1px solid var(--ice-border);
-    border-radius: 14px;
+    border-radius: 16px;
     padding: 14px;
     box-shadow: var(--ice-card-shadow);
   }
@@ -30,21 +34,20 @@
     font-size: 12px;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: .4px;
+    letter-spacing: 0;
   }
   .lead-toolbar {
     display: grid;
     grid-template-columns: minmax(180px, 1fr) 170px 170px auto;
     gap: 10px;
     align-items: end;
-    margin-bottom: 16px;
   }
   .lead-card {
     background: var(--ice-surface);
     border: 1px solid var(--ice-border);
-    border-radius: 16px;
+    border-radius: 18px;
     box-shadow: var(--ice-card-shadow);
-    overflow: hidden;
+    overflow-x: auto;
   }
   .lead-table {
     width: 100%;
@@ -55,7 +58,7 @@
     color: var(--ice-muted);
     font-size: 11px;
     font-weight: 900;
-    letter-spacing: .5px;
+    letter-spacing: 0;
     text-transform: uppercase;
     padding: 13px 14px;
     border-bottom: 1px solid var(--ice-border);
@@ -107,6 +110,9 @@
     display: grid;
     gap: 8px;
   }
+  .lead-mobile-list {
+    display: none;
+  }
   .lead-empty {
     padding: 44px 18px;
     text-align: center;
@@ -125,144 +131,193 @@
     .lead-toolbar .btn {
       grid-column: span 2;
     }
-  }
-  @media (max-width: 640px) {
-    .lead-toolbar {
-      grid-template-columns: 1fr;
-    }
-    .lead-toolbar .btn {
-      grid-column: auto;
-    }
     .lead-card {
-      border: 0;
-      box-shadow: none;
-      background: transparent;
-    }
-    .lead-table,
-    .lead-table tbody,
-    .lead-table tr,
-    .lead-table td {
-      display: block;
-      width: 100%;
-    }
-    .lead-table thead {
       display: none;
     }
-    .lead-table tr {
-      background: var(--ice-surface);
-      border: 1px solid var(--ice-border);
-      border-radius: 14px;
-      box-shadow: var(--ice-card-shadow);
-      margin-bottom: 12px;
-      overflow: hidden;
-    }
-    .lead-table td {
-      border-bottom: 0;
-      padding: 12px 14px;
+    .lead-mobile-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
     }
     .lead-status,
     .lead-notes {
       width: 100%;
+    }
+    .lead-update {
+      margin-top: 12px;
+    }
+  }
+  @media (max-width: 640px) {
+    .lead-toolbar,
+    .lead-mobile-list {
+      grid-template-columns: 1fr;
+    }
+    .lead-toolbar .btn {
+      grid-column: auto;
+      min-height: 48px;
     }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="lead-summary">
-  {% for item in status_summary %}
-  <a class="lead-stat" href="{% url 'manage_registration_leads' %}?status={{ item.value }}" style="text-decoration:none;">
-    <strong>{{ item.count }}</strong>
-    <span>{{ item.label }}</span>
-  </a>
-  {% endfor %}
-</div>
+<div class="lead-shell ice-mobile-page" data-ice-search-scope>
+  <section class="ice-hero">
+    <div class="ice-hero__main">
+      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-user-clock"></i></span>
+      <div class="ice-hero__copy">
+        <h2 class="ice-hero__title">{{ page_title }}</h2>
+        <p class="ice-hero__subtitle">Track incoming registrations, update status, and keep follow-up notes.</p>
+      </div>
+    </div>
+    <div class="ice-hero__actions">
+      <span class="ice-chip ice-chip--info"><i class="fas fa-list" aria-hidden="true"></i><span><span data-ice-visible-count>{{ leads|length }}</span> showing</span></span>
+    </div>
+  </section>
 
-<form method="get" class="lead-toolbar">
-  <div>
-    <label class="form-label">Search</label>
-    <input class="form-control" type="search" name="q" value="{{ search }}" placeholder="Name, phone, email, program...">
+  <div class="lead-summary">
+    {% for item in status_summary %}
+    <a class="lead-stat" href="{% url 'manage_registration_leads' %}?status={{ item.value }}" style="text-decoration:none;">
+      <strong>{{ item.count }}</strong>
+      <span>{{ item.label }}</span>
+    </a>
+    {% endfor %}
   </div>
-  <div>
-    <label class="form-label">Status</label>
-    <select class="form-control" name="status">
-      <option value="">All statuses</option>
-      {% for value, label in status_choices %}
-      <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div>
-    <label class="form-label">Source</label>
-    <select class="form-control" name="source">
-      <option value="">All sources</option>
-      {% for source in sources %}
-      <option value="{{ source }}" {% if source_filter == source %}selected{% endif %}>{{ source }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <button class="btn btn-primary" type="submit"><i class="fas fa-filter me-1"></i>Filter</button>
-</form>
 
-<div class="lead-card">
+  <form method="get" class="lead-toolbar">
+    <div>
+      <label class="form-label">Search</label>
+      <input class="form-control" type="search" name="q" value="{{ search }}" placeholder="Name, phone, email, program...">
+    </div>
+    <div>
+      <label class="form-label">Status</label>
+      <select class="form-control" name="status">
+        <option value="">All statuses</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="form-label">Source</label>
+      <select class="form-control" name="source">
+        <option value="">All sources</option>
+        {% for source in sources %}
+        <option value="{{ source }}" {% if source_filter == source %}selected{% endif %}>{{ source }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary" type="submit"><i class="fas fa-filter me-1"></i>Filter</button>
+  </form>
+
+  <label class="ice-searchbar" aria-label="Quick search visible leads">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-searchbar__input" data-ice-search placeholder="Quick search visible leads..." autocomplete="off">
+  </label>
+
+  <div class="ice-empty-state" data-ice-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No records found</strong>
+    <span>Try another name, phone, program, source, or status.</span>
+  </div>
+
   {% if leads %}
-  <table class="lead-table">
-    <thead>
-      <tr>
-        <th>Registrant</th>
-        <th>Interest</th>
-        <th>Source</th>
-        <th>Submitted</th>
-        <th>Follow-up</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for lead in leads %}
-      <tr>
-        <td>
-          <div class="lead-name">{{ lead.full_name }}</div>
-          {% if lead.phone %}<div class="lead-meta"><i class="fas fa-phone me-1"></i>{{ lead.phone }}</div>{% endif %}
-          {% if lead.parent_phone %}<div class="lead-meta"><i class="fas fa-user-friends me-1"></i>{{ lead.parent_phone }}</div>{% endif %}
-          {% if lead.email %}<div class="lead-meta"><i class="fas fa-envelope me-1"></i>{{ lead.email }}</div>{% endif %}
-          {% if lead.social_handle %}<div class="lead-meta"><i class="fas fa-at me-1"></i>{{ lead.social_handle }}</div>{% endif %}
-        </td>
-        <td>
-          {% if lead.program %}<div class="lead-name">{{ lead.program }}</div>{% endif %}
-          {% if lead.branch %}<div class="lead-small"><strong>Branch:</strong> {{ lead.branch }}</div>{% endif %}
-          {% if lead.preferred_schedule %}<div class="lead-small"><strong>Schedule:</strong> {{ lead.preferred_schedule }}</div>{% endif %}
-          {% if lead.message %}<div class="lead-small" style="margin-top:6px;">{{ lead.message }}</div>{% endif %}
-        </td>
-        <td>
-          <span class="lead-source"><i class="fas fa-bullhorn"></i>{{ lead.source|default:"website" }}</span>
-          {% if lead.campaign %}<div class="lead-small"><strong>Campaign:</strong> {{ lead.campaign }}</div>{% endif %}
-          {% if lead.utm_campaign %}<div class="lead-small"><strong>UTM:</strong> {{ lead.utm_campaign }}</div>{% endif %}
-          {% if lead.referrer %}<div class="lead-small">{{ lead.referrer|truncatechars:80 }}</div>{% endif %}
-        </td>
-        <td>
-          <div class="lead-name">{{ lead.created_at|date:"M j, Y" }}</div>
-          <div class="lead-small">{{ lead.created_at|date:"H:i" }}</div>
-          {% if lead.remote_addr %}<div class="lead-small" style="margin-top:6px;">IP {{ lead.remote_addr }}</div>{% endif %}
-        </td>
-        <td>
-          <form method="post" class="lead-update">
-            {% csrf_token %}
-            <input type="hidden" name="lead_id" value="{{ lead.id }}">
-            <input type="hidden" name="next" value="?status={{ status_filter }}&source={{ source_filter }}&q={{ search }}">
-            <select class="form-control lead-status" name="status">
-              {% for value, label in status_choices %}
-              <option value="{{ value }}" {% if lead.status == value %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-            <textarea class="form-control lead-notes" name="admin_notes" placeholder="Follow-up notes...">{{ lead.admin_notes }}</textarea>
-            <button class="btn btn-sm btn-primary" type="submit"><i class="fas fa-save me-1"></i>Update</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="lead-card">
+    <table class="lead-table">
+      <thead>
+        <tr>
+          <th>Registrant</th>
+          <th>Interest</th>
+          <th>Source</th>
+          <th>Submitted</th>
+          <th>Follow-up</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lead in leads %}
+        <tr data-ice-search-item data-ice-search-text="{{ lead.full_name }} {{ lead.phone }} {{ lead.parent_phone }} {{ lead.email }} {{ lead.program }} {{ lead.branch }} {{ lead.source }} {{ lead.status }} {{ lead.admin_notes }}">
+          <td>
+            <div class="lead-name">{{ lead.full_name }}</div>
+            {% if lead.phone %}<div class="lead-meta"><i class="fas fa-phone me-1"></i>{{ lead.phone }}</div>{% endif %}
+            {% if lead.parent_phone %}<div class="lead-meta"><i class="fas fa-user-friends me-1"></i>{{ lead.parent_phone }}</div>{% endif %}
+            {% if lead.email %}<div class="lead-meta"><i class="fas fa-envelope me-1"></i>{{ lead.email }}</div>{% endif %}
+            {% if lead.social_handle %}<div class="lead-meta"><i class="fas fa-at me-1"></i>{{ lead.social_handle }}</div>{% endif %}
+          </td>
+          <td>
+            {% if lead.program %}<div class="lead-name">{{ lead.program }}</div>{% endif %}
+            {% if lead.branch %}<div class="lead-small"><strong>Branch:</strong> {{ lead.branch }}</div>{% endif %}
+            {% if lead.preferred_schedule %}<div class="lead-small"><strong>Schedule:</strong> {{ lead.preferred_schedule }}</div>{% endif %}
+            {% if lead.message %}<div class="lead-small" style="margin-top:6px;">{{ lead.message }}</div>{% endif %}
+          </td>
+          <td>
+            <span class="lead-source"><i class="fas fa-bullhorn"></i>{{ lead.source|default:"website" }}</span>
+            {% if lead.campaign %}<div class="lead-small"><strong>Campaign:</strong> {{ lead.campaign }}</div>{% endif %}
+            {% if lead.utm_campaign %}<div class="lead-small"><strong>UTM:</strong> {{ lead.utm_campaign }}</div>{% endif %}
+            {% if lead.referrer %}<div class="lead-small">{{ lead.referrer|truncatechars:80 }}</div>{% endif %}
+          </td>
+          <td>
+            <div class="lead-name">{{ lead.created_at|date:"M j, Y" }}</div>
+            <div class="lead-small">{{ lead.created_at|date:"H:i" }}</div>
+            {% if lead.remote_addr %}<div class="lead-small" style="margin-top:6px;">IP {{ lead.remote_addr }}</div>{% endif %}
+          </td>
+          <td>
+            <form method="post" class="lead-update">
+              {% csrf_token %}
+              <input type="hidden" name="lead_id" value="{{ lead.id }}">
+              <input type="hidden" name="next" value="?status={{ status_filter }}&source={{ source_filter }}&q={{ search }}">
+              <select class="form-control lead-status" name="status">
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if lead.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <textarea class="form-control lead-notes" name="admin_notes" placeholder="Follow-up notes...">{{ lead.admin_notes }}</textarea>
+              <button class="btn btn-sm btn-primary" type="submit"><i class="fas fa-save me-1"></i>Update</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="lead-mobile-list">
+    {% for lead in leads %}
+    <article class="ice-mobile-card" data-ice-search-item data-ice-search-primary data-ice-search-text="{{ lead.full_name }} {{ lead.phone }} {{ lead.parent_phone }} {{ lead.email }} {{ lead.program }} {{ lead.branch }} {{ lead.source }} {{ lead.status }} {{ lead.admin_notes }}">
+      <div class="ice-mobile-card__top">
+        <span class="ice-mobile-card__avatar" aria-hidden="true">{{ lead.full_name|first|upper }}</span>
+        <div class="ice-mobile-card__main">
+          <h3 class="ice-mobile-card__title">{{ lead.full_name }}</h3>
+          <div class="ice-mobile-card__subtitle">{{ lead.program|default:"Program not selected" }}</div>
+        </div>
+      </div>
+      <div class="ice-mobile-card__meta">
+        {% if lead.phone %}<span class="ice-chip"><i class="fas fa-phone" aria-hidden="true"></i><span>{{ lead.phone }}</span></span>{% endif %}
+        {% if lead.parent_phone %}<span class="ice-chip"><i class="fas fa-user-friends" aria-hidden="true"></i><span>{{ lead.parent_phone }}</span></span>{% endif %}
+        {% if lead.email %}<span class="ice-chip"><i class="fas fa-envelope" aria-hidden="true"></i><span>{{ lead.email }}</span></span>{% endif %}
+        {% if lead.branch %}<span class="ice-chip"><i class="fas fa-map-marker-alt" aria-hidden="true"></i><span>{{ lead.branch }}</span></span>{% endif %}
+        <span class="ice-chip ice-chip--info"><i class="fas fa-bullhorn" aria-hidden="true"></i><span>{{ lead.source|default:"website" }}</span></span>
+        <span class="ice-chip"><i class="fas fa-calendar-alt" aria-hidden="true"></i><span>{{ lead.created_at|date:"M j, Y" }}</span></span>
+      </div>
+      {% if lead.message %}
+      <p class="lead-small" style="margin:12px 0 0;">{{ lead.message }}</p>
+      {% endif %}
+      <form method="post" class="lead-update">
+        {% csrf_token %}
+        <input type="hidden" name="lead_id" value="{{ lead.id }}">
+        <input type="hidden" name="next" value="?status={{ status_filter }}&source={{ source_filter }}&q={{ search }}">
+        <select class="form-control lead-status" name="status">
+          {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if lead.status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <textarea class="form-control lead-notes" name="admin_notes" placeholder="Follow-up notes...">{{ lead.admin_notes }}</textarea>
+        <button class="btn btn-primary" type="submit"><i class="fas fa-save me-1"></i>Update</button>
+      </form>
+    </article>
+    {% endfor %}
+  </div>
   {% else %}
-  <div class="lead-empty">
+  <div class="lead-empty ice-empty-state">
     <i class="fas fa-user-clock"></i>
     <strong>No registration leads found</strong>
     <div>New website registrations will appear here after the external form posts to the ERP endpoint.</div>

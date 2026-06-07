@@ -3,24 +3,36 @@
 {% block page_title %}{{ page_title }}{% endblock %}
 
 {% block content %}
-<div class="dt-card">
-  <div class="dt-header">
-    <div class="dt-title"><i class="fas fa-file-alt me-2"></i>{{ page_title }} <span class="dt-count">{{ files|length }}</span></div>
-    <a href="{% url 'upload_result_file' %}" class="btn btn-primary btn-sm">
-      <i class="fas fa-upload me-1"></i> Upload File
-    </a>
-  </div>
+<div class="ice-mobile-page" data-ice-search-scope>
+  <section class="ice-hero">
+    <div class="ice-hero__main">
+      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-file-alt"></i></span>
+      <div class="ice-hero__copy">
+        <h2 class="ice-hero__title">{{ page_title }}</h2>
+        <p class="ice-hero__subtitle">Manage uploaded result files for groups and individual students.</p>
+      </div>
+    </div>
+    <div class="ice-hero__actions">
+      <span class="ice-chip ice-chip--info"><i class="fas fa-folder-open" aria-hidden="true"></i><span><span data-ice-visible-count>{{ files|length }}</span> files</span></span>
+      <a href="{% url 'upload_result_file' %}" class="ice-action ice-action--primary">
+        <i class="fas fa-upload" aria-hidden="true"></i> Upload File
+      </a>
+    </div>
+  </section>
 
-  {% if messages %}
-  <div style="padding:12px 20px 0;">
-    {% for m in messages %}
-    <div class="alert alert-{{ m.tags|default:'info' }}">{{ m }}</div>
-    {% endfor %}
+  <label class="ice-searchbar" aria-label="Search result files">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-searchbar__input" data-ice-search placeholder="Search title, group, student..." autocomplete="off">
+  </label>
+
+  <div class="ice-empty-state" data-ice-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No records found</strong>
+    <span>Try another title, group, student, or description.</span>
   </div>
-  {% endif %}
 
   {% if files %}
-  <div style="overflow-x:auto;">
+  <div class="ice-table-card ice-desktop-only">
     <table class="dt">
       <thead>
         <tr>
@@ -34,7 +46,7 @@
       </thead>
       <tbody>
         {% for f in files %}
-        <tr>
+        <tr data-ice-search-item data-ice-search-text="{{ f.title }} {{ f.description }} {{ f.group.name }} {% if f.student %}{{ f.student.admin.get_full_name }}{% else %}entire group{% endif %}">
           <td style="color:var(--ice-muted);">{{ forloop.counter }}</td>
           <td>
             <div style="font-weight:600;">{{ f.title }}</div>
@@ -50,13 +62,13 @@
           </td>
           <td style="font-size:12px; color:var(--ice-muted);">{{ f.uploaded_at|date:"d M Y, H:i" }}</td>
           <td>
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <a href="{% url 'result_file_download' f.id %}" class="ab-success">
-                <i class="fas fa-download me-1"></i>Download
+            <div class="ice-actions" style="margin:0;">
+              <a href="{% url 'result_file_download' f.id %}" class="ice-action">
+                <i class="fas fa-download" aria-hidden="true"></i> Download
               </a>
-              <a href="{% url 'delete_result_file' f.id %}" class="ab-danger"
+              <a href="{% url 'delete_result_file' f.id %}" class="ice-action ice-action--danger"
                  onclick="return confirm('Delete this file?')">
-                <i class="fas fa-trash me-1"></i>Delete
+                <i class="fas fa-trash" aria-hidden="true"></i> Delete
               </a>
             </div>
           </td>
@@ -65,14 +77,51 @@
       </tbody>
     </table>
   </div>
+
+  <div class="ice-card-grid ice-mobile-only">
+    {% for f in files %}
+    <article class="ice-mobile-card" data-ice-search-item data-ice-search-primary data-ice-search-text="{{ f.title }} {{ f.description }} {{ f.group.name }} {% if f.student %}{{ f.student.admin.get_full_name }}{% else %}entire group{% endif %}">
+      <div class="ice-mobile-card__top">
+        <span class="ice-mobile-card__avatar" aria-hidden="true"><i class="fas fa-file-alt"></i></span>
+        <div class="ice-mobile-card__main">
+          <h3 class="ice-mobile-card__title">{{ f.title }}</h3>
+          <div class="ice-mobile-card__subtitle">{{ f.group.name }}</div>
+        </div>
+      </div>
+      <div class="ice-mobile-card__meta">
+        <span class="ice-chip"><i class="fas fa-layer-group" aria-hidden="true"></i><span>{{ f.group.name }}</span></span>
+        {% if f.student %}
+        <span class="ice-chip"><i class="fas fa-user-graduate" aria-hidden="true"></i><span>{{ f.student.admin.last_name }}, {{ f.student.admin.first_name }}</span></span>
+        {% else %}
+        <span class="ice-chip ice-chip--info"><i class="fas fa-users" aria-hidden="true"></i><span>Entire Group</span></span>
+        {% endif %}
+        <span class="ice-chip"><i class="fas fa-clock" aria-hidden="true"></i><span>{{ f.uploaded_at|date:"d M Y, H:i" }}</span></span>
+      </div>
+      {% if f.description %}
+      <p style="margin:12px 0 0; color:var(--ice-polish-muted); font-size:13px; line-height:1.5;">{{ f.description }}</p>
+      {% endif %}
+      <div class="ice-actions">
+        <a href="{% url 'result_file_download' f.id %}" class="ice-action ice-action--primary">
+          <i class="fas fa-download" aria-hidden="true"></i> Download
+        </a>
+        <a href="{% url 'delete_result_file' f.id %}" class="ice-action ice-action--danger"
+           onclick="return confirm('Delete this file?')">
+          <i class="fas fa-trash" aria-hidden="true"></i> Delete
+        </a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
   {% else %}
-  <div style="text-align:center; padding:60px 20px; color:var(--ice-muted);">
-    <i class="fas fa-folder-open" style="font-size:40px; opacity:.2; display:block; margin-bottom:14px;"></i>
-    <div style="font-size:15px; font-weight:600; color:var(--ice-text); margin-bottom:8px;">No files uploaded yet</div>
-    <div style="font-size:13px; margin-bottom:20px;">Upload result files for your students and groups.</div>
-    <a href="{% url 'upload_result_file' %}" class="btn btn-primary">
-      <i class="fas fa-upload me-1"></i> Upload First File
-    </a>
+  <div class="ice-empty-state">
+    <i class="fas fa-folder-open" aria-hidden="true"></i>
+    <strong>No records found</strong>
+    <span>Upload result files for your students and groups.</span>
+    <div style="margin-top:16px;">
+      <a href="{% url 'upload_result_file' %}" class="ice-action ice-action--primary">
+        <i class="fas fa-upload" aria-hidden="true"></i> Upload First File
+      </a>
+    </div>
   </div>
   {% endif %}
 </div>
