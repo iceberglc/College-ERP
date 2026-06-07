@@ -5,28 +5,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
   document.body.classList.add("has-glow-bottom-nav");
 
-  const links = Array.from(nav.querySelectorAll(".glow-bottom-nav__link"));
-  const indicator = nav.querySelector(".glow-bottom-nav__indicator");
   const list = nav.querySelector(".glow-bottom-nav__list");
+  const links = Array.from(nav.querySelectorAll(".glow-bottom-nav__link"));
 
-  if (!links.length || !indicator || !list) return;
+  if (!links.length || !list) return;
 
   list.style.setProperty("--glow-nav-count", String(links.length));
 
   function setActiveLink(activeLink) {
-    const activeIndex = links.indexOf(activeLink);
-
-    if (activeIndex < 0) return;
+    if (!activeLink || !links.includes(activeLink)) return;
 
     links.forEach((link) => {
       link.classList.remove("is-active");
-      link.setAttribute("aria-current", "false");
+      link.removeAttribute("aria-current");
     });
 
     activeLink.classList.add("is-active");
     activeLink.setAttribute("aria-current", "page");
-
-    indicator.style.transform = `translateX(${activeIndex * 100}%)`;
   }
 
   const serverActive = links.find((link) => link.classList.contains("is-active"));
