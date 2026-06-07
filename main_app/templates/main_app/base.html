@@ -53,6 +53,7 @@
     <link rel="stylesheet" href="{% static 'dist/css/iceberg-bold.css' %}">
     <!-- adaptive mobile layer: safe areas, table→card reflow, platform glass/solid themes (loads LAST) -->
     <link rel="stylesheet" href="{% static 'dist/css/mobile-adaptive.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/css/glowing-bottom-nav.css' %}">
     <style>
 /* ── ICEBERG page enter (subtle, calm) ──────────────────────────────── */
 /* A single short fade on first paint of the main content. No exit
@@ -248,78 +249,7 @@
     </main>
 
     <!-- ── Mobile Bottom Navigation ──────────────────────────────────────── -->
-    <nav class="bottom-nav ice-bottom-nav" id="bottom-nav" aria-label="Primary navigation">
-        {% if user.user_type == '1' %}
-            {% url 'admin_home' as u_home %}
-            {% url 'manage_student' as u_students %}
-            {% url 'manage_group' as u_groups %}
-            {% url 'messages' as u_messages %}
-            {% url 'admin_view_profile' as u_profile %}
-            <a href="{{ u_home }}" class="bottom-nav-item {% if u_home == request.path %}active{% endif %}">
-                <i class="fas fa-tachometer-alt"></i><span>Home</span>
-            </a>
-            <a href="{{ u_students }}" class="bottom-nav-item {% if 'student' in request.path and 'notif' not in request.path %}active{% endif %}">
-                <i class="fas fa-users"></i><span>Students</span>
-            </a>
-            <a href="{{ u_groups }}" class="bottom-nav-item {% if 'group' in request.path %}active{% endif %}">
-                <i class="fas fa-layer-group"></i><span>Groups</span>
-            </a>
-            <a href="{{ u_messages }}" class="bottom-nav-item {% if 'messages' in request.path %}active{% endif %}">
-                <i class="fas fa-comments"></i><span>Chat</span>
-                {% if unread_message_count > 0 %}<span class="notif-dot"></span>{% endif %}
-            </a>
-            <a href="{{ u_profile }}" class="bottom-nav-item {% if 'profile' in request.path %}active{% endif %}">
-                <i class="fas fa-user"></i><span>Profile</span>
-            </a>
-
-        {% elif user.user_type == '2' %}
-            {% url 'staff_home' as u_home %}
-            {% url 'staff_take_attendance' as u_att %}
-            {% url 'staff_add_result' as u_results %}
-            {% url 'messages' as u_messages %}
-            {% url 'staff_view_profile' as u_profile %}
-            <a href="{{ u_home }}" class="bottom-nav-item {% if u_home == request.path %}active{% endif %}">
-                <i class="fas fa-home"></i><span>Home</span>
-            </a>
-            <a href="{{ u_att }}" class="bottom-nav-item {% if 'attendance' in request.path %}active{% endif %}">
-                <i class="fas fa-clipboard-check"></i><span>Attendance</span>
-            </a>
-            <a href="{{ u_results }}" class="bottom-nav-item {% if 'result' in request.path %}active{% endif %}">
-                <i class="fas fa-chart-bar"></i><span>Scores</span>
-            </a>
-            <a href="{{ u_messages }}" class="bottom-nav-item {% if 'messages' in request.path %}active{% endif %}">
-                <i class="fas fa-comments"></i><span>Chat</span>
-                {% if unread_message_count > 0 %}<span class="notif-dot"></span>{% endif %}
-            </a>
-            <a href="{{ u_profile }}" class="bottom-nav-item {% if 'profile' in request.path %}active{% endif %}">
-                <i class="fas fa-user"></i><span>Profile</span>
-            </a>
-
-        {% else %}
-            {% url 'student_home' as u_home %}
-            {% url 'student_view_attendance' as u_att %}
-            {% url 'student_view_result' as u_results %}
-            {% url 'messages' as u_messages %}
-            {% url 'view_books' as u_library %}
-            <a href="{{ u_home }}" class="bottom-nav-item {% if u_home == request.path %}active{% endif %}">
-                <i class="fas fa-home"></i><span>Home</span>
-            </a>
-            <a href="{{ u_att }}" class="bottom-nav-item {% if 'attendance' in request.path %}active{% endif %}">
-                <i class="fas fa-calendar-check"></i><span>Attendance</span>
-            </a>
-            <a href="{{ u_results }}" class="bottom-nav-item {% if 'result' in request.path and 'file' not in request.path %}active{% endif %}">
-                <i class="fas fa-chart-bar"></i><span>Results</span>
-            </a>
-            <a href="{{ u_messages }}" class="bottom-nav-item {% if 'messages' in request.path %}active{% endif %}">
-                <i class="fas fa-comments"></i><span>Chat</span>
-                {% if unread_message_count > 0 %}<span class="notif-dot"></span>{% endif %}
-            </a>
-            {% url 'vocabulary_day_list' as u_vocab %}
-            <a href="{{ u_vocab }}" class="bottom-nav-item {% if 'vocabulary' in request.path %}active{% endif %}">
-                <i class="fas fa-language"></i><span>Vocab</span>
-            </a>
-        {% endif %}
-    </nav>
+    {% include "main_app/partials/glowing_bottom_nav.html" %}
 
     <!-- ── Page-level modals (rendered directly on <body>, outside .erpnext-main
          stacking context, so fixed z-index values work correctly) ────────── -->
@@ -449,6 +379,7 @@
   });
 })();
     </script>
+    <script src="{% static 'dist/js/glowing-bottom-nav.js' %}"></script>
     {% block custom_js %}{% endblock custom_js %}
 
     <!-- Service Worker registration -->

@@ -3,211 +3,187 @@
 {% block page_title %}{{ page_title }}{% endblock %}
 
 {% block custom_css %}
-<style>
-.mg-page { display: flex; flex-direction: column; gap: 18px; }
-
-.mg-hero {
-  padding: 22px 24px 18px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #0C1F45, #1B3F7A);
-  color: #fff;
-  box-shadow: 0 10px 28px rgba(12,31,69,.22);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.mg-hero h2 { font-size: 20px; font-weight: 900; margin: 0 0 4px; }
-.mg-hero p  { font-size: 13px; color: rgba(255,255,255,.72); margin: 0; }
-
-.mg-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-@media (max-width: 480px) { .mg-grid { grid-template-columns: 1fr; } }
-
-.group-card {
-  background: #fff;
-  border-radius: 16px;
-  border: 1.5px solid #E8EDF5;
-  box-shadow: 0 4px 14px rgba(12,31,69,.07);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: transform .15s, box-shadow .15s;
-}
-.group-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(12,31,69,.12); }
-.group-card.archived { opacity: .65; }
-
-.gc-top {
-  padding: 16px 18px 12px;
-  background: linear-gradient(135deg, #0C1F45, #1B3F7A);
-  color: #fff;
-  position: relative;
-}
-.gc-top .status-pill {
-  position: absolute;
-  top: 12px; right: 14px;
-  padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 700;
-}
-.status-pill.active   { background: rgba(16,185,129,.28); color: #6EE7B7; }
-.status-pill.archived { background: rgba(255,255,255,.15); color: rgba(255,255,255,.7); }
-.gc-group-name { font-size: 18px; font-weight: 900; letter-spacing: -.3px; margin: 0 0 6px; }
-
-.gc-teacher {
-  display: flex; align-items: center; gap: 7px;
-  font-size: 13px; color: rgba(255,255,255,.85);
-}
-.gc-teacher-avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: rgba(255,255,255,.2); border: 1.5px solid rgba(255,255,255,.3);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; flex-shrink: 0;
-}
-.gc-teacher-name { font-weight: 700; }
-.gc-teacher-label { font-size: 11px; opacity: .7; }
-
-.gc-body { padding: 14px 18px; flex: 1; }
-
-.gc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-.gc-chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 9px; border-radius: 999px;
-  background: #F1F5F9; color: #475569;
-  font-size: 11px; font-weight: 600;
-}
-.gc-chip i { font-size: 10px; color: #94A3B8; }
-
-.gc-student-count {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 12px; border-radius: 10px;
-  background: #EFF6FF; border: 1.5px solid rgba(30,64,175,.12);
-  margin-bottom: 14px;
-  text-decoration: none;
-  transition: background .12s;
-}
-.gc-student-count:hover { background: #DBEAFE; }
-.gc-student-count-num { font-size: 22px; font-weight: 900; color: #1E40AF; line-height: 1; }
-.gc-student-count-label { font-size: 12px; color: #3B82F6; font-weight: 600; }
-.gc-student-count-arrow { margin-left: auto; color: #93C5FD; font-size: 13px; }
-
-.gc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.gc-btn {
-  flex: 1; min-width: 60px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 8px 6px; border-radius: 9px;
-  font-size: 11px; font-weight: 700; text-decoration: none;
-  border: 1.5px solid transparent; transition: all .12s; text-align: center;
-}
-.gc-btn i { font-size: 14px; }
-.gc-btn.edit    { background: rgba(59,130,246,.08); color: #1E40AF; border-color: rgba(59,130,246,.2); }
-.gc-btn.archive { background: rgba(245,158,11,.08); color: #92400E; border-color: rgba(245,158,11,.2); }
-.gc-btn.delete  { background: rgba(239,68,68,.08); color: #B91C1C; border-color: rgba(239,68,68,.2); }
-.gc-btn:hover { filter: brightness(.9); transform: translateY(-1px); text-decoration: none; }
-
-.empty-state {
-  background: #fff; border-radius: 16px;
-  box-shadow: 0 4px 14px rgba(12,31,69,.07);
-  padding: 56px 24px; text-align: center;
-}
-.empty-icon { font-size: 42px; margin-bottom: 14px; opacity: .2; }
-.empty-title { font-size: 15px; font-weight: 700; color: #0F172A; margin-bottom: 6px; }
-</style>
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
 {% endblock custom_css %}
 
 {% block content %}
-<div class="mg-page">
-
-  <div class="mg-hero">
-    <div>
-      <h2><i class="fas fa-layer-group me-2"></i>Manage Groups</h2>
-      <p>{{ groups|length }} group{{ groups|length|pluralize }} &nbsp;·&nbsp; Click a group to view enrolled students</p>
+<div class="ice-manage-page" data-manage-search-scope>
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-layer-group"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Manage Groups</h2>
+        <p class="ice-manage-hero__subtitle">Manage class groups, teachers, branches, and enrollments.</p>
+      </div>
     </div>
-    <a href="{% url 'add_group' %}" class="btn btn-light btn-sm fw-700">
-      <i class="fas fa-plus me-1"></i> Add Group
-    </a>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count"><span data-manage-visible-count>{{ groups|length }}</span>&nbsp;total</span>
+      <a href="{% url 'add_group' %}" class="ice-manage-add-btn">
+        <i class="fas fa-plus" aria-hidden="true"></i> Add Group
+      </a>
+    </div>
+  </section>
+
+  <label class="ice-manage-search" aria-label="Search groups">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search groups, teachers, branches..." autocomplete="off">
+  </label>
+
+  <div class="ice-manage-empty" data-manage-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No groups found</strong>
+    <span>Try another group, teacher, course, branch, or status.</span>
   </div>
 
-  {% if messages %}
-  {% for message in messages %}
-  <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-    {{ message }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  <div class="ice-manage-table-wrap">
+    <table class="ice-manage-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Group</th>
+          <th>Course</th>
+          <th>Branch</th>
+          <th>Teacher</th>
+          <th>Students</th>
+          <th>Start Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for group in groups %}
+        <tr data-manage-search-item
+            data-manage-search-text="{{ group.name }} {{ group.course.name }} {{ group.branch.name }} {% if group.teacher %}{{ group.teacher.admin.get_full_name }} {{ group.teacher.admin.email }}{% endif %} {{ group.schedule }} {{ group.room }} {% if group.is_archived %}archived{% else %}active{% endif %}">
+          <td>{{ forloop.counter }}</td>
+          <td><strong>{{ group.name }}</strong></td>
+          <td>{{ group.course.name|default:"No course" }}</td>
+          <td>{{ group.branch.name|default:"No branch" }}</td>
+          <td>
+            {% if group.teacher %}
+              {{ group.teacher.admin.get_full_name|default:group.teacher.admin.email }}
+            {% else %}
+              No teacher
+            {% endif %}
+          </td>
+          <td><span class="ice-manage-chip"><i class="fas fa-users" aria-hidden="true"></i> {{ group.enrolled_count }} student{{ group.enrolled_count|pluralize }}</span></td>
+          <td>{{ group.start_date|date:"M j, Y"|default:"Not set" }}</td>
+          <td>
+            {% if group.is_archived %}
+            <span class="ice-manage-chip ice-manage-chip--muted"><i class="fas fa-archive" aria-hidden="true"></i> Archived</span>
+            {% else %}
+            <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-check-circle" aria-hidden="true"></i> Active</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="ice-manage-actions">
+              <a href="{% url 'admin_group_detail' group.id %}" class="ice-manage-action ice-manage-action--primary">
+                <i class="fas fa-users" aria-hidden="true"></i> Students
+              </a>
+              <a href="{% url 'edit_group' group.id %}" class="ice-manage-action">
+                <i class="fas fa-edit" aria-hidden="true"></i> Edit
+              </a>
+              <a href="{% url 'archive_group' group.id %}" class="ice-manage-action ice-manage-action--warning"
+                 onclick="return confirm('{% if group.is_archived %}Restore{% else %}Archive{% endif %} this group?');">
+                <i class="fas fa-{% if group.is_archived %}undo{% else %}archive{% endif %}" aria-hidden="true"></i>
+                {% if group.is_archived %}Restore{% else %}Archive{% endif %}
+              </a>
+              <a href="{% url 'delete_group' group.id %}" class="ice-manage-action ice-manage-action--danger"
+                 onclick="return confirm('Are you sure you want to delete this?');">
+                <i class="fas fa-trash" aria-hidden="true"></i> Delete
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9">
+            <div class="ice-manage-empty">
+              <i class="fas fa-layer-group" aria-hidden="true"></i>
+              <strong>No groups found</strong>
+              <span>Create a group and assign a course, teacher, and branch.</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  {% endfor %}
-  {% endif %}
 
-  {% if groups %}
-  <div class="mg-grid">
+  <div class="ice-manage-mobile-list">
     {% for group in groups %}
-    <div class="group-card {% if group.is_archived %}archived{% endif %}">
-
-      <div class="gc-top">
-        <span class="status-pill {% if group.is_archived %}archived{% else %}active{% endif %}">
-          {% if group.is_archived %}<i class="fas fa-archive me-1"></i>Archived{% else %}<i class="fas fa-circle me-1" style="font-size:6px;"></i>Active{% endif %}
-        </span>
-
-        <div class="gc-group-name">{{ group.name }}</div>
-
-        <div class="gc-teacher">
-          <div class="gc-teacher-avatar">
-            {% if group.teacher %}{{ group.teacher.admin.first_name|first|upper }}{{ group.teacher.admin.last_name|first|upper }}{% else %}?{% endif %}
-          </div>
-          <div>
-            <div class="gc-teacher-name">{% if group.teacher %}{{ group.teacher.admin.get_full_name }}{% else %}No teacher assigned{% endif %}</div>
-            <div class="gc-teacher-label">Teacher</div>
+    <article class="ice-manage-card {% if group.is_archived %}ice-manage-card--muted{% endif %}"
+             data-manage-search-item
+             data-manage-search-primary
+             data-manage-search-text="{{ group.name }} {{ group.course.name }} {{ group.branch.name }} {% if group.teacher %}{{ group.teacher.admin.get_full_name }} {{ group.teacher.admin.email }}{% endif %} {{ group.schedule }} {{ group.room }} {% if group.is_archived %}archived{% else %}active{% endif %}">
+      <div class="ice-manage-card__top">
+        <span class="ice-manage-card__avatar" aria-hidden="true">{{ group.name|first|upper }}</span>
+        <div class="ice-manage-card__main">
+          <h3 class="ice-manage-card__title">{{ group.name }}</h3>
+          <div class="ice-manage-card__subtitle">
+            {{ group.course.name|default:"No course" }}
+            {% if group.branch %}&middot; {{ group.branch.name }}{% endif %}
           </div>
         </div>
       </div>
 
-      <div class="gc-body">
-        <div class="gc-chips">
-          {% if group.course %}<span class="gc-chip"><i class="fas fa-graduation-cap"></i> {{ group.course.name }}</span>{% endif %}
-          {% if group.branch %}<span class="gc-chip"><i class="fas fa-map-marker-alt"></i> {{ group.branch }}</span>{% endif %}
-          {% if group.schedule %}<span class="gc-chip"><i class="fas fa-clock"></i> {{ group.schedule }}</span>{% endif %}
-          {% if group.start_date %}<span class="gc-chip"><i class="fas fa-calendar-alt"></i> {{ group.start_date|date:"M j, Y" }}</span>{% endif %}
-          {% if group.capacity %}<span class="gc-chip"><i class="fas fa-users"></i> Cap. {{ group.capacity }}</span>{% endif %}
-        </div>
+      <div class="ice-manage-card__meta">
+        {% if group.is_archived %}
+        <span class="ice-manage-chip ice-manage-chip--muted"><i class="fas fa-archive" aria-hidden="true"></i><span>Archived</span></span>
+        {% else %}
+        <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-check-circle" aria-hidden="true"></i><span>Active</span></span>
+        {% endif %}
+        <span class="ice-manage-chip"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>{{ group.course.name|default:"No course" }}</span></span>
+        {% if group.branch %}
+        <span class="ice-manage-chip"><i class="fas fa-map-marker-alt" aria-hidden="true"></i><span>{{ group.branch.name }}</span></span>
+        {% endif %}
+        <span class="ice-manage-chip"><i class="fas fa-user-tie" aria-hidden="true"></i><span>
+          {% if group.teacher %}
+            {{ group.teacher.admin.get_full_name|default:group.teacher.admin.email }}
+          {% else %}
+            No teacher
+          {% endif %}
+        </span></span>
+        <span class="ice-manage-chip"><i class="fas fa-users" aria-hidden="true"></i><span>{{ group.enrolled_count }} student{{ group.enrolled_count|pluralize }}</span></span>
+        {% if group.start_date %}
+        <span class="ice-manage-chip"><i class="fas fa-calendar-alt" aria-hidden="true"></i><span>Start {{ group.start_date|date:"M j, Y" }}</span></span>
+        {% endif %}
+        {% if group.schedule %}
+        <span class="ice-manage-chip"><i class="fas fa-clock" aria-hidden="true"></i><span>{{ group.schedule }}</span></span>
+        {% endif %}
+        {% if group.room %}
+        <span class="ice-manage-chip"><i class="fas fa-door-open" aria-hidden="true"></i><span>{{ group.room }}</span></span>
+        {% endif %}
+      </div>
 
-        <a href="{% url 'admin_group_detail' group.id %}" class="gc-student-count">
-          <div>
-            <div class="gc-student-count-num">{{ group.enrolled_count }}</div>
-            <div class="gc-student-count-label">Enrolled Student{{ group.enrolled_count|pluralize }}</div>
-          </div>
-          <div class="gc-student-count-arrow"><i class="fas fa-chevron-right"></i> View</div>
+      <div class="ice-manage-actions">
+        <a href="{% url 'admin_group_detail' group.id %}" class="ice-manage-action ice-manage-action--primary">
+          <i class="fas fa-users" aria-hidden="true"></i> Students
         </a>
-
-        <div class="gc-actions">
-          <a href="{% url 'edit_group' group.id %}" class="gc-btn edit">
-            <i class="fas fa-edit"></i> Edit
-          </a>
-          <a href="{% url 'archive_group' group.id %}" class="gc-btn archive"
-             onclick="return confirm('{% if group.is_archived %}Restore{% else %}Archive{% endif %} this group?')">
-            <i class="fas fa-{% if group.is_archived %}undo{% else %}archive{% endif %}"></i>
-            {% if group.is_archived %}Restore{% else %}Archive{% endif %}
-          </a>
-          <a href="{% url 'delete_group' group.id %}" class="gc-btn delete"
-             onclick="return confirm('Permanently delete {{ group.name }}?')">
-            <i class="fas fa-trash"></i> Delete
-          </a>
-        </div>
+        <a href="{% url 'edit_group' group.id %}" class="ice-manage-action">
+          <i class="fas fa-edit" aria-hidden="true"></i> Edit
+        </a>
+        <a href="{% url 'archive_group' group.id %}" class="ice-manage-action ice-manage-action--warning"
+           onclick="return confirm('{% if group.is_archived %}Restore{% else %}Archive{% endif %} this group?');">
+          <i class="fas fa-{% if group.is_archived %}undo{% else %}archive{% endif %}" aria-hidden="true"></i>
+          {% if group.is_archived %}Restore{% else %}Archive{% endif %}
+        </a>
+        <a href="{% url 'delete_group' group.id %}" class="ice-manage-action ice-manage-action--danger"
+           onclick="return confirm('Are you sure you want to delete this?');">
+          <i class="fas fa-trash" aria-hidden="true"></i> Delete
+        </a>
       </div>
-
+    </article>
+    {% empty %}
+    <div class="ice-manage-empty">
+      <i class="fas fa-layer-group" aria-hidden="true"></i>
+      <strong>No groups found</strong>
+      <span>Create a group and assign a course, teacher, and branch.</span>
     </div>
     {% endfor %}
   </div>
-
-  {% else %}
-  <div class="empty-state">
-    <div class="empty-icon"><i class="fas fa-layer-group"></i></div>
-    <div class="empty-title">No groups yet</div>
-    <p style="font-size:13px; color:#64748B;">
-      <a href="{% url 'add_group' %}">Add your first group</a> to get started.
-    </p>
-  </div>
-  {% endif %}
-
 </div>
-{% endblock %}
+{% endblock content %}
+
+{% block custom_js %}
+<script src="{% static 'dist/js/admin-manage-mobile.js' %}"></script>
+{% endblock custom_js %}

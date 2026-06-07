@@ -2,54 +2,153 @@
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock %}
 
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
+{% endblock custom_css %}
+
 {% block content %}
-<div class="dt-card">
-  <div class="dt-header">
-    <div class="dt-title"><i class="fas fa-graduation-cap"></i> {{ page_title }} <span class="dt-count">{{ courses|length }} courses</span></div>
-    <div class="d-flex gap-2 flex-wrap align-items-center">
-      <input type="text" id="search_input" class="dt-search" placeholder="Search…">
-      <a href="{% url 'add_course' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> Add Course</a>
+<div class="ice-manage-page" data-manage-search-scope>
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-book-open"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Manage Courses</h2>
+        <p class="ice-manage-hero__subtitle">Organize programs offered by Iceberg.</p>
+      </div>
     </div>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count"><span data-manage-visible-count>{{ courses|length }}</span>&nbsp;total</span>
+      <a href="{% url 'add_course' %}" class="ice-manage-add-btn">
+        <i class="fas fa-plus" aria-hidden="true"></i> Add Course
+      </a>
+    </div>
+  </section>
+
+  <label class="ice-manage-search" aria-label="Search courses">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search courses..." autocomplete="off">
+  </label>
+
+  <div class="ice-manage-empty" data-manage-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No courses found</strong>
+    <span>Try another course name, status, or track.</span>
   </div>
-  <div style="overflow-x:auto;">
-    <table class="dt" id="course_table">
+
+  <div class="ice-manage-table-wrap">
+    <table class="ice-manage-table">
       <thead>
         <tr>
           <th>#</th>
           <th>Course Name</th>
+          <th>Status</th>
+          <th>Track</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for course in courses %}
-        <tr>
-          <td style="color:var(--ice-muted); width:40px;">{{ forloop.counter }}</td>
-          <td style="font-weight:600;">{{ course.name }}</td>
+        <tr data-manage-search-item
+            data-manage-search-text="{{ course.name }} {% if course.is_active %}active{% else %}inactive{% endif %} {% if course.is_english %}english track{% else %}other track{% endif %}">
+          <td>{{ forloop.counter }}</td>
+          <td><strong>{{ course.name }}</strong></td>
           <td>
-            <div class="ab-row">
-              <a href="{% url 'edit_course' course.id %}" class="ab-edit"><i class="fas fa-edit"></i> Edit</a>
-              <a href="{% url 'delete_course' course.id %}"
-                 onclick="return confirm('Permanently delete {{ course.name }}?')"
-                 class="ab-danger"><i class="fas fa-trash"></i> Delete</a>
+            {% if course.is_active %}
+            <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-check-circle" aria-hidden="true"></i> Active</span>
+            {% else %}
+            <span class="ice-manage-chip ice-manage-chip--muted"><i class="fas fa-pause-circle" aria-hidden="true"></i> Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if course.is_english %}
+            <span class="ice-manage-chip"><i class="fas fa-language" aria-hidden="true"></i> English Track</span>
+            {% else %}
+            <span class="ice-manage-chip ice-manage-chip--muted"><i class="fas fa-book" aria-hidden="true"></i> Other Track</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="ice-manage-actions">
+              <a href="{% url 'edit_course' course.id %}" class="ice-manage-action">
+                <i class="fas fa-edit" aria-hidden="true"></i> Edit
+              </a>
+              <a href="{% url 'toggle_course_active' course.id %}" class="ice-manage-action ice-manage-action--warning"
+                 onclick="return confirm('{% if course.is_active %}Deactivate{% else %}Activate{% endif %} {{ course.name }}?');">
+                <i class="fas fa-power-off" aria-hidden="true"></i>
+                {% if course.is_active %}Deactivate{% else %}Activate{% endif %}
+              </a>
+              <a href="{% url 'delete_course' course.id %}" class="ice-manage-action ice-manage-action--danger"
+                 onclick="return confirm('Are you sure you want to delete this?');">
+                <i class="fas fa-trash" aria-hidden="true"></i> Delete
+              </a>
             </div>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="3" style="text-align:center; padding:48px; color:var(--ice-muted);">No courses yet. <a href="{% url 'add_course' %}">Add one</a>.</td></tr>
+        <tr>
+          <td colspan="5">
+            <div class="ice-manage-empty">
+              <i class="fas fa-book-open" aria-hidden="true"></i>
+              <strong>No courses found</strong>
+              <span>Create your first course to organize programs.</span>
+            </div>
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  <div class="ice-manage-mobile-list">
+    {% for course in courses %}
+    <article class="ice-manage-card"
+             data-manage-search-item
+             data-manage-search-primary
+             data-manage-search-text="{{ course.name }} {% if course.is_active %}active{% else %}inactive{% endif %} {% if course.is_english %}english track{% else %}other track{% endif %}">
+      <div class="ice-manage-card__top">
+        <span class="ice-manage-card__avatar" aria-hidden="true"><i class="fas fa-book-open"></i></span>
+        <div class="ice-manage-card__main">
+          <h3 class="ice-manage-card__title">{{ course.name }}</h3>
+          <div class="ice-manage-card__subtitle">Program</div>
+        </div>
+      </div>
+      <div class="ice-manage-card__meta">
+        {% if course.is_active %}
+        <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-check-circle" aria-hidden="true"></i><span>Active</span></span>
+        {% else %}
+        <span class="ice-manage-chip ice-manage-chip--muted"><i class="fas fa-pause-circle" aria-hidden="true"></i><span>Inactive</span></span>
+        {% endif %}
+        {% if course.is_english %}
+        <span class="ice-manage-chip"><i class="fas fa-language" aria-hidden="true"></i><span>English Track</span></span>
+        {% else %}
+        <span class="ice-manage-chip ice-manage-chip--muted"><i class="fas fa-book" aria-hidden="true"></i><span>Other Track</span></span>
+        {% endif %}
+      </div>
+      <div class="ice-manage-actions">
+        <a href="{% url 'edit_course' course.id %}" class="ice-manage-action">
+          <i class="fas fa-edit" aria-hidden="true"></i> Edit
+        </a>
+        <a href="{% url 'toggle_course_active' course.id %}" class="ice-manage-action ice-manage-action--warning"
+           onclick="return confirm('{% if course.is_active %}Deactivate{% else %}Activate{% endif %} {{ course.name }}?');">
+          <i class="fas fa-power-off" aria-hidden="true"></i>
+          {% if course.is_active %}Deactivate{% else %}Activate{% endif %}
+        </a>
+        <a href="{% url 'delete_course' course.id %}" class="ice-manage-action ice-manage-action--danger"
+           onclick="return confirm('Are you sure you want to delete this?');">
+          <i class="fas fa-trash" aria-hidden="true"></i> Delete
+        </a>
+      </div>
+    </article>
+    {% empty %}
+    <div class="ice-manage-empty">
+      <i class="fas fa-book-open" aria-hidden="true"></i>
+      <strong>No courses found</strong>
+      <span>Create your first course to organize programs.</span>
+    </div>
+    {% endfor %}
+  </div>
 </div>
-{% endblock %}
+{% endblock content %}
 
 {% block custom_js %}
-<script>
-document.getElementById('search_input').addEventListener('input', function() {
-  const q = this.value.toLowerCase();
-  document.querySelectorAll('#course_table tbody tr').forEach(r => {
-    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
-  });
-});
-</script>
-{% endblock %}
+<script src="{% static 'dist/js/admin-manage-mobile.js' %}"></script>
+{% endblock custom_js %}

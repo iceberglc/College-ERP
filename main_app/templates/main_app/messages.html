@@ -6,392 +6,428 @@
 
 {% block custom_css %}
 <style>
-.msg-shell {
+:root {
+  --ice-chat-navy: #071827;
+  --ice-chat-navy-2: #0c1f45;
+  --ice-chat-cyan: #38bdf8;
+  --ice-chat-cyan-2: #06b6d4;
+  --ice-chat-bg: #eef6ff;
+  --ice-chat-bg-2: #f8fbff;
+  --ice-chat-panel: rgba(255, 255, 255, 0.94);
+  --ice-chat-panel-strong: #ffffff;
+  --ice-chat-border: rgba(148, 163, 184, 0.24);
+  --ice-chat-text: #0f172a;
+  --ice-chat-muted: #64748b;
+  --ice-chat-soft: #e8f3fb;
+  --ice-chat-danger: #ef4444;
+  --ice-chat-shadow: 0 18px 46px rgba(12, 31, 69, 0.12);
+  --ice-chat-shadow-soft: 0 10px 28px rgba(12, 31, 69, 0.08);
+}
+
+.ice-chat-app {
   display: grid;
-  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-  gap: 14px;
-  min-height: calc(100vh - 190px);
-  min-height: calc(100dvh - 190px);
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  gap: 16px;
+  height: clamp(520px, calc(100dvh - 230px), 700px);
+  min-height: 520px;
+  color: var(--ice-chat-text);
 }
 
-.msg-threads,
-.msg-chat {
+.ice-chat-sidebar,
+.ice-chat-room {
   min-width: 0;
-  border: 1px solid var(--ice-border);
-  border-radius: 12px;
-  background: var(--ice-surface);
-  box-shadow: var(--ice-card-shadow);
-}
-
-.msg-threads {
-  display: flex;
-  flex-direction: column;
+  border: 1px solid var(--ice-chat-border);
+  border-radius: 24px;
+  background: var(--ice-chat-panel);
+  box-shadow: var(--ice-chat-shadow);
   overflow: hidden;
 }
 
-.msg-panel-head,
-.msg-chat-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--ice-border);
-}
-
-.msg-title {
-  margin: 0;
-  color: var(--ice-text);
-  font-size: 15px;
-  font-weight: 800;
-  line-height: 1.25;
-}
-
-.msg-sub {
-  margin-top: 3px;
-  color: var(--ice-muted);
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.msg-thread-list {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 6px;
-  min-height: 0;
-  padding: 8px;
-  overflow-y: auto;
-}
-
-.msg-hub-mobile,
-.msg-back-btn {
-  display: none;
-}
-
-.msg-hub-section {
+.ice-chat-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  height: 100%;
 }
 
-.msg-hub-section-title {
+.ice-chat-room {
   display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ice-chat-hub-header,
+.ice-chat-room__header {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 18px;
+  border-bottom: 1px solid var(--ice-chat-border);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(56, 189, 248, 0.18), transparent 15rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 248, 255, 0.92));
+}
+
+.ice-chat-eyebrow {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 18px 4px 8px;
-  color: var(--ice-muted);
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--ice-chat-cyan-2);
   font-size: 11px;
-  font-weight: 850;
-  letter-spacing: .08em;
+  font-weight: 900;
+  letter-spacing: 0;
   line-height: 1.2;
   text-transform: uppercase;
 }
 
-.msg-hub-count {
+.ice-chat-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ice-chat-title,
+.ice-chat-room__name {
+  min-width: 0;
+  margin: 0;
+  color: var(--ice-chat-text);
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.ice-chat-subtitle,
+.ice-chat-room__subtitle,
+.ice-chat-thread__meta,
+.ice-chat-thread__preview {
+  color: var(--ice-chat-muted);
+}
+
+.ice-chat-subtitle {
+  max-width: 31rem;
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ice-chat-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 8px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
   border-radius: 999px;
-  color: var(--ice-text);
-  background: var(--ice-surface2);
-  font-size: 11px;
-  font-weight: 850;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--ice-chat-navy-2), var(--ice-chat-cyan-2));
+  box-shadow: 0 8px 20px rgba(6, 182, 212, 0.22);
+  font-size: 13px;
+  font-weight: 900;
 }
 
-.msg-hub-card {
+.ice-chat-thread-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ice-chat-thread {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
-  min-height: 58px;
-  padding: 11px 12px;
-  border: 1px solid var(--ice-border);
-  border-radius: 14px;
-  color: var(--ice-text);
-  background: var(--ice-surface);
+  min-width: 0;
+  min-height: 78px;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  color: var(--ice-chat-text);
+  background: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.ice-chat-thread:hover,
+.ice-chat-thread:focus {
+  color: var(--ice-chat-text);
+  border-color: rgba(56, 189, 248, 0.28);
+  background: #ffffff;
+  box-shadow: var(--ice-chat-shadow-soft);
   text-decoration: none;
 }
 
-.msg-hub-card:hover,
-.msg-hub-card:focus {
-  color: var(--ice-text);
-  text-decoration: none;
-  background: var(--ice-surface2);
+.ice-chat-thread.is-selected {
+  border-color: rgba(56, 189, 248, 0.42);
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(255, 255, 255, 0.96));
+  box-shadow: 0 12px 28px rgba(6, 182, 212, 0.14);
 }
 
-.msg-hub-card-icon {
+.ice-chat-avatar {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  border-radius: 17px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.26), transparent 34%),
+    linear-gradient(135deg, var(--ice-chat-navy-2), var(--ice-chat-cyan-2));
+  box-shadow: 0 12px 24px rgba(12, 31, 69, 0.16);
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.ice-chat-thread__main {
+  min-width: 0;
+}
+
+.ice-chat-thread__name,
+.ice-chat-thread__meta,
+.ice-chat-thread__preview {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ice-chat-thread__name {
+  color: var(--ice-chat-text);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.ice-chat-thread__meta {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.ice-chat-thread__preview {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ice-chat-thread__preview-name {
+  color: var(--ice-chat-text);
+  font-weight: 800;
+}
+
+.ice-chat-thread__side {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 26px;
+}
+
+.ice-chat-unread {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--ice-chat-danger);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.16);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ice-chat-chevron {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.ice-chat-room__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ice-chat-room__identity {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 13px;
+  align-items: center;
+  min-width: 0;
+}
+
+.ice-chat-room__copy {
+  min-width: 0;
+}
+
+.ice-chat-room__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 20px;
+}
+
+.ice-chat-room__subtitle {
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.ice-chat-room__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.ice-chat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 999px;
+  color: var(--ice-chat-muted);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.ice-chat-chip span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ice-chat-back {
+  display: none;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: 13px;
-  color: var(--ice-cyan);
-  background: rgba(6, 182, 212, .12);
-  font-size: 17px;
-}
-
-.msg-hub-card-title,
-.msg-hub-card-sub {
-  display: block;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.msg-hub-card-title {
-  color: var(--ice-text);
-  font-size: 13px;
-  font-weight: 850;
-}
-
-.msg-hub-card-sub {
-  margin-top: 2px;
-  color: var(--ice-muted);
-  font-size: 11.5px;
-  line-height: 1.35;
-}
-
-.msg-hub-card-chevron {
-  color: var(--ice-muted);
-  font-size: 13px;
-}
-
-.msg-thread {
-  display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  min-width: 0;
-  padding: 10px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  color: var(--ice-text);
+  flex: 0 0 44px;
+  border: 1px solid var(--ice-chat-border);
+  border-radius: 16px;
+  color: var(--ice-chat-text);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: var(--ice-chat-shadow-soft);
   text-decoration: none;
 }
 
-.msg-thread:hover,
-.msg-thread:focus {
-  color: var(--ice-text);
-  text-decoration: none;
-  background: var(--ice-surface2);
-}
-
-.msg-thread.active {
-  border-color: rgba(6, 182, 212, .28);
-  background: rgba(6, 182, 212, .10);
-}
-
-.msg-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
-  border-radius: 10px;
-  color: #fff;
-  background: linear-gradient(135deg, #0c1f45, #0891b2);
-  font-size: 15px;
-  font-weight: 800;
-}
-
-.msg-thread-main,
-.msg-chat-title {
-  min-width: 0;
-}
-
-.msg-thread-name,
-.msg-thread-meta,
-.msg-thread-preview {
-  display: block;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.msg-thread-name {
-  color: var(--ice-text);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.msg-thread-meta,
-.msg-thread-preview {
-  color: var(--ice-muted);
-  font-size: 11.5px;
-  line-height: 1.35;
-}
-
-.msg-unread {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 21px;
-  height: 21px;
-  padding: 0 7px;
-  border-radius: 999px;
-  color: #fff;
-  background: var(--ice-danger);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.msg-chat {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.msg-chat-head {
-  flex-wrap: wrap;
-}
-
-.msg-chat-head-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.msg-back-btn {
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--ice-border);
-  border-radius: 999px;
-  color: var(--ice-text);
-  background: var(--ice-surface2);
-  font-size: 13px;
-  font-weight: 850;
-  line-height: 1;
+.ice-chat-back:hover,
+.ice-chat-back:focus {
+  color: var(--ice-chat-text);
+  background: #ffffff;
   text-decoration: none;
 }
 
-.msg-back-btn:hover,
-.msg-back-btn:focus {
-  color: var(--ice-text);
-  text-decoration: none;
-  background: rgba(6, 182, 212, .12);
-}
-
-.msg-head-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.msg-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  max-width: 100%;
-  padding: 4px 9px;
-  border-radius: 999px;
-  color: var(--ice-muted);
-  background: var(--ice-surface2);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.25;
-}
-
-.msg-pill span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.msg-body {
+.ice-chat-messages {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 18px;
+  padding: 22px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background:
-    linear-gradient(180deg, rgba(6, 182, 212, .05), transparent 180px),
-    var(--ice-surface);
+    radial-gradient(circle at 82% 0%, rgba(56, 189, 248, 0.12), transparent 17rem),
+    linear-gradient(180deg, rgba(238, 246, 255, 0.9), rgba(255, 255, 255, 0.78));
 }
 
-.msg-row {
+.ice-chat-message {
   display: flex;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-.msg-row.mine {
+.ice-chat-message.is-mine {
   justify-content: flex-end;
 }
 
-.msg-bubble {
-  max-width: min(680px, 78%);
-  padding: 10px 12px;
-  border: 1px solid var(--ice-border);
-  border-radius: 13px;
-  color: var(--ice-text);
-  background: var(--ice-surface2);
+.ice-chat-message__bubble {
+  max-width: min(680px, 76%);
+  padding: 11px 13px;
+  border: 1px solid var(--ice-chat-border);
+  border-radius: 18px 18px 18px 7px;
+  color: var(--ice-chat-text);
+  background: var(--ice-chat-panel-strong);
+  box-shadow: 0 9px 24px rgba(12, 31, 69, 0.08);
 }
 
-.msg-row.mine .msg-bubble {
-  color: #fff;
+.ice-chat-message.is-mine .ice-chat-message__bubble {
+  color: #ffffff;
   border-color: transparent;
-  background: linear-gradient(135deg, #0c1f45, #0891b2);
+  border-radius: 18px 18px 7px 18px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.18), transparent 36%),
+    linear-gradient(135deg, var(--ice-chat-navy-2), var(--ice-chat-cyan-2));
+  box-shadow: 0 14px 30px rgba(12, 31, 69, 0.18);
 }
 
-.msg-bubble-head {
+.ice-chat-message__meta {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 5px;
-  color: var(--ice-muted);
-  font-size: 11px;
+  margin-bottom: 6px;
+  color: var(--ice-chat-muted);
+  font-size: 11.5px;
+  font-weight: 800;
   line-height: 1.35;
 }
 
-.msg-row.mine .msg-bubble-head {
-  color: rgba(255, 255, 255, .78);
+.ice-chat-message.is-mine .ice-chat-message__meta {
+  color: rgba(255, 255, 255, 0.78);
 }
 
-.msg-sender {
+.ice-chat-message__sender {
   min-width: 0;
-  font-weight: 800;
   overflow-wrap: anywhere;
 }
 
-.msg-time {
+.ice-chat-message__time {
   flex: 0 0 auto;
+  font-weight: 700;
 }
 
-.msg-text {
+.ice-chat-message__text {
   color: inherit;
-  font-size: 13.5px;
-  line-height: 1.55;
+  font-size: 14px;
+  line-height: 1.56;
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
 }
 
-.msg-composer {
+.ice-chat-composer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 52px;
   gap: 10px;
   align-items: end;
-  padding: 12px;
-  border-top: 1px solid var(--ice-border);
-  background: var(--ice-surface);
+  flex: 0 0 auto;
+  padding: 14px;
+  border-top: 1px solid var(--ice-chat-border);
+  background: rgba(255, 255, 255, 0.96);
 }
 
-.msg-composer .form-label {
+.ice-chat-composer__label {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -400,92 +436,202 @@
   white-space: nowrap;
 }
 
-.msg-composer textarea {
-  min-height: 50px;
-  max-height: 140px;
-  resize: vertical;
-  border-radius: 10px;
-  font-size: 15px;
-  line-height: 1.4;
+.ice-chat-composer textarea {
+  min-height: 52px;
+  max-height: 142px;
+  resize: none;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 18px;
+  background: #f8fbff;
+  color: var(--ice-chat-text);
+  font-size: 16px !important;
+  line-height: 1.45;
+  padding: 13px 15px;
+  box-shadow: none;
 }
 
-.msg-composer-actions .btn {
-  min-height: 50px;
-  border-radius: 10px;
-  font-weight: 800;
-  white-space: nowrap;
+.ice-chat-composer textarea:focus {
+  border-color: rgba(56, 189, 248, 0.64);
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.16);
 }
 
-.msg-empty {
+.ice-chat-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 17px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 25% 15%, rgba(255, 255, 255, 0.26), transparent 36%),
+    linear-gradient(135deg, var(--ice-chat-navy-2), var(--ice-chat-cyan-2));
+  box-shadow: 0 12px 26px rgba(6, 182, 212, 0.26);
+}
+
+.ice-chat-send:hover,
+.ice-chat-send:focus {
+  color: #ffffff;
+  filter: brightness(1.05);
+}
+
+.ice-chat-empty {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 280px;
-  padding: 24px;
-  color: var(--ice-muted);
+  padding: 28px;
+  color: var(--ice-chat-muted);
   text-align: center;
 }
 
-.msg-empty i {
-  margin-bottom: 12px;
-  color: var(--ice-cyan);
-  font-size: 34px;
+.ice-chat-empty__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 14px;
+  border-radius: 18px;
+  color: var(--ice-chat-cyan-2);
+  background: rgba(56, 189, 248, 0.12);
+  font-size: 24px;
 }
 
-.msg-empty strong {
-  color: var(--ice-text);
+.ice-chat-empty strong {
+  display: block;
+  color: var(--ice-chat-text);
+  font-size: 16px;
+  font-weight: 900;
 }
 
-.dark-mode .msg-threads,
-.dark-mode .msg-chat,
-.dark-mode .msg-composer {
-  background: var(--ice-surface);
-  border-color: var(--ice-border);
+.ice-chat-empty span {
+  display: block;
+  max-width: 25rem;
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
-.dark-mode .msg-thread.active {
-  border-color: rgba(103, 232, 249, .28);
-  background: rgba(103, 232, 249, .10);
+.dark-mode .ice-chat-app,
+[data-theme="dark"] .ice-chat-app {
+  --ice-chat-bg: #07101f;
+  --ice-chat-bg-2: #0b1426;
+  --ice-chat-panel: rgba(15, 23, 42, 0.94);
+  --ice-chat-panel-strong: #111f35;
+  --ice-chat-border: rgba(148, 163, 184, 0.17);
+  --ice-chat-text: #e5eef8;
+  --ice-chat-muted: #9aa9bc;
+  --ice-chat-soft: #101d32;
+  --ice-chat-shadow: 0 18px 48px rgba(0, 0, 0, 0.26);
+  --ice-chat-shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.18);
 }
 
-.dark-mode .msg-bubble {
-  background: #111f35;
+.dark-mode .ice-chat-hub-header,
+.dark-mode .ice-chat-room__header,
+[data-theme="dark"] .ice-chat-hub-header,
+[data-theme="dark"] .ice-chat-room__header {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(56, 189, 248, 0.14), transparent 15rem),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(17, 31, 53, 0.94));
 }
 
-@media (min-width: 769px) {
-  .msg-threads,
-  .msg-chat {
-    max-height: calc(100vh - 190px);
-    max-height: calc(100dvh - 190px);
+.dark-mode .ice-chat-thread,
+[data-theme="dark"] .ice-chat-thread {
+  background: rgba(17, 29, 53, 0.74);
+}
+
+.dark-mode .ice-chat-thread:hover,
+.dark-mode .ice-chat-thread:focus,
+[data-theme="dark"] .ice-chat-thread:hover,
+[data-theme="dark"] .ice-chat-thread:focus {
+  background: rgba(17, 31, 53, 0.96);
+}
+
+.dark-mode .ice-chat-thread.is-selected,
+[data-theme="dark"] .ice-chat-thread.is-selected {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(17, 31, 53, 0.96));
+}
+
+.dark-mode .ice-chat-chip,
+.dark-mode .ice-chat-back,
+.dark-mode .ice-chat-composer,
+[data-theme="dark"] .ice-chat-chip,
+[data-theme="dark"] .ice-chat-back,
+[data-theme="dark"] .ice-chat-composer {
+  background: rgba(15, 23, 42, 0.84);
+}
+
+.dark-mode .ice-chat-composer textarea,
+[data-theme="dark"] .ice-chat-composer textarea {
+  background: #0b1426;
+  color: var(--ice-chat-text);
+}
+
+.dark-mode .ice-chat-messages,
+[data-theme="dark"] .ice-chat-messages {
+  background:
+    radial-gradient(circle at 82% 0%, rgba(56, 189, 248, 0.1), transparent 17rem),
+    linear-gradient(180deg, rgba(7, 16, 31, 0.92), rgba(11, 20, 38, 0.9));
+}
+
+@media (min-width: 768px) {
+  .ice-chat-sidebar,
+  .ice-chat-room {
+    max-height: 100%;
   }
 }
 
-@media (max-width: 980px) and (min-width: 769px) {
-  .msg-shell {
-    grid-template-columns: minmax(230px, 290px) minmax(0, 1fr);
-    gap: 10px;
+@media (max-width: 1120px) and (min-width: 768px) {
+  .ice-chat-app {
+    grid-template-columns: minmax(290px, 330px) minmax(0, 1fr);
+    gap: 12px;
   }
 
-  .msg-bubble {
+  .ice-chat-message__bubble {
     max-width: 84%;
   }
 }
 
-@media (max-width: 1023px) {
-  #main-content:has(.msg-shell) {
-    position: relative !important;
-    z-index: 5000 !important;
-    padding: 0 !important;
+@media (max-width: 767px) {
+  body.ice-chat-page.has-glow-bottom-nav {
+    padding-bottom: 0;
   }
 
-  #main-content:has(.msg-shell) > .page-header,
-  #main-content:has(.msg-shell) > .messages-container {
+  body.ice-chat-conversation .glow-bottom-nav {
     display: none !important;
   }
 
-  #main-content:has(.msg-shell) > .content-area {
+  body.ice-chat-page #main-content,
+  #main-content:has(.ice-chat-app) {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1035 !important;
+    width: 100vw !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(56, 189, 248, 0.16), transparent 17rem),
+      linear-gradient(180deg, var(--ice-chat-bg-2), var(--ice-chat-bg));
+    overflow: hidden !important;
+  }
+
+  body.ice-chat-page #main-content > .page-header,
+  body.ice-chat-page #main-content > .messages-container,
+  #main-content:has(.ice-chat-app) > .page-header,
+  #main-content:has(.ice-chat-app) > .messages-container {
+    display: none !important;
+  }
+
+  body.ice-chat-page #main-content > .content-area,
+  #main-content:has(.ice-chat-app) > .content-area {
     width: 100% !important;
+    height: 100% !important;
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -493,483 +639,417 @@
     transform: none !important;
   }
 
-  .msg-shell {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    display: block;
-    width: 100vw;
-    min-height: 100vh;
-    min-height: 100dvh;
+  .ice-chat-app {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
     padding:
       max(12px, env(safe-area-inset-top))
       max(12px, env(safe-area-inset-right))
       max(12px, env(safe-area-inset-bottom))
       max(12px, env(safe-area-inset-left));
-    background:
-      radial-gradient(circle at 18% 0%, rgba(6, 182, 212, .12), transparent 16rem),
-      linear-gradient(180deg, var(--ice-page-bg-2, #f8fbff), var(--ice-page-bg, #eef4fb));
     overflow: hidden;
-    overscroll-behavior: contain;
   }
 
-  .msg-shell.is-hub .msg-chat,
-  .msg-shell.is-conversation .msg-threads {
+  .ice-chat-app.is-hub {
+    padding-bottom: calc(108px + env(safe-area-inset-bottom));
+  }
+
+  .ice-chat-app.is-conversation {
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  .ice-chat-app.is-hub .ice-chat-room,
+  .ice-chat-app.is-conversation .ice-chat-sidebar {
     display: none;
   }
 
-  .msg-threads,
-  .msg-chat {
+  .ice-chat-sidebar,
+  .ice-chat-room {
     width: 100%;
     height: 100%;
-    max-height: none;
     border: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
   }
 
-  .msg-threads {
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .msg-chat {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .msg-hub-mobile {
-    display: block;
-  }
-
-  .msg-hub-section-title.msg-hub-mobile {
-    display: flex;
-  }
-
-  .msg-panel-head,
-  .msg-chat-head {
-    padding: 4px 2px 14px;
+  .ice-chat-hub-header,
+  .ice-chat-room__header {
+    padding: 2px 0 14px;
     border-bottom: 0;
-  }
-
-  .msg-panel-head {
-    align-items: flex-start;
-  }
-
-  .msg-title {
-    font-size: 20px;
-    letter-spacing: 0;
-  }
-
-  .msg-sub {
-    font-size: 12.5px;
-  }
-
-  .msg-thread-list {
-    display: flex;
-    flex: 0 0 auto;
-    flex-direction: column;
-    gap: 10px;
-    min-height: auto;
-    padding: 0;
-    overflow: visible;
-  }
-
-  .msg-thread,
-  .msg-hub-card {
-    grid-template-columns: 48px minmax(0, 1fr) auto;
-    min-height: 68px;
-    padding: 12px;
-    border-color: rgba(148, 163, 184, .22);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, .88);
-    box-shadow: 0 10px 26px rgba(12, 31, 69, .08);
-  }
-
-  .msg-shell.is-hub .msg-thread.active {
-    border-color: rgba(148, 163, 184, .22);
-    background: rgba(255, 255, 255, .88);
-  }
-
-  .msg-thread:active,
-  .msg-hub-card:active,
-  .msg-back-btn:active,
-  .msg-composer-actions .btn:active {
-    transform: scale(.985);
-  }
-
-  .msg-avatar,
-  .msg-hub-card-icon {
-    width: 48px;
-    height: 48px;
-    flex-basis: 48px;
-    border-radius: 15px;
-    font-size: 16px;
-  }
-
-  .msg-thread-name,
-  .msg-hub-card-title {
-    font-size: 14px;
-  }
-
-  .msg-thread-meta,
-  .msg-thread-preview,
-  .msg-hub-card-sub {
-    font-size: 12px;
-  }
-
-  .msg-hub-section {
-    margin-top: 4px;
-  }
-
-  .msg-hub-section-title {
-    margin: 20px 4px 9px;
-  }
-
-  .msg-unread,
-  .msg-hub-count {
-    min-width: 26px;
-    height: 26px;
-  }
-
-  .msg-back-btn {
-    display: inline-flex;
-    flex: 0 0 auto;
-    min-width: 46px;
-    min-height: 46px;
-  }
-
-  .msg-chat-head {
-    align-items: flex-start;
-    gap: 10px;
-    flex: 0 0 auto;
-  }
-
-  .msg-chat-head-left {
-    display: grid;
-    grid-template-columns: auto 48px minmax(0, 1fr);
-    flex: 1 1 100%;
-    gap: 10px;
-    align-items: center;
-    width: 100%;
-  }
-
-  .msg-chat-title .msg-title {
-    font-size: 17px;
-    line-height: 1.18;
-  }
-
-  .msg-head-meta {
-    gap: 6px;
-  }
-
-  .msg-pill {
-    min-height: 32px;
-    padding: 7px 10px;
-    font-size: 11.5px;
-  }
-
-  .msg-body {
-    flex: 1 1 auto;
-    min-height: 0;
-    margin: 0 -2px;
-    padding: 14px 2px 12px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
     background: transparent;
   }
 
-  .msg-row {
-    margin-bottom: 10px;
+  .ice-chat-eyebrow {
+    margin-bottom: 7px;
   }
 
-  .msg-bubble {
-    max-width: 88%;
+  .ice-chat-title {
+    font-size: 25px;
+  }
+
+  .ice-chat-subtitle {
+    font-size: 13px;
+  }
+
+  .ice-chat-thread-list {
+    flex: 1 1 auto;
+    gap: 11px;
+    padding: 2px 0 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .ice-chat-thread {
+    grid-template-columns: 54px minmax(0, 1fr) auto;
+    min-height: 82px;
+    padding: 12px;
+    border-color: rgba(148, 163, 184, 0.24);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: var(--ice-chat-shadow-soft);
+  }
+
+  .ice-chat-app.is-hub .ice-chat-thread.is-selected {
+    border-color: rgba(148, 163, 184, 0.24);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: var(--ice-chat-shadow-soft);
+  }
+
+  .ice-chat-thread:active,
+  .ice-chat-back:active,
+  .ice-chat-send:active {
+    transform: scale(0.985);
+  }
+
+  .ice-chat-thread__name {
+    font-size: 14.5px;
+  }
+
+  .ice-chat-thread__meta,
+  .ice-chat-thread__preview {
+    font-size: 12.5px;
+  }
+
+  .ice-chat-room {
+    min-height: 0;
+  }
+
+  .ice-chat-room__header {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 auto;
+  }
+
+  .ice-chat-back {
+    display: inline-flex;
+    width: 46px;
+    height: 46px;
+    flex-basis: 46px;
+    border-radius: 16px;
+  }
+
+  .ice-chat-room__identity {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .ice-chat-room__identity .ice-chat-avatar {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+    border-radius: 16px;
+    font-size: 18px;
+  }
+
+  .ice-chat-room__name {
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .ice-chat-room__subtitle {
+    font-size: 12.5px;
+  }
+
+  .ice-chat-room__chips {
+    grid-column: 1 / -1;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .ice-chat-chip {
+    min-height: 30px;
+    padding: 6px 9px;
+    background: rgba(255, 255, 255, 0.76);
+    font-size: 11.5px;
+  }
+
+  .ice-chat-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0 -2px;
+    padding: 12px 2px;
+    background: transparent;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .ice-chat-message {
+    margin-bottom: 11px;
+  }
+
+  .ice-chat-message__bubble {
+    max-width: 90%;
     padding: 10px 12px;
-    border-radius: 17px 17px 17px 7px;
-    box-shadow: 0 7px 18px rgba(12, 31, 69, .08);
+    border-radius: 18px 18px 18px 7px;
   }
 
-  .msg-row.mine .msg-bubble {
-    border-radius: 17px 17px 7px 17px;
+  .ice-chat-message.is-mine .ice-chat-message__bubble {
+    border-radius: 18px 18px 7px 18px;
   }
 
-  .msg-bubble-head {
+  .ice-chat-message__meta {
     gap: 8px;
     font-size: 11px;
   }
 
-  .msg-text {
+  .ice-chat-message__text {
     font-size: 14px;
     line-height: 1.5;
   }
 
-  .msg-composer {
-    position: static;
-    z-index: 2;
-    flex: 0 0 auto;
+  .ice-chat-composer {
     grid-template-columns: minmax(0, 1fr) 52px;
     gap: 9px;
     padding: 10px 0 0;
-    border-top: 1px solid rgba(148, 163, 184, .24);
+    border-top: 1px solid rgba(148, 163, 184, 0.24);
     background: transparent;
-    box-shadow: none;
   }
 
-  .msg-composer textarea {
+  .ice-chat-composer textarea {
     min-height: 52px;
-    max-height: 116px;
-    resize: none;
-    border-radius: 16px;
-    font-size: 16px !important;
-    line-height: 1.45;
+    max-height: 120px;
+    border-radius: 17px;
     padding: 13px 14px;
   }
 
-  .msg-composer-actions .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 52px;
-    min-width: 52px;
-    min-height: 52px;
-    height: 52px;
-    padding: 0;
-    overflow: hidden;
-    border-radius: 16px;
-    font-size: 0 !important;
+  .ice-chat-send {
+    border-radius: 17px;
   }
 
-  .msg-composer-actions .btn i {
-    margin: 0 !important;
-    font-size: 17px !important;
+  .ice-chat-empty {
+    min-height: 220px;
+    padding: 22px;
   }
 
-  .msg-empty {
-    min-height: 240px;
-    padding: 20px;
-  }
-
-  .dark-mode .msg-shell {
-    background:
-      radial-gradient(circle at 18% 0%, rgba(34, 211, 238, .10), transparent 16rem),
-      linear-gradient(180deg, #07101f, #0b1426);
-  }
-
-  .dark-mode .msg-thread,
-  .dark-mode .msg-hub-card,
-  .dark-mode .msg-shell.is-hub .msg-thread.active {
-    border-color: rgba(148, 163, 184, .16);
-    background: rgba(17, 29, 53, .92);
+  .dark-mode .ice-chat-thread,
+  .dark-mode .ice-chat-app.is-hub .ice-chat-thread.is-selected,
+  [data-theme="dark"] .ice-chat-thread,
+  [data-theme="dark"] .ice-chat-app.is-hub .ice-chat-thread.is-selected {
+    border-color: rgba(148, 163, 184, 0.17);
+    background: rgba(17, 29, 53, 0.9);
   }
 }
 
-@media (max-width: 480px) {
-
-  .msg-panel-head,
-  .msg-chat-head {
-    padding: 2px 0 12px;
+@media (max-width: 420px) {
+  .ice-chat-app {
+    padding-left: max(9px, env(safe-area-inset-left));
+    padding-right: max(9px, env(safe-area-inset-right));
   }
 
-  .msg-body {
-    padding: 12px 0;
+  .ice-chat-app.is-hub {
+    padding-bottom: calc(102px + env(safe-area-inset-bottom));
   }
 
-  .msg-bubble {
+  .ice-chat-title {
+    font-size: 23px;
+  }
+
+  .ice-chat-thread {
+    grid-template-columns: 50px minmax(0, 1fr) auto;
+    min-height: 78px;
+    border-radius: 20px;
+  }
+
+  .ice-chat-avatar {
+    width: 50px;
+    height: 50px;
+    flex-basis: 50px;
+    border-radius: 16px;
+    font-size: 18px;
+  }
+
+  .ice-chat-message__bubble {
     max-width: 94%;
   }
 
-  .msg-bubble-head {
+  .ice-chat-message__meta {
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ice-chat-app,
+  .ice-chat-app *,
+  .ice-chat-app *::before,
+  .ice-chat-app *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
 </style>
 {% endblock custom_css %}
 
 {% block content %}
-{% if user.user_type == '1' %}
-  {% url 'admin_view_profile' as profile_url %}
-{% elif user.user_type == '2' %}
-  {% url 'staff_view_profile' as profile_url %}
-{% else %}
-  {% url 'student_view_profile' as profile_url %}
-{% endif %}
+<script>
+(function () {
+  document.body.classList.add('ice-chat-page');
+  document.body.classList.toggle('ice-chat-conversation', {% if explicit_thread_selected %}true{% else %}false{% endif %});
+  document.body.classList.toggle('ice-chat-hub', {% if explicit_thread_selected %}false{% else %}true{% endif %});
+})();
+</script>
 
-<div class="msg-shell {% if explicit_thread_selected %}is-conversation{% else %}is-hub{% endif %}">
-  <aside class="msg-threads" aria-label="Group chats">
-    <div class="msg-panel-head">
-      <div>
-        <h2 class="msg-title">Messages</h2>
-        <div class="msg-sub">{{ thread_cards|length }} channel{{ thread_cards|length|pluralize }}</div>
+<div class="ice-chat-app {% if explicit_thread_selected %}is-conversation{% else %}is-hub{% endif %}">
+  <aside class="ice-chat-sidebar" aria-label="Group conversations">
+    <header class="ice-chat-hub-header">
+      <div class="ice-chat-eyebrow"><i class="fas fa-comments" aria-hidden="true"></i> Iceberg Chat</div>
+      <div class="ice-chat-title-row">
+        <h2 class="ice-chat-title">Messages</h2>
+        <span class="ice-chat-count" aria-label="{{ thread_cards|length }} available chat{{ thread_cards|length|pluralize }}">{{ thread_cards|length }}</span>
       </div>
-      <i class="fas fa-comments" style="color:var(--ice-cyan);" aria-hidden="true"></i>
-    </div>
-
-    <div class="msg-hub-section-title msg-hub-mobile">
-      <span>Channels</span>
-      <span class="msg-hub-count">{{ thread_cards|length }}</span>
-    </div>
+      <p class="ice-chat-subtitle">Your group conversations and class channels.</p>
+    </header>
 
     {% if thread_cards %}
-    <div class="msg-thread-list">
+    <div class="ice-chat-thread-list">
       {% for card in thread_cards %}
       <a href="{% url 'message_thread' card.group.id %}"
-         class="msg-thread {% if active_group and active_group.id == card.group.id %}active{% endif %}">
-        <span class="msg-avatar" aria-hidden="true">{{ card.group.name|first|upper }}</span>
-        <span class="msg-thread-main">
-          <span class="msg-thread-name">{{ card.group.name }}</span>
-          <span class="msg-thread-meta">
+         class="ice-chat-thread {% if active_group and active_group.id == card.group.id %}is-selected{% endif %}">
+        <span class="ice-chat-avatar" aria-hidden="true">{{ card.group.name|first|upper }}</span>
+        <span class="ice-chat-thread__main">
+          <span class="ice-chat-thread__name">{{ card.group.name }}</span>
+          <span class="ice-chat-thread__meta">
             {% if card.group.teacher %}
               {{ card.group.teacher.admin.get_full_name|default:card.group.teacher.admin.email }}
             {% else %}
               No teacher assigned
             {% endif %}
-            - {{ card.group.active_student_count|default:0 }} student{{ card.group.active_student_count|default:0|pluralize }}
+            &middot; {{ card.group.active_student_count|default:0 }} student{{ card.group.active_student_count|default:0|pluralize }}
           </span>
-          <span class="msg-thread-preview">
+          <span class="ice-chat-thread__preview">
             {% if card.last_message %}
-              {{ card.last_message.sender.get_full_name|default:card.last_message.sender.email }}: {{ card.last_message.body }}
+              <span class="ice-chat-thread__preview-name">
+                {% if card.last_message.sender_id == request.user.id %}Me{% else %}{{ card.last_message.sender.get_full_name|default:card.last_message.sender.email }}{% endif %}:
+              </span>
+              {{ card.last_message.body|truncatechars:96 }}
             {% else %}
-              No messages yet
+              No messages yet.
             {% endif %}
           </span>
         </span>
-        {% if card.unread_count > 0 %}
-        <span class="msg-unread" aria-label="{{ card.unread_count }} unread">{{ card.unread_count }}</span>
-        {% endif %}
+        <span class="ice-chat-thread__side">
+          {% if card.unread_count > 0 %}
+          <span class="ice-chat-unread" aria-label="{{ card.unread_count }} unread message{{ card.unread_count|pluralize }}">{{ card.unread_count }}</span>
+          {% else %}
+          <span class="ice-chat-chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+          {% endif %}
+        </span>
       </a>
       {% endfor %}
     </div>
     {% else %}
-    <div class="msg-empty">
-      <i class="fas fa-comment-slash" aria-hidden="true"></i>
+    <div class="ice-chat-empty">
+      <span class="ice-chat-empty__icon" aria-hidden="true"><i class="fas fa-comment-slash"></i></span>
       <strong>No group chats available</strong>
       <span>You will see chats here once you are assigned to a group.</span>
     </div>
     {% endif %}
-
-    <div class="msg-hub-mobile">
-      <div class="msg-hub-section">
-        <div class="msg-hub-section-title">
-          <span>DMs</span>
-          <span class="msg-hub-count">0</span>
-        </div>
-        <div class="msg-hub-card" aria-disabled="true">
-          <span class="msg-hub-card-icon" aria-hidden="true"><i class="fas fa-user-friends"></i></span>
-          <span>
-            <span class="msg-hub-card-title">Direct Messages</span>
-            <span class="msg-hub-card-sub">Private chats will appear here.</span>
-          </span>
-          <span class="msg-hub-card-chevron" aria-hidden="true"><i class="fas fa-lock"></i></span>
-        </div>
-      </div>
-
-      <div class="msg-hub-section">
-        <div class="msg-hub-section-title">
-          <span>User Profile</span>
-        </div>
-        <a href="{{ profile_url }}" class="msg-hub-card">
-          <span class="msg-hub-card-icon" aria-hidden="true"><i class="fas fa-user"></i></span>
-          <span>
-            <span class="msg-hub-card-title">{{ request.user.get_full_name|default:request.user.email }}</span>
-            <span class="msg-hub-card-sub">
-              {% if request.user.user_type == '1' %}Admin{% elif request.user.user_type == '2' %}Teacher{% else %}Student{% endif %} profile
-            </span>
-          </span>
-          <span class="msg-hub-card-chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
-        </a>
-      </div>
-
-      <div class="msg-hub-section">
-        <div class="msg-hub-section-title">
-          <span>Upcoming Events</span>
-        </div>
-        <div class="msg-hub-card" aria-disabled="true">
-          <span class="msg-hub-card-icon" aria-hidden="true"><i class="fas fa-calendar-day"></i></span>
-          <span>
-            <span class="msg-hub-card-title">No scheduled events</span>
-            <span class="msg-hub-card-sub">Class reminders will appear here.</span>
-          </span>
-          <span class="msg-hub-card-chevron" aria-hidden="true"><i class="fas fa-clock"></i></span>
-        </div>
-      </div>
-    </div>
   </aside>
 
-  <section class="msg-chat" aria-label="Active conversation">
+  <section class="ice-chat-room" aria-label="Active conversation">
     {% if active_group %}
-    <div class="msg-chat-head">
-      <div class="msg-chat-head-left">
-        <a href="{% url 'messages' %}" class="msg-back-btn" aria-label="Back to message hub">
-          <i class="fas fa-chevron-left" aria-hidden="true"></i>
-          <span>Back</span>
-        </a>
-        <span class="msg-avatar" aria-hidden="true">{{ active_group.name|first|upper }}</span>
-        <div class="msg-chat-title">
-          <h2 class="msg-title">{{ active_group.name }}</h2>
-          <div class="msg-head-meta">
-            <span class="msg-pill"><i class="fas fa-user-tie" aria-hidden="true"></i>
-              <span>
-                {% if active_group.teacher %}
-                  {{ active_group.teacher.admin.get_full_name|default:active_group.teacher.admin.email }}
-                {% else %}
-                  No teacher
-                {% endif %}
-              </span>
-            </span>
-            <span class="msg-pill"><i class="fas fa-users" aria-hidden="true"></i><span>{{ active_group.active_student_count|default:0 }} student{{ active_group.active_student_count|default:0|pluralize }}</span></span>
-            {% if active_group.course %}<span class="msg-pill"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>{{ active_group.course.name }}</span></span>{% endif %}
+    <header class="ice-chat-room__header">
+      <a href="{% url 'messages' %}" class="ice-chat-back" aria-label="Back to message hub">
+        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+      </a>
+      <div class="ice-chat-room__identity">
+        <span class="ice-chat-avatar" aria-hidden="true">{{ active_group.name|first|upper }}</span>
+        <div class="ice-chat-room__copy">
+          <h2 class="ice-chat-room__name">{{ active_group.name }}</h2>
+          <div class="ice-chat-room__subtitle">
+            {% if active_group.teacher %}
+              {{ active_group.teacher.admin.get_full_name|default:active_group.teacher.admin.email }}
+            {% else %}
+              No teacher assigned
+            {% endif %}
+            &middot; {{ active_group.active_student_count|default:0 }} student{{ active_group.active_student_count|default:0|pluralize }}
+            {% if active_group.course %} &middot; {{ active_group.course.name }}{% endif %}
           </div>
+        </div>
+        <div class="ice-chat-room__chips" aria-label="Conversation details">
+          <span class="ice-chat-chip"><i class="fas fa-user-tie" aria-hidden="true"></i><span>
+            {% if active_group.teacher %}
+              {{ active_group.teacher.admin.get_full_name|default:active_group.teacher.admin.email }}
+            {% else %}
+              No teacher
+            {% endif %}
+          </span></span>
+          <span class="ice-chat-chip"><i class="fas fa-users" aria-hidden="true"></i><span>{{ active_group.active_student_count|default:0 }} student{{ active_group.active_student_count|default:0|pluralize }}</span></span>
+          {% if active_group.course %}
+          <span class="ice-chat-chip"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>{{ active_group.course.name }}</span></span>
+          {% endif %}
+          {% if user.user_type == '1' %}
+          <span class="ice-chat-chip"><i class="fas fa-shield-alt" aria-hidden="true"></i><span>Admin access</span></span>
+          {% endif %}
         </div>
       </div>
-      {% if user.user_type == '1' %}
-      <span class="msg-pill"><i class="fas fa-shield-alt" aria-hidden="true"></i><span>Admin access</span></span>
-      {% endif %}
-    </div>
+    </header>
 
-    <div class="msg-body" id="msg-body">
+    <div class="ice-chat-messages" id="ice-chat-messages">
       {% if chat_messages %}
         {% for msg in chat_messages %}
-        <div class="msg-row {% if msg.sender_id == request.user.id %}mine{% endif %}" {% if forloop.last %}id="latest"{% endif %}>
-          <div class="msg-bubble">
-            <div class="msg-bubble-head">
-              <span class="msg-sender">
-                {{ msg.sender.get_full_name|default:msg.sender.email }}
-                {% if msg.sender.user_type == '1' %} - Admin{% elif msg.sender.user_type == '2' %} - Teacher{% else %} - Student{% endif %}
+        <article class="ice-chat-message {% if msg.sender_id == request.user.id %}is-mine{% endif %}" {% if forloop.last %}id="latest"{% endif %}>
+          <div class="ice-chat-message__bubble">
+            <div class="ice-chat-message__meta">
+              <span class="ice-chat-message__sender">
+                {% if msg.sender_id == request.user.id %}Me{% else %}{{ msg.sender.get_full_name|default:msg.sender.email }}{% endif %}
+                &middot;
+                {% if msg.sender.user_type == '1' %}Admin{% elif msg.sender.user_type == '2' %}Teacher{% else %}Student{% endif %}
               </span>
-              <span class="msg-time">{{ msg.created_at|date:"M j, H:i" }}</span>
+              <time class="ice-chat-message__time" datetime="{{ msg.created_at|date:'c' }}">{{ msg.created_at|date:"M j, H:i" }}</time>
             </div>
-            <div class="msg-text">{{ msg.body }}</div>
+            <div class="ice-chat-message__text">{{ msg.body|linebreaksbr }}</div>
           </div>
-        </div>
+        </article>
         {% endfor %}
       {% else %}
-      <div class="msg-empty">
-        <i class="fas fa-comments" aria-hidden="true"></i>
+      <div class="ice-chat-empty">
+        <span class="ice-chat-empty__icon" aria-hidden="true"><i class="fas fa-comments"></i></span>
         <strong>No messages yet</strong>
         <span>Start the group conversation below.</span>
       </div>
       {% endif %}
     </div>
 
-    <form method="post" class="msg-composer" action="{% url 'message_thread' active_group.id %}">
+    <form method="post" class="ice-chat-composer" action="{% url 'message_thread' active_group.id %}">
       {% csrf_token %}
-      <label for="chat-body" class="form-label">Message</label>
-      <textarea id="chat-body" name="body" class="form-control" maxlength="4000" placeholder="Write a message..." required></textarea>
-      <div class="msg-composer-actions">
-        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane me-1" aria-hidden="true"></i>Send</button>
-      </div>
+      <label for="chat-body" class="ice-chat-composer__label">Message</label>
+      <textarea id="chat-body" name="body" class="form-control" maxlength="4000" placeholder="Write a message..." required rows="1"></textarea>
+      <button type="submit" class="ice-chat-send" aria-label="Send message">
+        <i class="fas fa-paper-plane" aria-hidden="true"></i>
+      </button>
     </form>
     {% else %}
-    <div class="msg-empty">
-      <i class="fas fa-comments" aria-hidden="true"></i>
+    <div class="ice-chat-empty">
+      <span class="ice-chat-empty__icon" aria-hidden="true"><i class="fas fa-comments"></i></span>
       <strong>Select a group chat</strong>
       <span>Your available group conversations will appear on the left.</span>
     </div>
@@ -981,10 +1061,35 @@
 {% block custom_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  var body = document.getElementById('msg-body');
+  var messagePane = document.getElementById('ice-chat-messages');
   var latest = document.getElementById('latest');
-  if (body) body.scrollTop = body.scrollHeight;
-  if (latest && window.location.hash === '#latest') latest.scrollIntoView({ block: 'end' });
+  var textarea = document.getElementById('chat-body');
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function scrollToLatest() {
+    if (!messagePane) return;
+    if (latest && window.location.hash === '#latest') {
+      latest.scrollIntoView({ block: 'end', behavior: reduceMotion ? 'auto' : 'smooth' });
+      return;
+    }
+    messagePane.scrollTop = messagePane.scrollHeight;
+  }
+
+  function resizeComposer() {
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 142) + 'px';
+  }
+
+  requestAnimationFrame(scrollToLatest);
+
+  if (textarea) {
+    resizeComposer();
+    textarea.addEventListener('input', resizeComposer);
+    textarea.addEventListener('focus', function () {
+      setTimeout(scrollToLatest, 120);
+    });
+  }
 });
 </script>
 {% endblock custom_js %}

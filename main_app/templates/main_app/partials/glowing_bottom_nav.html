@@ -1,0 +1,126 @@
+{% if request.user.is_authenticated %}
+<nav class="glow-bottom-nav" data-glow-bottom-nav aria-label="Primary navigation">
+  <ul class="glow-bottom-nav__list">
+    {% if user.user_type == '1' %}
+      {% url 'admin_home' as u_home %}
+      {% url 'manage_student' as u_students %}
+      {% url 'manage_group' as u_groups %}
+      {% url 'messages' as u_messages %}
+      {% url 'admin_view_profile' as u_profile %}
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_home }}" class="glow-bottom-nav__link {% if u_home == request.path %}is-active{% endif %}">
+          <i class="fas fa-tachometer-alt glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Home</span>
+        </a>
+      </li>
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_students }}" class="glow-bottom-nav__link {% if 'student' in request.path and 'notif' not in request.path %}is-active{% endif %}">
+          <i class="fas fa-users glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Students</span>
+        </a>
+      </li>
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_groups }}" class="glow-bottom-nav__link {% if 'group' in request.path %}is-active{% endif %}">
+          <i class="fas fa-layer-group glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Groups</span>
+        </a>
+      </li>
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_messages }}" class="glow-bottom-nav__link {% if 'messages' in request.path %}is-active{% endif %}">
+          <i class="fas fa-comments glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Chat</span>
+          {% if unread_message_count > 0 %}
+            <span class="glow-bottom-nav__notif-dot"></span>
+          {% endif %}
+        </a>
+      </li>
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_profile }}" class="glow-bottom-nav__link {% if 'profile' in request.path %}is-active{% endif %}">
+          <i class="fas fa-user glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Profile</span>
+        </a>
+      </li>
+    {% elif user.user_type == '2' %}
+      {% url 'staff_home' as u_home %}
+      {% url 'staff_take_attendance' as u_att %}
+      {% url 'staff_add_result' as u_results %}
+      {% url 'messages' as u_messages %}
+      {% url 'staff_view_profile' as u_profile %}
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_home }}" class="glow-bottom-nav__link {% if u_home == request.path %}is-active{% endif %}">
+          <i class="fas fa-home glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Home</span>
+        </a>
+      </li>
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_att }}" class="glow-bottom-nav__link {% if 'attendance' in request.path %}is-active{% endif %}">
+          <i class="fas fa-clipboard-check glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Attendance</span>
+        </a>
+      </li>
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_results }}" class="glow-bottom-nav__link {% if 'result' in request.path %}is-active{% endif %}">
+          <i class="fas fa-chart-bar glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Scores</span>
+        </a>
+      </li>
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_messages }}" class="glow-bottom-nav__link {% if 'messages' in request.path %}is-active{% endif %}">
+          <i class="fas fa-comments glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Chat</span>
+          {% if unread_message_count > 0 %}
+            <span class="glow-bottom-nav__notif-dot"></span>
+          {% endif %}
+        </a>
+      </li>
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_profile }}" class="glow-bottom-nav__link {% if 'profile' in request.path %}is-active{% endif %}">
+          <i class="fas fa-user glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Profile</span>
+        </a>
+      </li>
+    {% else %}
+      {% url 'student_home' as u_home %}
+      {% url 'student_view_attendance' as u_att %}
+      {% url 'student_view_result' as u_results %}
+      {% url 'messages' as u_messages %}
+      {% url 'view_books' as u_library %}
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_home }}" class="glow-bottom-nav__link {% if u_home == request.path %}is-active{% endif %}">
+          <i class="fas fa-home glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Home</span>
+        </a>
+      </li>
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_att }}" class="glow-bottom-nav__link {% if 'attendance' in request.path %}is-active{% endif %}">
+          <i class="fas fa-calendar-check glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Attendance</span>
+        </a>
+      </li>
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_results }}" class="glow-bottom-nav__link {% if 'result' in request.path and 'file' not in request.path %}is-active{% endif %}">
+          <i class="fas fa-chart-bar glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Results</span>
+        </a>
+      </li>
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_messages }}" class="glow-bottom-nav__link {% if 'messages' in request.path %}is-active{% endif %}">
+          <i class="fas fa-comments glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Chat</span>
+          {% if unread_message_count > 0 %}
+            <span class="glow-bottom-nav__notif-dot"></span>
+          {% endif %}
+        </a>
+      </li>
+      {% url 'vocabulary_day_list' as u_vocab %}
+      <li class="glow-bottom-nav__item">
+        <a href="{{ u_vocab }}" class="glow-bottom-nav__link {% if 'vocabulary' in request.path %}is-active{% endif %}">
+          <i class="fas fa-language glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Vocab</span>
+        </a>
+      </li>
+    {% endif %}
+    <li class="glow-bottom-nav__indicator" aria-hidden="true"></li>
+  </ul>
+</nav>
+{% endif %}
