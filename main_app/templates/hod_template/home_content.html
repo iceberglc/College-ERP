@@ -314,7 +314,7 @@
           <h2>People Overview</h2>
         </div>
       </div>
-      <div class="admin-chart-stage admin-chart-stage--donut">
+      <div class="admin-chart-stage admin-chart-stage--bar">
         <div class="admin-chart-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
         <canvas id="pieChart"></canvas>
       </div>
@@ -327,7 +327,7 @@
           <h2>Students per Program</h2>
         </div>
       </div>
-      <div class="admin-chart-stage admin-chart-stage--donut">
+      <div class="admin-chart-stage admin-chart-stage--bar">
         <div class="admin-chart-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
         <canvas id="pieChart2"></canvas>
       </div>
@@ -506,18 +506,29 @@ document.addEventListener('DOMContentLoaded', function () {
       showChartState('pieChart', 'People overview will appear after students or teachers are added.');
     } else {
     register(new Chart(document.getElementById('pieChart'), {
-      type: 'doughnut',
+      type: 'bar',
       data: {
         labels: ['Students', 'Teachers'],
-        datasets: [{ data: [{{ total_students }}, {{ total_staff }}], backgroundColor: [BRAND.navy, BRAND.cyan], borderWidth: 0, cutout: '70%' }]
+        datasets: [{
+          data: [{{ total_students }}, {{ total_staff }}],
+          backgroundColor: [BRAND.navy, BRAND.cyan],
+          borderRadius: 10,
+          borderSkipped: false,
+          barThickness: isMobileChart() ? 30 : 38
+        }]
       },
       options: {
+        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
         animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
         plugins: {
-          legend: { display: !isMobileChart(), position: 'bottom', labels: { color: mutedColor(), usePointStyle: true, boxWidth: 8, padding: 12 } },
+          legend: { display: false },
           tooltip: tooltipOptions()
+        },
+        scales: {
+          x: { beginAtZero: true, grid: { color: gridColor() }, ticks: { precision: 0, color: mutedColor(), padding: 4 } },
+          y: { grid: { display: false }, ticks: { color: textColor(), font: { size: isMobileChart() ? 12 : 13, weight: '700' } } }
         }
       }
     }));
@@ -579,18 +590,29 @@ document.addEventListener('DOMContentLoaded', function () {
       showChartState('pieChart2', 'Program composition will appear after students are assigned to programs.');
     } else {
     register(new Chart(document.getElementById('pieChart2'), {
-      type: 'doughnut',
+      type: 'bar',
       data: {
         labels: compactCourses.labels,
-        datasets: [{ data: compactCourses.values, backgroundColor: PALETTE.slice(0, compactCourses.labels.length), borderWidth: 0, cutout: '70%' }]
+        datasets: [{
+          data: compactCourses.values,
+          backgroundColor: PALETTE.slice(0, compactCourses.labels.length),
+          borderRadius: 8,
+          borderSkipped: false,
+          barThickness: isMobileChart() ? 22 : 28
+        }]
       },
       options: {
+        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
         animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
         plugins: {
-          legend: { display: !isMobileChart(), position: 'bottom', labels: { color: mutedColor(), usePointStyle: true, boxWidth: 8, padding: 10 } },
+          legend: { display: false },
           tooltip: tooltipOptions()
+        },
+        scales: {
+          x: { beginAtZero: true, grid: { color: gridColor() }, ticks: { precision: 0, color: mutedColor(), padding: 4, maxTicksLimit: isMobileChart() ? 4 : 6 } },
+          y: { grid: { display: false }, ticks: { color: textColor(), font: { size: isMobileChart() ? 11 : 12 } } }
         }
       }
     }));
