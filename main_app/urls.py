@@ -127,6 +127,7 @@ urlpatterns = [
     ),
     path("subject/edit/<int:subject_id>", hod_views.edit_subject, name="edit_subject"),
     # Admin management
+    path("admin/add/", hod_views.add_admin, name="add_admin"),
     path("admin/manage/", hod_views.manage_admin, name="manage_admin"),
     path("admin/delete/<int:admin_id>/", hod_views.delete_admin, name="delete_admin"),
     # Branch
