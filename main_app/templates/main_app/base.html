@@ -60,6 +60,7 @@
     <link rel="stylesheet" href="{% static 'dist/css/loading.css' %}">
     <link rel="stylesheet" href="{% static 'dist/css/animated-icons.css' %}">
     <link rel="stylesheet" href="{% static 'dist/css/animated-logout.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/css/iceberg-reliability.css' %}">
     <style>
 /* ── ICEBERG page enter (subtle, calm) ──────────────────────────────── */
 /* A single short fade on first paint of the main content. No exit
@@ -126,7 +127,7 @@
     </script>
 </head>
 
-<body id="stu-body">
+<body id="stu-body" data-user-type="{{ user.user_type|default:'' }}">
     <script>
     /* Sync body before template scripts register DOMContentLoaded handlers. */
     (function(){
@@ -138,7 +139,7 @@
     <!-- ── Top Navbar ──────────────────────────────────────────────────────── -->
     <nav class="erpnext-navbar">
         <div class="navbar-left">
-            <button class="navbar-toggle" onclick="toggleSidebar()" title="Toggle menu" aria-label="Toggle navigation menu">
+            <button type="button" class="navbar-toggle" onclick="toggleSidebar()" title="Toggle menu" aria-label="Toggle navigation menu" aria-controls="erpnext-sidebar" aria-expanded="false">
                 <i class="fas fa-bars"></i>
             </button>
             <a href="{% if user.user_type == '1' %}{% url 'admin_home' %}{% elif user.user_type == '2' %}{% url 'staff_home' %}{% else %}{% url 'student_home' %}{% endif %}"
@@ -151,7 +152,7 @@
             <!-- Theme Toggle (Teacher/Admin only — students use profile settings) -->
             {% if user.user_type == '1' or user.user_type == '2' %}
             <button type="button" id="navbar-theme-toggle" class="navbar-notification"
-                    title="Toggle dark/light mode" onclick="iceToggleTheme()"
+                    title="Toggle dark/light mode" aria-label="Toggle dark or bright theme" onclick="iceToggleTheme()"
                     style="border:none;background:none;cursor:pointer;">
                 <i class="fas fa-moon" id="navbar-theme-icon"></i>
             </button>
@@ -159,7 +160,7 @@
 
             <!-- Group Messages -->
             {% url 'messages' as messages_url %}
-            <a href="{{ messages_url }}" class="navbar-notification" title="Messages">
+            <a href="{{ messages_url }}" class="navbar-notification" title="Messages" aria-label="Open group messages">
                 <i class="fas fa-comments"></i>
                 {% if unread_message_count > 0 %}
                     <span class="notif-badge">{{ unread_message_count }}</span>
@@ -175,7 +176,7 @@
                 {% url 'messages' as notif_url %}
             {% endif %}
             {% if user.user_type != '1' %}
-                <a href="{{ notif_url }}" class="navbar-notification" title="Notifications">
+                <a href="{{ notif_url }}" class="navbar-notification" title="Notifications" aria-label="Open notifications">
                     <i class="fas fa-bell"></i>
                     {% if unread_notification_count > 0 %}
                         <span class="notif-badge">{{ unread_notification_count }}</span>
@@ -185,7 +186,7 @@
 
             <!-- User avatar + name -->
             {% url 'profile_hub' as profile_url %}
-            <a href="{{ profile_url }}" class="navbar-user-avatar" title="My profile" id="navbar-avatar-link">
+            <a href="{{ profile_url }}" class="navbar-user-avatar" title="My profile" id="navbar-avatar-link" aria-label="Open my profile and settings">
                 {% if user.profile_pic %}
                     <img src="{{ user.profile_pic.url }}" alt="{{ user.first_name }}"
                          onerror="this.style.display='none';document.getElementById('navbar-initials').style.display='flex';">
@@ -216,7 +217,7 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{% if user.user_type == '1' %}{% url 'admin_home' %}{% elif user.user_type == '2' %}{% url 'staff_home' %}{% else %}{% url 'student_home' %}{% endif %}">
+                        <a href="{% if user.user_type == '1' %}{% url 'admin_home' %}{% elif user.user_type == '2' %}{% url 'staff_home' %}{% else %}{% url 'student_home' %}{% endif %}" aria-label="Open dashboard">
                             <i class="fas fa-home"></i>
                         </a>
                     </li>
@@ -278,11 +279,15 @@
         document.body.classList.add('sidebar-open');
         document.body.classList.remove('sidebar-collapsed');
         localStorage.setItem('sidebarState', 'open');
+        var toggle = document.querySelector('.navbar-toggle[aria-controls="erpnext-sidebar"]');
+        if (toggle) toggle.setAttribute('aria-expanded', 'true');
     }
     function closeSidebar() {
         document.body.classList.remove('sidebar-open');
         if (!isMobile()) document.body.classList.add('sidebar-collapsed');
         localStorage.setItem('sidebarState', 'closed');
+        var toggle = document.querySelector('.navbar-toggle[aria-controls="erpnext-sidebar"]');
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
     }
     function toggleSidebar() {
         if (document.body.classList.contains('sidebar-open')) { closeSidebar(); }
@@ -342,6 +347,7 @@
         var isDark = document.documentElement.classList.contains('dark-mode');
         icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
     }
+    window.iceSyncThemeIcon = _syncThemeIcon;
     document.addEventListener('DOMContentLoaded', _syncThemeIcon);
 
     /* ── Auto-dismiss alerts ─────────────────────────────────────────────── */
@@ -387,6 +393,7 @@
     <!-- premium UX: page loader / progress + animated logout (progressive, JS-optional) -->
     <script src="{% static 'dist/js/loading.js' %}" defer></script>
     <script src="{% static 'dist/js/animated-logout.js' %}" defer></script>
+    <script src="{% static 'dist/js/safe-actions.js' %}" defer></script>
     {% block custom_js %}{% endblock custom_js %}
 
     <!-- Service Worker registration -->

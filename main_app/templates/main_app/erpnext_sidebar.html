@@ -24,7 +24,7 @@
 <!-- Navigation Menu -->
 <div class="nav-section nav-section--simple">
     {% if user.user_type == '1' %}
-        <h6 class="nav-section-title">Home</h6>
+        <h6 class="nav-section-title">Overview</h6>
 
         <div class="nav-item">
             {% url 'admin_home' as admin_home %}
@@ -42,7 +42,7 @@
             </a>
         </div>
 
-        <h6 class="nav-section-title">Manage</h6>
+        <h6 class="nav-section-title">People</h6>
 
         <div class="nav-item">
             {% url 'manage_student' as manage_student %}
@@ -59,6 +59,8 @@
                 <span class="nav-text">Teachers</span>
             </a>
         </div>
+
+        <h6 class="nav-section-title">Academic Management</h6>
 
         <div class="nav-item">
             {% url 'manage_group' as manage_group %}
@@ -84,8 +86,6 @@
             </a>
         </div>
 
-        <h6 class="nav-section-title">Learning</h6>
-
         <div class="nav-item">
             {% url 'admin_view_attendance' as admin_view_attendance %}
             <a href="{{ admin_view_attendance }}" class="nav-link {% if admin_view_attendance == request.path %}active{% endif %}">
@@ -93,6 +93,8 @@
                 <span class="nav-text">Attendance</span>
             </a>
         </div>
+
+        <h6 class="nav-section-title">Vocabulary & Content</h6>
 
         <div class="nav-item">
             {% url 'manage_vocabulary_days' as manage_vocabulary_days %}
@@ -154,6 +156,8 @@
                 <span class="nav-text">Teacher Feedback</span>
             </a>
         </div>
+
+        <h6 class="nav-section-title">Requests</h6>
 
         <div class="nav-item">
             {% url 'view_student_leave' as view_student_leave %}

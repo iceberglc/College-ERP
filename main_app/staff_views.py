@@ -352,33 +352,7 @@ def staff_feedback(request):
 
 @staff_only
 def staff_view_profile(request):
-    staff = get_object_or_404(Staff, admin=request.user)
-    form = StaffProfileForm(instance=staff, data=request.POST or None)
-    context = {"form": form, "page_title": "My Profile", "staff": staff}
-    if request.method == "POST":
-        if form.is_valid():
-            try:
-                admin = staff.admin
-                password = form.cleaned_data.get("password") or None
-                if password:
-                    admin.set_password(password)
-                admin.first_name = form.cleaned_data["first_name"]
-                admin.last_name = form.cleaned_data["last_name"]
-                admin.gender = form.cleaned_data.get("gender", "")
-                dob = form.cleaned_data.get("date_of_birth")
-                if dob is not None:
-                    admin.date_of_birth = dob
-                admin.save()
-                staff.phone = form.cleaned_data.get("phone", "")
-                staff.specialization = form.cleaned_data.get("specialization", "")
-                staff.save()
-                messages.success(request, "Profile updated!")
-                return redirect(reverse("staff_view_profile"))
-            except Exception as e:
-                messages.error(request, f"Error updating profile: {e}")
-        else:
-            messages.error(request, "Please fix the errors below.")
-    return render(request, "staff_template/staff_view_profile.html", context)
+    return redirect(reverse("profile_hub"))
 
 
 @staff_only

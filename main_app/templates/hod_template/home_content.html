@@ -74,6 +74,58 @@
     {% endfor %}
   </section>
 
+  <section class="admin-quick-actions" aria-label="Admin quick actions">
+    <div class="admin-card__header">
+      <div>
+        <span class="admin-section-kicker">Fast Path</span>
+        <h2>Quick Actions</h2>
+      </div>
+      <a href="{% url 'manage_registration_leads' %}" class="admin-link">Leads</a>
+    </div>
+    <div class="admin-quick-actions__grid">
+      <a href="{% url 'add_student' %}" class="admin-quick-action">
+        <span><i class="fas fa-user-plus" aria-hidden="true"></i></span>
+        <strong>Add Student</strong>
+        <small>Create an account and profile</small>
+      </a>
+      <a href="{% url 'add_staff' %}" class="admin-quick-action">
+        <span><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i></span>
+        <strong>Add Teacher</strong>
+        <small>Set course and branch access</small>
+      </a>
+      <a href="{% url 'add_course' %}" class="admin-quick-action">
+        <span><i class="fas fa-graduation-cap" aria-hidden="true"></i></span>
+        <strong>Add Program</strong>
+        <small>Organize learning tracks</small>
+      </a>
+      <a href="{% url 'add_group' %}" class="admin-quick-action">
+        <span><i class="fas fa-layer-group" aria-hidden="true"></i></span>
+        <strong>Add Group</strong>
+        <small>Schedule a class group</small>
+      </a>
+      <a href="{% url 'add_enrollment' %}" class="admin-quick-action">
+        <span><i class="fas fa-id-card" aria-hidden="true"></i></span>
+        <strong>Enroll Student</strong>
+        <small>Place students into groups</small>
+      </a>
+      <a href="{% url 'admin_view_attendance' %}" class="admin-quick-action">
+        <span><i class="fas fa-clipboard-check" aria-hidden="true"></i></span>
+        <strong>Attendance</strong>
+        <small>Review class records</small>
+      </a>
+      <a href="{% url 'messages' %}" class="admin-quick-action">
+        <span><i class="fas fa-comments" aria-hidden="true"></i></span>
+        <strong>Group Messages</strong>
+        <small>Open active conversations</small>
+      </a>
+      <a href="{% url 'staff_feedback_message' %}" class="admin-quick-action">
+        <span><i class="fas fa-comment-dots" aria-hidden="true"></i></span>
+        <strong>Teacher Feedback</strong>
+        <small>Reply to staff feedback</small>
+      </a>
+    </div>
+  </section>
+
   <section class="admin-grid admin-grid--ops">
     <article class="admin-card admin-card--wide">
       <div class="admin-card__header">
@@ -148,7 +200,7 @@
       <div class="admin-card__header">
         <div>
           <span class="admin-section-kicker">Admissions</span>
-          <h2>New Registrations</h2>
+          <h2>Recent Students</h2>
         </div>
         <a href="{% url 'manage_student' %}" class="admin-link">Students</a>
       </div>
@@ -165,6 +217,32 @@
         <div class="admin-empty-state">
           <i class="fas fa-user-plus" aria-hidden="true"></i>
           <span>No recent student registrations.</span>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-section-kicker">Follow Up</span>
+          <h2>Registration Leads</h2>
+        </div>
+        <a href="{% url 'manage_registration_leads' %}" class="admin-link">All leads</a>
+      </div>
+      <div class="admin-person-list">
+        {% for lead in recent_leads %}
+        <a href="{% url 'manage_registration_leads' %}" class="admin-person-row">
+          <span class="admin-avatar-sm admin-avatar-sm--lead">{{ lead.full_name|first|upper }}</span>
+          <span>
+            <strong>{{ lead.full_name }}</strong>
+            <small>{{ lead.program|default:"Program pending" }} · {{ lead.status|title }} · {{ lead.created_at|date:"M j" }}</small>
+          </span>
+        </a>
+        {% empty %}
+        <div class="admin-empty-state">
+          <i class="fas fa-user-clock" aria-hidden="true"></i>
+          <span>No registration leads yet.</span>
         </div>
         {% endfor %}
       </div>
@@ -277,8 +355,6 @@
 {% block custom_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  Chart.defaults.font.family = "'Inter', sans-serif";
-
   const BRAND = {
     navy: '#071A52',
     ocean: '#0B4F8A',
@@ -290,6 +366,62 @@ document.addEventListener('DOMContentLoaded', function () {
     violet: '#8B5CF6'
   };
   const PALETTE = [BRAND.navy, BRAND.cyan, BRAND.ocean, BRAND.green, BRAND.amber, BRAND.violet, BRAND.red, '#38BDF8', '#14B8A6'];
+
+  const groupLabels = {{ group_label_list|safe }};
+  const groupData = {{ group_attendance_list|safe }};
+  const studentLabels = {{ student_name_list|safe }};
+  const studentPresent = {{ student_attendance_present_list|safe }};
+  const studentAbsentLeave = {{ student_attendance_leave_list|safe }};
+  const courseLabels = {{ course_name_list|safe }};
+  const courseData = {{ student_count_list_in_course|safe }};
+
+  function chartLimit() {
+    if (window.innerWidth <= 767) return 6;
+    if (window.innerWidth <= 1023) return 8;
+    return 14;
+  }
+
+  function hasUsefulData(values) {
+    return (values || []).some(function (value) { return Number(value) > 0; });
+  }
+
+  function compactSingle(labels, values, limit) {
+    if (!labels || labels.length <= limit) return { labels: labels || [], values: values || [] };
+    var keptLabels = labels.slice(0, limit);
+    var keptValues = values.slice(0, limit);
+    var rest = values.slice(limit).reduce(function (sum, value) { return sum + Number(value || 0); }, 0);
+    if (rest > 0) {
+      keptLabels.push('Other');
+      keptValues.push(rest);
+    }
+    return { labels: keptLabels, values: keptValues };
+  }
+
+  function compactDual(labels, first, second, limit) {
+    if (!labels || labels.length <= limit) {
+      return { labels: labels || [], first: first || [], second: second || [] };
+    }
+    return {
+      labels: labels.slice(0, limit),
+      first: first.slice(0, limit),
+      second: second.slice(0, limit)
+    };
+  }
+
+  function showChartState(canvasId, message) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    var stage = canvas.closest('.admin-chart-stage');
+    if (!stage) return;
+    canvas.hidden = true;
+    stage.querySelectorAll('.admin-chart-skeleton').forEach(function (node) { node.remove(); });
+    if (!stage.querySelector('.ice-chart-state')) {
+      var state = document.createElement('div');
+      state.className = 'ice-chart-state';
+      state.textContent = message;
+      stage.appendChild(state);
+    }
+  }
 
   function isDarkTheme() {
     return document.documentElement.getAttribute('data-theme') === 'dark' ||
@@ -307,6 +439,24 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function createDashboardCharts() {
+    var root = document.querySelector('[data-admin-dashboard]');
+    if (typeof Chart === 'undefined') {
+      ['pieChart', 'barChart', 'barChart2', 'pieChart2'].forEach(function (id) {
+        showChartState(id, 'Charts are unavailable right now. The summary cards above are still current.');
+      });
+      if (root) root.classList.remove('admin-dashboard--loading');
+      return;
+    }
+
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    var limit = chartLimit();
+    var compactGroups = compactSingle(groupLabels, groupData, limit);
+    var compactCourses = compactSingle(courseLabels, courseData, limit);
+    var compactStudents = compactDual(studentLabels, studentPresent, studentAbsentLeave, limit);
+
+    if (!({{ total_students }} + {{ total_staff }})) {
+      showChartState('pieChart', 'People overview will appear after students or teachers are added.');
+    } else {
     register(new Chart(document.getElementById('pieChart'), {
       type: 'doughnut',
       data: {
@@ -319,14 +469,18 @@ document.addEventListener('DOMContentLoaded', function () {
         plugins: { legend: { position: 'bottom', labels: { color: mutedColor(), usePointStyle: true, boxWidth: 8, padding: 16 } } }
       }
     }));
+    }
 
+    if (!hasUsefulData(compactGroups.values)) {
+      showChartState('barChart', 'Attendance sessions will appear after teachers take attendance.');
+    } else {
     register(new Chart(document.getElementById('barChart'), {
       type: 'bar',
       data: {
-        labels: {{ group_label_list|safe }},
+        labels: compactGroups.labels,
         datasets: [{
           label: 'Sessions',
-          data: {{ group_attendance_list }},
+          data: compactGroups.values,
           backgroundColor: 'rgba(0, 207, 232, .78)',
           borderColor: BRAND.cyan,
           borderWidth: 1,
@@ -344,14 +498,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       }
     }));
+    }
 
+    if (!hasUsefulData(compactStudents.first) && !hasUsefulData(compactStudents.second)) {
+      showChartState('barChart2', 'Student attendance overview will appear when attendance records exist.');
+    } else {
     register(new Chart(document.getElementById('barChart2'), {
       type: 'bar',
       data: {
-        labels: {{ student_name_list|safe }},
+        labels: compactStudents.labels,
         datasets: [
-          { label: 'Present', data: {{ student_attendance_present_list }}, backgroundColor: 'rgba(16,185,129,.82)', borderRadius: 8, borderSkipped: false },
-          { label: 'Absent / Leave', data: {{ student_attendance_leave_list }}, backgroundColor: 'rgba(239,68,68,.76)', borderRadius: 8, borderSkipped: false }
+          { label: 'Present', data: compactStudents.first, backgroundColor: 'rgba(16,185,129,.82)', borderRadius: 8, borderSkipped: false },
+          { label: 'Absent / Leave', data: compactStudents.second, backgroundColor: 'rgba(239,68,68,.76)', borderRadius: 8, borderSkipped: false }
         ]
       },
       options: {
@@ -364,12 +522,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       }
     }));
+    }
 
+    if (!hasUsefulData(compactCourses.values)) {
+      showChartState('pieChart2', 'Program composition will appear after students are assigned to programs.');
+    } else {
     register(new Chart(document.getElementById('pieChart2'), {
       type: 'doughnut',
       data: {
-        labels: {{ course_name_list|safe }},
-        datasets: [{ data: {{ student_count_list_in_course }}, backgroundColor: PALETTE.slice(0, {{ course_name_list|length }}), borderWidth: 0, cutout: '70%' }]
+        labels: compactCourses.labels,
+        datasets: [{ data: compactCourses.values, backgroundColor: PALETTE.slice(0, compactCourses.labels.length), borderWidth: 0, cutout: '70%' }]
       },
       options: {
         responsive: true,
@@ -377,8 +539,8 @@ document.addEventListener('DOMContentLoaded', function () {
         plugins: { legend: { position: 'bottom', labels: { color: mutedColor(), usePointStyle: true, boxWidth: 8, padding: 12 } } }
       }
     }));
+    }
 
-    var root = document.querySelector('[data-admin-dashboard]');
     if (root) root.classList.remove('admin-dashboard--loading');
   }
 

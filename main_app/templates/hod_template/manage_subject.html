@@ -33,6 +33,7 @@
             <div class="ab-row">
               <a href="{% url 'edit_subject' subject.id %}" class="ab-edit"><i class="fas fa-edit"></i> Edit</a>
               <a href="{% url 'delete_subject' subject.id %}"
+                 data-confirm-post="Delete this subject?"
                  onclick="return confirm('Delete this subject?')"
                  class="ab-danger"><i class="fas fa-trash"></i> Delete</a>
             </div>

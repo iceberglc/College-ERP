@@ -145,6 +145,7 @@ def admin_home(request):
     total_staff = staff_base.count()
     total_students = students_base.count()
     total_course = Course.objects.all().count()
+    active_course_count = Course.objects.filter(is_active=True).count()
     total_groups = groups_base.count()
     group_ids = list(groups_base.values_list("id", flat=True))
 
@@ -160,6 +161,11 @@ def admin_home(request):
     ).count()
     new_groups_7 = groups_base.filter(created_at__date__gte=week_start).count()
     new_groups_previous = groups_base.filter(
+        created_at__date__gte=previous_week_start,
+        created_at__date__lt=week_start,
+    ).count()
+    new_courses_7 = Course.objects.filter(created_at__date__gte=week_start).count()
+    new_courses_previous = Course.objects.filter(
         created_at__date__gte=previous_week_start,
         created_at__date__lt=week_start,
     ).count()
@@ -196,6 +202,7 @@ def admin_home(request):
         staff_base.filter(admin__created_at__date=day).count() for day in spark_dates
     ]
     group_spark = [groups_base.filter(created_at__date=day).count() for day in spark_dates]
+    course_spark = [Course.objects.filter(created_at__date=day).count() for day in spark_dates]
     attendance_spark = [
         Attendance.objects.filter(group_id__in=group_ids, date=day).count()
         for day in spark_dates
@@ -261,6 +268,13 @@ def admin_home(request):
         lead_qs = RegistrationLead.objects.filter(
             models.Q(assigned_to=user) | models.Q(branch__in=branch_names)
         )
+    total_leads = lead_qs.count()
+    new_leads_7 = lead_qs.filter(created_at__date__gte=week_start).count()
+    new_leads_previous = lead_qs.filter(
+        created_at__date__gte=previous_week_start,
+        created_at__date__lt=week_start,
+    ).count()
+    lead_spark = [lead_qs.filter(created_at__date=day).count() for day in spark_dates]
     recent_leads = lead_qs.order_by("-created_at")[:4]
     recent_students = students_base.select_related("admin", "course", "branch").order_by(
         "-admin__created_at"
@@ -374,6 +388,17 @@ def admin_home(request):
             "tone": "navy",
         },
         {
+            "label": "Programs",
+            "value": total_course,
+            "icon": "fa-graduation-cap",
+            "href": reverse("manage_course"),
+            "trend": pct_change(new_courses_7, new_courses_previous),
+            "trend_label": f"{new_courses_7} new this week",
+            "progress": min(100, max(8, round((active_course_count / max(total_course, 1)) * 100))),
+            "spark": spark_points(course_spark),
+            "tone": "blue",
+        },
+        {
             "label": "Attendance Today",
             "value": f"{attendance_today_rate}%",
             "icon": "fa-clipboard-check",
@@ -384,6 +409,17 @@ def admin_home(request):
             "spark": spark_points(attendance_spark),
             "tone": "ice",
         },
+        {
+            "label": "Registration Leads",
+            "value": total_leads,
+            "icon": "fa-user-clock",
+            "href": reverse("manage_registration_leads"),
+            "trend": pct_change(new_leads_7, new_leads_previous),
+            "trend_label": f"{new_leads_7} new this week",
+            "progress": min(100, max(8, round((new_leads_7 / max(total_leads, 1)) * 100))),
+            "spark": spark_points(lead_spark),
+            "tone": "cyan",
+        },
     ]
 
     context = {
@@ -392,8 +428,10 @@ def admin_home(request):
         "total_staff": total_staff,
         "total_course": total_course,
         "total_groups": total_groups,
+        "total_leads": total_leads,
         "metric_cards": metric_cards,
         "new_students_7": new_students_7,
+        "new_leads_7": new_leads_7,
         "attendance_today_rate": attendance_today_rate,
         "today_attendance_present": today_attendance_present,
         "today_attendance_total": today_attendance_total,
@@ -1065,43 +1103,7 @@ def get_admin_attendance(request):
 
 @admin_only
 def admin_view_profile(request):
-    admin = get_object_or_404(Admin, admin=request.user)
-    form = AdminForm(request.POST or None, request.FILES or None, instance=admin)
-    context = {"form": form, "page_title": "View/Edit Profile"}
-    if request.method == "POST":
-        try:
-            if form.is_valid():
-                first_name = form.cleaned_data.get("first_name")
-                last_name = form.cleaned_data.get("last_name")
-                email = form.cleaned_data.get("email")
-                gender = form.cleaned_data.get("gender")
-                address = form.cleaned_data.get("address")
-                password = form.cleaned_data.get("password") or None
-                passport = request.FILES.get("profile_pic") or None
-                custom_user = admin.admin
-                if password is not None:
-                    custom_user.set_password(password)
-                if passport is not None:
-                    custom_user.profile_pic = default_storage.save(passport.name, passport)
-                custom_user.first_name = first_name
-                custom_user.last_name = last_name
-                if email:
-                    custom_user.email = email
-                if gender:
-                    custom_user.gender = gender
-                if address is not None:
-                    custom_user.address = address
-                dob = form.cleaned_data.get("date_of_birth")
-                if dob is not None:
-                    custom_user.date_of_birth = dob
-                custom_user.save()
-                messages.success(request, "Profile Updated!")
-                return redirect(reverse("admin_view_profile"))
-            else:
-                messages.error(request, "Invalid Data Provided")
-        except Exception as e:
-            messages.error(request, "Error Occured While Updating Profile " + str(e))
-    return render(request, "hod_template/admin_view_profile.html", context)
+    return redirect(reverse("profile_hub"))
 
 
 @admin_only

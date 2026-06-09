@@ -83,6 +83,7 @@
         <a href="{% url 'staff_vocabulary_day_detail' day.id %}" class="ice-action ice-action--primary"><i class="fas fa-eye" aria-hidden="true"></i> View</a>
         <a href="{% url 'edit_vocabulary_day' day.id %}" class="ice-action"><i class="fas fa-edit" aria-hidden="true"></i> Edit</a>
         <a href="{% url 'delete_vocabulary_day' day.id %}" class="ice-action ice-action--danger"
+           data-confirm-post="Delete Day {{ day.day_number }}? This cannot be undone."
            onclick="return confirm('Delete Day {{ day.day_number }}? This cannot be undone.')">
           <i class="fas fa-trash" aria-hidden="true"></i> Delete
         </a>

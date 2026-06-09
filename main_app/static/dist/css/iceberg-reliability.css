@@ -1,0 +1,220 @@
+:root {
+  --ice-deep-navy: #071A52;
+  --ice-ocean-blue: #0B4F8A;
+  --ice-cyan: #00CFE8;
+  --ice-light: #EAF8FF;
+  --ice-silver: #F4F7FB;
+  --ice-white: #FFFFFF;
+  --ice-success: #22C55E;
+  --ice-warning: #F59E0B;
+  --ice-danger: #EF4444;
+  --ice-focus-ring: 0 0 0 4px rgba(0, 207, 232, 0.22);
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+.btn,
+a.btn,
+.ice-action,
+.ice-action-btn,
+.quick-action-btn,
+.ice-manage-action,
+.ice-manage-add-btn,
+.profile-action-card,
+.profile-quick-action,
+.settings-row,
+.theme-btn,
+.glow-bottom-nav__link,
+.navbar-notification,
+.navbar-toggle,
+.navbar-user-avatar {
+  touch-action: manipulation;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--ice-focus-ring) !important;
+}
+
+.navbar-notification,
+.navbar-toggle,
+.navbar-user-avatar,
+.ice-chat-send,
+.avatar-modal-close,
+.ice-modal-close,
+.lb-modal-close,
+.story-modal-close {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+[data-confirm-post].is-loading,
+form.is-submitting {
+  pointer-events: none;
+  opacity: 0.68;
+}
+
+.ice-toast-stack {
+  position: fixed;
+  z-index: 2147483000;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(18px, calc(env(safe-area-inset-bottom) + 18px));
+  display: grid;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.ice-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 207, 232, 0.22);
+  border-radius: 16px;
+  color: #EAF8FF;
+  background: linear-gradient(135deg, rgba(7, 26, 82, 0.96), rgba(11, 79, 138, 0.94));
+  box-shadow: 0 18px 44px rgba(7, 26, 82, 0.22);
+  font-size: 13px;
+  font-weight: 800;
+  transform: translateY(8px);
+  opacity: 0;
+  animation: iceToastIn 180ms ease forwards;
+}
+
+.ice-toast i {
+  color: var(--ice-cyan);
+}
+
+.ice-chart-state {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  padding: 18px;
+  border: 1px dashed rgba(148, 163, 184, 0.32);
+  border-radius: 18px;
+  color: #64748B;
+  background: rgba(244, 247, 251, 0.72);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dark-mode .ice-chart-state,
+[data-theme="dark"] .ice-chart-state {
+  color: #9CB3CF;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(234, 248, 255, 0.14);
+}
+
+.admin-chart-stage canvas,
+.ice-chart-card canvas,
+.erpnext-card canvas,
+canvas {
+  max-width: 100%;
+}
+
+.admin-chart-stage,
+.ice-chart-card,
+.erpnext-card:has(canvas) {
+  min-width: 0;
+}
+
+.ice-mobile-card,
+.ice-manage-card,
+.profile-panel,
+.admin-card,
+.admin-metric-card {
+  overflow-wrap: anywhere;
+}
+
+@keyframes iceToastIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 767.98px) {
+  body {
+    min-width: 320px;
+  }
+
+  .erpnext-navbar .navbar-user > .animated-logout-form {
+    display: none !important;
+  }
+
+  .erpnext-main,
+  .content-area,
+  .ice-content {
+    min-width: 0;
+  }
+
+  .page-header.ice-page-header {
+    gap: 8px;
+  }
+
+  .breadcrumb {
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .admin-chart-stage,
+  .ice-chart-card,
+  .erpnext-card:has(canvas) {
+    min-height: 220px;
+  }
+
+  .admin-chart-stage canvas,
+  .ice-chart-card canvas,
+  .erpnext-card canvas {
+    max-height: 240px;
+  }
+
+  .ice-toast-stack {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
+    width: min(380px, calc(100vw - 24px));
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .admin-chart-stage,
+  .ice-chart-card,
+  .erpnext-card:has(canvas) {
+    min-height: 260px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ice-toast,
+  .ice-toast-stack *,
+  [data-confirm-post],
+  .ice-chart-state {
+    animation: none !important;
+    transition: none !important;
+  }
+}

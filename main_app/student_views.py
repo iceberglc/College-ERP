@@ -575,32 +575,7 @@ def student_feedback(request):
 
 @student_only
 def student_view_profile(request):
-    student = get_object_or_404(Student, admin=request.user)
-    form = StudentProfileForm(instance=student, data=request.POST or None)
-    context = {"form": form, "page_title": "My Profile", "student": student}
-    if request.method == "POST":
-        if form.is_valid():
-            try:
-                admin = student.admin
-                password = form.cleaned_data.get("password") or None
-                if password:
-                    admin.set_password(password)
-                admin.first_name = form.cleaned_data["first_name"]
-                admin.last_name = form.cleaned_data["last_name"]
-                admin.gender = form.cleaned_data.get("gender", "")
-                dob = form.cleaned_data.get("date_of_birth")
-                if dob is not None:
-                    admin.date_of_birth = dob
-                admin.save()
-                student.phone = form.cleaned_data.get("phone", "")
-                student.save()
-                messages.success(request, "Profile updated!")
-                return redirect(reverse("student_view_profile"))
-            except Exception as e:
-                messages.error(request, f"Error updating profile: {e}")
-        else:
-            messages.error(request, "Please fix the errors below.")
-    return render(request, "student_template/student_view_profile.html", context)
+    return redirect(reverse("profile_hub"))
 
 
 @student_only

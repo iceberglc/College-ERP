@@ -187,6 +187,8 @@
       document.body.classList.toggle('dark-mode', resolved === 'dark');
       document.body.classList.toggle('bright-mode', resolved === 'bright');
     }
+    if (window.iceSyncThemeIcon) window.iceSyncThemeIcon();
+    if (window.recreateAllCharts) window.recreateAllCharts();
   }
 
   function setActiveThemeButton(choice) {
@@ -228,7 +230,15 @@
           'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: 'theme=' + encodeURIComponent(choice)
-      }).catch(function () {});
+      }).then(function (response) {
+        if (!response.ok && window.iceShowToast) {
+          window.iceShowToast('Theme could not be saved. It was applied for this session.', 'warning');
+        }
+      }).catch(function () {
+        if (window.iceShowToast) {
+          window.iceShowToast('Theme could not be saved. It was applied for this session.', 'warning');
+        }
+      });
     } else {
       try { localStorage.setItem('ice_ui_theme', choice); } catch (_) {}
     }

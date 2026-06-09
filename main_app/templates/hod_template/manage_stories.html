@@ -73,6 +73,7 @@
       <div class="story-actions">
         <a href="{% url 'edit_story' s.id %}" class="btn-sm btn-edit"><i class="fas fa-edit"></i> Edit</a>
         <a href="{% url 'delete_story' s.id %}" class="btn-sm btn-del"
+           data-confirm-post="Delete this story?"
            onclick="return confirm('Delete this story?')"><i class="fas fa-trash"></i> Delete</a>
       </div>
     </div>
