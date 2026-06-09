@@ -603,7 +603,11 @@ body {
   }
 
   body.has-glow-bottom-nav .content-area {
-    padding-bottom: calc(var(--ice-mobile-bottom-nav-space) + 36px + env(safe-area-inset-bottom)) !important;
+    /* Nav clearance is already applied once on the parent #main-content
+       (padding-bottom: nav-space + 16px). Adding the full nav-space here
+       too double-counts it and leaves ~120px of dead space below the last
+       card on short pages. Keep only a small breathing gap. */
+    padding-bottom: 24px !important;
   }
 
   .ice-hero {
