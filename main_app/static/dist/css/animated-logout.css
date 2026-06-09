@@ -1,0 +1,187 @@
+/* ============================================================================
+   ICEBERG · animated-logout.css
+   Animated logout, derived from the uploaded "walk-through-the-door" button.
+   Fully scoped to .animated-logout* — no global element selectors, no demo
+   page styles (body centering / full-page background removed).
+
+   Two presentations:
+     .animated-logout            → compact icon button (navbar / sidebar / mobile)
+     .animated-logout--full      → the full SVG figure-walks-out-the-door button
+   The real logout always happens via the surrounding POST + CSRF <form>.
+   ========================================================================== */
+
+/* ── Compact icon variant (reuses host .logout-btn / .sidebar-logout-btn) ─ */
+.animated-logout {
+  position: relative;
+  overflow: hidden;
+}
+.animated-logout .al-icon,
+.animated-logout > i {
+  display: inline-block;
+  transition: transform 160ms cubic-bezier(.22, 1, .36, 1),
+              opacity 160ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .animated-logout:hover .al-icon,
+  .animated-logout:hover > i { transform: translateX(2px); }
+}
+/* Click → figure "walks out": icon slides right and fades, label dims. */
+.animated-logout.is-leaving { pointer-events: none; }
+.animated-logout.is-leaving .al-icon,
+.animated-logout.is-leaving > i {
+  animation: alWalkOut 480ms cubic-bezier(.5, 0, .75, 0) forwards;
+}
+.animated-logout.is-leaving .logout-text,
+.animated-logout.is-leaving .al-label {
+  opacity: .4;
+  transform: translateX(4px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+@keyframes alWalkOut {
+  0%   { transform: translateX(0);    opacity: 1; }
+  55%  { transform: translateX(8px);  opacity: 1; }
+  100% { transform: translateX(22px); opacity: 0; }
+}
+
+/* ── Full SVG component (adapted & scoped from the uploaded demo) ──────── */
+.animated-logout--full {
+  --figure-duration: 100ms;
+  --transform-figure: none;
+  --walking-duration: 100ms;
+  --transform-arm1: none;  --transform-wrist1: none;
+  --transform-arm2: none;  --transform-wrist2: none;
+  --transform-leg1: none;  --transform-calf1: none;
+  --transform-leg2: none;  --transform-calf2: none;
+  background: none;
+  border: 0;
+  color: #f4f7ff;
+  cursor: pointer;
+  display: inline-block;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 40px;
+  outline: none;
+  padding: 0 0 0 20px;
+  perspective: 100px;
+  position: relative;
+  text-align: left;
+  width: 130px;
+  -webkit-tap-highlight-color: transparent;
+}
+.animated-logout--full::before {
+  background-color: var(--ice-navy, #0C1F45);
+  border-radius: 8px;
+  content: "";
+  display: block;
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transition: transform 50ms ease;
+  width: 100%;
+  z-index: 2;
+}
+.animated-logout--full:hover .al-door  { transform: rotateY(20deg); }
+.animated-logout--full:active::before  { transform: scale(.96); }
+.animated-logout--full:active .al-door { transform: rotateY(28deg); }
+.animated-logout--full:focus-visible::before {
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, .45);
+}
+.animated-logout--full.is-leaving::before  { transform: none; }
+.animated-logout--full.is-leaving .al-door { transform: rotateY(35deg); }
+.animated-logout--full.door-slammed .al-door {
+  transform: none;
+  transition: transform 100ms ease-in 250ms;
+}
+.animated-logout--full.falling { animation: alShake 200ms linear; }
+.animated-logout--full.falling .al-bang { animation: alFlash 300ms linear; }
+.animated-logout--full.falling .al-figure {
+  animation: alSpin 1000ms infinite linear;
+  bottom: -1080px;
+  opacity: 0;
+  right: 1px;
+  transition: transform calc(var(--figure-duration) * 1ms) linear,
+              bottom calc(var(--figure-duration) * 1ms) cubic-bezier(.7, .1, 1, 1) 100ms,
+              opacity calc(var(--figure-duration) * .25ms) linear calc(var(--figure-duration) * .75ms);
+  z-index: 1;
+}
+.animated-logout--full .al-label {
+  color: #f4f7ff;
+  font-weight: 600;
+  position: relative;
+  z-index: 10;
+}
+.animated-logout--full svg {
+  display: block;
+  position: absolute;
+}
+.animated-logout--full .al-figure {
+  bottom: 5px;
+  fill: var(--ice-cyan, #06B6D4);
+  right: 18px;
+  transform: var(--transform-figure);
+  transition: transform calc(var(--figure-duration) * 1ms) cubic-bezier(.2, .1, .8, .9);
+  width: 30px;
+  z-index: 4;
+}
+.animated-logout--full .al-door,
+.animated-logout--full .al-doorway {
+  bottom: 4px;
+  fill: #f4f7ff;
+  right: 12px;
+  width: 32px;
+}
+.animated-logout--full .al-door {
+  transform: rotateY(20deg);
+  transform-origin: 100% 50%;
+  transform-style: preserve-3d;
+  transition: transform 200ms ease;
+  z-index: 5;
+}
+.animated-logout--full .al-door path {
+  fill: var(--ice-cyan, #06B6D4);
+  stroke: var(--ice-cyan, #06B6D4);
+  stroke-width: 4;
+}
+.animated-logout--full .al-doorway { z-index: 3; }
+.animated-logout--full .al-bang { opacity: 0; }
+
+.animated-logout--full .al-arm1, .animated-logout--full .al-wrist1,
+.animated-logout--full .al-arm2, .animated-logout--full .al-wrist2,
+.animated-logout--full .al-leg1, .animated-logout--full .al-calf1,
+.animated-logout--full .al-leg2, .animated-logout--full .al-calf2 {
+  transition: transform calc(var(--walking-duration) * 1ms) ease-in-out;
+}
+.animated-logout--full .al-arm1  { transform: var(--transform-arm1);  transform-origin: 52% 45%; }
+.animated-logout--full .al-wrist1{ transform: var(--transform-wrist1);transform-origin: 59% 55%; }
+.animated-logout--full .al-arm2  { transform: var(--transform-arm2);  transform-origin: 47% 43%; }
+.animated-logout--full .al-wrist2{ transform: var(--transform-wrist2);transform-origin: 35% 47%; }
+.animated-logout--full .al-leg1  { transform: var(--transform-leg1);  transform-origin: 47% 64.5%; }
+.animated-logout--full .al-calf1 { transform: var(--transform-calf1); transform-origin: 55.5% 71.5%; }
+.animated-logout--full .al-leg2  { transform: var(--transform-leg2);  transform-origin: 43% 63%; }
+.animated-logout--full .al-calf2 { transform: var(--transform-calf2); transform-origin: 41.5% 73%; }
+
+@keyframes alSpin  { from { transform: rotate(0) scale(.94); } to { transform: rotate(359deg) scale(.94); } }
+@keyframes alShake { 0% { transform: rotate(-1deg); } 50% { transform: rotate(2deg); } 100% { transform: rotate(-1deg); } }
+@keyframes alFlash { 0% { opacity: .4; } 100% { opacity: 0; } }
+
+/* Light host (light navbar/sidebar) tweaks for the full variant */
+.animated-logout--full.animated-logout--light::before { background-color: var(--ice-surface, #f4f7ff); }
+.animated-logout--full.animated-logout--light .al-label { color: var(--ice-navy, #1f2335); }
+.animated-logout--full.animated-logout--light .al-door,
+.animated-logout--full.animated-logout--light .al-doorway { fill: var(--ice-navy, #1f2335); }
+
+/* ── Reduced motion: skip choreography; logout proceeds immediately ───── */
+@media (prefers-reduced-motion: reduce) {
+  .animated-logout .al-icon,
+  .animated-logout > i,
+  .animated-logout--full .al-figure,
+  .animated-logout--full .al-door {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+  .animated-logout.is-leaving .al-icon,
+  .animated-logout.is-leaving > i { animation: none !important; }
+}

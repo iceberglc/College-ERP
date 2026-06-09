@@ -577,6 +577,45 @@
       .input-wrap input::placeholder { color: #71849B; }
       .login-link { color: #67E8F9; }
       .login-link:hover { color: #E6EDF7; }
+
+      /* Dark-mode sign-in button: Iceberg navy → cyan with soft glow */
+      .btn-signin {
+        background: linear-gradient(135deg, #0C1F45 0%, #0891B2 100%);
+        color: #F2FBFF;
+        box-shadow: 0 8px 22px rgba(8,145,178,.34), inset 0 1px 0 rgba(255,255,255,.10);
+      }
+      .btn-signin:hover {
+        opacity: 1;
+        box-shadow: 0 12px 30px rgba(8,145,178,.46), inset 0 1px 0 rgba(255,255,255,.14);
+      }
+      .btn-signin:active { box-shadow: 0 4px 12px rgba(8,145,178,.30); }
+    }
+
+    /* ── Sign-in button: focus ring + accessible loading state (all themes) ── */
+    .btn-signin:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3.5px rgba(6,182,212,.40), 0 4px 14px rgba(27,82,224,.28);
+    }
+    .btn-signin.is-submitting {
+      pointer-events: none;
+      opacity: .85;
+      color: transparent;
+      position: relative;
+    }
+    .btn-signin.is-submitting::after {
+      content: "";
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 18px; height: 18px;
+      margin: -9px 0 0 -9px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(255,255,255,.45);
+      border-top-color: #fff;
+      animation: btnSpin .6s linear infinite;
+    }
+    @keyframes btnSpin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .btn-signin.is-submitting::after { animation-duration: 1.4s; }
     }
 
     @media (max-width: 420px) {
@@ -693,6 +732,19 @@
         ico.innerHTML = on ? EYE_OFF : EYE;
       });
     }
+  })();
+
+  /* ── Sign-in button loading state (prevents double submit) ── */
+  (function () {
+    var form = document.querySelector('form[action]');
+    var btn  = document.querySelector('.btn-signin');
+    if (!form || !btn) return;
+    form.addEventListener('submit', function () {
+      // Native validation may still block — only show loading if form is valid.
+      if (form.checkValidity && !form.checkValidity()) return;
+      btn.classList.add('is-submitting');
+      setTimeout(function () { try { btn.disabled = true; } catch (e) {} }, 0);
+    });
   })();
 
   /* ── Clear error state when user starts re-typing ── */

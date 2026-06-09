@@ -50,6 +50,7 @@ urlpatterns = [
     path("firebase-messaging-sw.js", views.showFirebaseJS, name="showFirebaseJS"),
     path("doLogin/", views.doLogin, name="user_login"),
     path("logout_user/", views.logout_user, name="user_logout"),
+    path("profile/", views.profile_settings_hub, name="profile_hub"),
     path("admin/home/", hod_views.admin_home, name="admin_home"),
     path("staff/add", hod_views.add_staff, name="add_staff"),
     path("course/add", hod_views.add_course, name="add_course"),

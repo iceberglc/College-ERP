@@ -6,7 +6,7 @@
       {% url 'manage_student' as u_students %}
       {% url 'manage_group' as u_groups %}
       {% url 'messages' as u_messages %}
-      {% url 'admin_view_profile' as u_profile %}
+      {% url 'profile_hub' as u_profile %}
       <li class="glow-bottom-nav__item">
         <a href="{{ u_home }}" class="glow-bottom-nav__link {% if u_home == request.path %}is-active{% endif %}">
           <i class="fas fa-tachometer-alt glow-bottom-nav__icon"></i>
@@ -45,7 +45,7 @@
       {% url 'staff_take_attendance' as u_att %}
       {% url 'staff_add_result' as u_results %}
       {% url 'messages' as u_messages %}
-      {% url 'staff_view_profile' as u_profile %}
+      {% url 'profile_hub' as u_profile %}
       <li class="glow-bottom-nav__item">
         <a href="{{ u_home }}" class="glow-bottom-nav__link {% if u_home == request.path %}is-active{% endif %}">
           <i class="fas fa-home glow-bottom-nav__icon"></i>
@@ -85,6 +85,7 @@
       {% url 'student_view_result' as u_results %}
       {% url 'messages' as u_messages %}
       {% url 'view_books' as u_library %}
+      {% url 'profile_hub' as u_profile %}
       <li class="glow-bottom-nav__item">
         <a href="{{ u_home }}" class="glow-bottom-nav__link {% if u_home == request.path %}is-active{% endif %}">
           <i class="fas fa-home glow-bottom-nav__icon"></i>
@@ -112,11 +113,10 @@
           {% endif %}
         </a>
       </li>
-      {% url 'vocabulary_day_list' as u_vocab %}
       <li class="glow-bottom-nav__item">
-        <a href="{{ u_vocab }}" class="glow-bottom-nav__link {% if 'vocabulary' in request.path %}is-active{% endif %}">
-          <i class="fas fa-language glow-bottom-nav__icon"></i>
-          <span class="glow-bottom-nav__label">Vocab</span>
+        <a href="{{ u_profile }}" class="glow-bottom-nav__link {% if u_profile == request.path or 'profile' in request.path %}is-active{% endif %}">
+          <i class="fas fa-user glow-bottom-nav__icon"></i>
+          <span class="glow-bottom-nav__label">Profile</span>
         </a>
       </li>
     {% endif %}

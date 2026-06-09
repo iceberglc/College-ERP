@@ -135,6 +135,92 @@ class LoginPageTests(TestCase):
         response = self.client.get(reverse("admin_home"))
         self.assertNotEqual(response.status_code, 200)
 
+
+class ProfileHubTests(TestCase):
+    def setUp(self):
+        UserModel = get_user_model()
+        self.course = Course.objects.create(name="Profile Hub Course")
+        self.admin = UserModel.objects.create_user(
+            email="profile-admin@example.com",
+            password="AdminPass123!",
+            first_name="Ada",
+            last_name="Admin",
+            user_type="1",
+            gender="F",
+            address="HQ",
+            profile_pic="",
+        )
+        self.staff_user = UserModel.objects.create_user(
+            email="profile-staff@example.com",
+            password="StaffPass123!",
+            first_name="Theo",
+            last_name="Teacher",
+            user_type="2",
+            gender="M",
+            address="Branch",
+            profile_pic="",
+            login_id="TC90001",
+        )
+        self.student_user = UserModel.objects.create_user(
+            email="profile-student@example.com",
+            password="StudentPass123!",
+            first_name="Sam",
+            last_name="Student",
+            user_type="3",
+            gender="M",
+            address="Home",
+            profile_pic="",
+            login_id="IC90001",
+        )
+        self.staff = Staff.objects.get(admin=self.staff_user)
+        self.staff.course = self.course
+        self.staff.specialization = "IELTS"
+        self.staff.save()
+        self.student = Student.objects.get(admin=self.student_user)
+        self.student.course = self.course
+        self.student.phone = "+998 90 000 00 00"
+        self.student.save()
+
+    @override_settings(**_BASE_OVERRIDES)
+    def test_profile_hub_renders_for_all_roles(self):
+        cases = [
+            (self.admin, "Admin", "Administration"),
+            (self.staff_user, "Teacher", "Teaching"),
+            (self.student_user, "Student", "My Studies"),
+        ]
+        for user, role_label, role_section in cases:
+            with self.subTest(role=role_label):
+                self.client.force_login(user)
+                response = self.client.get(reverse("profile_hub"))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, "profile-hub")
+                self.assertContains(response, role_label)
+                self.assertContains(response, role_section)
+                self.assertContains(response, "Theme / Appearance")
+                self.assertContains(response, "Log Out")
+                self.client.logout()
+
+    @override_settings(**_BASE_OVERRIDES)
+    def test_student_can_update_profile_from_hub(self):
+        self.client.force_login(self.student_user)
+        response = self.client.post(
+            reverse("profile_hub"),
+            {
+                "first_name": "Samuel",
+                "last_name": "Student",
+                "gender": "M",
+                "date_of_birth": "2005-05-10",
+                "phone": "+998 90 111 22 33",
+                "password": "",
+            },
+        )
+        self.assertRedirects(response, reverse("profile_hub"), fetch_redirect_response=False)
+        self.student_user.refresh_from_db()
+        self.student.refresh_from_db()
+        self.assertEqual(self.student_user.first_name, "Samuel")
+        self.assertEqual(self.student.phone, "+998 90 111 22 33")
+
+
 class RegistrationLeadReceiverTests(TestCase):
     @override_settings(**_BASE_OVERRIDES, REGISTRATION_LEADS_API_TOKEN="secret-token")
     def test_receiver_requires_configured_bearer_token(self):
@@ -685,15 +771,15 @@ class GroupMessagingTests(TestCase):
 
         hub_response = self.client.get(reverse("messages"))
         self.assertEqual(hub_response.status_code, 200)
-        self.assertContains(hub_response, 'class="msg-shell is-hub"')
-        self.assertContains(hub_response, "Channels")
-        self.assertContains(hub_response, "Direct Messages")
-        self.assertContains(hub_response, "Upcoming Events")
+        self.assertContains(hub_response, 'class="ice-chat-app is-hub"')
+        self.assertContains(hub_response, "Iceberg Chat")
+        self.assertContains(hub_response, "Your group conversations and class channels.")
+        self.assertContains(hub_response, "Messaging Group A")
 
         thread_response = self.client.get(reverse("message_thread", args=[self.group_a.id]))
         self.assertEqual(thread_response.status_code, 200)
-        self.assertContains(thread_response, 'class="msg-shell is-conversation"')
-        self.assertContains(thread_response, 'class="msg-back-btn"')
+        self.assertContains(thread_response, 'class="ice-chat-app is-conversation"')
+        self.assertContains(thread_response, 'class="ice-chat-back"')
 
     @override_settings(**_BASE_OVERRIDES)
     def test_student_can_post_to_own_group_and_teacher_reads(self):
@@ -763,3 +849,171 @@ class GroupMessagingTests(TestCase):
         response = self.client.get(reverse("message_thread", args=[self.group_a.id]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(unread_message_count(self.student_a_user), 0)
+
+
+class BranchIsolationTests(TestCase):
+    """Branch-first access control: super admin vs branch admin vs teacher vs student."""
+
+    def _make_user(self, email, user_type, login_id=None):
+        UserModel = get_user_model()
+        return UserModel.objects.create_user(
+            email=email,
+            password="Pass123!",
+            first_name="Test",
+            last_name="User",
+            user_type=user_type,
+            gender="M",
+            address="",
+            profile_pic="",
+            login_id=login_id,
+        )
+
+    def setUp(self):
+        from main_app.models import Admin, Branch
+
+        self.branch_a = Branch.objects.create(name="Branch A")
+        self.branch_b = Branch.objects.create(name="Branch B")
+        self.course = Course.objects.create(name="Branch Course")
+
+        # Super admin (default flag is True).
+        self.super_admin_user = self._make_user("super@iceberg.internal", "1")
+        self.super_admin = Admin.objects.get(admin=self.super_admin_user)
+
+        # Branch admin scoped to Branch A only. Mutate through the user's own
+        # cached reverse accessor so is_super_admin reads back consistently
+        # (the post_save signal pre-populates user.admin at creation time).
+        self.branch_admin_user = self._make_user("ba@iceberg.internal", "1")
+        self.branch_admin = self.branch_admin_user.admin
+        self.branch_admin.is_super_admin = False
+        self.branch_admin.save()
+        self.branch_admin.branches.add(self.branch_a)
+
+        # Teacher with one group in Branch A.
+        self.teacher_a_user = self._make_user("bta@iceberg.internal", "2", "TC90001")
+        self.teacher_a = Staff.objects.get(admin=self.teacher_a_user)
+        self.teacher_a.branch = self.branch_a
+        self.teacher_a.save()
+
+        self.teacher_b_user = self._make_user("btb@iceberg.internal", "2", "TC90002")
+        self.teacher_b = Staff.objects.get(admin=self.teacher_b_user)
+        self.teacher_b.branch = self.branch_b
+        self.teacher_b.save()
+
+        self.group_a = Group.objects.create(
+            name="Branch A Group", course=self.course, teacher=self.teacher_a, branch=self.branch_a
+        )
+        self.group_b = Group.objects.create(
+            name="Branch B Group", course=self.course, teacher=self.teacher_b, branch=self.branch_b
+        )
+
+        self.student_a_user = self._make_user("bsa@iceberg.internal", "3", "IC90001")
+        self.student_b_user = self._make_user("bsb@iceberg.internal", "3", "IC90002")
+        self.student_a = Student.objects.get(admin=self.student_a_user)
+        self.student_b = Student.objects.get(admin=self.student_b_user)
+        self.student_a.branch = self.branch_a
+        self.student_a.save()
+        self.student_b.branch = self.branch_b
+        self.student_b.save()
+        Enrollment.objects.create(student=self.student_a, group=self.group_a, is_active=True)
+        Enrollment.objects.create(student=self.student_b, group=self.group_b, is_active=True)
+
+    # ── 1 & 9: super admin sees everything (and stays super after migration) ──
+    def test_super_admin_sees_all(self):
+        from main_app import branching
+
+        self.assertTrue(branching.is_super_admin(self.super_admin_user))
+        self.assertEqual(
+            branching.filter_groups_for_user(self.super_admin_user, Group.objects.all()).count(), 2
+        )
+        self.assertEqual(
+            branching.filter_students_for_user(self.super_admin_user, Student.objects.all()).count(),
+            2,
+        )
+        self.assertEqual(
+            branching.get_accessible_branches(self.super_admin_user).count(), 2
+        )
+
+    # ── 2: branch admin sees only Branch A ──
+    def test_branch_admin_scoped_to_branch_a(self):
+        from main_app import branching
+
+        self.assertFalse(branching.is_super_admin(self.branch_admin_user))
+        groups = branching.filter_groups_for_user(self.branch_admin_user, Group.objects.all())
+        self.assertEqual(list(groups), [self.group_a])
+        students = branching.filter_students_for_user(self.branch_admin_user, Student.objects.all())
+        self.assertEqual(list(students), [self.student_a])
+        staff = branching.filter_staff_for_user(self.branch_admin_user, Staff.objects.all())
+        self.assertIn(self.teacher_a, staff)
+        self.assertNotIn(self.teacher_b, staff)
+
+    # ── 3: branch admin cannot open Branch B group detail by URL ──
+    @override_settings(**_BASE_OVERRIDES)
+    def test_branch_admin_cannot_open_other_branch_group(self):
+        self.client.force_login(self.branch_admin_user)
+        response = self.client.get(reverse("admin_group_detail", args=[self.group_b.id]))
+        self.assertRedirects(
+            response, reverse("manage_group"), fetch_redirect_response=False
+        )
+        # Own branch group works.
+        ok = self.client.get(reverse("admin_group_detail", args=[self.group_a.id]))
+        self.assertEqual(ok.status_code, 200)
+
+    # ── 4: branch admin cannot fetch Branch B attendance by forged POST ──
+    @override_settings(**_BASE_OVERRIDES)
+    def test_branch_admin_cannot_fetch_other_branch_attendance(self):
+        attendance_b = Attendance.objects.create(group=self.group_b, date=date.today())
+        self.client.force_login(self.branch_admin_user)
+        forged = self.client.post(
+            reverse("get_admin_attendance"), {"attendance_date_id": str(attendance_b.id)}
+        )
+        self.assertEqual(forged.status_code, 403)
+
+    # ── 5: teacher sees only their groups ──
+    def test_teacher_sees_only_own_groups(self):
+        from main_app import branching
+
+        groups = branching.filter_groups_for_user(self.teacher_a_user, Group.objects.all())
+        self.assertEqual(list(groups), [self.group_a])
+
+    # ── 6: student sees only own groups ──
+    def test_student_sees_only_own_groups(self):
+        from main_app import branching
+
+        groups = branching.filter_groups_for_user(self.student_a_user, Group.objects.all())
+        self.assertEqual(list(groups), [self.group_a])
+
+    # ── 7: messaging respects branch admin scope ──
+    def test_messaging_respects_branch_admin_scope(self):
+        from main_app.messaging import accessible_groups_for_user
+
+        super_groups = accessible_groups_for_user(self.super_admin_user)
+        self.assertEqual(super_groups.count(), 2)
+        ba_groups = accessible_groups_for_user(self.branch_admin_user)
+        self.assertEqual(list(ba_groups), [self.group_a])
+
+    # ── 8: enrollment form rejects cross-branch student/group ──
+    def test_enrollment_form_rejects_branch_mismatch(self):
+        from main_app.forms import EnrollmentForm
+
+        form = EnrollmentForm(
+            data={"group": self.group_a.id, "student": self.student_b.id, "is_active": "True"},
+            user=self.super_admin_user,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("group", form.errors)
+
+    # ── 10: null-branch records don't crash management pages ──
+    @override_settings(**_BASE_OVERRIDES)
+    def test_null_branch_student_does_not_crash_pages(self):
+        orphan_user = self._make_user("orphan@iceberg.internal", "3", "IC99999")
+        orphan = Student.objects.get(admin=orphan_user)
+        orphan.branch = None
+        orphan.save()
+        # Super admin manage_student renders without error.
+        self.client.force_login(self.super_admin_user)
+        response = self.client.get(reverse("manage_student"))
+        self.assertEqual(response.status_code, 200)
+        # Branch admin page also renders (orphan simply isn't shown).
+        self.client.force_login(self.branch_admin_user)
+        response = self.client.get(reverse("manage_student"))
+        self.assertEqual(response.status_code, 200)

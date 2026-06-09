@@ -55,6 +55,11 @@
     <link rel="stylesheet" href="{% static 'dist/css/mobile-adaptive.css' %}">
     <link rel="stylesheet" href="{% static 'dist/css/glowing-bottom-nav.css' %}">
     <link rel="stylesheet" href="{% static 'dist/css/iceberg-mobile-polish.css' %}">
+    <!-- premium interaction layer: press/hover/focus utilities, loaders, icon + logout animation -->
+    <link rel="stylesheet" href="{% static 'dist/css/interactions.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/css/loading.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/css/animated-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/css/animated-logout.css' %}">
     <style>
 /* ── ICEBERG page enter (subtle, calm) ──────────────────────────────── */
 /* A single short fade on first paint of the main content. No exit
@@ -179,13 +184,7 @@
             {% endif %}
 
             <!-- User avatar + name -->
-            {% if user.user_type == '1' %}
-                {% url 'admin_view_profile' as profile_url %}
-            {% elif user.user_type == '2' %}
-                {% url 'staff_view_profile' as profile_url %}
-            {% else %}
-                {% url 'student_view_profile' as profile_url %}
-            {% endif %}
+            {% url 'profile_hub' as profile_url %}
             <a href="{{ profile_url }}" class="navbar-user-avatar" title="My profile" id="navbar-avatar-link">
                 {% if user.profile_pic %}
                     <img src="{{ user.profile_pic.url }}" alt="{{ user.first_name }}"
@@ -196,14 +195,8 @@
                 {% endif %}
             </a>
 
-            <!-- Logout -->
-            <form method="post" action="{% url 'user_logout' %}" class="m-0">
-                {% csrf_token %}
-                <button type="submit" class="logout-btn" title="Sign out">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span class="logout-text">Logout</span>
-                </button>
-            </form>
+            <!-- Logout (animated, POST + CSRF, JS-optional) -->
+            {% include "main_app/includes/animated_logout_button.html" with btn_class="logout-btn" label="Logout" label_class="logout-text" %}
         </div>
     </nav>
 
@@ -255,6 +248,15 @@
     <!-- ── Page-level modals (rendered directly on <body>, outside .erpnext-main
          stacking context, so fixed z-index values work correctly) ────────── -->
     {% block body_modals %}{% endblock %}
+
+    <!-- ── Global perceived-speed UI: top progress bar + delayed page loader ─ -->
+    <div class="page-progress" id="ice-progress" aria-hidden="true"></div>
+    <div class="app-loader" id="ice-loader" role="status" aria-live="polite" aria-hidden="true">
+        <div class="app-loader__card">
+            <div class="app-loader__spinner" aria-hidden="true"></div>
+            <div class="app-loader__text">Preparing your page…</div>
+        </div>
+    </div>
 
     <!-- ── Scripts ────────────────────────────────────────────────────────── -->
     <!-- Chart.js deferred: was blocking <head>; loaded here so it never delays first paint -->
@@ -382,6 +384,9 @@
 })();
     </script>
     <script src="{% static 'dist/js/glowing-bottom-nav.js' %}"></script>
+    <!-- premium UX: page loader / progress + animated logout (progressive, JS-optional) -->
+    <script src="{% static 'dist/js/loading.js' %}" defer></script>
+    <script src="{% static 'dist/js/animated-logout.js' %}" defer></script>
     {% block custom_js %}{% endblock custom_js %}
 
     <!-- Service Worker registration -->

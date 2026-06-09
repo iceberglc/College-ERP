@@ -1,0 +1,215 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+
+{% block page_title %}My Profile / Settings{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Profile</li>{% endblock %}
+
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/profile-hub.css' %}">
+{% endblock %}
+
+{% block body_modals %}
+<div class="avatar-modal-overlay" id="avatar-modal" aria-hidden="true">
+  <div class="avatar-modal" role="dialog" aria-modal="true" aria-labelledby="avatar-modal-title">
+    <div class="avatar-modal-header">
+      <h3 id="avatar-modal-title"><i class="fas fa-smile me-2" style="color:var(--accent,#06B6D4);"></i>Choose Your Avatar</h3>
+      <button type="button" class="avatar-modal-close" data-close-avatar aria-label="Close avatar picker">
+        <i class="fas fa-times" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="avatar-grid" id="avatar-grid"></div>
+    <div class="avatar-modal-footer">
+      <button type="button" class="avatar-cancel-btn" data-close-avatar>Cancel</button>
+      <button type="button" class="avatar-save-btn" data-save-avatar>
+        <i class="fas fa-check me-1" aria-hidden="true"></i>Save Avatar
+      </button>
+    </div>
+  </div>
+</div>
+<div class="avatar-toast" id="avatar-toast" role="status" aria-live="polite">
+  <i class="fas fa-check-circle me-1" aria-hidden="true"></i>Avatar saved
+</div>
+{% endblock body_modals %}
+
+{% block content %}
+<div class="profile-hub-shell">
+  <section class="profile-hub"
+           data-profile-hub
+           data-avatar-save-url="{% url 'save_avatar' %}"
+           data-theme-save-url="{{ theme_save_url }}"
+           data-current-avatar="{{ request.user.avatar|default:'' }}"
+           data-current-theme="{{ current_theme|default:'system' }}"
+           data-csrf="{{ csrf_token }}">
+
+    <header class="profile-header">
+      <button type="button" class="profile-avatar{% if request.user.avatar %} profile-avatar-sticker{% endif %}"
+              id="profile-avatar-display"
+              data-open-avatar
+              aria-label="Change profile avatar">
+        <span id="profile-avatar-inner">
+          {% if request.user.avatar %}
+            {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+          {% elif request.user.profile_pic %}
+            <img src="{{ request.user.profile_pic.url }}" alt="{{ request.user.get_full_name|default:'Profile photo' }}" loading="lazy">
+          {% else %}
+            {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+          {% endif %}
+        </span>
+        <span class="profile-avatar__cam"><i class="fas fa-camera" aria-hidden="true"></i></span>
+      </button>
+
+      <h2 class="profile-name">{{ request.user.get_full_name|default:request.user.email|default:request.user.login_id }}</h2>
+      <span class="profile-role"><i class="fas {{ role_icon }}" aria-hidden="true"></i>{{ role_label }}</span>
+      <span class="profile-status"><span class="profile-status__dot"></span>Online now</span>
+
+      {% if profile_meta %}
+      <div class="profile-meta" aria-label="Profile details">
+        {% for item in profile_meta %}
+          <span class="profile-meta__chip"><i class="fas {{ item.icon }}" aria-hidden="true"></i>{{ item.text }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </header>
+
+    {% if profile_stats %}
+    <div class="profile-snapshot" aria-label="Profile summary">
+      {% for stat in profile_stats %}
+      <div class="profile-snapshot__item">
+        <i class="fas {{ stat.icon }}" aria-hidden="true"></i>
+        <span class="profile-snapshot__value">{{ stat.value }}</span>
+        <span class="profile-snapshot__label">{{ stat.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% for group in settings_groups %}
+      <div class="settings-group__label">{{ group.label }}</div>
+      <div class="settings-group">
+        {% for row in group.rows %}
+          {% if row.kind == "details" %}
+          <a class="settings-row pressable"
+             href="#{{ row.details_id }}"
+             data-open-details="{{ row.details_id }}"
+             {% if row.focus %}data-focus="{{ row.focus }}"{% endif %}>
+            <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
+            <span class="settings-row__content">
+              <span class="settings-row__title">{{ row.title }}</span>
+              <span class="settings-row__subtitle">{{ row.subtitle }}</span>
+            </span>
+            <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+          </a>
+          {% elif row.kind == "avatar" %}
+          <button type="button" class="settings-row pressable" data-open-avatar>
+            <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
+            <span class="settings-row__content">
+              <span class="settings-row__title">{{ row.title }}</span>
+              <span class="settings-row__subtitle">{{ row.subtitle }}</span>
+            </span>
+            <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+          </button>
+          {% elif row.kind == "appearance" %}
+          <div class="settings-row settings-row--static">
+            <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
+            <span class="settings-row__content">
+              <span class="settings-row__title">{{ row.title }}</span>
+              <span class="settings-row__subtitle">{{ row.subtitle }}</span>
+            </span>
+          </div>
+          <div class="theme-grid" role="group" aria-label="Theme preference">
+            <button type="button" class="theme-btn" data-theme-choice="bright">
+              <span class="theme-icon theme-icon--bright"><i class="fas fa-sun" aria-hidden="true"></i></span>
+              Bright
+            </button>
+            <button type="button" class="theme-btn" data-theme-choice="dark">
+              <span class="theme-icon theme-icon--dark"><i class="fas fa-moon" aria-hidden="true"></i></span>
+              Dark
+            </button>
+            <button type="button" class="theme-btn" data-theme-choice="system">
+              <span class="theme-icon theme-icon--system"><i class="fas fa-desktop" aria-hidden="true"></i></span>
+              System
+            </button>
+          </div>
+          <div class="theme-saved-msg" id="theme-msg">
+            <i class="fas fa-check-circle me-1" aria-hidden="true"></i>Theme saved
+          </div>
+          {% elif row.kind == "static" %}
+          <div class="settings-row settings-row--static">
+            <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
+            <span class="settings-row__content">
+              <span class="settings-row__title">{{ row.title }}</span>
+              <span class="settings-row__subtitle">{{ row.subtitle }}</span>
+            </span>
+          </div>
+          {% else %}
+          <a class="settings-row pressable" href="{{ row.href }}">
+            <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
+            <span class="settings-row__content">
+              <span class="settings-row__title">{{ row.title }}</span>
+              <span class="settings-row__subtitle">{{ row.subtitle }}</span>
+            </span>
+            <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+          </a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+    <details class="settings-group profile-edit-group" id="edit-profile" {% if open_edit_panel %}open{% endif %}>
+      <summary class="settings-row pressable">
+        <span class="settings-row__icon"><i class="fas fa-edit icon-hover-wiggle" aria-hidden="true"></i></span>
+        <span class="settings-row__content">
+          <span class="settings-row__title">Edit Profile</span>
+          <span class="settings-row__subtitle">Update details and password</span>
+        </span>
+        <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+      </summary>
+      <div class="profile-edit">
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+          </div>
+          {% endif %}
+          <div class="profile-field-grid">
+            {% for field in form.visible_fields %}
+              <div class="profile-field{% if field.name == 'address' or field.name == 'profile_pic' or field.name == 'password' or field.name == 'specialization' %} full{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                {% if field.errors %}<div class="field-error">{{ field.errors.0 }}</div>{% endif %}
+                {% if field.name == "password" %}
+                <div class="pw-notice" id="pw-notice">
+                  <i class="fas fa-exclamation-triangle me-1" aria-hidden="true"></i>
+                  Saving a new password may end your current session.
+                </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+          <button type="submit" class="profile-save-btn">
+            <i class="fas fa-save me-1" aria-hidden="true"></i>Save Changes
+          </button>
+        </form>
+      </div>
+    </details>
+
+    <div class="settings-group settings-group--logout">
+      <div class="settings-row settings-row--danger profile-logout-row">
+        <span class="settings-row__icon"><i class="fas fa-sign-out-alt icon-hover-pulse" aria-hidden="true"></i></span>
+        <span class="settings-row__content">
+          <span class="settings-row__title">Log Out</span>
+          <span class="settings-row__subtitle">End this signed-in session</span>
+        </span>
+        {% include "main_app/includes/animated_logout_button.html" with variant="full" btn_class="profile-hub-logout" label="Log Out" aria="Log out of Iceberg" %}
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block custom_js %}
+<script src="{% static 'dist/js/profile-hub.js' %}" defer></script>
+{% endblock %}

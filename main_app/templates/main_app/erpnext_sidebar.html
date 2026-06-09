@@ -37,10 +37,10 @@
         </div>
         
         <div class="nav-item">
-            {% url 'admin_view_profile' as admin_view_profile %}
+            {% url 'profile_hub' as admin_view_profile %}
             <a href="{{ admin_view_profile }}" class="nav-link {% if admin_view_profile == request.path %}active{% endif %}">
                 <i class="nav-icon fas fa-user-circle"></i>
-                <span class="nav-text">Profile</span>
+                <span class="nav-text">Profile / Settings</span>
             </a>
         </div>
 
@@ -264,10 +264,10 @@
         </div>
 
         <div class="nav-item">
-            {% url 'staff_view_profile' as staff_view_profile %}
+            {% url 'profile_hub' as staff_view_profile %}
             <a href="{{ staff_view_profile }}" class="nav-link {% if staff_view_profile == request.path %}active{% endif %}">
                 <i class="nav-icon fas fa-user-circle"></i>
-                <span class="nav-text">My Profile</span>
+                <span class="nav-text">My Profile / Settings</span>
             </a>
         </div>
 
@@ -416,10 +416,10 @@
         </div>
 
         <div class="nav-item">
-            {% url 'student_view_profile' as student_view_profile %}
+            {% url 'profile_hub' as student_view_profile %}
             <a href="{{ student_view_profile }}" class="nav-link {% if student_view_profile == request.path %}active{% endif %}">
                 <i class="nav-icon fas fa-user-circle"></i>
-                <span class="nav-text">My Profile</span>
+                <span class="nav-text">My Profile / Settings</span>
             </a>
         </div>
 
@@ -533,15 +533,9 @@
     {% endif %}
 </div>
 
-<!-- Sidebar Footer with Logout -->
+<!-- Sidebar Footer with Logout (animated, POST + CSRF, JS-optional) -->
 <div class="sidebar-footer">
-    <form method="post" action="{% url 'user_logout' %}">
-        {% csrf_token %}
-        <button type="submit" class="sidebar-logout-btn" title="Sign out of Iceberg">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Sign Out</span>
-        </button>
-    </form>
+    {% include "main_app/includes/animated_logout_button.html" with btn_class="sidebar-logout-btn" label="Sign Out" aria="Sign out of Iceberg" %}
 </div>
 
 <script>

@@ -1,0 +1,136 @@
+/* ============================================================================
+   ICEBERG · interactions.css
+   Reusable, scoped interaction utilities — press feedback, hover lift, focus
+   rings, smooth cards, and semantic text/surface variables.
+   Additive only: no generic element selectors, no layout overrides.
+   ========================================================================== */
+
+:root {
+  /* Semantic aliases mapped onto the existing --ice-* palette so both
+     naming conventions resolve to the same theme-aware colors. */
+  --text-primary:    var(--ice-text,   #0C1F45);
+  --text-secondary:  #475569;
+  --text-muted:      var(--ice-muted,  #64748B);
+  --surface:         var(--ice-surface,  #FFFFFF);
+  --surface-elevated: #FFFFFF;
+  --border-soft:     var(--ice-border, #E4E7EC);
+  --accent:          var(--ice-cyan,   #06B6D4);
+  --accent-contrast: #FFFFFF;
+  --danger:          var(--ice-danger, #EF4444);
+  --success:         var(--ice-success,#10B981);
+  --warning:         var(--ice-warning,#F59E0B);
+
+  /* Motion tokens (kept inside the recommended ranges) */
+  --tap-fast:   110ms;
+  --hover-med:  160ms;
+  --enter-med:  220ms;
+  --ease-out:   cubic-bezier(.22, 1, .36, 1);
+}
+
+.dark-mode,
+:root.dark-mode {
+  --text-primary:     var(--ice-text, #E2E8F0);
+  --text-secondary:   #B6C2D4;
+  --text-muted:       var(--ice-muted, #94A3B8);
+  --surface:          var(--ice-surface, #0E1D34);
+  --surface-elevated: #132440;
+  --border-soft:      var(--ice-border, #1C2E4A);
+}
+
+/* ── Press / tap feedback ─────────────────────────────────────────────── */
+.pressable,
+.clickable,
+.tap-feedback {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform var(--tap-fast) var(--ease-out),
+              box-shadow var(--hover-med) var(--ease-out),
+              background-color var(--hover-med) var(--ease-out);
+}
+.pressable:active,
+.clickable:active,
+.tap-feedback:active { transform: scale(.97); }
+
+/* ── Smooth links ─────────────────────────────────────────────────────── */
+.smooth-link {
+  transition: color var(--hover-med) var(--ease-out),
+              opacity var(--tap-fast) var(--ease-out);
+}
+.smooth-link:active { opacity: .7; }
+
+/* ── Cards: subtle desktop hover lift (pointer devices only) ──────────── */
+.smooth-card,
+.interactive-card,
+.hover-lift {
+  transition: transform var(--hover-med) var(--ease-out),
+              box-shadow var(--hover-med) var(--ease-out);
+  will-change: transform;
+}
+@media (hover: hover) and (pointer: fine) {
+  .smooth-card:hover,
+  .interactive-card:hover,
+  .hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(12, 31, 69, .12);
+  }
+  .dark-mode .smooth-card:hover,
+  .dark-mode .interactive-card:hover,
+  .dark-mode .hover-lift:hover {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .42);
+  }
+  .hover-glow:hover {
+    box-shadow: 0 0 0 1px rgba(6, 182, 212, .35),
+                0 8px 26px rgba(6, 182, 212, .22);
+  }
+}
+
+/* ── Focus ring (keyboard users) ──────────────────────────────────────── */
+.focus-ring:focus-visible,
+.pressable:focus-visible,
+.clickable:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, .35);
+  border-radius: inherit;
+}
+
+/* ── Generic button loading state ─────────────────────────────────────── */
+.btn-loading,
+.is-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+.btn-loading::after,
+.is-loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .45);
+  border-top-color: #fff;
+  animation: iceBtnSpin .6s linear infinite;
+}
+@keyframes iceBtnSpin { to { transform: rotate(360deg); } }
+
+/* ── Page entrance helper (opt-in) ────────────────────────────────────── */
+.page-enter {
+  animation: icePageEnter var(--enter-med) var(--ease-out) both;
+}
+@keyframes icePageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .pressable, .clickable, .tap-feedback, .smooth-link,
+  .smooth-card, .interactive-card, .hover-lift, .page-enter {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

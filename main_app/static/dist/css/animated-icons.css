@@ -1,0 +1,116 @@
+/* ============================================================================
+   ICEBERG · animated-icons.css
+   Subtle, premium desktop-hover icon micro-animations.
+   transform/opacity only · pointer-fine only · reduced-motion safe.
+   Opt-in utility classes + light enhancement of existing nav icons.
+   ========================================================================== */
+
+@media (hover: hover) and (pointer: fine) {
+
+  /* Base: smooth, GPU-friendly transition on any flagged icon */
+  .icon-animated {
+    display: inline-block;
+    transition: transform var(--hover-med, 160ms) cubic-bezier(.22, 1, .36, 1);
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  /* The animation fires only while the PARENT control is hovered/focused. */
+  .nav-link:hover .icon-hover-bounce,
+  .pressable:hover .icon-hover-bounce,
+  .icon-hover-bounce:hover            { animation: iceBounce .6s ease; }
+
+  .nav-link:hover .icon-hover-float,
+  .icon-hover-float:hover             { animation: iceFloat 1.4s ease-in-out infinite; }
+
+  .nav-link:hover .icon-hover-pulse,
+  .icon-hover-pulse:hover             { animation: icePulse .7s ease; }
+
+  .nav-link:hover .icon-hover-wiggle,
+  .icon-hover-wiggle:hover            { animation: iceWiggle .5s ease; }
+
+  .nav-link:hover .icon-hover-rotate,
+  .icon-hover-rotate:hover            { transform: rotate(22deg); }
+
+  .nav-link:hover .icon-hover-bell,
+  .icon-hover-bell:hover              { animation: iceBell .7s ease; transform-origin: top center; }
+
+  .nav-link:hover .icon-hover-check,
+  .icon-hover-check:hover             { animation: iceCheck .45s ease; }
+
+  .nav-link:hover .icon-hover-chart,
+  .icon-hover-chart:hover             { animation: icePulse .6s ease; }
+
+  .icon-hover-draw:hover              { animation: iceWiggle .4s ease; }
+
+  /* ── Light enhancement of existing chrome (no markup changes needed) ─── */
+  /* Sidebar nav icons gently slide-in on hover */
+  .erpnext-sidebar .nav-link .nav-icon {
+    transition: transform var(--hover-med, 160ms) cubic-bezier(.22, 1, .36, 1);
+  }
+  .erpnext-sidebar .nav-link:hover .nav-icon {
+    transform: translateX(2px) scale(1.08);
+  }
+  /* Navbar action icons get semantic micro-animations on hover */
+  .erpnext-navbar .navbar-notification i,
+  .erpnext-navbar .navbar-toggle i,
+  .erpnext-navbar .navbar-user-avatar {
+    transition: transform var(--hover-med, 160ms) cubic-bezier(.22, 1, .36, 1);
+  }
+  .erpnext-navbar .navbar-toggle:hover i               { transform: scale(1.1); }
+  .erpnext-navbar .navbar-user-avatar:hover            { transform: scale(1.06); }
+  /* Bell rings, messages wiggle, theme/profile pop */
+  .erpnext-navbar .navbar-notification:hover .fa-bell      { animation: iceBell .7s ease; transform-origin: top center; }
+  .erpnext-navbar .navbar-notification:hover .fa-comments  { animation: iceWiggle .5s ease; }
+  .erpnext-navbar .navbar-notification:hover .fa-moon,
+  .erpnext-navbar .navbar-notification:hover .fa-sun       { animation: iceSpinQuarter .5s ease; }
+}
+
+@keyframes iceSpinQuarter {
+  0%, 100% { transform: rotate(0); }
+  50%      { transform: rotate(40deg); }
+}
+
+/* ── Keyframes (transform/opacity only) ───────────────────────────────── */
+@keyframes iceBounce {
+  0%, 100% { transform: translateY(0); }
+  30%      { transform: translateY(-4px); }
+  55%      { transform: translateY(1px); }
+}
+@keyframes iceFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+@keyframes icePulse {
+  0%, 100% { transform: scale(1); }
+  45%      { transform: scale(1.18); }
+}
+@keyframes iceWiggle {
+  0%, 100% { transform: rotate(0); }
+  25%      { transform: rotate(-9deg); }
+  75%      { transform: rotate(9deg); }
+}
+@keyframes iceBell {
+  0%, 100% { transform: rotate(0); }
+  20%      { transform: rotate(12deg); }
+  40%      { transform: rotate(-10deg); }
+  60%      { transform: rotate(6deg); }
+  80%      { transform: rotate(-4deg); }
+}
+@keyframes iceCheck {
+  0%   { transform: scale(.6); opacity: .4; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .icon-animated,
+  .erpnext-sidebar .nav-link .nav-icon,
+  .erpnext-navbar .navbar-notification i,
+  .erpnext-navbar .navbar-toggle i {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

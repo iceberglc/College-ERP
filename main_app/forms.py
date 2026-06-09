@@ -5,6 +5,7 @@ from django.forms.widgets import DateInput, TextInput
 
 from .models import *
 from . import models
+from . import branching
 
 
 class FormSettings(forms.ModelForm):
@@ -13,6 +14,30 @@ class FormSettings(forms.ModelForm):
         # Here make some changes such as:
         for field in self.visible_fields():
             field.field.widget.attrs["class"] = "form-control"
+
+
+def _scope_branch_field(form, user, required=False):
+    """Scope a form's ``branch`` field to the branches ``user`` may assign.
+
+    Super admins keep the full branch list; branch admins see only their
+    assigned branches and the field defaults to their branch when they manage
+    exactly one. No-op when the form has no ``branch`` field.
+    """
+    if "branch" not in form.fields:
+        return
+    qs = Branch.objects.all().order_by("name")
+    if user is not None:
+        qs = branching.filter_branches_for_user(user, qs)
+    field = form.fields["branch"]
+    field.queryset = qs
+    field.required = required
+    field.empty_label = "— Select branch —"
+    field.label = "Branch / Location"
+    field.widget.attrs["class"] = "form-control"
+    if user is not None and not field.initial and not branching.is_super_admin(user):
+        first_two = list(qs[:2])
+        if len(first_two) == 1:
+            field.initial = first_two[0].pk
 
 
 _MAX_PROFILE_PIC_BYTES = 5 * 1024 * 1024  # 5 MB
@@ -106,6 +131,7 @@ class StudentForm(CustomUserForm):
     )
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
         super(StudentForm, self).__init__(*args, **kwargs)
         self.fields["status"].widget.attrs["class"] = "form-control"
         self.fields["level"].widget.attrs["class"] = "form-control"
@@ -116,10 +142,13 @@ class StudentForm(CustomUserForm):
             self.fields["phone"].initial = instance.phone
             self.fields["status"].initial = instance.status
             self.fields["level"].initial = instance.level if instance.level else ""
+            if instance.branch_id:
+                self.fields["branch"].initial = instance.branch_id
+        _scope_branch_field(self, user)
 
     class Meta(CustomUserForm.Meta):
         model = Student
-        fields = CustomUserForm.Meta.fields + ["course", "phone", "status", "level"]
+        fields = CustomUserForm.Meta.fields + ["course", "branch", "phone", "status", "level"]
 
 
 class AddStudentForm(CustomUserForm):
@@ -152,6 +181,7 @@ class AddStudentForm(CustomUserForm):
     )
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         self.fields["course"].widget.attrs["class"] = "form-control"
         self.fields["group"].widget.attrs["class"] = "form-control"
@@ -160,22 +190,44 @@ class AddStudentForm(CustomUserForm):
         self.fields["level"].widget.attrs["class"] = "form-control"
         # DOB is required on add — the login_id is derived from it.
         self.fields["date_of_birth"].required = True
+        # Group choices are scoped to the admin's accessible branches so a
+        # branch admin can't enrol into another branch's group.
+        group_qs = Group.objects.filter(is_archived=False)
+        if user is not None:
+            group_qs = branching.filter_groups_for_user(user, group_qs)
         if self.data.get("group"):
-            self.fields["group"].queryset = Group.objects.filter(is_archived=False)
+            self.fields["group"].queryset = group_qs
+        _scope_branch_field(self, user)
 
     def clean(self):
         cleaned_data = super().clean()
         course = cleaned_data.get("course")
         group = cleaned_data.get("group")
+        branch = cleaned_data.get("branch")
         if group and course and group.course_id != course.id:
             self.add_error(
                 "group", "The selected class group does not belong to the chosen program."
             )
+        # Keep student branch coherent with the chosen group's branch.
+        if group and group.branch_id:
+            if not branch:
+                cleaned_data["branch"] = group.branch
+            elif branch.id != group.branch_id:
+                self.add_error(
+                    "branch", "Selected group does not belong to the selected branch."
+                )
         return cleaned_data
 
     class Meta(CustomUserForm.Meta):
         model = Student
-        fields = CustomUserForm.Meta.fields + ["course", "group", "phone", "status", "level"]
+        fields = CustomUserForm.Meta.fields + [
+            "course",
+            "branch",
+            "group",
+            "phone",
+            "status",
+            "level",
+        ]
 
 
 class AdminForm(CustomUserForm):
@@ -257,11 +309,16 @@ class StaffForm(CustomUserForm):
     )
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
         super(StaffForm, self).__init__(*args, **kwargs)
+        instance = kwargs.get("instance")
+        if instance and getattr(instance, "branch_id", None):
+            self.fields["branch"].initial = instance.branch_id
+        _scope_branch_field(self, user)
 
     class Meta(CustomUserForm.Meta):
         model = Staff
-        fields = CustomUserForm.Meta.fields + ["course", "phone", "specialization"]
+        fields = CustomUserForm.Meta.fields + ["course", "branch", "phone", "specialization"]
 
 
 class CourseForm(forms.Form):
@@ -350,22 +407,32 @@ class FeedbackStudentForm(FormSettings):
 
 class StudentEditForm(CustomUserForm):
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
         super(StudentEditForm, self).__init__(*args, **kwargs)
         self.fields["date_of_birth"].required = False
+        instance = kwargs.get("instance")
+        if instance and getattr(instance, "branch_id", None):
+            self.fields["branch"].initial = instance.branch_id
+        _scope_branch_field(self, user)
 
     class Meta(CustomUserForm.Meta):
         model = Student
-        fields = CustomUserForm.Meta.fields
+        fields = CustomUserForm.Meta.fields + ["branch"]
 
 
 class StaffEditForm(CustomUserForm):
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
         super(StaffEditForm, self).__init__(*args, **kwargs)
         self.fields["date_of_birth"].required = False
+        instance = kwargs.get("instance")
+        if instance and getattr(instance, "branch_id", None):
+            self.fields["branch"].initial = instance.branch_id
+        _scope_branch_field(self, user)
 
     class Meta(CustomUserForm.Meta):
         model = Staff
-        fields = CustomUserForm.Meta.fields + ["course", "phone", "specialization"]
+        fields = CustomUserForm.Meta.fields + ["course", "branch", "phone", "specialization"]
 
 
 def _dob_widget():
@@ -502,6 +569,13 @@ class BranchForm(FormSettings):
 
 
 class GroupForm(FormSettings):
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        # Branch admins may only create/edit groups in their own branches.
+        # Teacher/course dropdowns keep their existing AJAX-driven behaviour.
+        _scope_branch_field(self, user, required=False)
+
     class Meta:
         model = Group
         fields = [
@@ -536,6 +610,30 @@ class EnrollmentForm(FormSettings):
         label="Enrollment Status",
         initial=True,
     )
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            self.fields["group"].queryset = branching.filter_groups_for_user(
+                user, Group.objects.filter(is_archived=False)
+            )
+            self.fields["student"].queryset = branching.filter_students_for_user(
+                user, Student.objects.all()
+            )
+
+    def clean(self):
+        cleaned = super().clean()
+        group = cleaned.get("group")
+        student = cleaned.get("student")
+        # Don't allow enrolling a student into a group from a different branch.
+        if group and student and group.branch_id and student.branch_id:
+            if group.branch_id != student.branch_id:
+                self.add_error(
+                    "group",
+                    "This student belongs to a different branch than the selected group.",
+                )
+        return cleaned
 
     class Meta:
         model = Enrollment

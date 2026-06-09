@@ -8,13 +8,29 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordResetView
 from django.core.exceptions import PermissionDenied
+from django.core.files.storage import default_storage
 from django.db import DatabaseError
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.urls import reverse_lazy
 
 from .apps import create_recovery_admin_access
-from .models import Admin, Attendance, Staff, Student
+from .forms import AdminForm, StaffProfileForm, StudentProfileForm
+from .models import (
+    Admin,
+    Assignment,
+    Attendance,
+    AttendanceReport,
+    Branch,
+    Course,
+    Enrollment,
+    Group,
+    ResultFile,
+    Staff,
+    Student,
+    StudentResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -177,6 +193,437 @@ def logout_user(request):
     if request.user is not None:
         logout(request)
     return redirect(reverse("login_page"))
+
+
+def _settings_row(title, subtitle, icon, anim="icon-hover-pulse", href=None, kind="link", **extra):
+    row = {
+        "title": title,
+        "subtitle": subtitle,
+        "icon": icon,
+        "anim": anim,
+        "href": href or "#",
+        "kind": kind,
+    }
+    row.update(extra)
+    return row
+
+
+def _reverse_row(title, subtitle, icon, url_name, anim="icon-hover-pulse", **extra):
+    return _settings_row(title, subtitle, icon, anim=anim, href=reverse(url_name), **extra)
+
+
+def _save_admin_profile(request, admin_profile, form):
+    custom_user = admin_profile.admin
+    password = form.cleaned_data.get("password") or None
+    passport = request.FILES.get("profile_pic") or None
+
+    if password is not None:
+        custom_user.set_password(password)
+    if passport is not None:
+        custom_user.profile_pic = default_storage.save(passport.name, passport)
+
+    custom_user.first_name = form.cleaned_data.get("first_name")
+    custom_user.last_name = form.cleaned_data.get("last_name")
+    email = form.cleaned_data.get("email")
+    if email:
+        custom_user.email = email
+    gender = form.cleaned_data.get("gender")
+    if gender:
+        custom_user.gender = gender
+    address = form.cleaned_data.get("address")
+    if address is not None:
+        custom_user.address = address
+    dob = form.cleaned_data.get("date_of_birth")
+    if dob is not None:
+        custom_user.date_of_birth = dob
+    custom_user.save()
+
+
+def _save_staff_profile(staff, form):
+    custom_user = staff.admin
+    password = form.cleaned_data.get("password") or None
+    if password:
+        custom_user.set_password(password)
+    custom_user.first_name = form.cleaned_data["first_name"]
+    custom_user.last_name = form.cleaned_data["last_name"]
+    custom_user.gender = form.cleaned_data.get("gender", "")
+    dob = form.cleaned_data.get("date_of_birth")
+    if dob is not None:
+        custom_user.date_of_birth = dob
+    custom_user.save()
+    staff.phone = form.cleaned_data.get("phone", "")
+    staff.specialization = form.cleaned_data.get("specialization", "")
+    staff.save()
+
+
+def _save_student_profile(student, form):
+    custom_user = student.admin
+    password = form.cleaned_data.get("password") or None
+    if password:
+        custom_user.set_password(password)
+    custom_user.first_name = form.cleaned_data["first_name"]
+    custom_user.last_name = form.cleaned_data["last_name"]
+    custom_user.gender = form.cleaned_data.get("gender", "")
+    dob = form.cleaned_data.get("date_of_birth")
+    if dob is not None:
+        custom_user.date_of_birth = dob
+    custom_user.save()
+    student.phone = form.cleaned_data.get("phone", "")
+    student.save()
+
+
+def _student_profile_context(user):
+    student = get_object_or_404(
+        Student.objects.select_related("admin", "course", "branch"),
+        admin=user,
+    )
+    enrollments = list(
+        Enrollment.objects.filter(student=student, is_active=True)
+        .select_related("group", "group__course", "group__branch", "group__teacher__admin")
+        .order_by("group__name")
+    )
+    groups = [e.group for e in enrollments if e.group_id]
+    group_ids = [g.id for g in groups]
+    total_attendance = AttendanceReport.objects.filter(student=student).count()
+    attended = AttendanceReport.objects.filter(
+        student=student, status__in=[AttendanceReport.PRESENT, AttendanceReport.LATE]
+    ).count()
+    attendance_label = "Not started"
+    if total_attendance:
+        attendance_label = f"{round((attended / total_attendance) * 100)}% present"
+
+    assignment_count = Assignment.objects.filter(group_id__in=group_ids).count()
+    result_count = StudentResult.objects.filter(student=student).count()
+    file_count = ResultFile.objects.filter(
+        group_id__in=group_ids,
+    ).filter(Q(student__isnull=True) | Q(student=student)).count()
+    group_names = ", ".join(g.name for g in groups[:2]) or "Not assigned"
+    if len(groups) > 2:
+        group_names += f" +{len(groups) - 2}"
+
+    meta = [
+        {"icon": "fa-id-badge", "text": user.login_id or "Student ID not set"},
+        {"icon": "fa-book", "text": str(student.course) if student.course else "Course not set"},
+        {"icon": "fa-layer-group", "text": group_names},
+        {
+            "icon": "fa-map-marker-alt",
+            "text": str(student.effective_branch) if student.effective_branch else "Branch not set",
+        },
+    ]
+    if student.level:
+        meta.append({"icon": "fa-signal", "text": f"Level {student.level}"})
+
+    stats = [
+        {"label": "Attendance", "value": attendance_label, "icon": "fa-calendar-check"},
+        {"label": "Assignments", "value": assignment_count, "icon": "fa-tasks"},
+        {"label": "Results", "value": result_count + file_count, "icon": "fa-chart-line"},
+    ]
+    role_rows = [
+        _reverse_row("My Course", str(student.course) if student.course else "Course not set", "fa-book-open", "student_home", "icon-hover-folder"),
+        _reverse_row("My Group", group_names, "fa-users", "student_home", "icon-hover-pulse"),
+        _reverse_row("Attendance Summary", attendance_label, "fa-calendar-check", "student_view_attendance", "icon-hover-bounce"),
+        _reverse_row("Results", "Exam scores and result files", "fa-chart-line", "student_view_result", "icon-hover-pulse"),
+        _reverse_row("Assignments / Tasks", f"{assignment_count} assigned", "fa-tasks", "student_assignments", "icon-hover-wiggle"),
+        _reverse_row("Vocabulary / Study Settings", "Daily vocabulary and practice", "fa-spell-check", "vocabulary_day_list", "icon-hover-bounce"),
+        _reverse_row("Study Progress", "Learning progress and leaderboard", "fa-chart-line", "student_progress", "icon-hover-pulse"),
+        _reverse_row("Library", "Issued books and resources", "fa-book", "view_books", "icon-hover-folder"),
+    ]
+    return {
+        "role_profile": student,
+        "role_label": "Student",
+        "role_icon": "fa-user-graduate",
+        "form": StudentProfileForm(instance=student),
+        "profile_meta": meta,
+        "profile_stats": stats,
+        "role_group_label": "My Studies",
+        "role_rows": role_rows,
+        "current_theme": student.theme,
+        "theme_save_url": reverse("student_save_theme"),
+    }
+
+
+def _staff_profile_context(user):
+    staff = get_object_or_404(
+        Staff.objects.select_related("admin", "course", "branch"),
+        admin=user,
+    )
+    groups = list(
+        Group.objects.filter(teacher=staff, is_archived=False)
+        .select_related("course", "branch")
+        .order_by("name")
+    )
+    group_ids = [g.id for g in groups]
+    total_students = (
+        Enrollment.objects.filter(group_id__in=group_ids, is_active=True)
+        .values("student")
+        .distinct()
+        .count()
+    )
+    total_attendance = Attendance.objects.filter(group_id__in=group_ids).count()
+    assignment_count = Assignment.objects.filter(created_by=staff).count()
+    group_names = ", ".join(g.name for g in groups[:2]) or "No active groups"
+    if len(groups) > 2:
+        group_names += f" +{len(groups) - 2}"
+
+    meta = [
+        {"icon": "fa-id-badge", "text": user.login_id or "Teacher ID not set"},
+        {"icon": "fa-book", "text": str(staff.course) if staff.course else "Course not set"},
+        {
+            "icon": "fa-map-marker-alt",
+            "text": str(staff.effective_branch) if staff.effective_branch else "Branch not set",
+        },
+    ]
+    if staff.specialization:
+        meta.append({"icon": "fa-star", "text": staff.specialization})
+
+    stats = [
+        {"label": "Groups", "value": len(groups), "icon": "fa-layer-group"},
+        {"label": "Students", "value": total_students, "icon": "fa-user-graduate"},
+        {"label": "Attendance Days", "value": total_attendance, "icon": "fa-calendar-check"},
+    ]
+    role_rows = [
+        _reverse_row("My Groups", group_names, "fa-layer-group", "staff_home", "icon-hover-folder"),
+        _reverse_row("My Students", f"{total_students} active students", "fa-users", "staff_home", "icon-hover-pulse"),
+        _reverse_row("Attendance Settings", "Take or update attendance", "fa-clipboard-check", "staff_take_attendance", "icon-hover-bounce"),
+        _reverse_row("Result Upload Settings", "Add scores and upload files", "fa-file-upload", "staff_add_result", "icon-hover-pulse"),
+        _reverse_row("Assignments / Vocabulary Settings", f"{assignment_count} assignments created", "fa-tasks", "staff_assignments", "icon-hover-wiggle"),
+        _reverse_row("Daily Vocabulary", "Create and manage study days", "fa-spell-check", "staff_vocabulary_days", "icon-hover-bounce"),
+        _reverse_row("Teaching Profile", "Specialization and contact details", "fa-chalkboard-teacher", "staff_home", "icon-hover-pulse"),
+    ]
+    return {
+        "role_profile": staff,
+        "role_label": "Teacher",
+        "role_icon": "fa-chalkboard-teacher",
+        "form": StaffProfileForm(instance=staff),
+        "profile_meta": meta,
+        "profile_stats": stats,
+        "role_group_label": "Teaching",
+        "role_rows": role_rows,
+        "current_theme": "system",
+        "theme_save_url": "",
+    }
+
+
+def _admin_profile_context(user):
+    admin_profile = get_object_or_404(
+        Admin.objects.prefetch_related("branches"),
+        admin=user,
+    )
+    try:
+        from . import branching
+
+        students_qs = branching.filter_students_for_user(user, Student.objects.all())
+        staff_qs = branching.filter_staff_for_user(user, Staff.objects.all())
+        groups_qs = branching.filter_groups_for_user(user, Group.objects.filter(is_archived=False))
+        branches_qs = branching.filter_branches_for_user(user, Branch.objects.all())
+    except Exception:
+        logger.exception("Profile hub admin branch scoping failed; falling back to unscoped counts.")
+        students_qs = Student.objects.all()
+        staff_qs = Staff.objects.all()
+        groups_qs = Group.objects.filter(is_archived=False)
+        branches_qs = Branch.objects.all()
+
+    branch_names = ", ".join(admin_profile.branches.values_list("name", flat=True)[:2])
+    if admin_profile.is_super_admin:
+        branch_label = "All branches"
+    elif branch_names:
+        extra = max(admin_profile.branches.count() - 2, 0)
+        branch_label = branch_names + (f" +{extra}" if extra else "")
+    else:
+        branch_label = "Branch not assigned"
+
+    meta = [
+        {"icon": "fa-envelope", "text": user.email or "Email not set"},
+        {"icon": "fa-shield-alt", "text": "Super Admin" if admin_profile.is_super_admin else "Branch Admin"},
+        {"icon": "fa-map-marker-alt", "text": branch_label},
+    ]
+    stats = [
+        {"label": "Students", "value": students_qs.count(), "icon": "fa-user-graduate"},
+        {"label": "Teachers", "value": staff_qs.count(), "icon": "fa-chalkboard-teacher"},
+        {"label": "Groups", "value": groups_qs.count(), "icon": "fa-layer-group"},
+        {"label": "Branches", "value": branches_qs.count(), "icon": "fa-building"},
+    ]
+    role_rows = [
+        _reverse_row("Branch / Center Settings", branch_label, "fa-building", "manage_branch", "icon-hover-folder"),
+        _reverse_row("User Management Shortcuts", "Teachers, students, and accounts", "fa-users-cog", "manage_staff", "icon-hover-rotate"),
+        _reverse_row("Teacher Settings", f"{staff_qs.count()} teachers", "fa-chalkboard-teacher", "manage_staff", "icon-hover-pulse"),
+        _reverse_row("Student Settings", f"{students_qs.count()} students", "fa-user-graduate", "manage_student", "icon-hover-bounce"),
+        _reverse_row("Course / Group Settings", "Courses, groups, enrollments", "fa-layer-group", "manage_group", "icon-hover-folder"),
+        _reverse_row("System Preferences", "Leaderboard rules and seasons", "fa-sliders-h", "admin_leaderboard_settings", "icon-hover-rotate"),
+        _reverse_row("Reports / Dashboard Preferences", "Attendance and stories", "fa-chart-line", "admin_view_attendance", "icon-hover-pulse"),
+    ]
+    return {
+        "role_profile": admin_profile,
+        "role_label": "Admin",
+        "role_icon": "fa-user-shield",
+        "form": AdminForm(instance=admin_profile),
+        "profile_meta": meta,
+        "profile_stats": stats,
+        "role_group_label": "Administration",
+        "role_rows": role_rows,
+        "current_theme": "system",
+        "theme_save_url": "",
+    }
+
+
+@login_required
+def profile_settings_hub(request):
+    user_type = str(request.user.user_type)
+    if user_type == "1":
+        ctx = _admin_profile_context(request.user)
+        profile = ctx["role_profile"]
+        form = AdminForm(
+            request.POST or None,
+            request.FILES or None,
+            instance=profile,
+        )
+        save_fn = lambda: _save_admin_profile(request, profile, form)
+    elif user_type == "2":
+        ctx = _staff_profile_context(request.user)
+        profile = ctx["role_profile"]
+        form = StaffProfileForm(instance=profile, data=request.POST or None)
+        save_fn = lambda: _save_staff_profile(profile, form)
+    elif user_type == "3":
+        ctx = _student_profile_context(request.user)
+        profile = ctx["role_profile"]
+        form = StudentProfileForm(instance=profile, data=request.POST or None)
+        save_fn = lambda: _save_student_profile(profile, form)
+    else:
+        messages.error(request, "Your account role is not configured correctly.")
+        logout(request)
+        return redirect(reverse("login_page"))
+
+    open_edit_panel = False
+    if request.method == "POST":
+        open_edit_panel = True
+        if form.is_valid():
+            try:
+                save_fn()
+                messages.success(request, "Profile updated.")
+                return redirect(reverse("profile_hub"))
+            except Exception as exc:
+                logger.exception("Profile hub update failed for user pk=%s", request.user.pk)
+                messages.error(request, f"Could not update your profile: {exc}")
+        else:
+            messages.error(request, "Please fix the highlighted profile fields.")
+
+    account_rows = [
+        _settings_row(
+            "Personal Information",
+            "Name, contact details, birthday, and profile basics",
+            "fa-user",
+            kind="details",
+            details_id="edit-profile",
+            focus="#id_first_name",
+        ),
+        _settings_row(
+            "Edit Profile",
+            "Update the details available for your role",
+            "fa-edit",
+            anim="icon-hover-wiggle",
+            kind="details",
+            details_id="edit-profile",
+            focus="#id_first_name",
+        ),
+        _settings_row(
+            "Change Profile Avatar",
+            "Choose a profile sticker",
+            "fa-camera",
+            anim="icon-hover-camera",
+            kind="avatar",
+        ),
+        _settings_row(
+            "Change Password",
+            "Set a new password from the edit panel",
+            "fa-key",
+            anim="icon-hover-rotate",
+            kind="details",
+            details_id="edit-profile",
+            focus="#id_password",
+        ),
+        _settings_row(
+            "Login & Security",
+            request.user.email or request.user.login_id or "Account credentials",
+            "fa-lock",
+            anim="icon-hover-lock",
+            kind="details",
+            details_id="edit-profile",
+            focus="#id_password",
+        ),
+    ]
+
+    preference_rows = [
+        _settings_row(
+            "Theme / Appearance",
+            "Dark, bright, or system mode",
+            "fa-palette",
+            anim="icon-hover-rotate",
+            kind="appearance",
+        )
+    ]
+    if user_type == "2":
+        preference_rows.extend(
+            [
+                _reverse_row("Notifications", "Announcements and alerts", "fa-bell", "staff_view_notification", "icon-hover-bell"),
+                _reverse_row("Messages", "Group chat and conversations", "fa-comments", "messages", "icon-hover-wiggle"),
+            ]
+        )
+    elif user_type == "3":
+        preference_rows.extend(
+            [
+                _reverse_row("Notifications", "Announcements and alerts", "fa-bell", "student_view_notification", "icon-hover-bell"),
+                _reverse_row("Messages", "Group chat and conversations", "fa-comments", "messages", "icon-hover-wiggle"),
+            ]
+        )
+    else:
+        preference_rows.append(
+            _reverse_row("Messages", "Team and group conversations", "fa-comments", "messages", "icon-hover-wiggle")
+        )
+
+    support_rows = []
+    if user_type == "1":
+        support_rows = [
+            _reverse_row("Help & Support", "Review student feedback", "fa-circle-question", "student_feedback_message", "icon-hover-rotate"),
+            _reverse_row("Teacher Feedback", "Review teacher messages", "fa-comment-dots", "staff_feedback_message", "icon-hover-wiggle"),
+            _reverse_row("Registration Leads", "Follow up with interested students", "fa-user-clock", "manage_registration_leads", "icon-hover-pulse"),
+        ]
+    elif user_type == "2":
+        support_rows = [
+            _reverse_row("Help & Feedback", "Contact admin", "fa-circle-question", "staff_feedback", "icon-hover-rotate"),
+            _reverse_row("Apply for Leave", "Request time off", "fa-plane-departure", "staff_apply_leave", "icon-hover-bounce"),
+        ]
+    else:
+        support_rows = [
+            _reverse_row("Help & Feedback", "Contact your teacher or admin", "fa-circle-question", "student_feedback", "icon-hover-rotate"),
+            _reverse_row("Apply for Leave", "Request time off", "fa-plane-departure", "student_apply_leave", "icon-hover-bounce"),
+        ]
+    support_rows.append(
+        _settings_row(
+            "About Iceberg",
+            "Central profile and settings hub for College ERP",
+            "fa-info-circle",
+            anim="icon-hover-rotate",
+            kind="static",
+        )
+    )
+
+    ctx.update(
+        {
+            "form": form,
+            "page_title": "My Profile / Settings",
+            "open_edit_panel": open_edit_panel,
+            "dashboard_url": reverse(
+                "admin_home" if user_type == "1" else "staff_home" if user_type == "2" else "student_home"
+            ),
+            "settings_groups": [
+                {"label": "Account", "rows": account_rows},
+                {"label": "Preferences", "rows": preference_rows},
+                {"label": ctx["role_group_label"], "rows": ctx["role_rows"]},
+                {"label": "Support", "rows": support_rows},
+            ],
+        }
+    )
+    return render(request, "main_app/profile_hub.html", ctx)
 
 
 # ---------------------------------------------------------------------------

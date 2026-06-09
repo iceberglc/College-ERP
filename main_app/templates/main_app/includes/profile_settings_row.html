@@ -1,0 +1,27 @@
+{% comment %}
+  Reusable profile/settings row (ICEBERG profile hub).
+
+  Usage:
+    {% include "main_app/includes/profile_settings_row.html" with icon="fa-user" anim="icon-hover-pulse" title="Personal Information" subtitle="Name, gender, date of birth" href=some_url %}
+
+  Params:
+    icon      Font Awesome class (e.g. "fa-user")            [required]
+    title     row title                                      [required]
+    subtitle  small description                              [optional]
+    href      destination URL; falls back to "#"             [optional]
+    anim      icon hover class (icon-hover-pulse, …)         [optional]
+    danger    truthy → red destructive styling               [optional]
+    target    anchor target (e.g. "_blank")                  [optional]
+    rel       anchor rel                                     [optional]
+{% endcomment %}
+<a class="settings-row pressable{% if danger %} settings-row--danger{% endif %}"
+   href="{{ href|default:'#' }}"{% if target %} target="{{ target }}"{% endif %}{% if rel %} rel="{{ rel }}"{% endif %}>
+  <span class="settings-row__icon">
+    <i class="fas {{ icon }} {{ anim }}" aria-hidden="true"></i>
+  </span>
+  <span class="settings-row__content">
+    <span class="settings-row__title">{{ title }}</span>
+    {% if subtitle %}<span class="settings-row__subtitle">{{ subtitle }}</span>{% endif %}
+  </span>
+  <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+</a>

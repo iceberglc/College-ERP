@@ -1,0 +1,277 @@
+"""Branch-first access control — the single source of truth for "what can
+this user see?".
+
+Iceberg is one organization with many branches. Access is scoped by branch:
+
+  * Super admin  → every branch (all data).
+  * Branch admin → only their assigned branches (Admin.branches).
+  * Teacher      → only the groups they teach (and the students/attendance/
+                   results inside those groups). Group ownership is the source
+                   of truth, NOT Staff.branch, so legacy teachers with a null
+                   branch keep working.
+  * Student      → only their own record and their own enrolled groups.
+  * Anyone else  → nothing (empty queryset), never "all".
+
+Views, forms, messaging and the API all route through these helpers so the
+rules live in exactly one place. Do not re-implement branch filtering inline.
+"""
+
+from django.db.models import Q
+
+from .models import Admin, Branch, Enrollment, Staff, Student
+
+
+# ── Identity helpers ─────────────────────────────────────────────────────────
+
+
+def _user_type(user):
+    if not getattr(user, "is_authenticated", False):
+        return None
+    return str(getattr(user, "user_type", "") or "")
+
+
+def get_admin_profile(user):
+    """Return the Admin profile for an admin user, or None."""
+    if _user_type(user) != "1":
+        return None
+    try:
+        return user.admin
+    except (Admin.DoesNotExist, AttributeError):
+        return None
+
+
+def _get_staff(user):
+    if _user_type(user) != "2":
+        return None
+    try:
+        return user.staff
+    except (Staff.DoesNotExist, AttributeError):
+        return None
+
+
+def _get_student(user):
+    if _user_type(user) != "3":
+        return None
+    try:
+        return user.student
+    except (Student.DoesNotExist, AttributeError):
+        return None
+
+
+def is_super_admin(user):
+    """True only for an admin whose profile is flagged is_super_admin."""
+    profile = get_admin_profile(user)
+    return bool(profile and profile.is_super_admin)
+
+
+# ── Accessible branches ──────────────────────────────────────────────────────
+
+
+def get_accessible_branches(user):
+    """Return the Branch queryset this user is allowed to see."""
+    profile = get_admin_profile(user)
+    if profile is not None:
+        if profile.is_super_admin:
+            return Branch.objects.all()
+        return profile.branches.all()
+
+    staff = _get_staff(user)
+    if staff is not None:
+        return Branch.objects.filter(
+            Q(group__teacher=staff) | Q(staff_members=staff)
+        ).distinct()
+
+    student = _get_student(user)
+    if student is not None:
+        return Branch.objects.filter(
+            Q(students=student) | Q(group__enrollment__student=student)
+        ).distinct()
+
+    return Branch.objects.none()
+
+
+# ── Queryset filters ─────────────────────────────────────────────────────────
+
+
+def filter_branches_for_user(user, queryset):
+    if is_super_admin(user):
+        return queryset
+    profile = get_admin_profile(user)
+    if profile is not None:
+        return queryset.filter(id__in=profile.branches.values_list("id", flat=True))
+    # Teachers/students don't manage branches.
+    return queryset.filter(
+        id__in=get_accessible_branches(user).values_list("id", flat=True)
+    )
+
+
+def filter_students_for_user(user, queryset):
+    """Filter a Student queryset by branch access."""
+    if is_super_admin(user):
+        return queryset
+
+    profile = get_admin_profile(user)
+    if profile is not None:
+        ids = profile.branches.values_list("id", flat=True)
+        # Students explicitly in the branch OR enrolled in one of its groups
+        # (covers legacy students whose branch field is still null).
+        return queryset.filter(
+            Q(branch_id__in=ids) | Q(enrollment__group__branch_id__in=ids)
+        ).distinct()
+
+    staff = _get_staff(user)
+    if staff is not None:
+        return queryset.filter(
+            enrollment__group__teacher=staff, enrollment__is_active=True
+        ).distinct()
+
+    student = _get_student(user)
+    if student is not None:
+        return queryset.filter(pk=student.pk)
+
+    return queryset.none()
+
+
+def filter_staff_for_user(user, queryset):
+    """Filter a Staff queryset by branch access."""
+    if is_super_admin(user):
+        return queryset
+
+    profile = get_admin_profile(user)
+    if profile is not None:
+        ids = profile.branches.values_list("id", flat=True)
+        # Teachers in the branch OR teaching a group in the branch.
+        return queryset.filter(
+            Q(branch_id__in=ids) | Q(group__branch_id__in=ids)
+        ).distinct()
+
+    staff = _get_staff(user)
+    if staff is not None:
+        return queryset.filter(pk=staff.pk)
+
+    return queryset.none()
+
+
+def filter_groups_for_user(user, queryset):
+    """Filter a Group queryset by branch access."""
+    if is_super_admin(user):
+        return queryset
+
+    profile = get_admin_profile(user)
+    if profile is not None:
+        return queryset.filter(branch_id__in=profile.branches.values_list("id", flat=True))
+
+    staff = _get_staff(user)
+    if staff is not None:
+        return queryset.filter(teacher=staff)
+
+    student = _get_student(user)
+    if student is not None:
+        return queryset.filter(
+            enrollment__student=student, enrollment__is_active=True
+        ).distinct()
+
+    return queryset.none()
+
+
+def filter_enrollments_for_user(user, queryset):
+    """Filter an Enrollment queryset by branch access."""
+    if is_super_admin(user):
+        return queryset
+
+    profile = get_admin_profile(user)
+    if profile is not None:
+        return queryset.filter(
+            group__branch_id__in=profile.branches.values_list("id", flat=True)
+        )
+
+    staff = _get_staff(user)
+    if staff is not None:
+        return queryset.filter(group__teacher=staff)
+
+    student = _get_student(user)
+    if student is not None:
+        return queryset.filter(student=student)
+
+    return queryset.none()
+
+
+def filter_attendance_for_user(user, queryset):
+    """Filter an Attendance queryset by branch access."""
+    if is_super_admin(user):
+        return queryset
+
+    profile = get_admin_profile(user)
+    if profile is not None:
+        return queryset.filter(
+            group__branch_id__in=profile.branches.values_list("id", flat=True)
+        )
+
+    staff = _get_staff(user)
+    if staff is not None:
+        return queryset.filter(group__teacher=staff)
+
+    student = _get_student(user)
+    if student is not None:
+        return queryset.filter(attendancereport__student=student).distinct()
+
+    return queryset.none()
+
+
+def filter_results_for_user(user, queryset):
+    """Filter a StudentResult queryset by branch access."""
+    if is_super_admin(user):
+        return queryset
+
+    profile = get_admin_profile(user)
+    if profile is not None:
+        return queryset.filter(
+            group__branch_id__in=profile.branches.values_list("id", flat=True)
+        )
+
+    staff = _get_staff(user)
+    if staff is not None:
+        return queryset.filter(group__teacher=staff)
+
+    student = _get_student(user)
+    if student is not None:
+        return queryset.filter(student=student)
+
+    return queryset.none()
+
+
+# ── Single-object access checks ──────────────────────────────────────────────
+
+
+def user_can_access_branch(user, branch):
+    if branch is None:
+        return False
+    if is_super_admin(user):
+        return True
+    branch_id = getattr(branch, "id", branch)
+    return get_accessible_branches(user).filter(id=branch_id).exists()
+
+
+def user_can_access_group(user, group):
+    if group is None:
+        return False
+    if is_super_admin(user):
+        return True
+
+    profile = get_admin_profile(user)
+    if profile is not None:
+        if group.branch_id is None:
+            return False
+        return profile.branches.filter(id=group.branch_id).exists()
+
+    staff = _get_staff(user)
+    if staff is not None:
+        return group.teacher_id == staff.id
+
+    student = _get_student(user)
+    if student is not None:
+        return Enrollment.objects.filter(
+            student=student, group=group, is_active=True
+        ).exists()
+
+    return False

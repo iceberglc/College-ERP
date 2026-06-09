@@ -1,5 +1,6 @@
 from django.db.models import Count, Q
 
+from . import branching
 from .models import ChatReadState, ChatThread, Group
 
 
@@ -12,7 +13,13 @@ def accessible_groups_for_user(user):
     base = Group.objects.select_related("course", "teacher__admin", "branch")
 
     if user_type == "1":
-        return base.annotate(
+        # Super admin sees every group; a branch admin only sees groups in
+        # their assigned branches.
+        qs = base
+        if not branching.is_super_admin(user):
+            accessible_ids = branching.get_accessible_branches(user).values_list("id", flat=True)
+            qs = qs.filter(branch_id__in=list(accessible_ids))
+        return qs.annotate(
             active_student_count=Count("enrollment", filter=Q(enrollment__is_active=True))
         ).order_by("is_archived", "name")
 

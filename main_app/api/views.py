@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .. import branching
 from ..models import (
     Assignment,
     Attendance,
@@ -192,29 +193,12 @@ class GroupListView(generics.ListAPIView):
     serializer_class = GroupSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        user_type = str(user.user_type)
+        # Branch-aware: super admin → all, branch admin → assigned branches,
+        # teacher → own groups, student → enrolled groups.
         qs = Group.objects.select_related("course", "teacher__admin", "branch").filter(
             is_archived=False
         )
-
-        if user_type == "1":
-            return qs
-        if user_type == "2":
-            try:
-                return qs.filter(teacher=user.staff)
-            except Staff.DoesNotExist:
-                return qs.none()
-        if user_type == "3":
-            try:
-                ids = Enrollment.objects.filter(
-                    student=user.student,
-                    is_active=True,
-                ).values_list("group_id", flat=True)
-                return qs.filter(id__in=ids)
-            except Student.DoesNotExist:
-                return qs.none()
-        return qs.none()
+        return branching.filter_groups_for_user(self.request.user, qs)
 
 
 class GroupDetailView(generics.RetrieveAPIView):
@@ -222,27 +206,8 @@ class GroupDetailView(generics.RetrieveAPIView):
     serializer_class = GroupDetailSerializer
 
     def get_queryset(self):
-        user = self.request.user
-        user_type = str(user.user_type)
         qs = Group.objects.select_related("course", "teacher__admin", "branch")
-
-        if user_type == "1":
-            return qs
-        if user_type == "2":
-            try:
-                return qs.filter(teacher=user.staff)
-            except Staff.DoesNotExist:
-                return qs.none()
-        if user_type == "3":
-            try:
-                ids = Enrollment.objects.filter(
-                    student=user.student,
-                    is_active=True,
-                ).values_list("group_id", flat=True)
-                return qs.filter(id__in=ids)
-            except Student.DoesNotExist:
-                return qs.none()
-        return qs.none()
+        return branching.filter_groups_for_user(self.request.user, qs)
 
 
 # ---------------------------------------------------------------------------
@@ -287,15 +252,11 @@ class AttendanceView(APIView):
             ]
             return paginator.get_paginated_response(data)
 
-        # Admin and Teachers get full attendance records
+        # Admin and Teachers get full attendance records, branch-scoped.
         qs = Attendance.objects.select_related("group").prefetch_related(
             "attendancereport_set__student__admin"
         )
-        if user_type == "2":
-            try:
-                qs = qs.filter(group__teacher=user.staff)
-            except Staff.DoesNotExist:
-                return Response({"count": 0, "results": []})
+        qs = branching.filter_attendance_for_user(user, qs)
         if group_id:
             qs = qs.filter(group_id=group_id)
         if date_str:
@@ -319,17 +280,13 @@ class AttendanceView(APIView):
         data = serializer.validated_data
         group = Group.objects.get(id=data["group_id"])
 
-        if str(request.user.user_type) == "2":
-            try:
-                if group.teacher_id != request.user.staff.id:
-                    return Response(
-                        {"detail": "You can only take attendance for your own groups."},
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
-            except Staff.DoesNotExist:
-                return Response(
-                    {"detail": "Staff profile not found."}, status=status.HTTP_403_FORBIDDEN
-                )
+        # Unified branch/ownership check: super admin (all), branch admin
+        # (their branches), teacher (their groups).
+        if not branching.user_can_access_group(request.user, group):
+            return Response(
+                {"detail": "You can only take attendance for groups in your scope."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         records = data["records"]
         with transaction.atomic():
@@ -367,26 +324,10 @@ class ResultView(APIView):
 
     def get(self, request):
         user = request.user
-        user_type = str(user.user_type)
         group_id = request.query_params.get("group_id")
 
         qs = StudentResult.objects.select_related("student__admin", "group")
-
-        if user_type == "1":
-            pass
-        elif user_type == "2":
-            try:
-                teacher_group_ids = Group.objects.filter(teacher=user.staff).values_list(
-                    "id", flat=True
-                )
-                qs = qs.filter(group_id__in=teacher_group_ids)
-            except Staff.DoesNotExist:
-                return Response({"count": 0, "results": []})
-        elif user_type == "3":
-            try:
-                qs = qs.filter(student=user.student)
-            except Student.DoesNotExist:
-                return Response({"count": 0, "results": []})
+        qs = branching.filter_results_for_user(user, qs)
 
         if group_id:
             qs = qs.filter(group_id=group_id)
@@ -417,17 +358,11 @@ class ResultView(APIView):
                 {"detail": "Student or group not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
-        if str(request.user.user_type) == "2":
-            try:
-                if group.teacher_id != request.user.staff.id:
-                    return Response(
-                        {"detail": "You can only update results for your own groups."},
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
-            except Staff.DoesNotExist:
-                return Response(
-                    {"detail": "Staff profile not found."}, status=status.HTTP_403_FORBIDDEN
-                )
+        if not branching.user_can_access_group(request.user, group):
+            return Response(
+                {"detail": "You can only update results for groups in your scope."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         result, created = StudentResult.objects.update_or_create(
             student=student,
@@ -468,7 +403,10 @@ class AssignmentListView(APIView):
         user_type = str(user.user_type)
         qs = Assignment.objects.select_related("group", "created_by__admin")
         if user_type == "1":
-            return qs
+            if branching.is_super_admin(user):
+                return qs
+            ids = list(branching.get_accessible_branches(user).values_list("id", flat=True))
+            return qs.filter(group__branch_id__in=ids)
         if user_type == "2":
             try:
                 return qs.filter(created_by=user.staff)
@@ -522,7 +460,10 @@ class AssignmentDetailView(generics.RetrieveAPIView):
         user_type = str(user.user_type)
         qs = Assignment.objects.select_related("group", "created_by__admin")
         if user_type == "1":
-            return qs
+            if branching.is_super_admin(user):
+                return qs
+            ids = list(branching.get_accessible_branches(user).values_list("id", flat=True))
+            return qs.filter(group__branch_id__in=ids)
         if user_type == "2":
             try:
                 return qs.filter(created_by=user.staff)
@@ -718,13 +659,17 @@ class AdminStatsView(APIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):
+        user = request.user
+        students = branching.filter_students_for_user(user, Student.objects.all())
+        staff = branching.filter_staff_for_user(user, Staff.objects.all())
+        groups = branching.filter_groups_for_user(user, Group.objects.all())
         return Response(
             {
-                "student_count": Student.objects.count(),
-                "active_students": Student.objects.filter(status="active").count(),
-                "staff_count": Staff.objects.count(),
-                "group_count": Group.objects.filter(is_archived=False).count(),
-                "archived_groups": Group.objects.filter(is_archived=True).count(),
+                "student_count": students.count(),
+                "active_students": students.filter(status="active").count(),
+                "staff_count": staff.count(),
+                "group_count": groups.filter(is_archived=False).count(),
+                "archived_groups": groups.filter(is_archived=True).count(),
                 "course_count": Course.objects.filter(is_active=True).count(),
             }
         )
@@ -736,6 +681,15 @@ class AdminUserListView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = CustomUser.objects.all()
+        # Branch admins only see users (students/teachers) within their branches.
+        if not branching.is_super_admin(self.request.user):
+            allowed_students = branching.filter_students_for_user(
+                self.request.user, Student.objects.all()
+            )
+            allowed_staff = branching.filter_staff_for_user(
+                self.request.user, Staff.objects.all()
+            )
+            qs = qs.filter(Q(student__in=allowed_students) | Q(staff__in=allowed_staff))
         user_type = self.request.query_params.get("user_type")
         if user_type:
             qs = qs.filter(user_type=user_type)
@@ -757,7 +711,7 @@ class AdminGroupListView(generics.ListAPIView):
         qs = Group.objects.select_related("course", "teacher__admin", "branch")
         if self.request.query_params.get("archived") != "1":
             qs = qs.filter(is_archived=False)
-        return qs
+        return branching.filter_groups_for_user(self.request.user, qs)
 
 
 class AdminEnrollmentView(APIView):
@@ -769,6 +723,24 @@ class AdminEnrollmentView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         student = serializer.validated_data["student"]
         group = serializer.validated_data["group"]
+
+        # Branch admins can only enrol within their branches and not across
+        # a branch boundary (super admin may override a mismatch).
+        if not branching.user_can_access_group(request.user, group):
+            return Response(
+                {"detail": "You don't have access to that group's branch."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if (
+            not branching.is_super_admin(request.user)
+            and group.branch_id
+            and student.branch_id
+            and group.branch_id != student.branch_id
+        ):
+            return Response(
+                {"detail": "Student belongs to a different branch than the group."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         enrollment, created = Enrollment.objects.get_or_create(
             student=student, group=group, defaults={"is_active": True}
@@ -785,7 +757,8 @@ class AdminEnrollmentView(APIView):
     def delete(self, request):
         student_id = request.data.get("student")
         group_id = request.data.get("group")
-        updated = Enrollment.objects.filter(
+        scoped = branching.filter_enrollments_for_user(request.user, Enrollment.objects.all())
+        updated = scoped.filter(
             student_id=student_id,
             group_id=group_id,
         ).update(is_active=False)

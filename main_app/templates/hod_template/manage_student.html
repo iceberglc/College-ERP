@@ -29,6 +29,20 @@
     <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search students, ID, course..." autocomplete="off">
   </label>
 
+  {% if is_super_admin %}
+  <form method="get" class="ice-manage-filter">
+    <label for="branch-filter" class="ice-manage-filter__label"><i class="fas fa-code-branch" aria-hidden="true"></i> Branch</label>
+    <select id="branch-filter" name="branch" class="ice-manage-filter__select" onchange="this.form.submit()">
+      <option value="">All branches</option>
+      {% for b in branches %}
+      <option value="{{ b.id }}" {% if selected_branch == b.id|stringformat:'s' %}selected{% endif %}>{{ b.name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  {% elif branches %}
+  <p class="ice-manage-branch-note"><i class="fas fa-code-branch" aria-hidden="true"></i> Branch: {% for b in branches %}{{ b.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+  {% endif %}
+
   <div class="ice-manage-empty" data-manage-empty-state hidden>
     <i class="fas fa-search" aria-hidden="true"></i>
     <strong>No students found</strong>
@@ -43,6 +57,7 @@
           <th>Student</th>
           <th>Login ID</th>
           <th>Course</th>
+          <th>Branch</th>
           <th>Level</th>
           <th>Status</th>
           <th>Phone</th>
@@ -54,7 +69,7 @@
       <tbody>
         {% for student in students %}
         <tr data-manage-search-item
-            data-manage-search-text="{{ student.get_full_name }} {{ student.email }} {{ student.login_id }} {{ student.student.course.name }} {{ student.student.phone }} {{ student.student.level }} {{ student.student.status }} {{ student.gender }}">
+            data-manage-search-text="{{ student.get_full_name }} {{ student.email }} {{ student.login_id }} {{ student.student.course.name }} {{ student.student.branch.name }} {{ student.student.phone }} {{ student.student.level }} {{ student.student.status }} {{ student.gender }}">
           <td>{{ forloop.counter }}</td>
           <td>
             <div class="ice-manage-person">
@@ -75,6 +90,13 @@
           </td>
           <td><span class="ice-manage-code">{{ student.login_id|default:"No ID" }}</span></td>
           <td>{{ student.student.course.name|default:"No course" }}</td>
+          <td>
+            {% if student.student.branch %}
+            <span class="ice-manage-chip"><i class="fas fa-code-branch" aria-hidden="true"></i> {{ student.student.branch.name }}</span>
+            {% else %}
+            <span class="ice-manage-chip ice-manage-chip--muted">No branch</span>
+            {% endif %}
+          </td>
           <td>
             {% if student.student.level %}
             <span class="ice-manage-chip"><i class="fas fa-signal" aria-hidden="true"></i> Level {{ student.student.level }}</span>
@@ -126,7 +148,7 @@
     <article class="ice-manage-card"
              data-manage-search-item
              data-manage-search-primary
-             data-manage-search-text="{{ student.get_full_name }} {{ student.email }} {{ student.login_id }} {{ student.student.course.name }} {{ student.student.phone }} {{ student.student.level }} {{ student.student.status }} {{ student.gender }}">
+             data-manage-search-text="{{ student.get_full_name }} {{ student.email }} {{ student.login_id }} {{ student.student.course.name }} {{ student.student.branch.name }} {{ student.student.phone }} {{ student.student.level }} {{ student.student.status }} {{ student.gender }}">
       <div class="ice-manage-card__top">
         <span class="ice-manage-card__avatar" aria-hidden="true">
           {% if student.profile_pic %}
@@ -146,6 +168,9 @@
       <div class="ice-manage-card__meta">
         <span class="ice-manage-chip"><i class="fas fa-id-badge" aria-hidden="true"></i><span>{{ student.login_id|default:"No ID" }}</span></span>
         <span class="ice-manage-chip"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>{{ student.student.course.name|default:"No course" }}</span></span>
+        {% if student.student.branch %}
+        <span class="ice-manage-chip"><i class="fas fa-code-branch" aria-hidden="true"></i><span>{{ student.student.branch.name }}</span></span>
+        {% endif %}
         {% if student.student.level %}
         <span class="ice-manage-chip"><i class="fas fa-signal" aria-hidden="true"></i><span>Level {{ student.student.level }}</span></span>
         {% endif %}

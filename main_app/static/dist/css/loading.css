@@ -1,0 +1,109 @@
+/* ============================================================================
+   ICEBERG · loading.css
+   Top progress bar + delayed glassmorphism page loader.
+   Hidden by default; only shown via JS-added state classes.
+   ========================================================================== */
+
+/* ── Thin top progress bar ────────────────────────────────────────────── */
+.page-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 100000;
+  pointer-events: none;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #0C1F45 0%, #06B6D4 60%, #67E8F9 100%);
+  box-shadow: 0 0 10px rgba(6, 182, 212, .55);
+  transition: opacity 150ms ease;
+}
+.page-progress.is-active {
+  opacity: 1;
+  animation: iceProgress 1.4s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+@keyframes iceProgress {
+  0%   { transform: scaleX(0); }
+  35%  { transform: scaleX(.55); }
+  70%  { transform: scaleX(.82); }
+  100% { transform: scaleX(.96); }
+}
+
+/* ── Full-page loader overlay ─────────────────────────────────────────── */
+.app-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 99990;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(244, 247, 255, .62);
+  -webkit-backdrop-filter: blur(6px) saturate(140%);
+  backdrop-filter: blur(6px) saturate(140%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 220ms ease, visibility 220ms ease;
+}
+.app-loader.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.app-loader__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 26px 34px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .86);
+  border: 1px solid rgba(12, 31, 69, .08);
+  box-shadow: 0 18px 50px rgba(12, 31, 69, .18);
+  transform: translateY(8px) scale(.98);
+  transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
+}
+.app-loader.is-visible .app-loader__card {
+  transform: none;
+}
+
+/* Glowing cyan ring/orb */
+.app-loader__spinner {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3px solid rgba(6, 182, 212, .18);
+  border-top-color: #06B6D4;
+  box-shadow: 0 0 18px rgba(6, 182, 212, .35);
+  animation: iceSpin .8s linear infinite;
+}
+@keyframes iceSpin { to { transform: rotate(360deg); } }
+
+.app-loader__text {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  color: #0C1F45;
+}
+
+/* ── Dark mode ────────────────────────────────────────────────────────── */
+.dark-mode .app-loader {
+  background: rgba(8, 18, 31, .60);
+}
+.dark-mode .app-loader__card {
+  background: rgba(14, 29, 52, .90);
+  border-color: rgba(255, 255, 255, .10);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .50);
+}
+.dark-mode .app-loader__text { color: #E2E8F0; }
+
+/* ── Reduced motion / transparency ────────────────────────────────────── */
+@media (prefers-reduced-transparency: reduce) {
+  .app-loader { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(244,247,255,.92); }
+  .dark-mode .app-loader { background: rgba(8,18,31,.92); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-loader__spinner { animation-duration: 1.4s; }
+  .page-progress.is-active { animation: none; transform: scaleX(.9); }
+}

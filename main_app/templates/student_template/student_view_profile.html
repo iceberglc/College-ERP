@@ -4,114 +4,12 @@
 {% block breadcrumb %}<li class="breadcrumb-item active">My Profile</li>{% endblock %}
 
 {% block custom_css %}
-<style>
-/* ── layout ── */
-.prof-page { display: flex; flex-direction: column; gap: 20px; max-width: 640px; margin: 0 auto; }
-
-/* ── hero ── */
-.prof-hero {
-  background: linear-gradient(135deg, #0C1F45 0%, #1B3F7A 100%);
-  border-radius: 20px; padding: 28px 24px; color: #fff;
-  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
-  box-shadow: 0 10px 32px rgba(12,31,69,.22);
-}
-.prof-hero-right { flex: 1; min-width: 0; }
-.prof-hero-name { font-size: 22px; font-weight: 900; margin: 0 0 4px; }
-.prof-hero-sub  { font-size: 13px; opacity: .75; margin: 0 0 10px; }
-.prof-id-badge {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 6px 14px; border-radius: 8px;
-  background: rgba(255,255,255,.14); border: 1.5px solid rgba(255,255,255,.22);
-  font-size: 15px; font-weight: 800; font-family: monospace; letter-spacing: 1px;
-}
-.prof-id-badge i { font-size: 11px; opacity: .7; }
-
-/* ── section cards ── */
-.prof-card {
-  background: var(--ice-surface);
-  border: 1.5px solid var(--ice-border);
-  border-radius: 16px; overflow: hidden;
-  box-shadow: 0 2px 8px rgba(12,31,69,.06);
-}
-.prof-card-hd {
-  padding: 14px 20px;
-  background: var(--ice-surface2);
-  border-bottom: 1.5px solid var(--ice-border);
-  display: flex; align-items: center; gap: 9px;
-  font-size: 13px; font-weight: 700; color: var(--ice-text);
-}
-.prof-card-hd i { color: var(--ice-cyan); font-size: 14px; }
-.prof-card-body { padding: 20px; }
-
-/* ── field rows ── */
-.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 480px) { .field-grid { grid-template-columns: 1fr; } }
-.field-wrap label {
-  display: block; font-size: 10px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .6px;
-  color: var(--ice-muted); margin-bottom: 6px;
-}
-.field-wrap .form-control, .field-wrap select {
-  width: 100%; border-radius: 10px;
-  border: 1.5px solid var(--ice-border);
-  background: var(--ice-surface2);
-  color: var(--ice-text);
-  padding: 10px 14px; font-size: 14px;
-  transition: border-color .15s, box-shadow .15s;
-  -webkit-appearance: none; appearance: none;
-}
-.field-wrap .form-control:focus, .field-wrap select:focus {
-  border-color: var(--ice-cyan);
-  box-shadow: 0 0 0 3px rgba(6,182,212,.12);
-  outline: none;
-}
-.field-error { font-size: 11px; color: var(--ice-danger); margin-top: 4px; }
-
-/* ── password notice ── */
-.pw-notice {
-  display: none; margin-top: 8px; padding: 10px 14px; border-radius: 8px;
-  background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2);
-  font-size: 12px; color: var(--ice-warning);
-}
-
-/* ── theme selector ── */
-.theme-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
-.theme-btn {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 14px 8px; border-radius: 12px; cursor: pointer;
-  border: 2px solid var(--ice-border);
-  background: var(--ice-surface2);
-  transition: all .15s; font-size: 12px; font-weight: 700;
-  color: var(--ice-text);
-}
-.theme-btn .theme-icon {
-  width: 38px; height: 38px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center; font-size: 20px;
-}
-.theme-btn.active {
-  border-color: var(--ice-cyan);
-  background: rgba(6,182,212,.08);
-  color: var(--ice-cyan);
-}
-.theme-btn:hover:not(.active) {
-  border-color: var(--ice-border-strong, #CBD5E1);
-  background: var(--ice-surface);
-}
-.theme-saved-msg { display:none; font-size:12px; color: var(--ice-success); margin-top:10px; }
-
-/* ── save button ── */
-.prof-save-btn {
-  width: 100%; padding: 12px; border-radius: 12px;
-  background: linear-gradient(135deg, #0C1F45, #1B3F7A);
-  color: #fff; font-size: 14px; font-weight: 700;
-  border: none; cursor: pointer; transition: opacity .15s;
-}
-.prof-save-btn:hover { opacity: .9; }
-</style>
+<link rel="stylesheet" href="{% static 'dist/css/profile-hub.css' %}">
+<style>.pw-notice{display:none;margin-top:8px;padding:10px 14px;border-radius:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);font-size:12px;color:var(--warning,#F59E0B);}</style>
 {% endblock %}
 
 {% block body_modals %}
-<!-- Avatar picker modal — rendered on <body> to escape .erpnext-main stacking context -->
+<!-- Avatar picker modal — rendered on <body> to escape stacking context -->
 <div class="avatar-modal-overlay" id="avatar-modal">
   <div class="avatar-modal">
     <div class="avatar-modal-header">
@@ -129,123 +27,141 @@
 {% endblock body_modals %}
 
 {% block content %}
-<div class="prof-page">
+<div class="profile-hub">
 
-  <!-- Hero -->
-  <div class="prof-hero">
-    <div class="profile-avatar-sticker" id="profile-avatar-display" onclick="openAvatarModal()" title="Click to change avatar" style="cursor:pointer;">
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <div class="profile-header">
+    <div class="profile-avatar profile-avatar-sticker" id="profile-avatar-display"
+         onclick="openAvatarModal()" title="Change avatar" role="button" tabindex="0">
       <span id="profile-avatar-inner">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+      <span class="profile-avatar__cam"><i class="fas fa-camera"></i></span>
     </div>
-    <div class="prof-hero-right">
-      <div class="prof-hero-name">{{ user.get_full_name|default:user.login_id }}</div>
-      <div class="prof-hero-sub"><i class="fas fa-user-graduate me-1"></i>Student</div>
-      <div class="prof-id-badge"><i class="fas fa-id-badge"></i>{{ user.login_id|default:"—" }}</div>
-      <div style="font-size:11px;opacity:.5;margin-top:8px;"><i class="fas fa-paint-brush me-1"></i>Tap avatar to change</div>
+    <div class="profile-name">{{ user.get_full_name|default:user.login_id }}</div>
+    <span class="profile-role"><i class="fas fa-user-graduate"></i> Student</span>
+    <span class="profile-status"><span class="profile-status__dot"></span> Online</span>
+    <div class="profile-meta">
+      <span class="profile-meta__chip"><i class="fas fa-id-badge"></i> {{ user.login_id|default:"—" }}</span>
+      <span class="profile-meta__chip"><i class="fas fa-book"></i> {{ student.course|default:"No course" }}</span>
+      {% if student.level %}<span class="profile-meta__chip"><i class="fas fa-layer-group"></i> Level {{ student.level }}</span>{% endif %}
+      <span class="profile-meta__chip"><i class="fas fa-map-marker-alt"></i> {{ student.branch|default:"—" }}</span>
     </div>
   </div>
 
   {% if messages %}
-  {% for msg in messages %}
-  <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show">
-    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
-  {% endfor %}
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show">
+      {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
   {% endif %}
 
-  <!-- Appearance / Theme -->
-  <div class="prof-card">
-    <div class="prof-card-hd"><i class="fas fa-palette"></i> Appearance</div>
-    <div class="prof-card-body">
-      <div style="font-size:12px;color:var(--ice-muted);margin-bottom:14px;">Choose how ICEBERG looks. Saved to your account.</div>
-      {% with ct=request.user.student.theme|default:"system" %}
-      <div class="theme-grid">
-        <button type="button" class="theme-btn {% if ct == 'bright' %}active{% endif %}" data-theme="bright">
-          <div class="theme-icon" style="background:#F1F5F9;border:2px solid #E2E8F0;">☀️</div>
-          Bright
-        </button>
-        <button type="button" class="theme-btn {% if ct == 'dark' %}active{% endif %}" data-theme="dark">
-          <div class="theme-icon" style="background:#1E293B;border:2px solid #334155;">🌙</div>
-          Dark
-        </button>
-        <button type="button" class="theme-btn {% if ct == 'system' %}active{% endif %}" data-theme="system">
-          <div class="theme-icon" style="background:linear-gradient(135deg,#F1F5F9 50%,#1E293B 50%);border:2px solid #94A3B8;">⚙️</div>
-          System
-        </button>
-      </div>
-      {% endwith %}
-      <div class="theme-saved-msg" id="theme-msg"><i class="fas fa-check-circle me-1"></i>Theme saved!</div>
-    </div>
+  <!-- ── Account ────────────────────────────────────────────────────────── -->
+  <div class="settings-group__label">Account</div>
+  <div class="settings-group">
+    <a class="settings-row pressable" href="#edit-profile" data-open-details="edit-profile" data-focus="#id_first_name">
+      <span class="settings-row__icon"><i class="fas fa-user icon-hover-pulse"></i></span>
+      <span class="settings-row__content"><span class="settings-row__title">Personal Information</span>
+        <span class="settings-row__subtitle">Name, gender, date of birth, phone</span></span>
+      <i class="fas fa-chevron-right settings-row__chevron"></i>
+    </a>
+    <a class="settings-row pressable" href="#edit-profile" data-open-details="edit-profile" data-focus="#id_password">
+      <span class="settings-row__icon"><i class="fas fa-lock icon-hover-lock"></i></span>
+      <span class="settings-row__content"><span class="settings-row__title">Login &amp; Security</span>
+        <span class="settings-row__subtitle">Change your password</span></span>
+      <i class="fas fa-chevron-right settings-row__chevron"></i>
+    </a>
+    <a class="settings-row pressable" href="#" onclick="openAvatarModal();return false;">
+      <span class="settings-row__icon"><i class="fas fa-camera icon-hover-camera"></i></span>
+      <span class="settings-row__content"><span class="settings-row__title">Change Profile Photo</span>
+        <span class="settings-row__subtitle">Pick a new avatar</span></span>
+      <i class="fas fa-chevron-right settings-row__chevron"></i>
+    </a>
   </div>
 
-  <!-- Profile form -->
-  <form method="POST" novalidate>
-    {% csrf_token %}
+  <!-- ── My Studies ─────────────────────────────────────────────────────── -->
+  <div class="settings-group__label">My Studies</div>
+  <div class="settings-group">
+    {% url 'student_view_result' as u %}{% include "main_app/includes/profile_settings_row.html" with icon="fa-chart-line" anim="icon-hover-pulse" title="My Results" subtitle="Exam and quiz results" href=u %}
+    {% url 'student_view_attendance' as u %}{% include "main_app/includes/profile_settings_row.html" with icon="fa-calendar-check" anim="icon-hover-bounce" title="Attendance" subtitle="Your attendance summary" href=u %}
+    {% url 'student_assignments' as u %}{% include "main_app/includes/profile_settings_row.html" with icon="fa-tasks" anim="icon-hover-wiggle" title="Assignments" subtitle="Tasks and submissions" href=u %}
+    {% url 'vocabulary_day_list' as u %}{% include "main_app/includes/profile_settings_row.html" with icon="fa-spell-check" anim="icon-hover-bounce" title="Vocabulary" subtitle="Daily study sets" href=u %}
+    {% url 'student_progress' as u %}{% include "main_app/includes/profile_settings_row.html" with icon="fa-chart-line" anim="icon-hover-pulse" title="My Progress" subtitle="Track your learning" href=u %}
+    {% url 'student_leaderboard' as u %}{% include "main_app/includes/profile_settings_row.html" with icon="fa-trophy" anim="icon-hover-bounce" title="Leaderboard" subtitle="See your ranking" href=u %}
+  </div>
 
-    {% if form.non_field_errors %}
-    <div class="alert alert-danger">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
-    {% endif %}
-
-    <!-- Personal Info -->
-    <div class="prof-card" style="margin-bottom:20px;">
-      <div class="prof-card-hd"><i class="fas fa-user"></i> Personal Information</div>
-      <div class="prof-card-body">
-        <div class="field-grid">
-          <div class="field-wrap">
-            <label>First Name</label>
-            {{ form.first_name }}
-            {% if form.first_name.errors %}<div class="field-error">{{ form.first_name.errors.0 }}</div>{% endif %}
-          </div>
-          <div class="field-wrap">
-            <label>Last Name</label>
-            {{ form.last_name }}
-            {% if form.last_name.errors %}<div class="field-error">{{ form.last_name.errors.0 }}</div>{% endif %}
-          </div>
-        </div>
-        <div class="field-grid" style="margin-top:16px;">
-          <div class="field-wrap">
-            <label>Gender</label>
-            {{ form.gender }}
-          </div>
-          <div class="field-wrap">
-            <label>Date of Birth</label>
-            {{ form.date_of_birth }}
-            {% if form.date_of_birth.errors %}<div class="field-error">{{ form.date_of_birth.errors.0 }}</div>{% endif %}
-          </div>
-          <div class="field-wrap">
-            <label>Phone Number</label>
-            {{ form.phone }}
-          </div>
-        </div>
-      </div>
+  <!-- ── Preferences ────────────────────────────────────────────────────── -->
+  <div class="settings-group__label">Preferences</div>
+  <div class="settings-group">
+    <div class="settings-row" style="cursor:default;">
+      <span class="settings-row__icon"><i class="fas fa-palette icon-hover-rotate"></i></span>
+      <span class="settings-row__content"><span class="settings-row__title">Appearance</span>
+        <span class="settings-row__subtitle">Choose how ICEBERG looks</span></span>
     </div>
+    {% with ct=student.theme|default:"system" %}
+    <div class="theme-grid">
+      <button type="button" class="theme-btn {% if ct == 'bright' %}active{% endif %}" data-theme="bright">
+        <div class="theme-icon" style="background:#F1F5F9;border:2px solid #E2E8F0;">☀️</div>Bright</button>
+      <button type="button" class="theme-btn {% if ct == 'dark' %}active{% endif %}" data-theme="dark">
+        <div class="theme-icon" style="background:#1E293B;border:2px solid #334155;">🌙</div>Dark</button>
+      <button type="button" class="theme-btn {% if ct == 'system' %}active{% endif %}" data-theme="system">
+        <div class="theme-icon" style="background:linear-gradient(135deg,#F1F5F9 50%,#1E293B 50%);border:2px solid #94A3B8;">⚙️</div>System</button>
+    </div>
+    {% endwith %}
+    <div class="theme-saved-msg" id="theme-msg"><i class="fas fa-check-circle me-1"></i>Theme saved!</div>
+    {% url 'student_view_notification' as u %}{% include "main_app/includes/profile_settings_row.html" with icon="fa-bell" anim="icon-hover-bell" title="Notifications" subtitle="Announcements and alerts" href=u %}
+    {% url 'messages' as u %}{% include "main_app/includes/profile_settings_row.html" with icon="fa-comments" anim="icon-hover-wiggle" title="Messages" subtitle="Chat with your group" href=u %}
+  </div>
 
-    <!-- Security -->
-    <div class="prof-card" style="margin-bottom:20px;">
-      <div class="prof-card-hd"><i class="fas fa-lock"></i> Security</div>
-      <div class="prof-card-body">
-        <div class="field-wrap">
-          <label>New Password</label>
-          {{ form.password }}
-          {% if form.password.errors %}<div class="field-error">{{ form.password.errors.0 }}</div>{% endif %}
-          <div class="pw-notice" id="pw-notice">
-            <i class="fas fa-exclamation-triangle me-1"></i>
-            Saving a new password will end your current session.
+  <!-- ── Support ────────────────────────────────────────────────────────── -->
+  <div class="settings-group__label">Support</div>
+  <div class="settings-group">
+    {% url 'student_feedback' as u %}{% include "main_app/includes/profile_settings_row.html" with icon="fa-circle-question" anim="icon-hover-rotate" title="Help &amp; Feedback" subtitle="Contact your teacher / admin" href=u %}
+    {% url 'student_apply_leave' as u %}{% include "main_app/includes/profile_settings_row.html" with icon="fa-plane-departure" anim="icon-hover-bounce" title="Apply for Leave" subtitle="Request time off" href=u %}
+  </div>
+
+  <!-- ── Edit Profile (collapsible) ─────────────────────────────────────── -->
+  <details class="settings-group" id="edit-profile">
+    <summary class="settings-row pressable" style="list-style:none;">
+      <span class="settings-row__icon"><i class="fas fa-edit"></i></span>
+      <span class="settings-row__content"><span class="settings-row__title">Edit Profile</span>
+        <span class="settings-row__subtitle">Update your details &amp; password</span></span>
+      <i class="fas fa-chevron-right settings-row__chevron"></i>
+    </summary>
+    <div class="profile-edit">
+      <form method="POST" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>{% endif %}
+        <div class="profile-field-grid">
+          <div class="profile-field"><label>First Name</label>{{ form.first_name }}
+            {% if form.first_name.errors %}<div class="field-error">{{ form.first_name.errors.0 }}</div>{% endif %}</div>
+          <div class="profile-field"><label>Last Name</label>{{ form.last_name }}
+            {% if form.last_name.errors %}<div class="field-error">{{ form.last_name.errors.0 }}</div>{% endif %}</div>
+          <div class="profile-field"><label>Gender</label>{{ form.gender }}</div>
+          <div class="profile-field"><label>Date of Birth</label>{{ form.date_of_birth }}
+            {% if form.date_of_birth.errors %}<div class="field-error">{{ form.date_of_birth.errors.0 }}</div>{% endif %}</div>
+          <div class="profile-field full"><label>Phone Number</label>{{ form.phone }}</div>
+          <div class="profile-field full"><label>New Password</label>{{ form.password }}
+            {% if form.password.errors %}<div class="field-error">{{ form.password.errors.0 }}</div>{% endif %}
+            <div class="pw-notice" id="pw-notice"><i class="fas fa-exclamation-triangle me-1"></i>Saving a new password will end your current session.</div>
           </div>
         </div>
-      </div>
+        <button type="submit" class="profile-save-btn"><i class="fas fa-save me-1"></i> Save Changes</button>
+      </form>
     </div>
+  </details>
 
-    <button type="submit" class="prof-save-btn">
-      <i class="fas fa-save me-1"></i> Save Changes
-    </button>
-  </form>
+  <!-- ── Logout ─────────────────────────────────────────────────────────── -->
+  <div class="settings-group">
+    {% include "main_app/includes/animated_logout_button.html" with btn_class="settings-row settings-row--danger" label="Log Out" %}
+  </div>
 
 </div>
 {% endblock %}
 
 {% block custom_js %}
+<script src="{% static 'dist/js/profile-hub.js' %}" defer></script>
 <script>
-// ── Avatar ────────────────────────────────────────────────────────────────────
+// ── Avatar ────────────────────────────────────────────────────────────────
 var AVATARS = ["🧑‍🎓","👨‍🎓","👩‍🎓","🧑‍💻","👨‍💻","👩‍💻","🧑‍🏫","👨‍🏫","👩‍🏫","🤓",
                "😊","😎","💡","📚","🏆","⭐","💪","🎯","🌟","🦉","🌍","✏️","🎨","🔬"];
 var BG = ["#1B3F7A","#0C1F45","#7C3AED","#0891B2","#1F2937","#6D28D9",
@@ -275,7 +191,7 @@ function applyAvatarToHero(avId){
   var wrap=document.getElementById('profile-avatar-display');
   if(!inner||!wrap) return;
   var idx=parseInt(avId,10)-1;
-  if(idx>=0&&idx<AVATARS.length){ inner.textContent=AVATARS[idx]; inner.style.fontSize='32px'; wrap.style.background=BG[idx]; }
+  if(idx>=0&&idx<AVATARS.length){ inner.textContent=AVATARS[idx]; inner.style.fontSize='40px'; wrap.style.background=BG[idx]; }
 }
 function saveAvatar(){
   fetch('{% url "save_avatar" %}',{
@@ -289,25 +205,18 @@ function saveAvatar(){
 }
 (function(){
   if(currentAvatar) applyAvatarToHero(currentAvatar);
-  document.getElementById('avatar-modal').addEventListener('click',function(e){ if(e.target===this) closeAvatarModal(); });
-  var pw=document.getElementById('id_password');
-  if(pw) pw.addEventListener('input',function(){ if(pw.value) document.getElementById('pw-notice').style.display='block'; });
+  var m=document.getElementById('avatar-modal');
+  if(m) m.addEventListener('click',function(e){ if(e.target===this) closeAvatarModal(); });
 })();
 
-// ── Theme ─────────────────────────────────────────────────────────────────────
+// ── Theme ─────────────────────────────────────────────────────────────────
 (function(){
   var SAVE_URL='{% url "student_save_theme" %}';
   var CSRF2='{{ csrf_token }}';
-
   function applyTheme(theme){
     var resolved = theme;
-    if(theme==='system'){
-      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'bright';
-    }
-    if(window.iceApplyThemeState){
-      window.iceApplyThemeState(resolved);
-      return;
-    }
+    if(theme==='system'){ resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'bright'; }
+    if(window.iceApplyThemeState){ window.iceApplyThemeState(resolved); return; }
     var root=document.documentElement;
     root.setAttribute('data-theme', resolved);
     root.classList.toggle('dark-mode', resolved==='dark');
@@ -315,21 +224,14 @@ function saveAvatar(){
     document.body.classList.toggle('dark-mode', resolved==='dark');
     document.body.classList.toggle('bright-mode', resolved==='bright');
   }
-
   document.querySelectorAll('.theme-btn').forEach(function(btn){
     btn.addEventListener('click',function(){
       var theme=btn.dataset.theme;
       document.querySelectorAll('.theme-btn').forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
       applyTheme(theme);
-      fetch(SAVE_URL,{
-        method:'POST',
-        headers:{'X-CSRFToken':CSRF2,'Content-Type':'application/x-www-form-urlencoded'},
-        body:'theme='+theme,
-      }).then(function(){
-        var m=document.getElementById('theme-msg');
-        if(m){ m.style.display='block'; setTimeout(function(){m.style.display='none';},2200); }
-      });
+      fetch(SAVE_URL,{ method:'POST', headers:{'X-CSRFToken':CSRF2,'Content-Type':'application/x-www-form-urlencoded'}, body:'theme='+theme })
+      .then(function(){ var m=document.getElementById('theme-msg'); if(m){ m.style.display='block'; setTimeout(function(){m.style.display='none';},2200);} });
     });
   });
 })();

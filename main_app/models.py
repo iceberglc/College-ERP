@@ -91,6 +91,21 @@ class CustomUser(AbstractUser):
 
 class Admin(models.Model):
     admin = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    # Branch-first access control. Existing admins default to super admin so
+    # nobody is locked out by the branch rollout (see migration 0033).
+    is_super_admin = models.BooleanField(
+        default=True,
+        help_text="Super admins see every branch. Branch admins see only their assigned branches.",
+    )
+    branches = models.ManyToManyField(
+        "Branch",
+        blank=True,
+        related_name="admins",
+        help_text="Branches this admin manages. Ignored when is_super_admin is True.",
+    )
+
+    def __str__(self):
+        return f"{self.admin.first_name} {self.admin.last_name}".strip() or self.admin.email
 
 
 class Course(models.Model):
@@ -140,6 +155,13 @@ class Student(models.Model):
 
     admin = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=False)
+    branch = models.ForeignKey(
+        "Branch",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="students",
+    )
     phone = models.CharField(max_length=20, blank=True, default="")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     theme = models.CharField(max_length=10, choices=THEME_CHOICES, default=THEME_SYSTEM)
@@ -149,6 +171,12 @@ class Student(models.Model):
         blank=True,
         help_text="English proficiency level (1–6). Only applies to English-program students.",
     )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["branch", "status"]),
+            models.Index(fields=["course", "status"]),
+        ]
 
     def __str__(self):
         return self.admin.last_name + ", " + self.admin.first_name
@@ -161,10 +189,36 @@ class Student(models.Model):
     def is_english_student(self):
         return bool(self.course and self.course.is_english)
 
+    @property
+    def effective_branch(self):
+        """Branch this student belongs to.
+
+        Prefers the explicit branch; falls back to the branch of the first
+        active enrollment group so legacy records (no branch set yet) still
+        resolve sensibly. Returns None when nothing is known.
+        """
+        if self.branch_id:
+            return self.branch
+        enrollment = (
+            self.enrollment_set.select_related("group__branch")
+            .filter(is_active=True, group__branch__isnull=False)
+            .first()
+        )
+        if enrollment and enrollment.group:
+            return enrollment.group.branch
+        return None
+
 
 class Staff(models.Model):
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=False)
     admin = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    branch = models.ForeignKey(
+        "Branch",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="staff_members",
+    )
     phone = models.CharField(max_length=20, blank=True, default="")
     specialization = models.CharField(
         max_length=200,
@@ -174,8 +228,31 @@ class Staff(models.Model):
     )
     is_active = models.BooleanField(default=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["branch", "is_active"]),
+            models.Index(fields=["course", "is_active"]),
+        ]
+
     def __str__(self):
         return self.admin.first_name + " " + self.admin.last_name
+
+    @property
+    def effective_branch(self):
+        """Branch this teacher belongs to.
+
+        Prefers the explicit branch; falls back to the branch of the first
+        group they teach so legacy records still resolve. Returns None when
+        nothing is known.
+        """
+        if self.branch_id:
+            return self.branch
+        group = (
+            Group.objects.select_related("branch")
+            .filter(teacher=self, branch__isnull=False)
+            .first()
+        )
+        return group.branch if group else None
 
 
 class Subject(models.Model):
@@ -431,6 +508,12 @@ class Group(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["branch", "is_archived"]),
+            models.Index(fields=["teacher", "is_archived"]),
+        ]
+
     def __str__(self):
         return self.name
 
@@ -446,6 +529,8 @@ class Enrollment(models.Model):
         indexes = [
             models.Index(fields=["student"]),
             models.Index(fields=["group"]),
+            models.Index(fields=["group", "is_active"]),
+            models.Index(fields=["student", "is_active"]),
         ]
 
     def __str__(self):

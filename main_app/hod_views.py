@@ -14,6 +14,7 @@ from django.urls import reverse
 from .decorators import admin_only
 from .forms import *
 from .models import *
+from . import branching
 
 
 logger = logging.getLogger(__name__)
@@ -110,13 +111,22 @@ def _active_groups_for_enrollment():
 
 @admin_only
 def admin_home(request):
-    total_staff = Staff.objects.all().count()
-    total_students = Student.objects.all().count()
+    user = request.user
+    # Branch-scope every metric: super admin sees everything, branch admin
+    # only their assigned branches.
+    students_base = branching.filter_students_for_user(user, Student.objects.all())
+    staff_base = branching.filter_staff_for_user(user, Staff.objects.all())
+    groups_base = branching.filter_groups_for_user(
+        user, Group.objects.filter(is_archived=False)
+    )
+
+    total_staff = staff_base.count()
+    total_students = students_base.count()
     total_course = Course.objects.all().count()
-    total_groups = Group.objects.filter(is_archived=False).count()
+    total_groups = groups_base.count()
 
     # Attendance chart: per active group
-    active_groups = Group.objects.filter(is_archived=False).select_related("course")
+    active_groups = groups_base.select_related("course")
     group_label_list = [g.name[:12] for g in active_groups]
     group_attendance_list = [Attendance.objects.filter(group=g).count() for g in active_groups]
 
@@ -126,12 +136,12 @@ def admin_home(request):
     student_count_list_in_course = []
     for course in course_all:
         course_name_list.append(course.name)
-        student_count_list_in_course.append(Student.objects.filter(course_id=course.id).count())
+        student_count_list_in_course.append(students_base.filter(course_id=course.id).count())
 
     # Student attendance overview — 4 queries instead of O(3N+1)
     from django.db.models import Count
 
-    students_qs = list(Student.objects.select_related("admin").all())
+    students_qs = list(students_base.select_related("admin"))
     student_ids = [s.id for s in students_qs]
 
     present_map = dict(
@@ -187,7 +197,7 @@ def admin_home(request):
 
 @admin_only
 def add_staff(request):
-    form = StaffForm(request.POST or None, request.FILES or None)
+    form = StaffForm(request.POST or None, request.FILES or None, user=request.user)
     context = {"form": form, "page_title": "Add Teacher"}
     if request.method == "POST":
         if form.is_valid():
@@ -220,6 +230,7 @@ def add_staff(request):
                 user.save()
                 staff_obj = Staff.objects.get(admin=user)
                 staff_obj.course = course
+                staff_obj.branch = form.cleaned_data.get("branch")
                 staff_obj.phone = form.cleaned_data.get("phone", "")
                 staff_obj.specialization = form.cleaned_data.get("specialization", "")
                 staff_obj.is_active = True
@@ -237,7 +248,9 @@ def add_staff(request):
 
 @admin_only
 def add_student(request):
-    student_form = AddStudentForm(request.POST or None, request.FILES or None)
+    student_form = AddStudentForm(
+        request.POST or None, request.FILES or None, user=request.user
+    )
     context = {"form": student_form, "page_title": "Add Student"}
     if request.method == "POST":
         if student_form.is_valid():
@@ -271,6 +284,8 @@ def add_student(request):
                 user.save()
                 student = user.student
                 student.course = course
+                # clean() defaults branch from the group when left blank.
+                student.branch = student_form.cleaned_data.get("branch")
                 student.phone = student_form.cleaned_data.get("phone", "")
                 student.status = student_form.cleaned_data.get("status", Student.STATUS_ACTIVE)
                 raw_level = student_form.cleaned_data.get("level", "")
@@ -318,12 +333,17 @@ def manage_registration_leads(request):
     leads = RegistrationLead.objects.all()
     status_filter = request.GET.get("status", "").strip()
     source_filter = request.GET.get("source", "").strip()
+    branch_filter = request.GET.get("branch", "").strip()
     search = request.GET.get("q", "").strip()
 
     if status_filter:
         leads = leads.filter(status=status_filter)
     if source_filter:
         leads = leads.filter(source__iexact=source_filter)
+    # RegistrationLead.branch is still free text (pre-enrollment), so this is a
+    # best-effort contains match rather than a strict FK scope.
+    if branch_filter:
+        leads = leads.filter(branch__icontains=branch_filter)
     if search:
         leads = leads.filter(
             models.Q(full_name__icontains=search)
@@ -416,15 +436,43 @@ def add_subject(request):
 
 @admin_only
 def manage_staff(request):
-    allStaff = CustomUser.objects.filter(user_type=2)
-    context = {"allStaff": allStaff, "page_title": "Manage Teachers"}
+    allowed = branching.filter_staff_for_user(request.user, Staff.objects.all())
+    allStaff = (
+        CustomUser.objects.filter(user_type=2, staff__in=allowed)
+        .select_related("staff", "staff__course", "staff__branch")
+        .distinct()
+    )
+    branch_id = request.GET.get("branch")
+    if branch_id:
+        allStaff = allStaff.filter(staff__branch_id=branch_id)
+    context = {
+        "allStaff": allStaff,
+        "page_title": "Manage Teachers",
+        "branches": branching.get_accessible_branches(request.user),
+        "selected_branch": branch_id,
+        "is_super_admin": branching.is_super_admin(request.user),
+    }
     return render(request, "hod_template/manage_staff.html", context)
 
 
 @admin_only
 def manage_student(request):
-    students = CustomUser.objects.filter(user_type=3)
-    context = {"students": students, "page_title": "Manage Students"}
+    allowed = branching.filter_students_for_user(request.user, Student.objects.all())
+    students = (
+        CustomUser.objects.filter(user_type=3, student__in=allowed)
+        .select_related("student", "student__course", "student__branch")
+        .distinct()
+    )
+    branch_id = request.GET.get("branch")
+    if branch_id:
+        students = students.filter(student__branch_id=branch_id)
+    context = {
+        "students": students,
+        "page_title": "Manage Students",
+        "branches": branching.get_accessible_branches(request.user),
+        "selected_branch": branch_id,
+        "is_super_admin": branching.is_super_admin(request.user),
+    }
     return render(request, "hod_template/manage_student.html", context)
 
 
@@ -445,7 +493,14 @@ def manage_subject(request):
 @admin_only
 def edit_staff(request, staff_id):
     staff = get_object_or_404(Staff, id=staff_id)
-    form = StaffEditForm(request.POST or None, request.FILES or None, instance=staff)
+    if not branching.filter_staff_for_user(
+        request.user, Staff.objects.filter(id=staff_id)
+    ).exists():
+        messages.error(request, "You don't have access to this teacher's branch.")
+        return redirect(reverse("manage_staff"))
+    form = StaffEditForm(
+        request.POST or None, request.FILES or None, instance=staff, user=request.user
+    )
     context = {
         "form": form,
         "staff_id": staff_id,
@@ -475,6 +530,7 @@ def edit_staff(request, staff_id):
                 if dob is not None:
                     user.date_of_birth = dob
                 staff.course = course
+                staff.branch = form.cleaned_data.get("branch")
                 staff.phone = form.cleaned_data.get("phone", "")
                 staff.specialization = form.cleaned_data.get("specialization", "")
                 staff.is_active = True
@@ -492,7 +548,12 @@ def edit_staff(request, staff_id):
 @admin_only
 def edit_student(request, student_id):
     student = get_object_or_404(Student, id=student_id)
-    form = StudentForm(request.POST or None, instance=student)
+    if not branching.filter_students_for_user(
+        request.user, Student.objects.filter(id=student_id)
+    ).exists():
+        messages.error(request, "You don't have access to this student's branch.")
+        return redirect(reverse("manage_student"))
+    form = StudentForm(request.POST or None, instance=student, user=request.user)
     context = {
         "form": form,
         "student_id": student_id,
@@ -522,6 +583,7 @@ def edit_student(request, student_id):
                 if dob is not None:
                     user.date_of_birth = dob
                 student.course = course
+                student.branch = form.cleaned_data.get("branch")
                 student.phone = form.cleaned_data.get("phone", "")
                 student.status = form.cleaned_data.get("status", student.status)
                 raw_level = form.cleaned_data.get("level", "")
@@ -644,14 +706,17 @@ def check_email_availability(request):
 
 @admin_only
 def student_feedback_message(request):
+    allowed_students = branching.filter_students_for_user(request.user, Student.objects.all())
     if request.method != "POST":
-        feedbacks = FeedbackStudent.objects.all()
+        feedbacks = FeedbackStudent.objects.filter(student__in=allowed_students)
         context = {"feedbacks": feedbacks, "page_title": "Student Feedback Messages"}
         return render(request, "hod_template/student_feedback_template.html", context)
     else:
         feedback_id = request.POST.get("id")
         try:
-            feedback = get_object_or_404(FeedbackStudent, id=feedback_id)
+            feedback = get_object_or_404(
+                FeedbackStudent, id=feedback_id, student__in=allowed_students
+            )
             reply = request.POST.get("reply")
             feedback.reply = reply
             feedback.save()
@@ -663,14 +728,17 @@ def student_feedback_message(request):
 
 @admin_only
 def staff_feedback_message(request):
+    allowed_staff = branching.filter_staff_for_user(request.user, Staff.objects.all())
     if request.method != "POST":
-        feedbacks = FeedbackStaff.objects.all()
+        feedbacks = FeedbackStaff.objects.filter(staff__in=allowed_staff)
         context = {"feedbacks": feedbacks, "page_title": "Teacher Feedback"}
         return render(request, "hod_template/staff_feedback_template.html", context)
     else:
         feedback_id = request.POST.get("id")
         try:
-            feedback = get_object_or_404(FeedbackStaff, id=feedback_id)
+            feedback = get_object_or_404(
+                FeedbackStaff, id=feedback_id, staff__in=allowed_staff
+            )
             reply = request.POST.get("reply")
             feedback.reply = reply
             feedback.save()
@@ -682,8 +750,9 @@ def staff_feedback_message(request):
 
 @admin_only
 def view_staff_leave(request):
+    allowed_staff = branching.filter_staff_for_user(request.user, Staff.objects.all())
     if request.method != "POST":
-        allLeave = LeaveReportStaff.objects.all()
+        allLeave = LeaveReportStaff.objects.filter(staff__in=allowed_staff)
         context = {"allLeave": allLeave, "page_title": "Teacher Leave Requests"}
         return render(request, "hod_template/staff_leave_view.html", context)
     else:
@@ -694,7 +763,7 @@ def view_staff_leave(request):
         else:
             status = -1
         try:
-            leave = get_object_or_404(LeaveReportStaff, id=id)
+            leave = get_object_or_404(LeaveReportStaff, id=id, staff__in=allowed_staff)
             leave.status = status
             leave.save()
             return HttpResponse(True)
@@ -705,8 +774,9 @@ def view_staff_leave(request):
 
 @admin_only
 def view_student_leave(request):
+    allowed_students = branching.filter_students_for_user(request.user, Student.objects.all())
     if request.method != "POST":
-        allLeave = LeaveReportStudent.objects.all()
+        allLeave = LeaveReportStudent.objects.filter(student__in=allowed_students)
         context = {"allLeave": allLeave, "page_title": "Leave Applications From Students"}
         return render(request, "hod_template/student_leave_view.html", context)
     else:
@@ -717,7 +787,9 @@ def view_student_leave(request):
         else:
             status = -1
         try:
-            leave = get_object_or_404(LeaveReportStudent, id=id)
+            leave = get_object_or_404(
+                LeaveReportStudent, id=id, student__in=allowed_students
+            )
             leave.status = status
             leave.save()
             return HttpResponse(True)
@@ -728,7 +800,10 @@ def view_student_leave(request):
 
 @admin_only
 def admin_view_attendance(request):
-    groups = Group.objects.filter(is_archived=False).select_related("course", "teacher__admin")
+    groups = branching.filter_groups_for_user(
+        request.user,
+        Group.objects.filter(is_archived=False).select_related("course", "teacher__admin"),
+    )
     context = {
         "groups": groups,
         "page_title": "View Attendance",
@@ -742,7 +817,13 @@ def get_admin_attendance(request):
     group_id = request.POST.get("group")
     try:
         if attendance_date_id:
-            attendance = get_object_or_404(Attendance, id=attendance_date_id)
+            attendance = get_object_or_404(
+                Attendance.objects.select_related("group"), id=attendance_date_id
+            )
+            # Never let a branch admin read attendance from a group outside
+            # their branch by posting a forged attendance_date_id.
+            if not branching.user_can_access_group(request.user, attendance.group):
+                return JsonResponse({"error": "Not allowed."}, status=403)
             reports = AttendanceReport.objects.filter(attendance=attendance).select_related(
                 "student"
             )
@@ -750,6 +831,8 @@ def get_admin_attendance(request):
             return JsonResponse(data, safe=False)
         # Return list of attendance dates for a group
         group = get_object_or_404(Group, id=group_id)
+        if not branching.user_can_access_group(request.user, group):
+            return JsonResponse({"error": "Not allowed."}, status=403)
         dates = Attendance.objects.filter(group=group).order_by("-date")
         data = [{"id": a.id, "attendance_date": str(a.date)} for a in dates]
         return JsonResponse(data, safe=False)
@@ -966,7 +1049,7 @@ def get_teachers_for_course(request):
     course_id = request.GET.get("course_id") or request.POST.get("course_id")
     try:
         teachers = (
-            Staff.objects.filter(course_id=course_id)
+            branching.filter_staff_for_user(request.user, Staff.objects.filter(course_id=course_id))
             .select_related("admin")
             .order_by("admin__last_name")
         )
@@ -981,7 +1064,10 @@ def get_groups_for_teacher(request):
     teacher_id = request.GET.get("teacher_id") or request.POST.get("teacher_id")
     course_id = request.GET.get("course_id") or request.POST.get("course_id")
     try:
-        qs = Group.objects.filter(is_archived=False).select_related("course", "teacher__admin")
+        qs = branching.filter_groups_for_user(
+            request.user,
+            Group.objects.filter(is_archived=False).select_related("course", "teacher__admin"),
+        )
         if teacher_id:
             qs = qs.filter(teacher_id=teacher_id)
         elif course_id:
@@ -1008,19 +1094,24 @@ def get_groups_for_teacher(request):
 
 @admin_only
 def manage_branch(request):
-    branches = Branch.objects.all()
+    branches = branching.filter_branches_for_user(request.user, Branch.objects.all())
     return render(
         request,
         "hod_template/manage_branch.html",
         {
             "branches": branches,
             "page_title": "Manage Branches",
+            "is_super_admin": branching.is_super_admin(request.user),
         },
     )
 
 
 @admin_only
 def add_branch(request):
+    # Only super admins create branches; branch admins manage within theirs.
+    if not branching.is_super_admin(request.user):
+        messages.error(request, "Only a super admin can create branches.")
+        return redirect(reverse("manage_branch"))
     form = BranchForm(request.POST or None)
     if request.method == "POST":
         if form.is_valid():
@@ -1040,6 +1131,9 @@ def add_branch(request):
 @admin_only
 def edit_branch(request, branch_id):
     branch = get_object_or_404(Branch, id=branch_id)
+    if not branching.user_can_access_branch(request.user, branch):
+        messages.error(request, "You don't have access to this branch.")
+        return redirect(reverse("manage_branch"))
     form = BranchForm(request.POST or None, instance=branch)
     if request.method == "POST":
         if form.is_valid():
@@ -1058,6 +1152,10 @@ def edit_branch(request, branch_id):
 
 @admin_only
 def delete_branch(request, branch_id):
+    # Branch admins must not delete branches (data-loss risk across branches).
+    if not branching.is_super_admin(request.user):
+        messages.error(request, "Only a super admin can delete branches.")
+        return redirect(reverse("manage_branch"))
     branch = get_object_or_404(Branch, id=branch_id)
     try:
         branch.delete()
@@ -1075,16 +1173,24 @@ def manage_group(request):
     from django.db.models import Count, Q
 
     groups = (
-        Group.objects.select_related("course", "teacher__admin", "branch")
+        branching.filter_groups_for_user(
+            request.user, Group.objects.select_related("course", "teacher__admin", "branch")
+        )
         .annotate(enrolled_count=Count("enrollment", filter=Q(enrollment__is_active=True)))
         .order_by("is_archived", "name")
     )
+    branch_id = request.GET.get("branch")
+    if branch_id:
+        groups = groups.filter(branch_id=branch_id)
     return render(
         request,
         "hod_template/manage_group.html",
         {
             "groups": groups,
             "page_title": "Manage Groups",
+            "branches": branching.get_accessible_branches(request.user),
+            "selected_branch": branch_id,
+            "is_super_admin": branching.is_super_admin(request.user),
         },
     )
 
@@ -1092,6 +1198,9 @@ def manage_group(request):
 @admin_only
 def admin_group_detail(request, group_id):
     group = get_object_or_404(Group, id=group_id)
+    if not branching.user_can_access_group(request.user, group):
+        messages.error(request, "You don't have access to this group's branch.")
+        return redirect(reverse("manage_group"))
     enrollments = (
         Enrollment.objects.filter(group=group, is_active=True)
         .select_related("student__admin", "student__course")
@@ -1135,10 +1244,19 @@ def _notify_group_start_date(group):
 
 @admin_only
 def add_group(request):
-    form = GroupForm(request.POST or None)
+    form = GroupForm(request.POST or None, user=request.user)
     if request.method == "POST":
         if form.is_valid():
-            group = form.save()
+            group = form.save(commit=False)
+            # Branch admins can only create groups in branches they manage.
+            if not branching.user_can_access_branch(request.user, group.branch):
+                messages.error(request, "You can only create groups in your own branches.")
+                return render(
+                    request,
+                    "hod_template/add_group.html",
+                    {"form": form, "page_title": "Add Group"},
+                )
+            group.save()
             _notify_group_start_date(group)
             messages.success(request, "Group created!")
             return redirect(reverse("manage_group"))
@@ -1155,11 +1273,22 @@ def add_group(request):
 @admin_only
 def edit_group(request, group_id):
     group = get_object_or_404(Group, id=group_id)
+    if not branching.user_can_access_group(request.user, group):
+        messages.error(request, "You don't have access to this group's branch.")
+        return redirect(reverse("manage_group"))
     old_start_date = group.start_date
-    form = GroupForm(request.POST or None, instance=group)
+    form = GroupForm(request.POST or None, instance=group, user=request.user)
     if request.method == "POST":
         if form.is_valid():
-            updated = form.save()
+            updated = form.save(commit=False)
+            if not branching.user_can_access_branch(request.user, updated.branch):
+                messages.error(request, "You can only assign groups to your own branches.")
+                return render(
+                    request,
+                    "hod_template/add_group.html",
+                    {"form": form, "page_title": "Edit Group"},
+                )
+            updated.save()
             if updated.start_date and updated.start_date != old_start_date:
                 _notify_group_start_date(updated)
             messages.success(request, "Group updated!")
@@ -1177,6 +1306,9 @@ def edit_group(request, group_id):
 @admin_only
 def delete_group(request, group_id):
     group = get_object_or_404(Group, id=group_id)
+    if not branching.user_can_access_group(request.user, group):
+        messages.error(request, "You don't have access to this group's branch.")
+        return redirect(reverse("manage_group"))
     student_count = Enrollment.objects.filter(group=group).count()
     attendance_count = Attendance.objects.filter(group=group).count()
     result_count = StudentResult.objects.filter(group=group).count()
@@ -1207,6 +1339,9 @@ def delete_group(request, group_id):
 @admin_only
 def archive_group(request, group_id):
     group = get_object_or_404(Group, id=group_id)
+    if not branching.user_can_access_group(request.user, group):
+        messages.error(request, "You don't have access to this group's branch.")
+        return redirect(reverse("manage_group"))
     group.is_archived = not group.is_archived
     group.save()
     action = "archived" if group.is_archived else "restored"
@@ -1221,18 +1356,18 @@ def archive_group(request, group_id):
 def manage_enrollment(request):
     group_id = request.GET.get("group")
     groups, schema_fallback = _active_groups_for_enrollment()
+    groups = branching.filter_groups_for_user(request.user, groups)
     if schema_fallback:
         messages.warning(
             request,
             "Database schema looks outdated on this server. Showing all groups for now; run migrations to fully restore enrollment filtering.",
         )
-    enrollments = (
+    enrollments = branching.filter_enrollments_for_user(
+        request.user,
         Enrollment.objects.select_related(
             "student__admin", "student__course", "group__course", "group__teacher__admin"
-        )
-        .all()
-        .order_by("group__name", "student__admin__last_name")
-    )
+        ),
+    ).order_by("group__name", "student__admin__last_name")
     if group_id:
         enrollments = enrollments.filter(group_id=group_id)
     return render(
@@ -1250,12 +1385,15 @@ def manage_enrollment(request):
 @admin_only
 def add_enrollment(request):
     groups, schema_fallback = _active_groups_for_enrollment()
+    groups = branching.filter_groups_for_user(request.user, groups)
     if schema_fallback:
         messages.warning(
             request,
             "Database schema looks outdated on this server. Showing all groups for now; run migrations to fully restore enrollment filtering.",
         )
-    students = Student.objects.select_related("admin", "course").order_by("admin__last_name")
+    students = branching.filter_students_for_user(
+        request.user, Student.objects.select_related("admin", "course")
+    ).order_by("admin__last_name")
 
     if request.method == "POST":
         group_id = request.POST.get("group")
@@ -1270,21 +1408,39 @@ def add_enrollment(request):
             try:
                 group = get_object_or_404(Group, id=group_id)
                 student = get_object_or_404(Student, id=student_id)
-                _, created = Enrollment.objects.get_or_create(
-                    student=student, group=group, defaults={"is_active": is_active}
-                )
-                if created:
-                    Notification.objects.create(
-                        recipient=student.admin,
-                        category=Notification.GENERAL,
-                        message=f"You have been enrolled in {group.name}"
-                        + (f" ({group.course.name})" if group.course else "")
-                        + ".",
+                # Enforce branch access on both sides and reject cross-branch
+                # enrollment (super admin may override a branch mismatch).
+                if not branching.user_can_access_group(request.user, group) or not (
+                    branching.filter_students_for_user(
+                        request.user, Student.objects.filter(id=student.id)
+                    ).exists()
+                ):
+                    errors["error"] = "You don't have access to that group or student."
+                elif (
+                    not branching.is_super_admin(request.user)
+                    and group.branch_id
+                    and student.branch_id
+                    and group.branch_id != student.branch_id
+                ):
+                    errors["student"] = (
+                        "This student belongs to a different branch than the selected group."
                     )
-                    messages.success(request, f"{student} enrolled in {group.name}.")
-                    return redirect(reverse("manage_enrollment"))
                 else:
-                    errors["student"] = f"{student} is already enrolled in {group.name}."
+                    _, created = Enrollment.objects.get_or_create(
+                        student=student, group=group, defaults={"is_active": is_active}
+                    )
+                    if created:
+                        Notification.objects.create(
+                            recipient=student.admin,
+                            category=Notification.GENERAL,
+                            message=f"You have been enrolled in {group.name}"
+                            + (f" ({group.course.name})" if group.course else "")
+                            + ".",
+                        )
+                        messages.success(request, f"{student} enrolled in {group.name}.")
+                        return redirect(reverse("manage_enrollment"))
+                    else:
+                        errors["student"] = f"{student} is already enrolled in {group.name}."
             except (ValueError, TypeError):
                 errors["error"] = "Invalid selection. Please choose valid group and student."
             except Exception as e:
@@ -1317,6 +1473,8 @@ def add_enrollment(request):
 def get_group_info(request):
     group_id = request.POST.get("group_id")
     group = get_object_or_404(Group, id=group_id)
+    if not branching.user_can_access_group(request.user, group):
+        return JsonResponse({"error": "Not allowed."}, status=403)
     enrolled_ids = list(Enrollment.objects.filter(group=group).values_list("student_id", flat=True))
     data = {
         "teacher": str(group.teacher) if group.teacher else "—",
@@ -1331,7 +1489,10 @@ def get_group_info(request):
 
 @admin_only
 def delete_enrollment(request, enrollment_id):
-    enrollment = get_object_or_404(Enrollment, id=enrollment_id)
+    enrollment = get_object_or_404(Enrollment.objects.select_related("group"), id=enrollment_id)
+    if not branching.user_can_access_group(request.user, enrollment.group):
+        messages.error(request, "You don't have access to this enrollment's branch.")
+        return redirect(reverse("manage_enrollment"))
     enrollment.delete()
     messages.success(request, "Enrollment removed.")
     return redirect(reverse("manage_enrollment"))
@@ -1341,8 +1502,10 @@ def delete_enrollment(request, enrollment_id):
 def manage_vocabulary_days(request):
     from django.db.models import Count
 
+    accessible_groups = branching.filter_groups_for_user(request.user, Group.objects.all())
     days = (
-        VocabularyDay.objects.select_related("group", "created_by__admin")
+        VocabularyDay.objects.filter(group__in=accessible_groups)
+        .select_related("group", "created_by__admin")
         .prefetch_related("words", "completions")
         .annotate(
             word_count=Count("words", distinct=True),
@@ -1369,6 +1532,15 @@ def manage_stories(request):
         .prefetch_related("target_groups")
         .order_by("-created_at")
     )
+    # Branch admins see global stories (no target group), stories aimed at one
+    # of their groups, or stories they authored. Super admins see everything.
+    if not branching.is_super_admin(request.user):
+        accessible_groups = branching.filter_groups_for_user(request.user, Group.objects.all())
+        stories = stories.filter(
+            models.Q(target_groups__in=accessible_groups)
+            | models.Q(target_groups__isnull=True)
+            | models.Q(created_by=request.user)
+        ).distinct()
     return render(
         request,
         "hod_template/manage_stories.html",

@@ -29,6 +29,20 @@
     <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search teachers, ID, course..." autocomplete="off">
   </label>
 
+  {% if is_super_admin %}
+  <form method="get" class="ice-manage-filter">
+    <label for="branch-filter" class="ice-manage-filter__label"><i class="fas fa-code-branch" aria-hidden="true"></i> Branch</label>
+    <select id="branch-filter" name="branch" class="ice-manage-filter__select" onchange="this.form.submit()">
+      <option value="">All branches</option>
+      {% for b in branches %}
+      <option value="{{ b.id }}" {% if selected_branch == b.id|stringformat:'s' %}selected{% endif %}>{{ b.name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  {% elif branches %}
+  <p class="ice-manage-branch-note"><i class="fas fa-code-branch" aria-hidden="true"></i> Branch: {% for b in branches %}{{ b.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+  {% endif %}
+
   <div class="ice-manage-empty" data-manage-empty-state hidden>
     <i class="fas fa-search" aria-hidden="true"></i>
     <strong>No teachers found</strong>
@@ -43,6 +57,7 @@
           <th>Teacher</th>
           <th>Login ID</th>
           <th>Course</th>
+          <th>Branch</th>
           <th>Phone</th>
           <th>Specialization</th>
           <th>Birthday</th>
@@ -53,7 +68,7 @@
       <tbody>
         {% for staff in allStaff %}
         <tr data-manage-search-item
-            data-manage-search-text="{{ staff.get_full_name }} {{ staff.email }} {{ staff.login_id }} {{ staff.staff.course.name }} {{ staff.staff.phone }} {{ staff.staff.specialization }} {% if staff.staff.is_active %}active{% else %}inactive{% endif %}">
+            data-manage-search-text="{{ staff.get_full_name }} {{ staff.email }} {{ staff.login_id }} {{ staff.staff.course.name }} {{ staff.staff.branch.name }} {{ staff.staff.phone }} {{ staff.staff.specialization }} {% if staff.staff.is_active %}active{% else %}inactive{% endif %}">
           <td>{{ forloop.counter }}</td>
           <td>
             <div class="ice-manage-person">
@@ -74,6 +89,13 @@
           </td>
           <td><span class="ice-manage-code">{{ staff.login_id|default:"No ID" }}</span></td>
           <td>{{ staff.staff.course.name|default:"No course" }}</td>
+          <td>
+            {% if staff.staff.branch %}
+            <span class="ice-manage-chip"><i class="fas fa-code-branch" aria-hidden="true"></i> {{ staff.staff.branch.name }}</span>
+            {% else %}
+            <span class="ice-manage-chip ice-manage-chip--muted">No branch</span>
+            {% endif %}
+          </td>
           <td>{{ staff.staff.phone|default:"No phone" }}</td>
           <td>{{ staff.staff.specialization|default:"Not set" }}</td>
           <td>{{ staff.date_of_birth|date:"Y-m-d"|default:"Not set" }}</td>
@@ -116,7 +138,7 @@
     <article class="ice-manage-card"
              data-manage-search-item
              data-manage-search-primary
-             data-manage-search-text="{{ staff.get_full_name }} {{ staff.email }} {{ staff.login_id }} {{ staff.staff.course.name }} {{ staff.staff.phone }} {{ staff.staff.specialization }} {% if staff.staff.is_active %}active{% else %}inactive{% endif %}">
+             data-manage-search-text="{{ staff.get_full_name }} {{ staff.email }} {{ staff.login_id }} {{ staff.staff.course.name }} {{ staff.staff.branch.name }} {{ staff.staff.phone }} {{ staff.staff.specialization }} {% if staff.staff.is_active %}active{% else %}inactive{% endif %}">
       <div class="ice-manage-card__top">
         <span class="ice-manage-card__avatar" aria-hidden="true">
           {% if staff.profile_pic %}
@@ -137,6 +159,9 @@
         <span class="ice-manage-chip"><i class="fas fa-id-badge" aria-hidden="true"></i><span>{{ staff.login_id|default:"No ID" }}</span></span>
         <span class="ice-manage-chip"><i class="fas fa-envelope" aria-hidden="true"></i><span>{{ staff.email }}</span></span>
         <span class="ice-manage-chip"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>{{ staff.staff.course.name|default:"No course" }}</span></span>
+        {% if staff.staff.branch %}
+        <span class="ice-manage-chip"><i class="fas fa-code-branch" aria-hidden="true"></i><span>{{ staff.staff.branch.name }}</span></span>
+        {% endif %}
         {% if staff.staff.phone %}
         <span class="ice-manage-chip"><i class="fas fa-phone" aria-hidden="true"></i><span>{{ staff.staff.phone }}</span></span>
         {% endif %}
