@@ -261,9 +261,9 @@
 
 .ice-manage-card {
   min-width: 0;
-  padding: 15px;
+  padding: 12px;
   border: 1px solid var(--ice-manage-border);
-  border-radius: 24px;
+  border-radius: 20px;
   background: var(--ice-manage-surface);
   box-shadow: var(--ice-manage-shadow-soft);
 }
@@ -274,8 +274,8 @@
 
 .ice-manage-card__top {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
-  gap: 13px;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 10px;
   align-items: center;
 }
 
@@ -283,16 +283,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 14px;
   color: #ffffff;
   background:
     radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.28), transparent 34%),
     linear-gradient(135deg, var(--ice-manage-navy), var(--ice-manage-cyan-2));
-  box-shadow: 0 12px 24px rgba(12, 31, 69, 0.16);
-  font-size: 20px;
+  box-shadow: 0 8px 18px rgba(12, 31, 69, 0.14);
+  font-size: 17px;
   font-weight: 900;
 }
 
@@ -310,7 +310,7 @@
   margin: 0;
   overflow: hidden;
   color: var(--ice-manage-text);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -318,10 +318,10 @@
 }
 
 .ice-manage-card__subtitle {
-  margin-top: 4px;
+  margin-top: 3px;
   overflow: hidden;
   color: var(--ice-manage-muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -331,22 +331,22 @@
 .ice-manage-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 13px;
+  gap: 5px;
+  margin-top: 10px;
 }
 
 .ice-manage-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   max-width: 100%;
-  min-height: 30px;
-  padding: 5px 9px;
+  min-height: 26px;
+  padding: 3px 8px;
   border: 1px solid rgba(56, 189, 248, 0.16);
   border-radius: 999px;
   color: var(--ice-manage-muted);
   background: rgba(56, 189, 248, 0.08);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   line-height: 1.2;
 }
@@ -397,8 +397,8 @@
 .ice-manage-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 7px;
+  margin-top: 11px;
 }
 
 .ice-manage-table .ice-manage-actions {
@@ -761,15 +761,15 @@
 
 @media (max-width: 768px) {
   .ice-manage-page {
-    gap: 14px;
+    gap: 12px;
     padding-bottom: 156px;
   }
 
   .ice-manage-hero {
     align-items: stretch;
     flex-direction: column;
-    padding: 16px;
-    border-radius: 22px;
+    padding: 14px;
+    border-radius: 20px;
   }
 
   .ice-manage-hero__main {
@@ -831,7 +831,7 @@
   }
 
   .ice-manage-card {
-    border-radius: 22px;
+    border-radius: 18px;
   }
 
   .ice-manage-actions {
@@ -840,26 +840,27 @@
   }
 
   .ice-manage-action {
-    min-height: 46px;
+    min-height: 42px;
     padding: 0 10px;
+    font-size: 11px;
   }
 }
 
 @media (max-width: 420px) {
   .ice-manage-hero__main {
-    gap: 11px;
+    gap: 10px;
   }
 
   .ice-manage-card__top {
-    grid-template-columns: 50px minmax(0, 1fr);
-    gap: 11px;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 9px;
   }
 
   .ice-manage-card__avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 16px;
-    font-size: 18px;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    font-size: 16px;
   }
 
   .ice-manage-actions {
