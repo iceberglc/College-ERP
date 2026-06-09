@@ -581,8 +581,12 @@ def add_student(request):
 
 @admin_only
 def manage_registration_leads(request):
+    base_qs = branching.filter_registration_leads_for_user(
+        request.user, RegistrationLead.objects.all()
+    )
+
     if request.method == "POST":
-        lead = get_object_or_404(RegistrationLead, id=request.POST.get("lead_id"))
+        lead = get_object_or_404(base_qs, id=request.POST.get("lead_id"))
         status = request.POST.get("status", lead.status)
         if status in dict(RegistrationLead.STATUS_CHOICES):
             lead.status = status
@@ -592,7 +596,7 @@ def manage_registration_leads(request):
         query_string = request.POST.get("next", "")
         return redirect(reverse("manage_registration_leads") + query_string)
 
-    leads = RegistrationLead.objects.all()
+    leads = base_qs
     status_filter = request.GET.get("status", "").strip()
     source_filter = request.GET.get("source", "").strip()
     branch_filter = request.GET.get("branch", "").strip()
@@ -602,7 +606,7 @@ def manage_registration_leads(request):
         leads = leads.filter(status=status_filter)
     if source_filter:
         leads = leads.filter(source__iexact=source_filter)
-    # RegistrationLead.branch is still free text (pre-enrollment), so this is a
+    # RegistrationLead.branch is free text (pre-enrollment); this is a
     # best-effort contains match rather than a strict FK scope.
     if branch_filter:
         leads = leads.filter(branch__icontains=branch_filter)
@@ -620,14 +624,14 @@ def manage_registration_leads(request):
 
     status_counts = {
         row["status"]: row["count"]
-        for row in RegistrationLead.objects.values("status").annotate(count=models.Count("id"))
+        for row in base_qs.values("status").annotate(count=models.Count("id"))
     }
     status_summary = [
         {"value": value, "label": label, "count": status_counts.get(value, 0)}
         for value, label in RegistrationLead.STATUS_CHOICES
     ]
     sources = (
-        RegistrationLead.objects.exclude(source="")
+        base_qs.exclude(source="")
         .values_list("source", flat=True)
         .distinct()
         .order_by("source")
@@ -1192,9 +1196,14 @@ def send_staff_notification(request):
 @admin_only
 @require_POST
 def delete_staff(request, staff_id):
-    staff = get_object_or_404(CustomUser, staff__id=staff_id)
+    staff_obj = get_object_or_404(Staff, id=staff_id)
+    if not branching.filter_staff_for_user(
+        request.user, Staff.objects.filter(id=staff_id)
+    ).exists():
+        messages.error(request, "You don't have permission to delete this teacher.")
+        return redirect(reverse("manage_staff"))
     try:
-        staff.delete()
+        staff_obj.admin.delete()
         messages.success(request, "Staff deleted successfully!")
     except IntegrityError:
         messages.error(request, "Could not delete staff because related attendance data exists.")
@@ -1204,12 +1213,17 @@ def delete_staff(request, staff_id):
 @admin_only
 @require_POST
 def delete_student(request, student_id):
-    student_user = get_object_or_404(CustomUser, student__id=student_id)
+    student_obj = get_object_or_404(Student, id=student_id)
+    if not branching.filter_students_for_user(
+        request.user, Student.objects.filter(id=student_id)
+    ).exists():
+        messages.error(request, "You don't have permission to delete this student.")
+        return redirect(reverse("manage_student"))
+    student_user = student_obj.admin
     try:
         with transaction.atomic():
-            student_profile = student_user.student
             # AttendanceReport keeps a DO_NOTHING FK to Student, so remove it manually.
-            AttendanceReport.objects.filter(student=student_profile).delete()
+            AttendanceReport.objects.filter(student=student_obj).delete()
             student_user.delete()
         messages.success(request, "Student deleted successfully!")
     except IntegrityError:

@@ -243,6 +243,32 @@ def filter_results_for_user(user, queryset):
 # ── Single-object access checks ──────────────────────────────────────────────
 
 
+def filter_registration_leads_for_user(user, queryset):
+    """Filter a RegistrationLead queryset by branch access.
+
+    RegistrationLead.branch is a free-text field (pre-enrollment), so we do a
+    case-insensitive name match against the admin's accessible branch names.
+    Super admins see every lead; branch admins see leads whose branch text
+    matches one of their branch names; everyone else sees nothing.
+    """
+    if is_super_admin(user):
+        return queryset
+
+    profile = get_admin_profile(user)
+    if profile is not None:
+        branch_names = list(
+            profile.branches.values_list("name", flat=True)
+        )
+        if not branch_names:
+            return queryset.none()
+        q = Q()
+        for name in branch_names:
+            q |= Q(branch__iexact=name)
+        return queryset.filter(q)
+
+    return queryset.none()
+
+
 def user_can_access_branch(user, branch):
     if branch is None:
         return False
