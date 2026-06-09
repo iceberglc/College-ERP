@@ -441,6 +441,27 @@
 .dash-qa-viewall i { font-size: 9px; }
 .dark-mode .dash-qa-viewall { background: rgba(6,182,212,.1); border-color: rgba(6,182,212,.22); }
 
+.dash-qa-outer {
+  position: relative;
+}
+.dash-qa-outer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 48px;
+  background: linear-gradient(to right, transparent, var(--ice-surface, #fff));
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.dark-mode .dash-qa-outer::after,
+[data-theme="dark"] .dash-qa-outer::after {
+  background: linear-gradient(to right, transparent, var(--ice-surface, #0f172a));
+}
+.dash-qa-outer.is-scrolled-end::after {
+  opacity: 0;
+}
 .dash-qa-strip {
   display: flex;
   overflow-x: auto;
@@ -845,6 +866,7 @@
       View All <i class="fas fa-chevron-right"></i>
     </button>
   </div>
+  <div class="dash-qa-outer" id="dash-qa-outer">
   <div class="dash-qa-strip" id="dash-qa-strip">
 
     <a href="{% url 'student_assignments' %}" class="dash-qa"
@@ -912,6 +934,7 @@
       <div class="dash-qa-title">Profile</div>
     </a>
 
+  </div>
   </div>
 
   <!-- ══ 3. UPCOMING LESSONS ══════════════════════════════════ -->
@@ -1218,12 +1241,21 @@
 
   /* Quick Access "View All": toggles between start and end of the strip */
   var qaStrip = document.getElementById('dash-qa-strip');
+  var qaOuter = document.getElementById('dash-qa-outer');
   var qaViewAll = document.getElementById('dash-qa-viewall');
   if (qaStrip && qaViewAll) {
     qaViewAll.addEventListener('click', function () {
       var atEnd = qaStrip.scrollLeft + qaStrip.clientWidth >= qaStrip.scrollWidth - 8;
       qaStrip.scrollTo({ left: atEnd ? 0 : qaStrip.scrollWidth, behavior: 'smooth' });
     });
+  }
+  if (qaStrip && qaOuter) {
+    function updateQaFade() {
+      var atEnd = qaStrip.scrollLeft + qaStrip.clientWidth >= qaStrip.scrollWidth - 4;
+      qaOuter.classList.toggle('is-scrolled-end', atEnd);
+    }
+    qaStrip.addEventListener('scroll', updateQaFade, { passive: true });
+    updateQaFade();
   }
 })();
 </script>
