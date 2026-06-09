@@ -882,6 +882,26 @@
   border-top: 1px solid var(--ice-manage-border);
 }
 
+.ice-afc-locked-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid rgba(100, 116, 139, 0.16);
+  border-radius: 14px;
+  background: rgba(100, 116, 139, 0.07);
+  color: var(--ice-manage-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.ice-afc-locked-note i {
+  margin-top: 2px;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
 /* Dark mode */
 .dark-mode .ice-admin-full-card,
 [data-theme="dark"] .ice-admin-full-card {

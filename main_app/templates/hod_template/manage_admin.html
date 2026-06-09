@@ -92,34 +92,32 @@
       </div>
 
       {# ── Branch access form ── #}
+      {% if ap.superadmin_toggle_locked %}
+      {# Sole super admin: nothing here is changeable — show a quiet note instead of a dead form #}
+      <div class="ice-afc-form">
+        <div class="ice-afc-locked-note">
+          <i class="fas fa-lock" aria-hidden="true"></i>
+          <span>Sole super admin with access to all branches. Promote another admin first to change this role.</span>
+        </div>
+      </div>
+      {% else %}
       <form method="post"
             action="{% url 'update_admin_branch_access' ap.id %}"
             class="ice-afc-form">
         {% csrf_token %}
 
-        <label class="ice-admin-scope-toggle {% if ap.superadmin_toggle_locked %}ice-admin-scope-toggle--locked{% endif %}">
-          <input type="checkbox" name="is_super_admin"
-                 {% if ap.is_super_admin %}checked{% endif %}
-                 {% if ap.superadmin_toggle_locked %}disabled{% endif %}>
+        <label class="ice-admin-scope-toggle">
+          <input type="checkbox" name="is_super_admin" data-superadmin-toggle
+                 {% if ap.is_super_admin %}checked{% endif %}>
           <span>
-            <strong>Super admin
-              {% if ap.superadmin_toggle_locked %}
-              <span class="ice-admin-lock-badge" title="Only super admin — promote another admin first">
-                <i class="fas fa-lock" aria-hidden="true"></i>
-              </span>
-              {% endif %}
-            </strong>
-            <small>
-              {% if ap.superadmin_toggle_locked %}
-              Only super admin — promote another admin first to change this.
-              {% else %}
-              Can see and manage every branch.
-              {% endif %}
-            </small>
+            <strong>Super admin</strong>
+            <small>Can see and manage every branch.</small>
           </span>
         </label>
 
-        <div class="ice-admin-access-branches" aria-label="Assigned branches">
+        {# Branch picker only matters for branch admins — hidden while super admin is on #}
+        <div class="ice-admin-access-branches" aria-label="Assigned branches"
+             data-branch-picker {% if ap.is_super_admin %}hidden{% endif %}>
           {% for branch in all_branches %}
           <label class="ice-admin-access-branch">
             <input type="checkbox"
@@ -139,6 +137,7 @@
           </button>
         </div>
       </form>
+      {% endif %}
     </div>
     {% endfor %}
   </div>
@@ -155,4 +154,13 @@
 
 {% block custom_js %}
 <script src="{% static 'dist/js/admin-manage-mobile.js' %}"></script>
+<script>
+// Branch picker is only relevant for branch admins — hide it while "Super admin" is on.
+document.querySelectorAll('[data-superadmin-toggle]').forEach(function (toggle) {
+  toggle.addEventListener('change', function () {
+    var picker = toggle.closest('form').querySelector('[data-branch-picker]');
+    if (picker) picker.hidden = toggle.checked;
+  });
+});
+</script>
 {% endblock custom_js %}
