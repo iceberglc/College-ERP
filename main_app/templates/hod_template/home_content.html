@@ -5,143 +5,273 @@
 {% block page_title %}Admin Dashboard{% endblock %}
 {% block breadcrumb %}<li class="breadcrumb-item active">Dashboard</li>{% endblock %}
 
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/admin-dashboard-2026.css' %}">
+{% endblock custom_css %}
+
 {% block content %}
-
-<section class="admin-hero ice-hero">
-  <div class="admin-hero-inner ice-hero-grid">
-    <div>
-      <div class="admin-hero-kicker ice-hero-kicker">School command center</div>
-      <h1 class="admin-hero-title ice-hero-title">Welcome, {{ request.user.get_full_name|default:request.user.username }}</h1>
-      <p class="admin-hero-subtitle ice-hero-subtitle">Track students, teachers, programs, groups, attendance, and communication from one clean dashboard.</p>
-    </div>
-    <div class="admin-hero-actions ice-hero-actions">
-      <a href="{% url 'add_student' %}" class="admin-hero-action"><i class="fas fa-user-plus"></i>Add Student</a>
-      <a href="{% url 'manage_group' %}" class="admin-hero-action"><i class="fas fa-layer-group"></i>Groups</a>
-    </div>
-  </div>
-</section>
-
-{# ── KPI strip ──────────────────────────────────────────────────────────────── #}
-<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));">
-
-  <div class="stat-card ice-stat-card">
-    <div class="stat-icon primary"><i class="fas fa-user-graduate"></i></div>
-    <div class="stat-number" style="color:var(--ice-navy);">{{ total_students }}</div>
-    <p class="stat-label">Total Students</p>
-    <a href="{% url 'manage_student' %}" class="btn btn-outline-primary btn-sm">
-      <i class="fas fa-arrow-right me-1"></i>View all
-    </a>
-  </div>
-
-  <div class="stat-card ice-stat-card">
-    <div class="stat-icon success"><i class="fas fa-chalkboard-teacher"></i></div>
-    <div class="stat-number" style="color:var(--ice-success);">{{ total_staff }}</div>
-    <p class="stat-label">Total Teachers</p>
-    <a href="{% url 'manage_staff' %}" class="btn btn-outline-primary btn-sm">
-      <i class="fas fa-arrow-right me-1"></i>View all
-    </a>
-  </div>
-
-  <div class="stat-card ice-stat-card">
-    <div class="stat-icon cyan"><i class="fas fa-graduation-cap"></i></div>
-    <div class="stat-number" style="color:var(--ice-cyan-dk);">{{ total_course }}</div>
-    <p class="stat-label">Programs</p>
-    <a href="{% url 'manage_course' %}" class="btn btn-outline-primary btn-sm">
-      <i class="fas fa-arrow-right me-1"></i>View all
-    </a>
-  </div>
-
-  <div class="stat-card ice-stat-card">
-    <div class="stat-icon warning"><i class="fas fa-layer-group"></i></div>
-    <div class="stat-number" style="color:var(--ice-warning);">{{ total_groups }}</div>
-    <p class="stat-label">Active Groups</p>
-    <a href="{% url 'manage_group' %}" class="btn btn-outline-primary btn-sm">
-      <i class="fas fa-arrow-right me-1"></i>View all
-    </a>
-  </div>
-
-</div>
-
-{# ── Quick actions ──────────────────────────────────────────────────────────── #}
-<div class="erpnext-card ice-card mb-4">
-  <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-bolt me-2" style="color:var(--ice-cyan);"></i>Quick Actions</h3>
-  </div>
-  <div class="card-body">
-    <div class="quick-action-grid ice-action-grid">
-      <a href="{% url 'add_student' %}" class="quick-action-btn">
-        <i class="fas fa-user-plus" style="color:var(--ice-navy);"></i>Add Student
-      </a>
-      <a href="{% url 'add_staff' %}" class="quick-action-btn">
-        <i class="fas fa-user-tie" style="color:var(--ice-success);"></i>Add Teacher
-      </a>
-      <a href="{% url 'add_course' %}" class="quick-action-btn">
-        <i class="fas fa-graduation-cap" style="color:var(--ice-cyan-dk);"></i>Add Program
-      </a>
-      <a href="{% url 'add_group' %}" class="quick-action-btn">
-        <i class="fas fa-layer-group" style="color:var(--ice-warning);"></i>Add Group
-      </a>
-      <a href="{% url 'add_enrollment' %}" class="quick-action-btn">
-        <i class="fas fa-user-check" style="color:var(--ice-info);"></i>Enroll Student
-      </a>
-      <a href="{% url 'admin_view_attendance' %}" class="quick-action-btn">
-        <i class="fas fa-chart-line" style="color:var(--ice-danger);"></i>Attendance
-      </a>
-      <a href="{% url 'messages' %}" class="quick-action-btn">
-        <i class="fas fa-comments" style="color:var(--ice-navy);"></i>Group Messages
-      </a>
-      <a href="{% url 'staff_feedback_message' %}" class="quick-action-btn">
-        <i class="fas fa-comment-dots" style="color:var(--ice-success);"></i>Teacher Feedback
-      </a>
-    </div>
-  </div>
-</div>
-
-{# ── Row 1: overview charts ─────────────────────────────────────────────────── #}
-<div class="row g-3 mb-3">
-  <div class="col-lg-4">
-    <div class="erpnext-card ice-chart-card h-100">
-      <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-users me-2" style="color:var(--ice-cyan);"></i>People Overview</h3>
+<div class="admin-dashboard admin-dashboard--loading" data-admin-dashboard>
+  <section class="admin-command">
+    <div class="admin-command__glow" aria-hidden="true"></div>
+    <div class="admin-command__content">
+      <div class="admin-eyebrow">
+        <span class="admin-live-dot"></span>
+        ICEBERG Command Center
       </div>
-      <div class="card-body d-flex align-items-center justify-content-center">
-        <canvas id="pieChart" style="max-height:260px;"></canvas>
+      <h1>Welcome back, {{ request.user.get_full_name|default:request.user.username }}</h1>
+      <p>Run admissions, groups, attendance, teacher activity, and student performance from one premium operating surface.</p>
+      <div class="admin-command__actions">
+        <a href="{% url 'add_student' %}" class="admin-primary-action">
+          <i class="fas fa-user-plus" aria-hidden="true"></i>
+          Add Student
+        </a>
+        <a href="{% url 'manage_group' %}" class="admin-secondary-action">
+          <i class="fas fa-layer-group" aria-hidden="true"></i>
+          Manage Groups
+        </a>
+        <a href="{% url 'profile_hub' %}" class="admin-secondary-action">
+          <i class="fas fa-sliders-h" aria-hidden="true"></i>
+          Profile Settings
+        </a>
       </div>
     </div>
-  </div>
-
-  <div class="col-lg-8">
-    <div class="erpnext-card ice-chart-card h-100">
-      <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-chart-bar me-2" style="color:var(--ice-cyan);"></i>Attendance Sessions per Group</h3>
+    <div class="admin-command__panel" aria-label="Today snapshot">
+      <div class="admin-command__panel-header">
+        <span>Today</span>
+        <strong>{{ attendance_today_rate }}%</strong>
       </div>
-      <div class="card-body">
-        <canvas id="barChart" style="height:260px;"></canvas>
+      <div class="admin-radial" style="--value: {{ attendance_today_rate }};">
+        <span>{{ today_attendance_present }}</span>
+      </div>
+      <p>{{ today_attendance_present }} present out of {{ today_attendance_total }} attendance records today.</p>
+      <div class="admin-mini-stack">
+        <span><i class="fas fa-user-plus" aria-hidden="true"></i>{{ new_students_7 }} new students</span>
+        <span><i class="fas fa-tasks" aria-hidden="true"></i>{{ assignments_due_soon }} tasks due soon</span>
       </div>
     </div>
-  </div>
-</div>
+  </section>
 
-{# ── Row 2: student attendance ──────────────────────────────────────────────── #}
-<div class="erpnext-card ice-chart-card mb-3">
-  <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-calendar-check me-2" style="color:var(--ice-cyan);"></i>Student Attendance Overview</h3>
-  </div>
-  <div class="card-body">
-    <canvas id="barChart2" style="height:320px;"></canvas>
-  </div>
-</div>
+  <section class="admin-metrics" aria-label="Dashboard statistics">
+    {% for card in metric_cards %}
+    <a href="{{ card.href }}" class="admin-metric-card admin-metric-card--{{ card.tone }}">
+      <div class="admin-metric-card__top">
+        <span class="admin-metric-card__icon"><i class="fas {{ card.icon }}" aria-hidden="true"></i></span>
+        <span class="admin-trend {% if card.trend >= 0 %}is-up{% else %}is-down{% endif %}">
+          <i class="fas {% if card.trend >= 0 %}fa-level-up-alt{% else %}fa-level-down-alt{% endif %}" aria-hidden="true"></i>
+          {{ card.trend }}%
+        </span>
+      </div>
+      <div class="admin-metric-card__value">{{ card.value }}</div>
+      <div class="admin-metric-card__label">{{ card.label }}</div>
+      <div class="admin-metric-card__meta">{{ card.trend_label }}</div>
+      <div class="admin-progress" aria-hidden="true"><span style="width: {{ card.progress }}%;"></span></div>
+      <div class="admin-spark" aria-hidden="true">
+        {% for bar in card.spark %}
+        <span style="height: {{ bar.height }}px;"></span>
+        {% endfor %}
+      </div>
+    </a>
+    {% endfor %}
+  </section>
 
-{# ── Row 3: students per program ─────────────────────────────────────────────── #}
-<div class="erpnext-card ice-chart-card mb-3">
-  <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-graduation-cap me-2" style="color:var(--ice-cyan);"></i>Students per Program</h3>
-  </div>
-  <div class="card-body d-flex align-items-center justify-content-center">
-    <canvas id="pieChart2" style="max-height:260px;"></canvas>
-  </div>
-</div>
+  <section class="admin-grid admin-grid--ops">
+    <article class="admin-card admin-card--wide">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-section-kicker">Analytics</span>
+          <h2>Attendance Sessions per Group</h2>
+        </div>
+        <a href="{% url 'admin_view_attendance' %}" class="admin-link">View report</a>
+      </div>
+      <div class="admin-chart-stage admin-chart-stage--bar">
+        <div class="admin-chart-skeleton" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <canvas id="barChart"></canvas>
+      </div>
+    </article>
 
+    <article class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-section-kicker">Live Ops</span>
+          <h2>Today's Attendance</h2>
+        </div>
+        <span class="admin-soft-badge">{{ attendance_today_rate }}%</span>
+      </div>
+      <div class="admin-attendance-list">
+        {% for item in today_attendance_groups %}
+        <a href="{% url 'admin_view_attendance' %}" class="admin-attendance-row">
+          <span>
+            <strong>{{ item.group.name }}</strong>
+            <small>{{ item.present }}/{{ item.total }} present</small>
+          </span>
+          <span class="admin-ring" style="--value: {{ item.rate }};">{{ item.rate }}%</span>
+        </a>
+        {% empty %}
+        <div class="admin-empty-state">
+          <i class="fas fa-clipboard-check" aria-hidden="true"></i>
+          <span>No attendance has been taken today.</span>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <section class="admin-grid admin-grid--live">
+    <article class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-section-kicker">Pulse</span>
+          <h2>Recent Activity</h2>
+        </div>
+      </div>
+      <div class="admin-activity-feed">
+        {% for item in recent_activity %}
+        <a href="{{ item.href }}" class="admin-activity-item">
+          <span class="admin-activity-item__icon"><i class="fas {{ item.icon }}" aria-hidden="true"></i></span>
+          <span>
+            <strong>{{ item.title|truncatechars:34 }}</strong>
+            <small>{{ item.meta }} · {{ item.at|date:"M j, H:i" }}</small>
+          </span>
+        </a>
+        {% empty %}
+        <div class="admin-empty-state">
+          <i class="fas fa-wave-square" aria-hidden="true"></i>
+          <span>Activity will appear here as the center runs.</span>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-section-kicker">Admissions</span>
+          <h2>New Registrations</h2>
+        </div>
+        <a href="{% url 'manage_student' %}" class="admin-link">Students</a>
+      </div>
+      <div class="admin-person-list">
+        {% for student in recent_students %}
+        <a href="{% url 'manage_student' %}" class="admin-person-row">
+          <span class="admin-avatar-sm">{{ student.admin.first_name|first|upper }}{{ student.admin.last_name|first|upper }}</span>
+          <span>
+            <strong>{{ student.admin.get_full_name|default:student.admin.email }}</strong>
+            <small>{{ student.course|default:"Course pending" }} · {{ student.admin.created_at|date:"M j" }}</small>
+          </span>
+        </a>
+        {% empty %}
+        <div class="admin-empty-state">
+          <i class="fas fa-user-plus" aria-hidden="true"></i>
+          <span>No recent student registrations.</span>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-section-kicker">Faculty</span>
+          <h2>Teacher Activity</h2>
+        </div>
+        <a href="{% url 'manage_staff' %}" class="admin-link">Teachers</a>
+      </div>
+      <div class="admin-person-list">
+        {% for teacher in teacher_activity %}
+        <a href="{% url 'manage_staff' %}" class="admin-person-row">
+          <span class="admin-avatar-sm admin-avatar-sm--teacher">{{ teacher.admin.first_name|first|upper }}{{ teacher.admin.last_name|first|upper }}</span>
+          <span>
+            <strong>{{ teacher.admin.get_full_name|default:teacher.admin.email }}</strong>
+            <small>{{ teacher.active_groups_count }} groups · {{ teacher.course|default:"Course not set" }}</small>
+          </span>
+        </a>
+        {% empty %}
+        <div class="admin-empty-state">
+          <i class="fas fa-chalkboard-teacher" aria-hidden="true"></i>
+          <span>No teacher activity yet.</span>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-section-kicker">Schedule</span>
+          <h2>{{ upcoming_title }}</h2>
+        </div>
+        <a href="{% url 'manage_group' %}" class="admin-link">Groups</a>
+      </div>
+      <div class="admin-class-list">
+        {% for group in upcoming_classes %}
+        <a href="{% url 'manage_group' %}" class="admin-class-row">
+          <span class="admin-class-row__date">
+            {% if group.start_date %}
+            {{ group.start_date|date:"M" }}<strong>{{ group.start_date|date:"j" }}</strong>
+            {% else %}
+            Active<strong>Now</strong>
+            {% endif %}
+          </span>
+          <span>
+            <strong>{{ group.name }}</strong>
+            <small>{{ group.course }} · {{ group.teacher.admin.get_full_name|default:"Teacher pending" }}</small>
+          </span>
+        </a>
+        {% empty %}
+        <div class="admin-empty-state">
+          <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+          <span>No classes configured yet.</span>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <section class="admin-grid admin-grid--analytics">
+    <article class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-section-kicker">Composition</span>
+          <h2>People Overview</h2>
+        </div>
+      </div>
+      <div class="admin-chart-stage admin-chart-stage--donut">
+        <div class="admin-chart-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
+        <canvas id="pieChart"></canvas>
+      </div>
+    </article>
+
+    <article class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-section-kicker">Programs</span>
+          <h2>Students per Program</h2>
+        </div>
+      </div>
+      <div class="admin-chart-stage admin-chart-stage--donut">
+        <div class="admin-chart-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
+        <canvas id="pieChart2"></canvas>
+      </div>
+    </article>
+
+    <article class="admin-card admin-card--wide">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-section-kicker">Outcomes</span>
+          <h2>Student Attendance Overview</h2>
+        </div>
+      </div>
+      <div class="admin-chart-stage admin-chart-stage--bar">
+        <div class="admin-chart-skeleton" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <canvas id="barChart2"></canvas>
+      </div>
+    </article>
+  </section>
+</div>
 {% endblock content %}
 
 {% block custom_js %}
@@ -149,88 +279,111 @@
 document.addEventListener('DOMContentLoaded', function () {
   Chart.defaults.font.family = "'Inter', sans-serif";
 
-  const NAVY   = '#1B3F7A';
-  const CYAN   = '#06B6D4';
-  const GREEN  = '#10B981';
-  const AMBER  = '#F59E0B';
-  const RED    = '#EF4444';
-  const BLUE   = '#3B82F6';
-  const PURPLE = '#8B5CF6';
-  const PINK   = '#EC4899';
-  const PALETTE = [NAVY, CYAN, GREEN, AMBER, RED, BLUE, PURPLE, PINK, '#14B8A6', '#F97316'];
+  const BRAND = {
+    navy: '#071A52',
+    ocean: '#0B4F8A',
+    cyan: '#00CFE8',
+    ice: '#EAF8FF',
+    green: '#10B981',
+    amber: '#F59E0B',
+    red: '#EF4444',
+    violet: '#8B5CF6'
+  };
+  const PALETTE = [BRAND.navy, BRAND.cyan, BRAND.ocean, BRAND.green, BRAND.amber, BRAND.violet, BRAND.red, '#38BDF8', '#14B8A6'];
 
   function isDarkTheme() {
     return document.documentElement.getAttribute('data-theme') === 'dark' ||
       document.documentElement.classList.contains('dark-mode') ||
       document.body.classList.contains('dark-mode');
   }
-  function textColor() { return isDarkTheme() ? '#CBD5E1' : '#334155'; }
-  function gridColor() { return isDarkTheme() ? '#1E2E4A' : '#EFF6FF'; }
+  function textColor() { return isDarkTheme() ? '#DCEBFF' : '#15345F'; }
+  function mutedColor() { return isDarkTheme() ? '#9CB3CF' : '#64748B'; }
+  function gridColor() { return isDarkTheme() ? 'rgba(234,248,255,.10)' : 'rgba(7,26,82,.08)'; }
 
-  /* 1. People doughnut */
-  new Chart(document.getElementById('pieChart'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Students', 'Teachers'],
-      datasets: [{ data: [{{ total_students }}, {{ total_staff }}], backgroundColor: [NAVY, CYAN], borderWidth: 0, cutout: '65%' }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { color: textColor(), usePointStyle: true, padding: 18 } } }
-    }
-  });
+  function register(chart) {
+    window.chartInstances = window.chartInstances || [];
+    window.chartInstances.push(chart);
+    return chart;
+  }
 
-  /* 2. Attendance per group bar */
-  new Chart(document.getElementById('barChart'), {
-    type: 'bar',
-    data: {
-      labels: {{ group_label_list|safe }},
-      datasets: [{ label: 'Sessions', data: {{ group_attendance_list }}, backgroundColor: CYAN, borderRadius: 5, borderSkipped: false }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 10, bottom: 4, left: 4, right: 4 } },
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { color: textColor(), padding: 6 } },
-        x: { grid: { display: false }, ticks: { color: textColor(), maxRotation: 30 } }
+  function createDashboardCharts() {
+    register(new Chart(document.getElementById('pieChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Students', 'Teachers'],
+        datasets: [{ data: [{{ total_students }}, {{ total_staff }}], backgroundColor: [BRAND.navy, BRAND.cyan], borderWidth: 0, cutout: '70%' }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { color: mutedColor(), usePointStyle: true, boxWidth: 8, padding: 16 } } }
       }
-    }
-  });
+    }));
 
-  /* 3. Student attendance grouped bar */
-  new Chart(document.getElementById('barChart2'), {
-    type: 'bar',
-    data: {
-      labels: {{ student_name_list|safe }},
-      datasets: [
-        { label: 'Present', data: {{ student_attendance_present_list }}, backgroundColor: GREEN, borderRadius: 4, borderSkipped: false },
-        { label: 'Absent / Leave', data: {{ student_attendance_leave_list }}, backgroundColor: RED, borderRadius: 4, borderSkipped: false }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 10, bottom: 4, left: 4, right: 4 } },
-      plugins: { legend: { position: 'top', labels: { color: textColor(), usePointStyle: true, padding: 16 } } },
-      scales: {
-        y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { color: textColor(), padding: 6 } },
-        x: { grid: { display: false }, ticks: { color: textColor(), maxRotation: 30 } }
+    register(new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {
+        labels: {{ group_label_list|safe }},
+        datasets: [{
+          label: 'Sessions',
+          data: {{ group_attendance_list }},
+          backgroundColor: 'rgba(0, 207, 232, .78)',
+          borderColor: BRAND.cyan,
+          borderWidth: 1,
+          borderRadius: 10,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { color: mutedColor(), padding: 8 } },
+          x: { grid: { display: false }, ticks: { color: mutedColor(), maxRotation: 0 } }
+        }
       }
-    }
-  });
+    }));
 
-  /* 4. Students per program doughnut */
-  new Chart(document.getElementById('pieChart2'), {
-    type: 'doughnut',
-    data: {
-      labels: {{ course_name_list|safe }},
-      datasets: [{ data: {{ student_count_list_in_course }}, backgroundColor: PALETTE.slice(0, {{ course_name_list|length }}), borderWidth: 0, cutout: '65%' }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { color: textColor(), usePointStyle: true, padding: 14 } } }
-    }
-  });
+    register(new Chart(document.getElementById('barChart2'), {
+      type: 'bar',
+      data: {
+        labels: {{ student_name_list|safe }},
+        datasets: [
+          { label: 'Present', data: {{ student_attendance_present_list }}, backgroundColor: 'rgba(16,185,129,.82)', borderRadius: 8, borderSkipped: false },
+          { label: 'Absent / Leave', data: {{ student_attendance_leave_list }}, backgroundColor: 'rgba(239,68,68,.76)', borderRadius: 8, borderSkipped: false }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { color: textColor(), usePointStyle: true, boxWidth: 8, padding: 14 } } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { color: mutedColor(), padding: 8 } },
+          x: { grid: { display: false }, ticks: { color: mutedColor(), maxRotation: 30 } }
+        }
+      }
+    }));
+
+    register(new Chart(document.getElementById('pieChart2'), {
+      type: 'doughnut',
+      data: {
+        labels: {{ course_name_list|safe }},
+        datasets: [{ data: {{ student_count_list_in_course }}, backgroundColor: PALETTE.slice(0, {{ course_name_list|length }}), borderWidth: 0, cutout: '70%' }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { color: mutedColor(), usePointStyle: true, boxWidth: 8, padding: 12 } } }
+      }
+    }));
+
+    var root = document.querySelector('[data-admin-dashboard]');
+    if (root) root.classList.remove('admin-dashboard--loading');
+  }
+
+  createDashboardCharts();
+  if (window.registerChartRecreation) window.registerChartRecreation(createDashboardCharts);
 });
 </script>
 {% endblock custom_js %}

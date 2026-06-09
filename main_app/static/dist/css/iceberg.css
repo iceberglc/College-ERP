@@ -517,6 +517,25 @@ body {
   font-size: 13px;
 }
 
+.nav-section--simple .nav-link {
+  min-height: 40px;
+}
+
+.nav-section--simple .nav-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-section--simple .nav-section-title {
+  padding-top: 12px;
+}
+
+.nav-section--simple .nav-section-title:first-of-type {
+  padding-top: 6px;
+}
+
 .nav-arrow {
   font-size: 10px !important;
   color: var(--ice-muted, #64748B) !important;

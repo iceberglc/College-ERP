@@ -3,6 +3,7 @@ import os
 import re
 import logging
 import requests
+from datetime import timedelta
 from django.contrib import messages
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, OperationalError, ProgrammingError, models, transaction
@@ -10,6 +11,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
+from django.utils import timezone
 
 from .decorators import admin_only
 from .forms import *
@@ -112,6 +114,26 @@ def _active_groups_for_enrollment():
 @admin_only
 def admin_home(request):
     user = request.user
+    today = timezone.localdate()
+    week_start = today - timedelta(days=6)
+    previous_week_start = today - timedelta(days=13)
+
+    def pct_change(current, previous):
+        if previous == 0:
+            return 100 if current else 0
+        return round(((current - previous) / previous) * 100)
+
+    def spark_points(values):
+        max_value = max(values) if values else 0
+        if max_value <= 0:
+            return [{"value": value, "height": 18} for value in values]
+        return [
+            {"value": value, "height": 18 + round((value / max_value) * 34)}
+            for value in values
+        ]
+
+    spark_dates = [today - timedelta(days=offset) for offset in range(6, -1, -1)]
+
     # Branch-scope every metric: super admin sees everything, branch admin
     # only their assigned branches.
     students_base = branching.filter_students_for_user(user, Student.objects.all())
@@ -124,6 +146,60 @@ def admin_home(request):
     total_students = students_base.count()
     total_course = Course.objects.all().count()
     total_groups = groups_base.count()
+    group_ids = list(groups_base.values_list("id", flat=True))
+
+    new_students_7 = students_base.filter(admin__created_at__date__gte=week_start).count()
+    new_students_previous = students_base.filter(
+        admin__created_at__date__gte=previous_week_start,
+        admin__created_at__date__lt=week_start,
+    ).count()
+    new_staff_7 = staff_base.filter(admin__created_at__date__gte=week_start).count()
+    new_staff_previous = staff_base.filter(
+        admin__created_at__date__gte=previous_week_start,
+        admin__created_at__date__lt=week_start,
+    ).count()
+    new_groups_7 = groups_base.filter(created_at__date__gte=week_start).count()
+    new_groups_previous = groups_base.filter(
+        created_at__date__gte=previous_week_start,
+        created_at__date__lt=week_start,
+    ).count()
+
+    today_attendance_qs = AttendanceReport.objects.filter(
+        attendance__group_id__in=group_ids,
+        attendance__date=today,
+    )
+    today_attendance_total = today_attendance_qs.count()
+    today_attendance_present = today_attendance_qs.filter(
+        status__in=[AttendanceReport.PRESENT, AttendanceReport.LATE]
+    ).count()
+    attendance_today_rate = (
+        round((today_attendance_present / today_attendance_total) * 100)
+        if today_attendance_total
+        else 0
+    )
+    total_capacity = groups_base.aggregate(total=models.Sum("capacity"))["total"] or 0
+    active_enrollments = Enrollment.objects.filter(
+        group_id__in=group_ids,
+        is_active=True,
+    ).count()
+    group_fill_pct = round((active_enrollments / total_capacity) * 100) if total_capacity else 0
+    assignments_due_soon = Assignment.objects.filter(
+        group_id__in=group_ids,
+        due_date__gte=today,
+        due_date__lte=today + timedelta(days=7),
+    ).count()
+
+    student_spark = [
+        students_base.filter(admin__created_at__date=day).count() for day in spark_dates
+    ]
+    staff_spark = [
+        staff_base.filter(admin__created_at__date=day).count() for day in spark_dates
+    ]
+    group_spark = [groups_base.filter(created_at__date=day).count() for day in spark_dates]
+    attendance_spark = [
+        Attendance.objects.filter(group_id__in=group_ids, date=day).count()
+        for day in spark_dates
+    ]
 
     # Attendance chart: per active group
     active_groups = groups_base.select_related("course")
@@ -178,12 +254,159 @@ def admin_home(request):
     ]
     student_name_list = [s.admin.first_name for s in students_qs]
 
+    branch_names = list(branching.get_accessible_branches(user).values_list("name", flat=True))
+    if branching.is_super_admin(user):
+        lead_qs = RegistrationLead.objects.all()
+    else:
+        lead_qs = RegistrationLead.objects.filter(
+            models.Q(assigned_to=user) | models.Q(branch__in=branch_names)
+        )
+    recent_leads = lead_qs.order_by("-created_at")[:4]
+    recent_students = students_base.select_related("admin", "course", "branch").order_by(
+        "-admin__created_at"
+    )[:5]
+    teacher_activity = (
+        staff_base.select_related("admin", "course", "branch")
+        .annotate(active_groups_count=models.Count("group", filter=models.Q(group__is_archived=False)))
+        .order_by("-admin__updated_at")[:5]
+    )
+    upcoming_classes = list(
+        groups_base.select_related("course", "teacher__admin", "branch")
+        .filter(start_date__gte=today)
+        .order_by("start_date")[:5]
+    )
+    upcoming_title = "Upcoming Classes"
+    if not upcoming_classes:
+        upcoming_classes = list(
+            groups_base.select_related("course", "teacher__admin", "branch")
+            .order_by("-updated_at")[:5]
+        )
+        upcoming_title = "Active Classes"
+
+    today_attendance_groups = []
+    for group in groups_base.select_related("course", "teacher__admin").order_by("name")[:5]:
+        group_reports = AttendanceReport.objects.filter(
+            attendance__group=group,
+            attendance__date=today,
+        )
+        group_total = group_reports.count()
+        group_present = group_reports.filter(
+            status__in=[AttendanceReport.PRESENT, AttendanceReport.LATE]
+        ).count()
+        today_attendance_groups.append(
+            {
+                "group": group,
+                "present": group_present,
+                "total": group_total,
+                "rate": round((group_present / group_total) * 100) if group_total else 0,
+            }
+        )
+
+    recent_activity = []
+    for student in recent_students[:3]:
+        recent_activity.append(
+            {
+                "icon": "fa-user-plus",
+                "title": f"{student.admin.get_full_name() or student.admin.email}",
+                "meta": f"New student · {student.course or 'Course pending'}",
+                "at": student.admin.created_at,
+                "href": reverse("manage_student"),
+            }
+        )
+    for assignment in Assignment.objects.filter(group_id__in=group_ids).select_related(
+        "group", "created_by__admin"
+    ).order_by("-created_at")[:2]:
+        recent_activity.append(
+            {
+                "icon": "fa-tasks",
+                "title": assignment.title,
+                "meta": f"Assignment · {assignment.group or 'No group'}",
+                "at": assignment.created_at,
+                "href": reverse("manage_group"),
+            }
+        )
+    for message in ChatMessage.objects.filter(thread__group_id__in=group_ids).select_related(
+        "sender", "thread__group"
+    ).order_by("-created_at")[:2]:
+        recent_activity.append(
+            {
+                "icon": "fa-comments",
+                "title": message.sender.get_full_name() or message.sender.email,
+                "meta": f"Message in {message.thread.group.name}",
+                "at": message.created_at,
+                "href": reverse("messages"),
+            }
+        )
+    recent_activity = sorted(recent_activity, key=lambda item: item["at"], reverse=True)[:6]
+
+    metric_cards = [
+        {
+            "label": "Students",
+            "value": total_students,
+            "icon": "fa-user-graduate",
+            "href": reverse("manage_student"),
+            "trend": pct_change(new_students_7, new_students_previous),
+            "trend_label": f"{new_students_7} new this week",
+            "progress": min(100, max(8, group_fill_pct)),
+            "spark": spark_points(student_spark),
+            "tone": "cyan",
+        },
+        {
+            "label": "Teachers",
+            "value": total_staff,
+            "icon": "fa-chalkboard-teacher",
+            "href": reverse("manage_staff"),
+            "trend": pct_change(new_staff_7, new_staff_previous),
+            "trend_label": f"{new_staff_7} added this week",
+            "progress": min(100, max(8, round((total_staff / max(total_groups, 1)) * 20))),
+            "spark": spark_points(staff_spark),
+            "tone": "blue",
+        },
+        {
+            "label": "Active Groups",
+            "value": total_groups,
+            "icon": "fa-layer-group",
+            "href": reverse("manage_group"),
+            "trend": pct_change(new_groups_7, new_groups_previous),
+            "trend_label": f"{group_fill_pct}% capacity filled",
+            "progress": min(100, group_fill_pct),
+            "spark": spark_points(group_spark),
+            "tone": "navy",
+        },
+        {
+            "label": "Attendance Today",
+            "value": f"{attendance_today_rate}%",
+            "icon": "fa-clipboard-check",
+            "href": reverse("admin_view_attendance"),
+            "trend": attendance_today_rate,
+            "trend_label": f"{today_attendance_present}/{today_attendance_total} present",
+            "progress": attendance_today_rate,
+            "spark": spark_points(attendance_spark),
+            "tone": "ice",
+        },
+    ]
+
     context = {
         "page_title": "Administrative Dashboard",
         "total_students": total_students,
         "total_staff": total_staff,
         "total_course": total_course,
         "total_groups": total_groups,
+        "metric_cards": metric_cards,
+        "new_students_7": new_students_7,
+        "attendance_today_rate": attendance_today_rate,
+        "today_attendance_present": today_attendance_present,
+        "today_attendance_total": today_attendance_total,
+        "active_enrollments": active_enrollments,
+        "total_capacity": total_capacity,
+        "assignments_due_soon": assignments_due_soon,
+        "recent_leads": recent_leads,
+        "recent_students": recent_students,
+        "teacher_activity": teacher_activity,
+        "today_attendance_groups": today_attendance_groups,
+        "upcoming_classes": upcoming_classes,
+        "upcoming_title": upcoming_title,
+        "recent_activity": recent_activity,
         "group_label_list": group_label_list,
         "group_attendance_list": group_attendance_list,
         "student_attendance_present_list": student_attendance_present_list,
@@ -1094,16 +1317,86 @@ def get_groups_for_teacher(request):
 
 @admin_only
 def manage_branch(request):
+    is_super_admin = branching.is_super_admin(request.user)
     branches = branching.filter_branches_for_user(request.user, Branch.objects.all())
+    admin_profiles = []
+    all_branches = Branch.objects.all().order_by("name")
+    if is_super_admin:
+        admin_profiles = list(
+            Admin.objects.select_related("admin")
+            .prefetch_related("branches")
+            .order_by("admin__first_name", "admin__last_name", "admin__email")
+        )
+        for admin_profile in admin_profiles:
+            assigned_branches = list(admin_profile.branches.all())
+            admin_profile.assigned_branch_ids = {branch.id for branch in assigned_branches}
+            admin_profile.assigned_branch_names = ", ".join(
+                branch.name for branch in assigned_branches
+            )
     return render(
         request,
         "hod_template/manage_branch.html",
         {
             "branches": branches,
+            "all_branches": all_branches,
+            "admin_profiles": admin_profiles,
             "page_title": "Manage Branches",
-            "is_super_admin": branching.is_super_admin(request.user),
+            "is_super_admin": is_super_admin,
         },
     )
+
+
+@admin_only
+def update_admin_branch_access(request, admin_id):
+    if not branching.is_super_admin(request.user):
+        messages.error(request, "Only a super admin can change admin branch access.")
+        return redirect(reverse("manage_branch"))
+
+    if request.method != "POST":
+        return redirect(reverse("manage_branch"))
+
+    admin_profile = get_object_or_404(
+        Admin.objects.select_related("admin").prefetch_related("branches"), id=admin_id
+    )
+    make_super_admin = request.POST.get("is_super_admin") == "on"
+    branch_ids = request.POST.getlist("branches")
+
+    if not make_super_admin:
+        if not branch_ids:
+            messages.error(
+                request,
+                "Select at least one dedicated branch for a branch admin.",
+            )
+            return redirect(reverse("manage_branch"))
+
+        other_super_admin_exists = (
+            Admin.objects.filter(is_super_admin=True).exclude(id=admin_profile.id).exists()
+        )
+        if admin_profile.is_super_admin and not other_super_admin_exists:
+            messages.error(request, "Keep at least one super admin with access to all branches.")
+            return redirect(reverse("manage_branch"))
+
+    selected_branches = Branch.objects.filter(id__in=branch_ids).order_by("name")
+    if not make_super_admin and not selected_branches.exists():
+        messages.error(request, "Select at least one valid branch for this admin.")
+        return redirect(reverse("manage_branch"))
+
+    admin_profile.is_super_admin = make_super_admin
+    admin_profile.save(update_fields=["is_super_admin"])
+    if make_super_admin:
+        admin_profile.branches.clear()
+        messages.success(
+            request,
+            f"{admin_profile.admin.get_full_name() or admin_profile.admin.email} now manages all branches.",
+        )
+    else:
+        admin_profile.branches.set(selected_branches)
+        branch_names = ", ".join(selected_branches.values_list("name", flat=True))
+        messages.success(
+            request,
+            f"{admin_profile.admin.get_full_name() or admin_profile.admin.email} is assigned to {branch_names}.",
+        )
+    return redirect(reverse("manage_branch"))
 
 
 @admin_only

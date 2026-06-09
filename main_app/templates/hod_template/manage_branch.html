@@ -26,6 +26,97 @@
     </div>
   </section>
 
+  {% if is_super_admin %}
+  <section class="ice-admin-access" aria-labelledby="admin-branch-access-title">
+    <div class="ice-admin-access__header">
+      <span class="ice-admin-access__icon" aria-hidden="true"><i class="fas fa-user-shield"></i></span>
+      <div>
+        <h3 id="admin-branch-access-title">Admin Branch Access</h3>
+        <p>To add an admin to a dedicated branch, turn off all-branch access, select one or more branches, then save.</p>
+      </div>
+    </div>
+
+    <div class="ice-admin-access__grid">
+      {% for admin_profile in admin_profiles %}
+      <form method="post"
+            action="{% url 'update_admin_branch_access' admin_profile.id %}"
+            class="ice-admin-access-card">
+        {% csrf_token %}
+        <div class="ice-admin-access-card__top">
+          <span class="ice-manage-card__avatar" aria-hidden="true">
+            {% if admin_profile.admin.profile_pic %}
+              <img src="{{ admin_profile.admin.profile_pic.url }}" alt="{{ admin_profile.admin.get_full_name|default:admin_profile.admin.email }}">
+            {% elif admin_profile.admin.first_name or admin_profile.admin.last_name %}
+              {{ admin_profile.admin.first_name|first|upper }}{{ admin_profile.admin.last_name|first|upper }}
+            {% else %}
+              <i class="fas fa-user-shield"></i>
+            {% endif %}
+          </span>
+          <span class="ice-admin-access-card__identity">
+            <strong>{{ admin_profile.admin.get_full_name|default:admin_profile.admin.email }}</strong>
+            <small>{{ admin_profile.admin.email }}</small>
+            {% if admin_profile.is_super_admin %}
+            <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-globe" aria-hidden="true"></i><span>All branches</span></span>
+            {% else %}
+            <span class="ice-manage-chip"><i class="fas fa-code-branch" aria-hidden="true"></i><span>{{ admin_profile.assigned_branch_names|default:"No branch assigned" }}</span></span>
+            {% endif %}
+          </span>
+        </div>
+
+        <label class="ice-admin-scope-toggle">
+          <input type="checkbox" name="is_super_admin" {% if admin_profile.is_super_admin %}checked{% endif %}>
+          <span>
+            <strong>Super admin</strong>
+            <small>Can see and manage every branch.</small>
+          </span>
+        </label>
+
+        <div class="ice-admin-access-branches" aria-label="Dedicated branches">
+          {% for branch in all_branches %}
+          <label class="ice-admin-access-branch">
+            <input type="checkbox"
+                   name="branches"
+                   value="{{ branch.id }}"
+                   {% if branch.id in admin_profile.assigned_branch_ids %}checked{% endif %}>
+            <span>{{ branch.name }}</span>
+          </label>
+          {% empty %}
+          <p class="ice-admin-access-empty">Add a branch before assigning branch admins.</p>
+          {% endfor %}
+        </div>
+
+        <button type="submit" class="ice-admin-access-save">
+          <i class="fas fa-save" aria-hidden="true"></i> Save Access
+        </button>
+      </form>
+      {% empty %}
+      <div class="ice-manage-empty">
+        <i class="fas fa-user-shield" aria-hidden="true"></i>
+        <strong>No admin profiles found</strong>
+        <span>Create an admin account before assigning branch access.</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <section class="ice-admin-access ice-admin-access--readonly" aria-label="Your branch access">
+    <div class="ice-admin-access__header">
+      <span class="ice-admin-access__icon" aria-hidden="true"><i class="fas fa-code-branch"></i></span>
+      <div>
+        <h3>Your Branch Access</h3>
+        <p>You can manage only your assigned branches. A super admin changes admin-to-branch assignments.</p>
+      </div>
+    </div>
+    <div class="ice-manage-card__meta">
+      {% for branch in branches %}
+      <span class="ice-manage-chip"><i class="fas fa-building" aria-hidden="true"></i><span>{{ branch.name }}</span></span>
+      {% empty %}
+      <span class="ice-manage-chip ice-manage-chip--warning"><i class="fas fa-exclamation-circle" aria-hidden="true"></i><span>No branch assigned</span></span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   <label class="ice-manage-search" aria-label="Search branches">
     <i class="fas fa-search" aria-hidden="true"></i>
     <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search branches..." autocomplete="off">

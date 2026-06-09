@@ -946,6 +946,47 @@ class BranchIsolationTests(TestCase):
         self.assertIn(self.teacher_a, staff)
         self.assertNotIn(self.teacher_b, staff)
 
+    @override_settings(**_BASE_OVERRIDES)
+    def test_super_admin_can_assign_admin_to_dedicated_branch(self):
+        self.client.force_login(self.super_admin_user)
+        response = self.client.post(
+            reverse("update_admin_branch_access", args=[self.branch_admin.id]),
+            {"branches": [str(self.branch_b.id)]},
+        )
+        self.assertRedirects(response, reverse("manage_branch"), fetch_redirect_response=False)
+
+        self.branch_admin.refresh_from_db()
+        self.assertFalse(self.branch_admin.is_super_admin)
+        self.assertEqual(list(self.branch_admin.branches.all()), [self.branch_b])
+
+    @override_settings(**_BASE_OVERRIDES)
+    def test_branch_admin_cannot_update_admin_branch_access(self):
+        self.client.force_login(self.branch_admin_user)
+        response = self.client.post(
+            reverse("update_admin_branch_access", args=[self.super_admin.id]),
+            {"branches": [str(self.branch_a.id)]},
+        )
+        self.assertRedirects(response, reverse("manage_branch"), fetch_redirect_response=False)
+
+        self.super_admin.refresh_from_db()
+        self.assertTrue(self.super_admin.is_super_admin)
+
+    @override_settings(**_BASE_OVERRIDES)
+    def test_cannot_demote_last_super_admin(self):
+        from main_app.models import Admin
+
+        Admin.objects.exclude(id=self.super_admin.id).update(is_super_admin=False)
+        self.client.force_login(self.super_admin_user)
+        response = self.client.post(
+            reverse("update_admin_branch_access", args=[self.super_admin.id]),
+            {"branches": [str(self.branch_a.id)]},
+        )
+        self.assertRedirects(response, reverse("manage_branch"), fetch_redirect_response=False)
+
+        self.super_admin.refresh_from_db()
+        self.assertTrue(self.super_admin.is_super_admin)
+        self.assertEqual(self.super_admin.branches.count(), 0)
+
     # ── 3: branch admin cannot open Branch B group detail by URL ──
     @override_settings(**_BASE_OVERRIDES)
     def test_branch_admin_cannot_open_other_branch_group(self):

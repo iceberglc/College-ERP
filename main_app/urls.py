@@ -131,6 +131,11 @@ urlpatterns = [
     path("branch/add/", hod_views.add_branch, name="add_branch"),
     path("branch/edit/<int:branch_id>", hod_views.edit_branch, name="edit_branch"),
     path("branch/delete/<int:branch_id>", hod_views.delete_branch, name="delete_branch"),
+    path(
+        "branch/admin-access/<int:admin_id>/",
+        hod_views.update_admin_branch_access,
+        name="update_admin_branch_access",
+    ),
     # Group
     path("group/manage/", hod_views.manage_group, name="manage_group"),
     path("group/add/", hod_views.add_group, name="add_group"),

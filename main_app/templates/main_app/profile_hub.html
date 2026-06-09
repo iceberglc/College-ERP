@@ -41,171 +41,264 @@
            data-current-theme="{{ current_theme|default:'system' }}"
            data-csrf="{{ csrf_token }}">
 
-    <header class="profile-header">
-      <button type="button" class="profile-avatar{% if request.user.avatar %} profile-avatar-sticker{% endif %}"
-              id="profile-avatar-display"
-              data-open-avatar
-              aria-label="Change profile avatar">
-        <span id="profile-avatar-inner">
-          {% if request.user.avatar %}
-            {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
-          {% elif request.user.profile_pic %}
-            <img src="{{ request.user.profile_pic.url }}" alt="{{ request.user.get_full_name|default:'Profile photo' }}" loading="lazy">
-          {% else %}
-            {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
-          {% endif %}
-        </span>
-        <span class="profile-avatar__cam"><i class="fas fa-camera" aria-hidden="true"></i></span>
-      </button>
+    <aside class="profile-identity-card">
+      <div class="profile-cover" aria-hidden="true"></div>
+      <div class="profile-identity-content">
+        <button type="button" class="profile-avatar{% if request.user.avatar %} profile-avatar-sticker{% endif %}"
+                id="profile-avatar-display"
+                data-open-avatar
+                aria-label="Change profile avatar">
+          <span id="profile-avatar-inner">
+            {% if request.user.avatar %}
+              {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+            {% elif request.user.profile_pic %}
+              <img src="{{ request.user.profile_pic.url }}" alt="{{ request.user.get_full_name|default:'Profile photo' }}" loading="lazy">
+            {% else %}
+              {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+            {% endif %}
+          </span>
+          <span class="profile-avatar__cam"><i class="fas fa-camera" aria-hidden="true"></i></span>
+        </button>
 
-      <h2 class="profile-name">{{ request.user.get_full_name|default:request.user.email|default:request.user.login_id }}</h2>
-      <span class="profile-role"><i class="fas {{ role_icon }}" aria-hidden="true"></i>{{ role_label }}</span>
-      <span class="profile-status"><span class="profile-status__dot"></span>Online now</span>
+        <div class="profile-heading">
+          <h2 class="profile-name">{{ request.user.get_full_name|default:request.user.email|default:request.user.login_id }}</h2>
+          <div class="profile-heading__badges">
+            <span class="profile-role"><i class="fas {{ role_icon }}" aria-hidden="true"></i>{{ role_label }}</span>
+            <span class="profile-status"><span class="profile-status__dot"></span>Online now</span>
+          </div>
+        </div>
 
-      {% if profile_meta %}
-      <div class="profile-meta" aria-label="Profile details">
-        {% for item in profile_meta %}
-          <span class="profile-meta__chip"><i class="fas {{ item.icon }}" aria-hidden="true"></i>{{ item.text }}</span>
+        {% if profile_meta %}
+        <div class="profile-contact-list" aria-label="Profile details">
+          {% for item in profile_meta %}
+          <span class="profile-contact-item"><i class="fas {{ item.icon }}" aria-hidden="true"></i><span>{{ item.text }}</span></span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="profile-left-actions">
+          <a href="{{ dashboard_url }}" class="profile-action-card">
+            <i class="fas fa-th-large" aria-hidden="true"></i>
+            <span><strong>Dashboard</strong><small>Return to your workspace</small></span>
+          </a>
+          <button type="button" class="profile-action-card" data-open-avatar>
+            <i class="fas fa-camera" aria-hidden="true"></i>
+            <span><strong>Avatar</strong><small>Update profile visual</small></span>
+          </button>
+          <a href="#edit-profile" class="profile-action-card" data-open-details="edit-profile" data-focus="#id_first_name">
+            <i class="fas fa-pen-nib" aria-hidden="true"></i>
+            <span><strong>Edit Profile</strong><small>Personal details and password</small></span>
+          </a>
+        </div>
+
+        <div class="profile-activity-summary">
+          <div class="profile-section-heading">
+            <span>Activity Summary</span>
+            <strong>Live</strong>
+          </div>
+          <div class="profile-activity-row">
+            <span class="profile-activity-dot"></span>
+            <span><strong>Signed in</strong><small>Session active now</small></span>
+          </div>
+          <div class="profile-activity-row">
+            <span class="profile-activity-dot profile-activity-dot--cyan"></span>
+            <span><strong>Account updated</strong><small>{{ request.user.updated_at|date:"M j, Y" }}</small></span>
+          </div>
+          <div class="profile-activity-row">
+            <span class="profile-activity-dot profile-activity-dot--navy"></span>
+            <span><strong>{{ role_label }} workspace</strong><small>{{ role_group_label }} tools enabled</small></span>
+          </div>
+        </div>
+
+        <div class="settings-row settings-row--danger profile-logout-row">
+          <span class="settings-row__icon"><i class="fas fa-sign-out-alt icon-hover-pulse" aria-hidden="true"></i></span>
+          <span class="settings-row__content">
+            <span class="settings-row__title">Log Out</span>
+            <span class="settings-row__subtitle">End this signed-in session</span>
+          </span>
+          {% include "main_app/includes/animated_logout_button.html" with variant="full" btn_class="profile-hub-logout" label="Log Out" aria="Log out of Iceberg" %}
+        </div>
+      </div>
+    </aside>
+
+    <main class="profile-workspace">
+      <header class="profile-workspace-header">
+        <div>
+          <span class="profile-kicker">Profile OS</span>
+          <h1>Settings, access, and preferences</h1>
+          <p>A focused control center for your ICEBERG account.</p>
+        </div>
+        <a href="{{ dashboard_url }}" class="profile-dashboard-link">
+          <i class="fas fa-arrow-left" aria-hidden="true"></i>
+          Dashboard
+        </a>
+      </header>
+
+      {% if profile_stats %}
+      <div class="profile-snapshot" aria-label="Profile summary">
+        {% for stat in profile_stats %}
+        <div class="profile-snapshot__item">
+          <span class="profile-snapshot__icon"><i class="fas {{ stat.icon }}" aria-hidden="true"></i></span>
+          <span class="profile-snapshot__value">{{ stat.value }}</span>
+          <span class="profile-snapshot__label">{{ stat.label }}</span>
+          <span class="profile-snapshot__trend"><i class="fas fa-chart-line" aria-hidden="true"></i> Live metric</span>
+        </div>
         {% endfor %}
       </div>
       {% endif %}
-    </header>
 
-    {% if profile_stats %}
-    <div class="profile-snapshot" aria-label="Profile summary">
-      {% for stat in profile_stats %}
-      <div class="profile-snapshot__item">
-        <i class="fas {{ stat.icon }}" aria-hidden="true"></i>
-        <span class="profile-snapshot__value">{{ stat.value }}</span>
-        <span class="profile-snapshot__label">{{ stat.label }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-    {% for group in settings_groups %}
-      <div class="settings-group__label">{{ group.label }}</div>
-      <div class="settings-group">
-        {% for row in group.rows %}
-          {% if row.kind == "details" %}
-          <a class="settings-row pressable"
-             href="#{{ row.details_id }}"
-             data-open-details="{{ row.details_id }}"
-             {% if row.focus %}data-focus="{{ row.focus }}"{% endif %}>
-            <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
-            <span class="settings-row__content">
-              <span class="settings-row__title">{{ row.title }}</span>
-              <span class="settings-row__subtitle">{{ row.subtitle }}</span>
-            </span>
-            <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+      <section class="profile-panel">
+        <div class="profile-section-heading">
+          <span>Quick Actions</span>
+          <strong>Fast path</strong>
+        </div>
+        <div class="profile-quick-grid">
+          <a href="#edit-profile" class="profile-quick-action" data-open-details="edit-profile" data-focus="#id_first_name">
+            <i class="fas fa-user-edit" aria-hidden="true"></i>
+            <span><strong>Edit info</strong><small>Name, phone, birthday</small></span>
           </a>
-          {% elif row.kind == "avatar" %}
-          <button type="button" class="settings-row pressable" data-open-avatar>
-            <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
-            <span class="settings-row__content">
-              <span class="settings-row__title">{{ row.title }}</span>
-              <span class="settings-row__subtitle">{{ row.subtitle }}</span>
-            </span>
-            <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+          <button type="button" class="profile-quick-action" data-open-avatar>
+            <i class="fas fa-camera-retro" aria-hidden="true"></i>
+            <span><strong>Photo</strong><small>Avatar and profile visual</small></span>
           </button>
-          {% elif row.kind == "appearance" %}
-          <div class="settings-row settings-row--static">
-            <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
-            <span class="settings-row__content">
-              <span class="settings-row__title">{{ row.title }}</span>
-              <span class="settings-row__subtitle">{{ row.subtitle }}</span>
-            </span>
-          </div>
-          <div class="theme-grid" role="group" aria-label="Theme preference">
-            <button type="button" class="theme-btn" data-theme-choice="bright">
-              <span class="theme-icon theme-icon--bright"><i class="fas fa-sun" aria-hidden="true"></i></span>
-              Bright
-            </button>
-            <button type="button" class="theme-btn" data-theme-choice="dark">
-              <span class="theme-icon theme-icon--dark"><i class="fas fa-moon" aria-hidden="true"></i></span>
-              Dark
-            </button>
-            <button type="button" class="theme-btn" data-theme-choice="system">
-              <span class="theme-icon theme-icon--system"><i class="fas fa-desktop" aria-hidden="true"></i></span>
-              System
-            </button>
-          </div>
-          <div class="theme-saved-msg" id="theme-msg">
-            <i class="fas fa-check-circle me-1" aria-hidden="true"></i>Theme saved
-          </div>
-          {% elif row.kind == "static" %}
-          <div class="settings-row settings-row--static">
-            <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
-            <span class="settings-row__content">
-              <span class="settings-row__title">{{ row.title }}</span>
-              <span class="settings-row__subtitle">{{ row.subtitle }}</span>
-            </span>
-          </div>
-          {% else %}
-          <a class="settings-row pressable" href="{{ row.href }}">
-            <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
-            <span class="settings-row__content">
-              <span class="settings-row__title">{{ row.title }}</span>
-              <span class="settings-row__subtitle">{{ row.subtitle }}</span>
-            </span>
-            <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+          <a href="#edit-profile" class="profile-quick-action" data-open-details="edit-profile" data-focus="#id_password">
+            <i class="fas fa-key" aria-hidden="true"></i>
+            <span><strong>Password</strong><small>Update account security</small></span>
           </a>
-          {% endif %}
-        {% endfor %}
-      </div>
-    {% endfor %}
+          <a href="{% url 'messages' %}" class="profile-quick-action">
+            <i class="fas fa-comments" aria-hidden="true"></i>
+            <span><strong>Messages</strong><small>Open conversations</small></span>
+          </a>
+        </div>
+      </section>
 
-    <details class="settings-group profile-edit-group" id="edit-profile" {% if open_edit_panel %}open{% endif %}>
-      <summary class="settings-row pressable">
-        <span class="settings-row__icon"><i class="fas fa-edit icon-hover-wiggle" aria-hidden="true"></i></span>
-        <span class="settings-row__content">
-          <span class="settings-row__title">Edit Profile</span>
-          <span class="settings-row__subtitle">Update details and password</span>
-        </span>
-        <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
-      </summary>
-      <div class="profile-edit">
-        <form method="post" enctype="multipart/form-data" novalidate>
-          {% csrf_token %}
-          {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
-          {% if form.non_field_errors %}
-          <div class="alert alert-danger">
-            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      {% for group in settings_groups %}
+        <section class="profile-panel">
+          <div class="profile-section-heading">
+            <span>{{ group.label }}</span>
+            <strong>{{ group.rows|length }} items</strong>
           </div>
-          {% endif %}
-          <div class="profile-field-grid">
-            {% for field in form.visible_fields %}
-              <div class="profile-field{% if field.name == 'address' or field.name == 'profile_pic' or field.name == 'password' or field.name == 'specialization' %} full{% endif %}">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-                {% if field.errors %}<div class="field-error">{{ field.errors.0 }}</div>{% endif %}
-                {% if field.name == "password" %}
-                <div class="pw-notice" id="pw-notice">
-                  <i class="fas fa-exclamation-triangle me-1" aria-hidden="true"></i>
-                  Saving a new password may end your current session.
-                </div>
-                {% endif %}
+          <div class="settings-group">
+            {% for row in group.rows %}
+              {% if row.kind == "details" %}
+              <a class="settings-row pressable"
+                 href="#{{ row.details_id }}"
+                 data-open-details="{{ row.details_id }}"
+                 {% if row.focus %}data-focus="{{ row.focus }}"{% endif %}>
+                <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
+                <span class="settings-row__content">
+                  <span class="settings-row__title">{{ row.title }}</span>
+                  <span class="settings-row__subtitle">{{ row.subtitle }}</span>
+                </span>
+                <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+              </a>
+              {% elif row.kind == "avatar" %}
+              <button type="button" class="settings-row pressable" data-open-avatar>
+                <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
+                <span class="settings-row__content">
+                  <span class="settings-row__title">{{ row.title }}</span>
+                  <span class="settings-row__subtitle">{{ row.subtitle }}</span>
+                </span>
+                <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+              </button>
+              {% elif row.kind == "appearance" %}
+              <div class="settings-row settings-row--static">
+                <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
+                <span class="settings-row__content">
+                  <span class="settings-row__title">{{ row.title }}</span>
+                  <span class="settings-row__subtitle">{{ row.subtitle }}</span>
+                </span>
               </div>
+              <div class="theme-grid" role="group" aria-label="Theme preference">
+                <button type="button" class="theme-btn" data-theme-choice="bright">
+                  <span class="theme-preview theme-preview--bright">
+                    <span></span><span></span><span></span>
+                  </span>
+                  <strong>Bright</strong>
+                  <small>Light Ice surfaces</small>
+                </button>
+                <button type="button" class="theme-btn" data-theme-choice="dark">
+                  <span class="theme-preview theme-preview--dark">
+                    <span></span><span></span><span></span>
+                  </span>
+                  <strong>Dark</strong>
+                  <small>Deep Navy glass</small>
+                </button>
+                <button type="button" class="theme-btn" data-theme-choice="system">
+                  <span class="theme-preview theme-preview--system">
+                    <span></span><span></span><span></span>
+                  </span>
+                  <strong>System</strong>
+                  <small>Match device</small>
+                </button>
+              </div>
+              <div class="theme-saved-msg" id="theme-msg">
+                <i class="fas fa-check-circle me-1" aria-hidden="true"></i>Theme saved
+              </div>
+              {% elif row.kind == "static" %}
+              <div class="settings-row settings-row--static">
+                <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
+                <span class="settings-row__content">
+                  <span class="settings-row__title">{{ row.title }}</span>
+                  <span class="settings-row__subtitle">{{ row.subtitle }}</span>
+                </span>
+              </div>
+              {% else %}
+              <a class="settings-row pressable" href="{{ row.href }}">
+                <span class="settings-row__icon"><i class="fas {{ row.icon }} {{ row.anim }}" aria-hidden="true"></i></span>
+                <span class="settings-row__content">
+                  <span class="settings-row__title">{{ row.title }}</span>
+                  <span class="settings-row__subtitle">{{ row.subtitle }}</span>
+                </span>
+                <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+              </a>
+              {% endif %}
             {% endfor %}
           </div>
-          <button type="submit" class="profile-save-btn">
-            <i class="fas fa-save me-1" aria-hidden="true"></i>Save Changes
-          </button>
-        </form>
-      </div>
-    </details>
+        </section>
+      {% endfor %}
 
-    <div class="settings-group settings-group--logout">
-      <div class="settings-row settings-row--danger profile-logout-row">
-        <span class="settings-row__icon"><i class="fas fa-sign-out-alt icon-hover-pulse" aria-hidden="true"></i></span>
-        <span class="settings-row__content">
-          <span class="settings-row__title">Log Out</span>
-          <span class="settings-row__subtitle">End this signed-in session</span>
-        </span>
-        {% include "main_app/includes/animated_logout_button.html" with variant="full" btn_class="profile-hub-logout" label="Log Out" aria="Log out of Iceberg" %}
-      </div>
-    </div>
+      <details class="profile-panel profile-edit-group" id="edit-profile" {% if open_edit_panel %}open{% endif %}>
+        <summary class="settings-row pressable">
+          <span class="settings-row__icon"><i class="fas fa-edit icon-hover-wiggle" aria-hidden="true"></i></span>
+          <span class="settings-row__content">
+            <span class="settings-row__title">Edit Profile</span>
+            <span class="settings-row__subtitle">Update details and password</span>
+          </span>
+          <i class="fas fa-chevron-right settings-row__chevron" aria-hidden="true"></i>
+        </summary>
+        <div class="profile-edit">
+          <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+              {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            </div>
+            {% endif %}
+            <div class="profile-field-grid">
+              {% for field in form.visible_fields %}
+                <div class="profile-field{% if field.name == 'address' or field.name == 'profile_pic' or field.name == 'password' or field.name == 'specialization' %} full{% endif %}">
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                  {% if field.errors %}<div class="field-error">{{ field.errors.0 }}</div>{% endif %}
+                  {% if field.name == "password" %}
+                  <div class="pw-notice" id="pw-notice">
+                    <i class="fas fa-exclamation-triangle me-1" aria-hidden="true"></i>
+                    Saving a new password may end your current session.
+                  </div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+            <button type="submit" class="profile-save-btn">
+              <i class="fas fa-save me-1" aria-hidden="true"></i>Save Changes
+            </button>
+          </form>
+        </div>
+      </details>
+    </main>
   </section>
 </div>
 {% endblock %}
