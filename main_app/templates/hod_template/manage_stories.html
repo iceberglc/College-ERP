@@ -41,10 +41,7 @@
 
 {% block content %}
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px;">
-  <div>
-    <h2 style="font-size:20px;font-weight:900;color:var(--ice-text);margin:0;">Dashboard Stories</h2>
-    <p style="font-size:13px;color:var(--ice-muted);margin:4px 0 0;">Cards shown in the student dashboard stories strip.</p>
-  </div>
+  <p style="font-size:13px;color:var(--ice-muted);margin:0;">Cards shown in the student dashboard stories strip.</p>
   <a href="{% url 'add_story' %}" class="btn" style="background:linear-gradient(135deg,#0C1F45,#1B3F7A);color:#fff;padding:10px 20px;border-radius:12px;font-weight:700;font-size:13px;text-decoration:none;">
     <i class="fas fa-plus me-1"></i> New Story
   </a>
@@ -73,8 +70,7 @@
       <div class="story-actions">
         <a href="{% url 'edit_story' s.id %}" class="btn-sm btn-edit"><i class="fas fa-edit"></i> Edit</a>
         <a href="{% url 'delete_story' s.id %}" class="btn-sm btn-del"
-           data-confirm-post="Delete this story?"
-           onclick="return confirm('Delete this story?')"><i class="fas fa-trash"></i> Delete</a>
+           data-confirm-post="Delete this story?"><i class="fas fa-trash"></i> Delete</a>
       </div>
     </div>
   </div>

@@ -1190,6 +1190,7 @@ def send_staff_notification(request):
 
 
 @admin_only
+@require_POST
 def delete_staff(request, staff_id):
     staff = get_object_or_404(CustomUser, staff__id=staff_id)
     try:
@@ -1201,6 +1202,7 @@ def delete_staff(request, staff_id):
 
 
 @admin_only
+@require_POST
 def delete_student(request, student_id):
     student_user = get_object_or_404(CustomUser, student__id=student_id)
     try:
@@ -1216,6 +1218,7 @@ def delete_student(request, student_id):
 
 
 @admin_only
+@require_POST
 def delete_course(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     try:
@@ -1244,6 +1247,7 @@ def toggle_course_active(request, course_id):
 
 
 @admin_only
+@require_POST
 def delete_subject(request, subject_id):
     subject = get_object_or_404(Subject, id=subject_id)
     try:
@@ -1257,6 +1261,7 @@ def delete_subject(request, subject_id):
 
 
 @admin_only
+@require_POST
 def delete_session(request, session_id):
     session = get_object_or_404(Session, id=session_id)
     try:
@@ -1632,6 +1637,7 @@ def edit_group(request, group_id):
 
 
 @admin_only
+@require_POST
 def delete_group(request, group_id):
     group = get_object_or_404(Group, id=group_id)
     if not branching.user_can_access_group(request.user, group):
@@ -1665,6 +1671,7 @@ def delete_group(request, group_id):
 
 
 @admin_only
+@require_POST
 def archive_group(request, group_id):
     group = get_object_or_404(Group, id=group_id)
     if not branching.user_can_access_group(request.user, group):
@@ -1816,6 +1823,7 @@ def get_group_info(request):
 
 
 @admin_only
+@require_POST
 def delete_enrollment(request, enrollment_id):
     enrollment = get_object_or_404(Enrollment.objects.select_related("group"), id=enrollment_id)
     if not branching.user_can_access_group(request.user, enrollment.group):
@@ -1937,6 +1945,7 @@ def edit_story(request, story_id):
 
 
 @admin_only
+@require_POST
 def delete_story(request, story_id):
     story = get_object_or_404(DashboardStory, id=story_id)
     story.delete()
