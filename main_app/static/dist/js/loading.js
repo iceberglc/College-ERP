@@ -38,6 +38,9 @@
     var a = e.target.closest('a[href]');
     if (!a || e.defaultPrevented) return;
     if (a.hasAttribute('download') || a.hasAttribute('data-no-loader')) return;
+    // Confirm-post links open a modal first — safe-actions.js starts the
+    // loader itself only after the user confirms.
+    if (a.hasAttribute('data-confirm-post')) return;
     if (a.target && a.target !== '_self') return;
 
     var raw = a.getAttribute('href') || '';

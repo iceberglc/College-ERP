@@ -105,6 +105,9 @@
         e.stopPropagation();
         e.preventDefault();
       }
+      // Cancelled (or about to confirm — confirm restarts it): never leave
+      // a stuck "Preparing your page…" overlay behind.
+      if (window.iceLoader) window.iceLoader.stop();
       overlay.classList.remove("ice-confirm-overlay--open");
       overlay.addEventListener("transitionend", function() { overlay.remove(); }, { once: true });
       // Safety fallback — remove after 400 ms even if transitionend never fires
@@ -214,6 +217,10 @@
 
     event.preventDefault();
     event.stopPropagation();
+
+    // Belt-and-braces: if any global click handler already kicked off the
+    // page loader, kill it — we're showing a modal, not navigating.
+    if (window.iceLoader) window.iceLoader.stop();
 
     var message = link.getAttribute("data-confirm-post") || "Are you sure? This cannot be undone.";
     showConfirmModal(message, function() {
