@@ -2,17 +2,41 @@
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock %}
 
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
+{% endblock custom_css %}
+
 {% block content %}
-<div class="dt-card">
-  <div class="dt-header">
-    <div class="dt-title"><i class="fas fa-book-open"></i> {{ page_title }} <span class="dt-count">{{ subjects|length }} subjects</span></div>
-    <div class="d-flex gap-2 flex-wrap align-items-center">
-      <input type="text" id="search_input" class="dt-search" placeholder="Search…">
-      <a href="{% url 'add_subject' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> Add Subject</a>
+<div class="ice-manage-page" data-manage-search-scope>
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-book-open"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Manage Subjects</h2>
+        <p class="ice-manage-hero__subtitle">Assign subjects to teachers and programs.</p>
+      </div>
     </div>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count"><span data-manage-visible-count>{{ subjects|length }}</span>&nbsp;total</span>
+      <a href="{% url 'add_subject' %}" class="ice-manage-add-btn">
+        <i class="fas fa-plus" aria-hidden="true"></i> Add Subject
+      </a>
+    </div>
+  </section>
+
+  <label class="ice-manage-search" aria-label="Search subjects">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search subjects, teacher, program..." autocomplete="off">
+  </label>
+
+  <div class="ice-manage-empty" data-manage-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No subjects found</strong>
+    <span>Try a different subject name, teacher, or program.</span>
   </div>
-  <div style="overflow-x:auto;">
-    <table class="dt" id="subject_table">
+
+  <div class="ice-manage-table-wrap">
+    <table class="ice-manage-table">
       <thead>
         <tr>
           <th>#</th>
@@ -24,37 +48,88 @@
       </thead>
       <tbody>
         {% for subject in subjects %}
-        <tr>
-          <td style="color:var(--ice-muted); width:40px;">{{ forloop.counter }}</td>
-          <td style="font-weight:600;">{{ subject.name }}</td>
+        <tr data-manage-search-item
+            data-manage-search-text="{{ subject.name }} {{ subject.staff.admin|default:'' }} {{ subject.course.name }}">
+          <td>{{ forloop.counter }}</td>
+          <td><strong>{{ subject.name }}</strong></td>
           <td style="color:var(--ice-muted);">{{ subject.staff.admin|default:"—" }}</td>
-          <td style="color:var(--ice-muted); font-size:12px;">{{ subject.course.name }}</td>
           <td>
-            <div class="ab-row">
-              <a href="{% url 'edit_subject' subject.id %}" class="ab-edit"><i class="fas fa-edit"></i> Edit</a>
-              <a href="{% url 'delete_subject' subject.id %}"
-                 data-confirm-post="Delete this subject?"
-                 onclick="return confirm('Delete this subject?')"
-                 class="ab-danger"><i class="fas fa-trash"></i> Delete</a>
+            {% if subject.course %}
+            <span class="ice-manage-chip"><i class="fas fa-graduation-cap" aria-hidden="true"></i> {{ subject.course.name }}</span>
+            {% else %}
+            <span class="ice-manage-chip ice-manage-chip--muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="ice-manage-actions">
+              <a href="{% url 'edit_subject' subject.id %}" class="ice-manage-action">
+                <i class="fas fa-edit" aria-hidden="true"></i> Edit
+              </a>
+              <a href="{% url 'delete_subject' subject.id %}" class="ice-manage-action ice-manage-action--danger"
+                 data-confirm-post="Delete this subject? This cannot be undone."
+                 onclick="return confirm('Delete this subject?');">
+                <i class="fas fa-trash" aria-hidden="true"></i> Delete
+              </a>
             </div>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" style="text-align:center; padding:48px; color:var(--ice-muted);">No subjects yet.</td></tr>
+        <tr>
+          <td colspan="5">
+            <div class="ice-manage-empty">
+              <i class="fas fa-book-open" aria-hidden="true"></i>
+              <strong>No subjects yet</strong>
+              <span>Add your first subject to get started.</span>
+            </div>
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  <div class="ice-manage-mobile-list">
+    {% for subject in subjects %}
+    <article class="ice-manage-card"
+             data-manage-search-item
+             data-manage-search-primary
+             data-manage-search-text="{{ subject.name }} {{ subject.staff.admin|default:'' }} {{ subject.course.name }}">
+      <div class="ice-manage-card__top">
+        <span class="ice-manage-card__avatar" aria-hidden="true"><i class="fas fa-book-open"></i></span>
+        <div class="ice-manage-card__main">
+          <h3 class="ice-manage-card__title">{{ subject.name }}</h3>
+          <div class="ice-manage-card__subtitle">{{ subject.staff.admin|default:"No teacher assigned" }}</div>
+        </div>
+      </div>
+      <div class="ice-manage-card__meta">
+        {% if subject.course %}
+        <span class="ice-manage-chip"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>{{ subject.course.name }}</span></span>
+        {% else %}
+        <span class="ice-manage-chip ice-manage-chip--muted"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>No program</span></span>
+        {% endif %}
+      </div>
+      <div class="ice-manage-actions">
+        <a href="{% url 'edit_subject' subject.id %}" class="ice-manage-action">
+          <i class="fas fa-edit" aria-hidden="true"></i> Edit
+        </a>
+        <a href="{% url 'delete_subject' subject.id %}" class="ice-manage-action ice-manage-action--danger"
+           data-confirm-post="Delete this subject? This cannot be undone."
+           onclick="return confirm('Delete this subject?');">
+          <i class="fas fa-trash" aria-hidden="true"></i> Delete
+        </a>
+      </div>
+    </article>
+    {% empty %}
+    <div class="ice-manage-empty">
+      <i class="fas fa-book-open" aria-hidden="true"></i>
+      <strong>No subjects yet</strong>
+      <span>Add your first subject to get started.</span>
+    </div>
+    {% endfor %}
+  </div>
 </div>
-{% endblock %}
+{% endblock content %}
 
 {% block custom_js %}
-<script>
-document.getElementById('search_input').addEventListener('input', function() {
-  const q = this.value.toLowerCase();
-  document.querySelectorAll('#subject_table tbody tr').forEach(r => {
-    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
-  });
-});
-</script>
-{% endblock %}
+<script src="{% static 'dist/js/admin-manage-mobile.js' %}"></script>
+{% endblock custom_js %}
