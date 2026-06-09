@@ -342,6 +342,11 @@
   background: rgba(239,68,68,.12);
 }
 
+.admin-trend--neutral {
+  color: #64748B;
+  background: rgba(100,116,139,.10);
+}
+
 .admin-metric-card__value {
   margin-top: 14px;
   color: var(--ib-text);

@@ -55,10 +55,17 @@
     <a href="{{ card.href }}" class="admin-metric-card admin-metric-card--{{ card.tone }}">
       <div class="admin-metric-card__top">
         <span class="admin-metric-card__icon"><i class="fas {{ card.icon }}" aria-hidden="true"></i></span>
+        {% if card.trend == -100 or card.trend == 0 and card.value == 0 %}
+        <span class="admin-trend admin-trend--neutral">
+          <i class="fas fa-minus" aria-hidden="true"></i>
+          —
+        </span>
+        {% else %}
         <span class="admin-trend {% if card.trend >= 0 %}is-up{% else %}is-down{% endif %}">
           <i class="fas {% if card.trend >= 0 %}fa-level-up-alt{% else %}fa-level-down-alt{% endif %}" aria-hidden="true"></i>
           {{ card.trend }}%
         </span>
+        {% endif %}
       </div>
       <div class="admin-metric-card__value">{{ card.value }}</div>
       <div class="admin-metric-card__label">{{ card.label }}</div>
