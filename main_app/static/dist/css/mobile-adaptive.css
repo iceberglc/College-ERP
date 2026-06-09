@@ -241,7 +241,7 @@ html[data-theme="dark"] {
    Tablet/desktop keep the real <table>. Below 600px each row becomes a
    card and each cell shows its column label (injected by
    responsive-tables.js as data-label). */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   table.dt,
   table.data-table,
   table.table {
