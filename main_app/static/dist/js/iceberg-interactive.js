@@ -75,6 +75,10 @@
 
   function isDataTable(table) {
     if (table.closest('.login-card')) return false;
+    // Skip tables that ship their own search/filter UI (e.g. the admin
+    // manage pages) so we don't inject a duplicate search toolbar.
+    if (table.classList.contains('ice-manage-table')) return false;
+    if (table.closest('[data-no-table-enhance]')) return false;
     var thead = table.querySelector('thead');
     var tbody = table.querySelector('tbody');
     if (!thead || !tbody) return false;

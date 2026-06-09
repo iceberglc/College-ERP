@@ -203,20 +203,20 @@
 }
 
 .ice-manage-table th {
-  padding: 13px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--ice-manage-border);
   color: var(--ice-manage-muted);
   background: rgba(238, 246, 255, 0.8);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 900;
-  letter-spacing: 0;
+  letter-spacing: .2px;
   text-align: left;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .ice-manage-table td {
-  padding: 14px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--ice-manage-border);
   color: var(--ice-manage-text);
   font-size: 13px;
@@ -738,9 +738,24 @@
   background: rgba(56, 189, 248, 0.1);
 }
 
-@media (min-width: 769px) {
+/* Desktop only (>=1025px): show the data table, hide the card list. */
+@media (min-width: 1025px) {
   .ice-manage-mobile-list {
     display: none !important;
+  }
+}
+
+/* Tablet (769–1024px): the 11-column table is cramped and overflows here,
+   so show the clean card list in a 2-up grid instead — far less bulky and
+   no horizontal scroll. The table returns at desktop widths. */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ice-manage-table-wrap {
+    display: none;
+  }
+  .ice-manage-mobile-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
   }
 }
 
