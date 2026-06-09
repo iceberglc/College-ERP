@@ -897,9 +897,9 @@
   .admin-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  /* Live cards: 2-column on phones */
+  /* Live cards: single-column on phones — 2-col was too tight for card content */
   .admin-grid--live {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
   .admin-quick-actions,
   .admin-card,

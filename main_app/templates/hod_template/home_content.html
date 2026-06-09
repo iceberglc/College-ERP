@@ -44,8 +44,8 @@
       </div>
       <p>{{ today_attendance_present }} present out of {{ today_attendance_total }} attendance records today.</p>
       <div class="admin-mini-stack">
-        <span><i class="fas fa-user-plus" aria-hidden="true"></i>{{ new_students_7 }} new students</span>
-        <span><i class="fas fa-tasks" aria-hidden="true"></i>{{ assignments_due_soon }} tasks due soon</span>
+        <span><i class="fas fa-user-plus" aria-hidden="true"></i>{{ new_students_7 }} new this week</span>
+        <span><i class="fas fa-user-clock" aria-hidden="true"></i>{{ recent_leads|length }} pending leads</span>
       </div>
     </div>
   </section>
@@ -198,24 +198,24 @@
     <article class="admin-card">
       <div class="admin-card__header">
         <div>
-          <span class="admin-section-kicker">Admissions</span>
-          <h2>Recent Students</h2>
+          <span class="admin-section-kicker">Latest Arrivals</span>
+          <h2>New Enrollments</h2>
         </div>
-        <a href="{% url 'manage_student' %}" class="admin-link">Students</a>
+        <span class="admin-soft-badge">{{ recent_students|length }}</span>
       </div>
       <div class="admin-person-list">
         {% for student in recent_students %}
-        <a href="{% url 'manage_student' %}" class="admin-person-row">
+        <a href="{% url 'edit_student' student.student.id %}" class="admin-person-row">
           <span class="admin-avatar-sm">{{ student.admin.first_name|first|upper }}{{ student.admin.last_name|first|upper }}</span>
           <span>
             <strong>{{ student.admin.get_full_name|default:student.admin.email }}</strong>
-            <small>{{ student.course|default:"Course pending" }} · {{ student.admin.created_at|date:"M j" }}</small>
+            <small>{{ student.course|default:"Course pending" }} · Joined {{ student.admin.created_at|date:"M j" }}</small>
           </span>
         </a>
         {% empty %}
         <div class="admin-empty-state">
           <i class="fas fa-user-plus" aria-hidden="true"></i>
-          <span>No recent student registrations.</span>
+          <span>No recent enrollments yet.</span>
         </div>
         {% endfor %}
       </div>
@@ -250,24 +250,24 @@
     <article class="admin-card">
       <div class="admin-card__header">
         <div>
-          <span class="admin-section-kicker">Faculty</span>
-          <h2>Teacher Activity</h2>
+          <span class="admin-section-kicker">Teaching Load</span>
+          <h2>Faculty Pulse</h2>
         </div>
-        <a href="{% url 'manage_staff' %}" class="admin-link">Teachers</a>
+        <span class="admin-soft-badge">{{ teacher_activity|length }} active</span>
       </div>
       <div class="admin-person-list">
         {% for teacher in teacher_activity %}
-        <a href="{% url 'manage_staff' %}" class="admin-person-row">
+        <a href="{% url 'edit_staff' teacher.id %}" class="admin-person-row">
           <span class="admin-avatar-sm admin-avatar-sm--teacher">{{ teacher.admin.first_name|first|upper }}{{ teacher.admin.last_name|first|upper }}</span>
           <span>
             <strong>{{ teacher.admin.get_full_name|default:teacher.admin.email }}</strong>
-            <small>{{ teacher.active_groups_count }} groups · {{ teacher.course|default:"Course not set" }}</small>
+            <small>{{ teacher.active_groups_count }} group{% if teacher.active_groups_count != 1 %}s{% endif %} · {{ teacher.course|default:"No course" }}</small>
           </span>
         </a>
         {% empty %}
         <div class="admin-empty-state">
           <i class="fas fa-chalkboard-teacher" aria-hidden="true"></i>
-          <span>No teacher activity yet.</span>
+          <span>No teachers assigned yet.</span>
         </div>
         {% endfor %}
       </div>
@@ -539,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function () {
         interaction: { mode: 'index', intersect: false },
         plugins: { legend: { display: false }, tooltip: tooltipOptions() },
         scales: {
-          y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { color: mutedColor(), padding: isMobileChart() ? 4 : 8, maxTicksLimit: isMobileChart() ? 4 : 6 } },
+          y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { precision: 0, color: mutedColor(), padding: isMobileChart() ? 4 : 8, maxTicksLimit: isMobileChart() ? 4 : 6 } },
           x: { grid: { display: false }, ticks: { color: mutedColor(), maxRotation: 0, autoSkip: true, maxTicksLimit: isMobileChart() ? 4 : 8 } }
         }
       }
@@ -568,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function () {
           tooltip: tooltipOptions()
         },
         scales: {
-          y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { color: mutedColor(), padding: isMobileChart() ? 4 : 8, maxTicksLimit: isMobileChart() ? 4 : 6 } },
+          y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { precision: 0, color: mutedColor(), padding: isMobileChart() ? 4 : 8, maxTicksLimit: isMobileChart() ? 4 : 6 } },
           x: { grid: { display: false }, ticks: { color: mutedColor(), maxRotation: isMobileChart() ? 0 : 24, autoSkip: true, maxTicksLimit: isMobileChart() ? 4 : 8 } }
         }
       }
