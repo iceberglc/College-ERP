@@ -1649,12 +1649,12 @@ textarea.form-control { height: auto; min-height: 90px; }
 }
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .quick-action-grid { grid-template-columns: repeat(3, 1fr); }
+  .quick-action-grid { grid-template-columns: repeat(2, 1fr); }
   .page-title { font-size: 18px !important; }
-  .erpnext-card .card-body { padding: 16px; }
+  .erpnext-card .card-body { padding: 14px; }
 }
 @media (max-width: 480px) {
-  .stats-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .quick-action-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
