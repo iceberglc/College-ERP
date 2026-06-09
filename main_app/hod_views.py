@@ -1378,7 +1378,14 @@ def add_admin(request):
             return render(request, "hod_template/add_admin_template.html", {
                 "all_branches": all_branches,
                 "page_title": "Add Admin",
-                "post": request.POST,
+                "form_data": {
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "email": email,
+                    "gender": gender,
+                    "address": address,
+                },
+                "selected_branch_ids": branch_ids,
             })
 
         try:
@@ -1410,7 +1417,8 @@ def add_admin(request):
     return render(request, "hod_template/add_admin_template.html", {
         "all_branches": all_branches,
         "page_title": "Add Admin",
-        "post": {},
+        "form_data": {},
+        "selected_branch_ids": [],
     })
 
 
@@ -2030,11 +2038,7 @@ def manage_stories(request):
     )
 
 
-def _story_storage_ok():
-    """True when a persistent remote storage backend is active (e.g. S3/Spaces)."""
-    import os
-
-    return bool(os.environ.get("SPACES_KEY") and os.environ.get("SPACES_BUCKET"))
+_story_storage_ok = branching.story_storage_ok
 
 
 @admin_only

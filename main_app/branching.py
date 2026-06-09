@@ -301,3 +301,13 @@ def user_can_access_group(user, group):
         ).exists()
 
     return False
+
+
+# ── Deployment utilities ─────────────────────────────────────────────────────
+
+
+def story_storage_ok():
+    """True when a persistent remote storage backend (S3/Spaces) is configured."""
+    import os
+
+    return bool(os.environ.get("SPACES_KEY") and os.environ.get("SPACES_BUCKET"))

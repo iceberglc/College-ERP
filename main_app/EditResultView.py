@@ -1,18 +1,19 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 from django.contrib import messages
 from .models import Group, Staff, Student, StudentResult
 
 
-class EditResultView(View):
+class EditResultView(LoginRequiredMixin, View):
     template = "staff_template/edit_student_result.html"
 
-    def _groups(self, request):
+    def _staff_and_groups(self, request):
         staff = get_object_or_404(Staff, admin=request.user)
-        return Group.objects.filter(teacher=staff, is_archived=False)
+        return staff, Group.objects.filter(teacher=staff, is_archived=False)
 
     def get(self, request, *args, **kwargs):
-        groups = self._groups(request)
+        _staff, groups = self._staff_and_groups(request)
         return render(
             request,
             self.template,
@@ -23,14 +24,15 @@ class EditResultView(View):
         )
 
     def post(self, request, *args, **kwargs):
-        groups = self._groups(request)
+        staff, groups = self._staff_and_groups(request)
         group_id = request.POST.get("group")
         student_id = request.POST.get("student")
         test = request.POST.get("test")
         exam = request.POST.get("exam")
 
         try:
-            group = get_object_or_404(Group, id=group_id)
+            # Restrict to groups owned by this teacher to prevent IDOR.
+            group = get_object_or_404(groups, id=group_id)
             student = get_object_or_404(Student, id=student_id)
             result = StudentResult.objects.get(student=student, group=group)
             result.test = float(test)

@@ -612,14 +612,6 @@ class FileUploadView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        if staff is None:
-            try:
-                staff = request.user.staff
-            except Staff.DoesNotExist:
-                return Response(
-                    {"detail": "Staff profile not found."}, status=status.HTTP_403_FORBIDDEN
-                )
-
         title = request.data.get("title", file_obj.name)
         description = request.data.get("description", "")
 

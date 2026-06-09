@@ -198,7 +198,6 @@ urlpatterns = [
     path("student/view/profile/", student_views.student_view_profile, name="student_view_profile"),
     path("student/fcmtoken/", student_views.student_fcmtoken, name="student_fcmtoken"),
     path("student/save-theme/", student_views.student_save_theme, name="student_save_theme"),
-    # path('student/todo',student_views.todo,name='todo'),
     path("student/viewbooks/", student_views.view_books, name="view_books"),
     path(
         "student/view/notification/",

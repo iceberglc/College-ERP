@@ -953,7 +953,7 @@ class BranchIsolationTests(TestCase):
             reverse("update_admin_branch_access", args=[self.branch_admin.id]),
             {"branches": [str(self.branch_b.id)]},
         )
-        self.assertRedirects(response, reverse("manage_branch"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("manage_admin"), fetch_redirect_response=False)
 
         self.branch_admin.refresh_from_db()
         self.assertFalse(self.branch_admin.is_super_admin)
@@ -966,7 +966,7 @@ class BranchIsolationTests(TestCase):
             reverse("update_admin_branch_access", args=[self.super_admin.id]),
             {"branches": [str(self.branch_a.id)]},
         )
-        self.assertRedirects(response, reverse("manage_branch"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("manage_admin"), fetch_redirect_response=False)
 
         self.super_admin.refresh_from_db()
         self.assertTrue(self.super_admin.is_super_admin)
@@ -981,7 +981,7 @@ class BranchIsolationTests(TestCase):
             reverse("update_admin_branch_access", args=[self.super_admin.id]),
             {"branches": [str(self.branch_a.id)]},
         )
-        self.assertRedirects(response, reverse("manage_branch"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("manage_admin"), fetch_redirect_response=False)
 
         self.super_admin.refresh_from_db()
         self.assertTrue(self.super_admin.is_super_admin)
@@ -1058,3 +1058,106 @@ class BranchIsolationTests(TestCase):
         self.client.force_login(self.branch_admin_user)
         response = self.client.get(reverse("manage_student"))
         self.assertEqual(response.status_code, 200)
+
+    # ── 11: branch admin cannot delete a student from another branch ──
+    @override_settings(**_BASE_OVERRIDES)
+    def test_branch_admin_cannot_delete_other_branch_student(self):
+        self.client.force_login(self.branch_admin_user)
+        response = self.client.post(
+            reverse("delete_student", args=[self.student_b.id])
+        )
+        # Should redirect with an error, not delete.
+        self.assertRedirects(response, reverse("manage_student"), fetch_redirect_response=False)
+        self.assertTrue(Student.objects.filter(id=self.student_b.id).exists())
+
+    # ── 12: branch admin cannot delete a teacher from another branch ──
+    @override_settings(**_BASE_OVERRIDES)
+    def test_branch_admin_cannot_delete_other_branch_teacher(self):
+        self.client.force_login(self.branch_admin_user)
+        response = self.client.post(
+            reverse("delete_staff", args=[self.teacher_b.id])
+        )
+        self.assertRedirects(response, reverse("manage_staff"), fetch_redirect_response=False)
+        self.assertTrue(Staff.objects.filter(id=self.teacher_b.id).exists())
+
+    # ── 13: branch admin CAN delete a student from their own branch ──
+    @override_settings(**_BASE_OVERRIDES)
+    def test_branch_admin_can_delete_own_branch_student(self):
+        self.client.force_login(self.branch_admin_user)
+        student_id = self.student_a.id
+        response = self.client.post(
+            reverse("delete_student", args=[student_id])
+        )
+        self.assertRedirects(response, reverse("manage_student"), fetch_redirect_response=False)
+        self.assertFalse(Student.objects.filter(id=student_id).exists())
+
+    # ── 14: only super admin can access add_admin ──
+    @override_settings(**_BASE_OVERRIDES)
+    def test_only_super_admin_can_access_add_admin(self):
+        # Super admin sees the page.
+        self.client.force_login(self.super_admin_user)
+        response = self.client.get(reverse("add_admin"))
+        self.assertEqual(response.status_code, 200)
+
+        # Branch admin is redirected.
+        self.client.force_login(self.branch_admin_user)
+        response = self.client.get(reverse("add_admin"))
+        self.assertRedirects(response, reverse("admin_home"), fetch_redirect_response=False)
+
+    # ── 15: super admin can create a new branch admin via add_admin ──
+    @override_settings(**_BASE_OVERRIDES)
+    def test_super_admin_can_create_branch_admin(self):
+        from main_app.models import Admin
+
+        self.client.force_login(self.super_admin_user)
+        response = self.client.post(
+            reverse("add_admin"),
+            {
+                "first_name": "New",
+                "last_name": "Admin",
+                "gender": "M",
+                "address": "",
+                "email": "newadmin@iceberg.internal",
+                "password": "SecurePass1",
+                "branches": [str(self.branch_a.id)],
+            },
+        )
+        UserModel = get_user_model()
+        self.assertTrue(UserModel.objects.filter(email="newadmin@iceberg.internal").exists())
+        new_user = UserModel.objects.get(email="newadmin@iceberg.internal")
+        new_admin = Admin.objects.get(admin=new_user)
+        self.assertFalse(new_admin.is_super_admin)
+        self.assertIn(self.branch_a, new_admin.branches.all())
+
+    # ── 16: get_attendance blocks access to another branch's group ──
+    @override_settings(**_BASE_OVERRIDES)
+    def test_get_attendance_blocks_cross_branch_access(self):
+        self.client.force_login(self.branch_admin_user)
+        response = self.client.post(
+            reverse("get_attendance"), {"group": str(self.group_b.id)}
+        )
+        self.assertEqual(response.status_code, 403)
+
+    # ── 17: registration leads filtering by branch ──
+    def test_registration_leads_scoped_by_branch(self):
+        from main_app import branching
+        from main_app.models import RegistrationLead
+
+        RegistrationLead.objects.create(
+            full_name="Alice", email="alice@test.com", phone="1111", branch="Branch A"
+        )
+        RegistrationLead.objects.create(
+            full_name="Bob", email="bob@test.com", phone="2222", branch="Branch B"
+        )
+        RegistrationLead.objects.create(
+            full_name="Charlie", email="charlie@test.com", phone="3333", branch="branch a"
+        )
+
+        qs = RegistrationLead.objects.all()
+        super_leads = branching.filter_registration_leads_for_user(self.super_admin_user, qs)
+        self.assertEqual(super_leads.count(), 3)
+
+        branch_leads = branching.filter_registration_leads_for_user(self.branch_admin_user, qs)
+        self.assertEqual(branch_leads.count(), 2)
+        names = set(branch_leads.values_list("full_name", flat=True))
+        self.assertEqual(names, {"Alice", "Charlie"})

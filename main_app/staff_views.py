@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST
 from .decorators import staff_only
 from .forms import *
 from .models import *
-from . import forms
+from . import branching, forms
 from datetime import date
 
 logger = logging.getLogger(__name__)
@@ -1042,11 +1042,7 @@ def _notify_vocab_day(day: VocabularyDay):
         day.notified_students.add(*new_notified)
 
 
-def _story_storage_ok():
-    """True when a persistent remote storage backend (S3/Spaces) is configured."""
-    import os
-
-    return bool(os.environ.get("SPACES_KEY") and os.environ.get("SPACES_BUCKET"))
+_story_storage_ok = branching.story_storage_ok
 
 
 @staff_only
