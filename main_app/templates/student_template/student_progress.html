@@ -13,10 +13,10 @@
 
 /* ══ TOKENS ══════════════════════════════════════════════════════ */
 .pg {
-  --navy: #0C1F45; --navy-mid: #1B3F7A; --cyan: #06B6D4;
+  --navy: #071A52; --navy-mid: #0B4F8A; --cyan: #00CFE8;
   --bg: #EEF3FB; --surf: #ffffff; --bdr: #E2EAF4;
   --txt: #0C1A36; --sub: #475569; --muted: #94A3B8;
-  --green: #10B981; --amber: #F59E0B; --red: #EF4444; --purple: #8B5CF6;
+  --green: #22C55E; --amber: #F59E0B; --red: #EF4444; --purple: #0B4F8A;
   --r-sm: 14px; --r-md: 22px; --r-lg: 32px;
   background: var(--bg); min-height: 100svh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -82,18 +82,19 @@
 /* ══ INSIGHT ═════════════════════════════════════════════════════ */
 .pg-insight {
   display: flex; align-items: flex-start; gap: 12px;
-  background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.22);
+  background: rgba(0,207,232,.1); border: 1px solid rgba(0,207,232,.22);
   border-radius: 16px; padding: 13px 16px; margin: 14px 16px 0;
   animation: pgUp .4s ease .14s both;
 }
 .pg-insight-icon {
   width: 34px; height: 34px; border-radius: 11px; flex-shrink: 0;
-  background: rgba(139,92,246,.2); color: #8B5CF6; font-size: 14px;
+  background: rgba(0,207,232,.18); color: var(--cyan); font-size: 14px;
   display: flex; align-items: center; justify-content: center;
 }
-.dark-mode .pg-insight { background: rgba(139,92,246,.07); border-color: rgba(139,92,246,.18); }
-.pg-insight-head { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: rgba(139,92,246,.65); margin-bottom: 3px; }
-.pg-insight-txt  { font-size: 12.5px; font-weight: 600; color: #8B5CF6; line-height: 1.5; }
+.dark-mode .pg-insight { background: rgba(0,207,232,.07); border-color: rgba(0,207,232,.18); }
+.pg-insight-head { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: rgba(0,207,232,.72); margin-bottom: 3px; }
+.pg-insight-txt  { font-size: 12.5px; font-weight: 600; color: var(--navy-mid); line-height: 1.5; }
+.dark-mode .pg-insight-txt { color: var(--cyan); }
 
 /* ══ STAT GRID ════════════════════════════════════════════════════ */
 .pg-stat-grid {
@@ -164,7 +165,7 @@
 }
 .pg-empty-icon {
   width: 80px; height: 80px; border-radius: 24px; margin: 0 auto 20px;
-  background: linear-gradient(135deg, rgba(139,92,246,.12), rgba(27,63,122,.12));
+  background: linear-gradient(135deg, rgba(0,207,232,.12), rgba(11,79,138,.12));
   color: var(--purple); font-size: 32px;
   display: flex; align-items: center; justify-content: center;
 }
@@ -243,7 +244,7 @@
   <span class="pg-lbl pg-anim pg-anim-3">Summary</span>
   <div class="pg-stat-grid pg-anim pg-anim-3">
     <div class="pg-stat-tile">
-      <div class="pg-stat-icon" style="background:rgba(27,63,122,.1); color:#1B3F7A;">
+      <div class="pg-stat-icon" style="background:rgba(11,79,138,.1); color:#0B4F8A;">
         <i class="fas fa-calendar-check"></i>
       </div>
       <div class="pg-stat-num" style="color:var(--navy-mid);">{{ total_days_available }}</div>
@@ -251,7 +252,7 @@
       <div class="pg-stat-sub">vocabulary sets</div>
     </div>
     <div class="pg-stat-tile">
-      <div class="pg-stat-icon" style="background:rgba(16,185,129,.1); color:#10B981;">
+      <div class="pg-stat-icon" style="background:rgba(34,197,94,.1); color:#22C55E;">
         <i class="fas fa-check-double"></i>
       </div>
       <div class="pg-stat-num" style="color:var(--green);">{{ total_completed }}</div>
@@ -273,7 +274,7 @@
       {% endif %}
     </div>
     <div class="pg-stat-tile">
-      <div class="pg-stat-icon" style="background:rgba(139,92,246,.1); color:#8B5CF6;">
+      <div class="pg-stat-icon" style="background:rgba(11,79,138,.1); color:#0B4F8A;">
         <i class="fas fa-graduation-cap"></i>
       </div>
       <div class="pg-stat-num" style="color:var(--purple);">{% if results %}{{ results|length }}{% else %}0{% endif %}</div>
@@ -365,82 +366,60 @@
 
 {% block custom_js %}
 {% if has_any_data %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function () {
-  var isDark = document.documentElement.classList.contains('dark-mode') || document.body.classList.contains('dark-mode');
-  var gridColor = isDark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.04)';
-  var tickColor = isDark ? '#8CA4BE' : '#64748B';
-
   var labels = {{ date_labels|safe }};
   var completions = {{ completions_line|safe }};
   var quizScores  = {{ quiz_line|safe }};
 
-  /* 30-day activity chart */
-  new Chart(document.getElementById('activityChart'), {
-    type: 'line',
-    data: {
+  function resetChart(canvasId) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    canvas.hidden = false;
+    var body = canvas.parentElement;
+    if (body) body.querySelectorAll('.ice-chart-state').forEach(function(node) { node.remove(); });
+  }
+  function showState(canvasId, message) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    var body = canvas.parentElement;
+    canvas.hidden = true;
+    if (body && !body.querySelector('.ice-chart-state')) {
+      var state = document.createElement('div');
+      state.className = 'ice-chart-state';
+      state.textContent = message;
+      body.appendChild(state);
+    }
+  }
+  function createProgressCharts() {
+    resetChart('activityChart');
+    resetChart('quizChart');
+    if (!window.IcebergTrend) {
+      showState('activityChart', 'Activity chart is unavailable right now.');
+      showState('quizChart', 'Quiz chart is unavailable right now.');
+      return;
+    }
+    IcebergTrend.line({
+      canvas: 'activityChart',
       labels: labels,
-      datasets: [
-        {
-          label: 'Days Completed',
-          data: completions,
-          borderColor: '#1B3F7A', backgroundColor: 'rgba(27,63,122,.08)',
-          fill: true, tension: .38, spanGaps: true,
-          pointRadius: function(ctx){ return ctx.raw !== null ? 3 : 0; },
-          pointBackgroundColor: '#1B3F7A',
-          pointHoverRadius: 6, borderWidth: 2.5,
-        },
-      ],
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 12, bottom: 4, left: 8, right: 8 } },
-      interaction: { mode: 'index', intersect: false },
-      animation: { duration: 800, easing: 'easeOutQuart' },
-      plugins: {
-        legend: { position:'top', labels:{ font:{size:11,weight:'600'}, usePointStyle:true, pointStyleWidth:8, color:tickColor } },
-        tooltip: { backgroundColor: isDark?'#0D1B2F':'#0F172A', cornerRadius:10, padding:10, titleFont:{size:11}, bodyFont:{size:12} },
-      },
-      scales: {
-        x: { offset:true, ticks:{font:{size:10},maxTicksLimit:8,maxRotation:0,color:tickColor}, grid:{color:gridColor} },
-        y: { beginAtZero:true, ticks:{font:{size:10},stepSize:1,color:tickColor}, grid:{color:gridColor} },
-      },
-    },
-  });
-
-  /* Quiz score chart */
-  new Chart(document.getElementById('quizChart'), {
-    type: 'line',
-    data: {
+      series: [{ name: 'Days Completed', data: completions, color: '#00CFE8' }],
+      yMin: 0,
+      recreate: false,
+      emptyMessage: 'Daily activity will appear after completed study days.'
+    });
+    IcebergTrend.line({
+      canvas: 'quizChart',
       labels: labels,
-      datasets: [{
-        label: 'Quiz Score (%)',
-        data: quizScores,
-        borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,.08)',
-        fill: true, tension: .38, spanGaps: true,
-        pointRadius: function(ctx){ return ctx.raw !== null ? 3.5 : 0; },
-        pointBackgroundColor: '#F59E0B',
-        pointHoverRadius: 7, borderWidth: 2.5,
-      }],
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 12, bottom: 4, left: 8, right: 8 } },
-      animation: { duration: 800, easing: 'easeOutQuart' },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: isDark?'#0D1B2F':'#0F172A', cornerRadius:10, padding:10,
-          callbacks: { label: function(ctx){ return ctx.raw !== null ? 'Score: '+ctx.raw+'%' : 'No quiz'; } },
-        },
-      },
-      scales: {
-        x: { offset:true, ticks:{font:{size:10},maxTicksLimit:8,maxRotation:0,color:tickColor}, grid:{color:gridColor} },
-        y: { min:0, max:100, ticks:{font:{size:10},callback:function(v){return v+'%';},color:tickColor}, grid:{color:gridColor} },
-      },
-    },
-  });
+      series: [{ name: 'Quiz Score', data: quizScores, color: '#F59E0B' }],
+      suffix: '%',
+      yMin: 0,
+      yMax: 100,
+      recreate: false,
+      emptyMessage: 'Quiz scores will appear after you complete quizzes.'
+    });
+  }
+  createProgressCharts();
+  if (window.registerChartRecreation) window.registerChartRecreation(createProgressCharts);
 })();
 </script>
 {% endif %}

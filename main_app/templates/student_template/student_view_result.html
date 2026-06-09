@@ -13,10 +13,10 @@
 
 /* ══ TOKENS ══════════════════════════════════════════════════════ */
 .rp {
-  --navy: #0C1F45; --navy-mid: #1B3F7A; --cyan: #06B6D4;
+  --navy: #071A52; --navy-mid: #0B4F8A; --cyan: #00CFE8;
   --bg: #EEF3FB; --surf: #ffffff; --bdr: #E2EAF4;
   --txt: #0C1A36; --sub: #475569; --muted: #94A3B8;
-  --green: #10B981; --amber: #F59E0B; --red: #EF4444; --purple: #8B5CF6;
+  --green: #22C55E; --amber: #F59E0B; --red: #EF4444; --purple: #0B4F8A;
   --r-sm: 14px; --r-md: 22px; --r-lg: 32px;
   background: var(--bg); min-height: 100svh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -167,9 +167,9 @@
 .rp-bar-val span { font-size: 11px; font-weight: 600; color: var(--muted); }
 .rp-bar-track { height: 8px; background: var(--bdr); border-radius: 999px; overflow: hidden; position: relative; }
 .rp-bar-fill  { height: 100%; border-radius: 999px; width: 0%; transition: width .8s cubic-bezier(.4,0,.2,1); }
-.rp-fill-test  { background: linear-gradient(90deg, #8B5CF6, #A78BFA); }
-.rp-fill-exam  { background: linear-gradient(90deg, #06B6D4, #38BDF8); }
-.rp-fill-total-g { background: linear-gradient(90deg, #10B981, #34D399); }
+.rp-fill-test  { background: linear-gradient(90deg, #071A52, #0B4F8A); }
+.rp-fill-exam  { background: linear-gradient(90deg, #00CFE8, #67E8F9); }
+.rp-fill-total-g { background: linear-gradient(90deg, #22C55E, #34D399); }
 .rp-fill-total-a { background: linear-gradient(90deg, #F59E0B, #FCD34D); }
 .rp-fill-total-r { background: linear-gradient(90deg, #EF4444, #F87171); }
 
@@ -337,10 +337,10 @@
   {% with gi=forloop.counter0 %}
   <div class="rp-card rp-anim rp-anim-5" style="animation-delay:{{ forloop.counter0|add:'5' }}00ms;"
        data-total="{{ r.total }}">
-    <div class="rp-card-stripe" style="background:{% cycle '#8B5CF6' '#06B6D4' '#10B981' '#F59E0B' '#EF4444' '#3B82F6' '#EC4899' %}"></div>
+    <div class="rp-card-stripe" style="background:{% cycle '#071A52' '#00CFE8' '#0B4F8A' '#22C55E' '#F59E0B' '#EF4444' '#67E8F9' %}"></div>
     <div class="rp-card-head">
       <div class="rp-group-name">
-        <span class="rp-group-dot" style="background:{% cycle '#8B5CF6' '#06B6D4' '#10B981' '#F59E0B' '#EF4444' '#3B82F6' '#EC4899' %}"></span>
+        <span class="rp-group-dot" style="background:{% cycle '#071A52' '#00CFE8' '#0B4F8A' '#22C55E' '#F59E0B' '#EF4444' '#67E8F9' %}"></span>
         {% if r.group %}{{ r.group.name }}{% else %}General{% endif %}
       </div>
       <span class="rp-grade {% if r.total >= 90 %}grade-A{% elif r.total >= 75 %}grade-B{% elif r.total >= 60 %}grade-C{% elif r.total >= 45 %}grade-D{% else %}grade-F{% endif %}">
@@ -419,10 +419,17 @@
 {% endblock content %}
 
 {% block custom_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function () {
-  var isDark = document.documentElement.classList.contains('dark-mode') || document.body.classList.contains('dark-mode');
+  var BRAND = {
+    navy: '#071A52',
+    ocean: '#0B4F8A',
+    cyan: '#00CFE8',
+    softCyan: '#67E8F9',
+    green: '#22C55E',
+    amber: '#F59E0B',
+    red: '#EF4444'
+  };
 
   /* Animate hero ring */
   var AVG_CIRC  = 263.9;
@@ -442,55 +449,113 @@
   });
 
   /* Multi-group bar chart */
-  var ctx = document.getElementById('scoresChart');
-  if (ctx) {
-    var gridColor  = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)';
-    var tickColor  = isDark ? '#8CA4BE' : '#64748B';
-    var legendColor= isDark ? '#E2E8F0' : '#374151';
-    new Chart(ctx, {
+  function isDarkTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ||
+      document.documentElement.classList.contains('dark-mode') ||
+      document.body.classList.contains('dark-mode');
+  }
+  function isMobileChart() { return window.innerWidth <= 767; }
+  function gridColor() { return isDarkTheme() ? 'rgba(234,248,255,.10)' : 'rgba(7,26,82,.08)'; }
+  function mutedColor() { return isDarkTheme() ? '#9CB3CF' : '#64748B'; }
+  function legendColor() { return isDarkTheme() ? '#EAF8FF' : '#15345F'; }
+  function compact(labels, test, exam, total) {
+    var limit = isMobileChart() ? 6 : 10;
+    if (!labels || labels.length <= limit) return { labels: labels || [], test: test || [], exam: exam || [], total: total || [] };
+    return { labels: labels.slice(0, limit), test: test.slice(0, limit), exam: exam.slice(0, limit), total: total.slice(0, limit) };
+  }
+  function tooltipOptions() {
+    return {
+      backgroundColor: isDarkTheme() ? 'rgba(7,15,28,.96)' : 'rgba(7,26,82,.95)',
+      titleColor: '#fff',
+      bodyColor: BRAND.softCyan,
+      borderColor: 'rgba(0,207,232,.30)',
+      borderWidth: 1,
+      cornerRadius: 12,
+      padding: isMobileChart() ? 10 : 12,
+      titleFont: { size: 11, weight: '700', family: 'Inter, sans-serif' },
+      bodyFont: { size: isMobileChart() ? 12 : 13, weight: '800', family: 'Inter, sans-serif' }
+    };
+  }
+  function resetChart(canvasId) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    canvas.hidden = false;
+    var body = canvas.parentElement;
+    if (body) body.querySelectorAll('.ice-chart-state,.trend-card-empty').forEach(function(node) { node.remove(); });
+  }
+  function showState(canvasId, message) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    var body = canvas.parentElement;
+    canvas.hidden = true;
+    if (body && !body.querySelector('.ice-chart-state')) {
+      var state = document.createElement('div');
+      state.className = 'ice-chart-state';
+      state.textContent = message;
+      body.appendChild(state);
+    }
+  }
+  function register(chart) {
+    window.chartInstances = window.chartInstances || [];
+    window.chartInstances.push(chart);
+    return chart;
+  }
+  function createResultCharts() {
+    resetChart('scoresChart');
+    resetChart('scoresTrendChart');
+
+    var ctx = document.getElementById('scoresChart');
+    if (ctx) {
+      if (typeof Chart === 'undefined') {
+        showState('scoresChart', 'Score overview chart is unavailable right now.');
+      } else {
+        var bars = compact({{ chart_labels|safe }}, {{ chart_test|safe }}, {{ chart_exam|safe }}, {{ chart_total|safe }});
+        register(new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: {{ chart_labels|safe }},
+        labels: bars.labels,
         datasets: [
-          { label: 'Test (max 40)',    data: {{ chart_test|safe }},  backgroundColor: 'rgba(139,92,246,.75)', borderRadius: 6, borderSkipped: false },
-          { label: 'Exam (max 60)',    data: {{ chart_exam|safe }},  backgroundColor: 'rgba(6,182,212,.75)',  borderRadius: 6, borderSkipped: false },
-          { label: 'Total (max 100)', data: {{ chart_total|safe }}, backgroundColor: 'rgba(16,185,129,.75)', borderRadius: 6, borderSkipped: false },
+          { label: 'Test (max 40)', data: bars.test, backgroundColor: 'rgba(7,26,82,.82)', borderRadius: 8, borderSkipped: false, maxBarThickness: isMobileChart() ? 22 : 36 },
+          { label: 'Exam (max 60)', data: bars.exam, backgroundColor: 'rgba(0,207,232,.76)', borderRadius: 8, borderSkipped: false, maxBarThickness: isMobileChart() ? 22 : 36 },
+          { label: 'Total (max 100)', data: bars.total, backgroundColor: 'rgba(34,197,94,.78)', borderRadius: 8, borderSkipped: false, maxBarThickness: isMobileChart() ? 22 : 36 },
         ],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        layout: { padding: { top: 10, bottom: 4, left: 4, right: 4 } },
-        animation: { duration: 900, easing: 'easeOutQuart' },
+        layout: { padding: { top: 8, bottom: 0, left: 2, right: 2 } },
+        animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
         plugins: {
-          legend: { position: 'bottom', labels: { font:{size:11,weight:'600'}, boxWidth:10, padding:14, color:legendColor } },
-          tooltip: { cornerRadius: 8, padding: 10 },
+          legend: { display: !isMobileChart(), position: 'bottom', labels: { font:{size:11,weight:'700'}, usePointStyle: true, boxWidth:8, padding:12, color:legendColor() } },
+          tooltip: tooltipOptions(),
         },
         scales: {
-          y: { beginAtZero:true, max:100, grid:{color:gridColor}, ticks:{font:{size:11},color:tickColor,padding:6} },
-          x: { grid:{display:false}, ticks:{font:{size:11},color:tickColor,maxRotation:30} },
+          y: { beginAtZero:true, max:100, grid:{color:gridColor()}, ticks:{font:{size:isMobileChart()?9:11,weight:'600'},color:mutedColor(),padding:isMobileChart()?4:6,maxTicksLimit:isMobileChart()?4:6} },
+          x: { grid:{display:false}, ticks:{font:{size:isMobileChart()?9:11,weight:'600'},color:mutedColor(),maxRotation:isMobileChart()?0:24,autoSkip:true,maxTicksLimit:isMobileChart()?4:8} },
         },
       },
-    });
-  }
+        }));
+      }
+    }
 
-  /* Score trend line */
-  var trend = {{ trend_json|safe }};
-  if (trend.labels && trend.labels.length && window.IcebergTrend) {
-    IcebergTrend.line({
-      canvas: 'scoresTrendChart', labels: trend.labels,
-      series: [
-        { name:'Total', data:trend.totals, color:'#06B6D4' },
-        { name:'Test',  data:trend.tests,  color:'#8B5CF6' },
-        { name:'Exam',  data:trend.exams,  color:'#10B981' },
-      ],
-      suffix: '', yMax: 100,
-    });
-    var meta = document.getElementById('scores-trend-meta');
-    if (meta) meta.innerHTML = '<i class="fas fa-circle"></i> Avg ' + trend.avg + '/100';
-  } else {
-    var body = document.getElementById('scores-trend-body');
-    if (body) body.innerHTML = '<div class="trend-card-empty"><i class="fas fa-chart-line"></i><p>Your score trend will appear here once you have graded results.</p></div>';
+    var trend = {{ trend_json|safe }};
+    if (trend.labels && trend.labels.length && window.IcebergTrend) {
+      IcebergTrend.line({
+        canvas: 'scoresTrendChart', labels: trend.labels,
+        series: [
+          { name:'Total', data:trend.totals, color:BRAND.cyan },
+          { name:'Test',  data:trend.tests,  color:BRAND.ocean },
+          { name:'Exam',  data:trend.exams,  color:BRAND.green },
+        ],
+        suffix: '', yMax: 100, recreate: false,
+      });
+      var meta = document.getElementById('scores-trend-meta');
+      if (meta) meta.innerHTML = '<i class="fas fa-circle"></i> Avg ' + trend.avg + '/100';
+    } else {
+      showState('scoresTrendChart', 'Your score trend will appear here once you have graded results.');
+    }
   }
+  createResultCharts();
+  if (window.registerChartRecreation) window.registerChartRecreation(createResultCharts);
 })();
 </script>
 {% endblock custom_js %}

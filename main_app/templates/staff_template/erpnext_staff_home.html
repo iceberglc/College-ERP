@@ -5,6 +5,64 @@
 {% block page_title %}Teacher Dashboard{% endblock %}
 {% block breadcrumb %}<li class="breadcrumb-item active">Dashboard</li>{% endblock %}
 
+{% block custom_css %}
+<style>
+.teacher-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  gap: 14px;
+  margin: 4px 0 18px;
+}
+.teacher-chart-body {
+  position: relative;
+  min-height: 220px;
+  padding: 12px 14px 16px;
+}
+.teacher-group-card {
+  margin-top: 14px;
+}
+.teacher-group-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 11px 14px;
+  border-top: 1px solid var(--ice-border);
+}
+.teacher-group-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #071A52, #00CFE8);
+  font-size: 13px;
+  font-weight: 900;
+}
+.teacher-room-pill {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: #0B4F8A;
+  background: rgba(0, 207, 232, .12);
+  font-size: 11px;
+  font-weight: 800;
+}
+@media (max-width: 1023.98px) {
+  .teacher-dashboard-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 767.98px) {
+  .stats-grid { gap: 10px !important; margin-bottom: 14px !important; }
+  .teacher-dashboard-grid { gap: 12px; margin-bottom: 14px; }
+  .teacher-chart-body { min-height: 188px; padding: 10px 12px 12px; }
+  .teacher-group-row { padding: 10px 12px; }
+  .teacher-room-pill { display: none; }
+}
+</style>
+{% endblock custom_css %}
+
 {% block content %}
 
 {# ── Greeting banner ────────────────────────────────────────────────────────── #}
@@ -91,14 +149,14 @@
 
   {% if groups %}
   <!-- My Groups with start date -->
-    <div class="dash-card ice-list-card" style="margin-top:16px;">
+    <div class="dash-card ice-list-card teacher-group-card">
     <div class="dash-card-header">
       <span><i class="fas fa-layer-group" style="color:var(--ice-cyan);margin-right:8px;"></i>My Groups</span>
     </div>
     <div style="padding:0;">
       {% for g in groups %}
-      <div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--ice-border);">
-        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0C1F45,#1B3F7A);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;">{{ g.name|first|upper }}</div>
+      <div class="teacher-group-row">
+        <div class="teacher-group-avatar">{{ g.name|first|upper }}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:14px;font-weight:700;color:var(--ice-text);">{{ g.name }}</div>
           <div style="font-size:12px;color:var(--ice-muted);margin-top:2px;">
@@ -110,7 +168,7 @@
             {% if g.schedule %} &nbsp;·&nbsp; <i class="fas fa-clock" style="margin-right:2px;"></i>{{ g.schedule }}{% endif %}
           </div>
         </div>
-        {% if g.room %}<span style="font-size:11px;padding:3px 9px;border-radius:999px;background:#EFF6FF;color:#1F4FD9;font-weight:700;">{{ g.room }}</span>{% endif %}
+        {% if g.room %}<span class="teacher-room-pill">{{ g.room }}</span>{% endif %}
       </div>
       {% endfor %}
     </div>
@@ -119,25 +177,25 @@
 </div>
 
 {# ── Analytics charts ────────────────────────────────────────────────────────── #}
-<div class="row g-3 mt-1 mb-3">
+<div class="teacher-dashboard-grid">
 
-  <div class="col-lg-4">
+  <div>
     <div class="erpnext-card ice-chart-card h-100">
       <div class="card-header">
         <h3 class="card-title"><i class="fas fa-chart-pie me-2" style="color:var(--ice-cyan);"></i>Attendance vs Leave</h3>
       </div>
-      <div class="card-body d-flex align-items-center justify-content-center" style="min-height:240px;">
-        <canvas id="pieChart" style="max-height:240px;"></canvas>
+      <div class="teacher-chart-body">
+        <canvas id="pieChart"></canvas>
       </div>
     </div>
   </div>
 
-  <div class="col-lg-8">
+  <div>
     <div class="erpnext-card ice-chart-card h-100">
       <div class="card-header">
         <h3 class="card-title"><i class="fas fa-chart-bar me-2" style="color:var(--ice-cyan);"></i>Attendance Sessions per Group</h3>
       </div>
-      <div class="card-body" style="position:relative; min-height:240px;">
+      <div class="teacher-chart-body">
         <canvas id="barChart"></canvas>
       </div>
     </div>
@@ -150,51 +208,131 @@
 {% block custom_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  Chart.defaults.font.family = "'Inter', sans-serif";
-
-  const NAVY  = '#1B3F7A';
-  const CYAN  = '#06B6D4';
-  const GREEN = '#10B981';
-  const RED   = '#EF4444';
+  const BRAND = {
+    navy: '#071A52',
+    ocean: '#0B4F8A',
+    cyan: '#00CFE8',
+    softCyan: '#67E8F9',
+    green: '#22C55E',
+    red: '#EF4444'
+  };
+  const subjects = {{ subject_list|safe }};
+  const attendance = {{ attendance_list|safe }};
 
   function isDarkTheme() {
     return document.documentElement.getAttribute('data-theme') === 'dark' ||
       document.documentElement.classList.contains('dark-mode') ||
       document.body.classList.contains('dark-mode');
   }
-  function textColor() { return isDarkTheme() ? '#CBD5E1' : '#334155'; }
-  function gridColor() { return isDarkTheme() ? '#1E2E4A' : '#EFF6FF'; }
-
-  /* Attendance vs Leave doughnut */
-  new Chart(document.getElementById('pieChart'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Sessions Taken', 'Leave Applied'],
-      datasets: [{ data: [{{ total_attendance }}, {{ total_leave }}], backgroundColor: [GREEN, RED], borderWidth: 0, cutout: '65%' }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { color: textColor(), usePointStyle: true, padding: 18 } } }
+  function isMobileChart() { return window.innerWidth <= 767; }
+  function textColor() { return isDarkTheme() ? '#DCEBFF' : '#15345F'; }
+  function mutedColor() { return isDarkTheme() ? '#9CB3CF' : '#64748B'; }
+  function gridColor() { return isDarkTheme() ? 'rgba(234,248,255,.10)' : 'rgba(7,26,82,.08)'; }
+  function hasData(values) { return (values || []).some(function(v) { return Number(v) > 0; }); }
+  function compact(labels, values) {
+    var limit = isMobileChart() ? 6 : 10;
+    if (!labels || labels.length <= limit) return { labels: labels || [], values: values || [] };
+    return { labels: labels.slice(0, limit), values: values.slice(0, limit) };
+  }
+  function tooltipOptions() {
+    return {
+      backgroundColor: isDarkTheme() ? 'rgba(7,15,28,.96)' : 'rgba(7,26,82,.95)',
+      titleColor: '#fff',
+      bodyColor: BRAND.softCyan,
+      borderColor: 'rgba(0,207,232,.30)',
+      borderWidth: 1,
+      cornerRadius: 12,
+      padding: isMobileChart() ? 10 : 12,
+      titleFont: { size: 11, weight: '700', family: 'Inter, sans-serif' },
+      bodyFont: { size: isMobileChart() ? 12 : 13, weight: '800', family: 'Inter, sans-serif' }
+    };
+  }
+  function showChartState(canvasId, message) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    var body = canvas.closest('.teacher-chart-body');
+    if (!body) return;
+    canvas.hidden = true;
+    if (!body.querySelector('.ice-chart-state')) {
+      var state = document.createElement('div');
+      state.className = 'ice-chart-state';
+      state.textContent = message;
+      body.appendChild(state);
     }
-  });
-
-  /* Attendance per subject bar */
-  new Chart(document.getElementById('barChart'), {
-    type: 'bar',
-    data: {
-      labels: {{ subject_list|safe }},
-      datasets: [{ label: 'Sessions', data: {{ attendance_list }}, backgroundColor: CYAN, borderRadius: 5, borderSkipped: false }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 8, bottom: 4, left: 4, right: 4 } },
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { color: textColor(), padding: 6 } },
-        x: { grid: { display: false }, ticks: { color: textColor(), maxRotation: 30 } }
-      }
+  }
+  function clearChartState(canvasId) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    canvas.hidden = false;
+    var body = canvas.closest('.teacher-chart-body');
+    if (body) body.querySelectorAll('.ice-chart-state').forEach(function(node) { node.remove(); });
+  }
+  function register(chart) {
+    window.chartInstances = window.chartInstances || [];
+    window.chartInstances.push(chart);
+    return chart;
+  }
+  function createTeacherCharts() {
+    clearChartState('pieChart');
+    clearChartState('barChart');
+    if (typeof Chart === 'undefined') {
+      showChartState('pieChart', 'Charts are unavailable right now. The summary cards above are still current.');
+      showChartState('barChart', 'Charts are unavailable right now. Your group data remains accessible.');
+      return;
     }
-  });
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    var compacted = compact(subjects, attendance);
+    var totalActivity = Number({{ total_attendance }}) + Number({{ total_leave }});
+
+    if (!totalActivity) {
+      showChartState('pieChart', 'Attendance and leave analytics will appear once activity exists.');
+    } else {
+      register(new Chart(document.getElementById('pieChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Sessions Taken', 'Leave Applied'],
+          datasets: [{ data: [{{ total_attendance }}, {{ total_leave }}], backgroundColor: [BRAND.green, BRAND.red], borderWidth: 0, cutout: '70%' }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
+          plugins: {
+            legend: { display: !isMobileChart(), position: 'bottom', labels: { color: mutedColor(), usePointStyle: true, boxWidth: 8, padding: 12 } },
+            tooltip: tooltipOptions()
+          }
+        }
+      }));
+    }
+
+    if (!hasData(compacted.values)) {
+      showChartState('barChart', 'Attendance sessions will appear after attendance is taken for your groups.');
+    } else {
+      register(new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+          labels: compacted.labels,
+          datasets: [{ label: 'Sessions', data: compacted.values, backgroundColor: 'rgba(0,207,232,.78)', borderColor: BRAND.cyan, borderWidth: 1, borderRadius: 9, borderSkipped: false, maxBarThickness: isMobileChart() ? 30 : 48 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: { top: 8, bottom: 0, left: 2, right: 2 } },
+          animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
+          plugins: { legend: { display: false }, tooltip: tooltipOptions() },
+          scales: {
+            y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { color: mutedColor(), padding: isMobileChart() ? 4 : 8, maxTicksLimit: isMobileChart() ? 4 : 6 } },
+            x: { grid: { display: false }, ticks: { color: mutedColor(), maxRotation: isMobileChart() ? 0 : 24, autoSkip: true, maxTicksLimit: isMobileChart() ? 4 : 8 } }
+          }
+        }
+      }));
+    }
+  }
+
+  createTeacherCharts();
+  if (window.registerChartRecreation) {
+    window.registerChartRecreation(createTeacherCharts);
+  }
 });
 </script>
 {% endblock custom_js %}

@@ -599,7 +599,7 @@ select.att-control {
   var trend = {{ trend_json|safe }};
   var hasData = (trend.values||[]).some(function(v){return v!==null;});
   if (hasData && window.IcebergTrend) {
-    IcebergTrend.line({canvas:'attTrendChart',labels:trend.labels,series:[{name:'Attendance',data:trend.values,color:'#06B6D4'}],suffix:'%',yMax:100});
+    IcebergTrend.line({canvas:'attTrendChart',labels:trend.labels,series:[{name:'Attendance',data:trend.values,color:'#00CFE8'}],suffix:'%',yMax:100});
     var meta=document.getElementById('att-trend-meta');
     if(meta) meta.innerHTML='<i class="fas fa-circle"></i> Avg '+trend.avg+'%';
   } else {

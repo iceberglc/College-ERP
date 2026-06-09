@@ -6,23 +6,23 @@
 
 /* ── Design Tokens ───────────────────────────────────── */
 :root {
-  --navy:        #0C1F45;
-  --navy-mid:    #1B3F7A;
-  --navy-light:  #2A5BA8;
-  --cyan:        #06B6D4;
-  --cyan-dk:     #0891B2;
-  --cyan-light:  #E0F7FA;
+  --navy:        #071A52;
+  --navy-mid:    #0B4F8A;
+  --navy-light:  #2569AE;
+  --cyan:        #00CFE8;
+  --cyan-dk:     #0B4F8A;
+  --cyan-light:  #EAF8FF;
 
-  --bg:          #F4F5F7;
+  --bg:          #F4F7FB;
   --surface:     #FFFFFF;
   --surface-2:   #F9FAFB;
   --border:      #E4E7EC;
   --border-dk:   #CDD4DF;
 
-  --text:        #0C1F45;
+  --text:        #071A52;
   --text-muted:  #64748B;
 
-  --success:     #10B981;
+  --success:     #22C55E;
   --warning:     #F59E0B;
   --danger:      #EF4444;
   --info:        #3B82F6;
@@ -49,20 +49,20 @@
   --border-color:  var(--border);
 
   /* --ice-* aliases for template consistency */
-  --ice-navy:      #0C1F45;
-  --ice-navy-mid:  #1B3F7A;
-  --ice-cyan:      #06B6D4;
-  --ice-cyan-dk:   #0891B2;
+  --ice-navy:      #071A52;
+  --ice-navy-mid:  #0B4F8A;
+  --ice-cyan:      #00CFE8;
+  --ice-cyan-dk:   #0B4F8A;
   --ice-surface:   #FFFFFF;
   --ice-surface2:  #F9FAFB;
   --ice-border:    #E4E7EC;
-  --ice-text:      #0C1F45;
+  --ice-text:      #071A52;
   --ice-muted:     #64748B;
-  --ice-success:   #10B981;
+  --ice-success:   #22C55E;
   --ice-warning:   #F59E0B;
   --ice-danger:    #EF4444;
   --ice-info:      #3B82F6;
-  --ice-bg:        #F4F5F7;
+  --ice-bg:        #F4F7FB;
 
   /* ── Canonical design-system tokens (design bundle) ───── */
   --navy-deep:    #06102A;   /* hero gradient floor */

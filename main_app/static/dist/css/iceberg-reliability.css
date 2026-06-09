@@ -61,6 +61,7 @@ textarea:focus-visible,
 .navbar-notification,
 .navbar-toggle,
 .navbar-user-avatar,
+.navbar-brand,
 .ice-chat-send,
 .avatar-modal-close,
 .ice-modal-close,
@@ -142,6 +143,47 @@ canvas {
   min-width: 0;
 }
 
+.erpnext-card,
+.ice-card,
+.dash-card,
+.trend-card,
+.rp-chart-card,
+.pg-chart-card,
+.pg-exam-card,
+.rp-card {
+  border-radius: 18px;
+}
+
+.erpnext-card .card-header,
+.ice-card .card-header {
+  padding-block: 12px;
+}
+
+.erpnext-card .card-body,
+.ice-card .card-body {
+  padding: 14px;
+}
+
+.ice-chart-card .card-body,
+.trend-card-body,
+.rp-chart-card > div:last-child,
+.pg-chart-body {
+  min-height: 210px;
+}
+
+.table,
+.ice-manage-table,
+.pg-table {
+  max-width: 100%;
+}
+
+.table th,
+.table td,
+.ice-manage-table th,
+.ice-manage-table td {
+  vertical-align: middle;
+}
+
 .ice-mobile-card,
 .ice-manage-card,
 .profile-panel,
@@ -182,16 +224,143 @@ canvas {
     white-space: nowrap;
   }
 
+  .erpnext-card,
+  .ice-card,
+  .dash-card,
+  .trend-card,
+  .rp-chart-card,
+  .pg-chart-card,
+  .pg-exam-card,
+  .rp-card,
+  .ice-manage-card {
+    border-radius: 16px;
+  }
+
+  .erpnext-card .card-header,
+  .ice-card .card-header {
+    padding: 11px 12px;
+  }
+
+  .erpnext-card .card-body,
+  .ice-card .card-body,
+  .rp-chart-card,
+  .pg-chart-body {
+    padding: 12px;
+  }
+
   .admin-chart-stage,
   .ice-chart-card,
-  .erpnext-card:has(canvas) {
-    min-height: 220px;
+  .erpnext-card:has(canvas),
+  .trend-card-body,
+  .rp-chart-card > div:last-child,
+  .pg-chart-body {
+    min-height: 188px;
   }
 
   .admin-chart-stage canvas,
   .ice-chart-card canvas,
-  .erpnext-card canvas {
-    max-height: 240px;
+  .erpnext-card canvas,
+  .trend-card canvas,
+  .rp-chart-card canvas,
+  .pg-chart-card canvas {
+    max-height: 210px;
+  }
+
+  .quick-action-btn,
+  .ice-action,
+  .ice-manage-action,
+  .settings-row,
+  .admin-link,
+  .admin-primary-action,
+  .admin-secondary-action,
+  .erpnext-sidebar .nav-link,
+  .animated-logout.sidebar-logout-btn {
+    min-height: 44px;
+  }
+
+  .navbar-brand,
+  .navbar-user-avatar {
+    min-height: 44px !important;
+    height: 44px !important;
+  }
+
+  .ice-manage-card {
+    padding: 13px;
+  }
+
+  .ice-manage-card__avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .ice-manage-actions {
+    gap: 6px;
+  }
+
+  .pg-exam-card > div[style*="overflow-x"] {
+    overflow-x: visible !important;
+  }
+
+  .pg-table,
+  .pg-table thead,
+  .pg-table tbody,
+  .pg-table tr,
+  .pg-table th,
+  .pg-table td {
+    display: block;
+  }
+
+  .pg-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .pg-table tr {
+    margin: 0 12px 12px;
+    border: 1px solid rgba(7, 26, 82, .10);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .50);
+  }
+
+  .dark-mode .pg-table tr,
+  [data-theme="dark"] .pg-table tr {
+    background: rgba(255, 255, 255, .035);
+    border-color: rgba(234, 248, 255, .10);
+  }
+
+  .pg-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(7, 26, 82, .08);
+    font-size: 13px;
+  }
+
+  .pg-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .pg-table td:nth-child(1)::before { content: "Group"; }
+  .pg-table td:nth-child(2)::before { content: "Test"; }
+  .pg-table td:nth-child(3)::before { content: "Exam"; }
+  .pg-table td:nth-child(4)::before { content: "Total"; }
+  .pg-table td:nth-child(5)::before { content: "Score"; }
+
+  .pg-table td::before {
+    color: #64748B;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  .pg-score-bar-wrap {
+    width: min(170px, 54vw);
   }
 
   .ice-toast-stack {

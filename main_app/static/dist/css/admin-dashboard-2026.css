@@ -121,14 +121,6 @@
   color: var(--ib-cyan);
 }
 
-.admin-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #34D399;
-  box-shadow: 0 0 0 6px rgba(52, 211, 153, .16);
-}
-
 .admin-command h1 {
   max-width: 760px;
   margin: 0;
@@ -279,8 +271,8 @@
 .admin-metric-card {
   position: relative;
   overflow: hidden;
-  min-height: 208px;
-  padding: 18px;
+  min-height: 176px;
+  padding: 16px;
   border-radius: var(--ib-radius);
   color: var(--ib-text);
   text-decoration: none;
@@ -351,9 +343,9 @@
 }
 
 .admin-metric-card__value {
-  margin-top: 18px;
+  margin-top: 14px;
   color: var(--ib-text);
-  font-size: 36px;
+  font-size: 33px;
   font-weight: 950;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -376,7 +368,7 @@
 .admin-progress {
   height: 7px;
   overflow: hidden;
-  margin-top: 14px;
+  margin-top: 12px;
   border-radius: 999px;
   background: rgba(100,116,139,.14);
 }
@@ -394,8 +386,8 @@
   display: flex;
   align-items: end;
   gap: 5px;
-  height: 58px;
-  margin-top: 11px;
+  height: 42px;
+  margin-top: 10px;
 }
 
 .admin-spark span {
@@ -441,8 +433,8 @@
   column-gap: 10px;
   align-items: center;
   min-width: 0;
-  min-height: 82px;
-  padding: 12px;
+  min-height: 74px;
+  padding: 10px;
   border: 1px solid rgba(7,26,82,.08);
   border-radius: 18px;
   color: var(--ib-text);
@@ -513,7 +505,7 @@
 
 .admin-card {
   min-width: 0;
-  padding: 18px;
+  padding: 16px;
   border-radius: var(--ib-radius);
   transition: transform .2s cubic-bezier(.22,1,.36,1), box-shadow .2s ease, border-color .2s ease;
 }
@@ -552,11 +544,11 @@
 
 .admin-chart-stage {
   position: relative;
-  min-height: 280px;
+  min-height: 252px;
 }
 
 .admin-chart-stage--donut {
-  min-height: 270px;
+  min-height: 236px;
 }
 
 .admin-chart-stage canvas {
@@ -799,16 +791,16 @@
 
 @media (max-width: 768px) {
   .admin-dashboard {
-    gap: 14px;
+    gap: 12px;
     padding-bottom: 110px;
   }
   .admin-command {
     min-height: auto;
-    padding: 18px;
-    border-radius: 24px;
+    padding: 16px;
+    border-radius: 22px;
   }
   .admin-command__panel {
-    min-height: 230px;
+    min-height: 190px;
   }
   .admin-metrics,
   .admin-grid--live {
@@ -823,7 +815,29 @@
     grid-template-columns: 1fr;
   }
   .admin-quick-action {
-    min-height: 76px;
+    min-height: 66px;
+  }
+  .admin-primary-action,
+  .admin-secondary-action,
+  .admin-link {
+    min-height: 44px;
+  }
+  .admin-link {
+    padding-inline: 12px;
+  }
+  .admin-metric-card {
+    min-height: 154px;
+    padding: 14px;
+  }
+  .admin-metric-card__value {
+    font-size: 30px;
+  }
+  .admin-spark {
+    height: 32px;
+  }
+  .admin-chart-stage,
+  .admin-chart-stage--donut {
+    min-height: 214px;
   }
 }
 

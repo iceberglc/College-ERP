@@ -38,7 +38,6 @@
     </div>
     <div class="profile-name">{{ user.get_full_name|default:user.login_id }}</div>
     <span class="profile-role"><i class="fas fa-user-graduate"></i> Student</span>
-    <span class="profile-status"><span class="profile-status__dot"></span> Online</span>
     <div class="profile-meta">
       <span class="profile-meta__chip"><i class="fas fa-id-badge"></i> {{ user.login_id|default:"—" }}</span>
       <span class="profile-meta__chip"><i class="fas fa-book"></i> {{ student.course|default:"No course" }}</span>
