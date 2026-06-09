@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.core.exceptions import ValidationError
 from .models import (
+    Admin,
     CustomUser,
     Staff,
     Student,
@@ -20,6 +22,58 @@ from .models import (
     Notification,
     RegistrationLead,
 )
+
+
+@admin.register(Admin)
+class AdminAdmin(admin.ModelAdmin):
+    list_display = ("full_name", "email", "is_super_admin", "branch_list")
+    list_filter = ("is_super_admin",)
+    search_fields = ("admin__email", "admin__first_name", "admin__last_name")
+    filter_horizontal = ("branches",)
+    raw_id_fields = ("admin",)
+    readonly_fields = ("admin",)
+
+    def full_name(self, obj):
+        return obj.admin.get_full_name() or "—"
+    full_name.short_description = "Name"
+
+    def email(self, obj):
+        return obj.admin.email
+    email.short_description = "Email"
+
+    def branch_list(self, obj):
+        if obj.is_super_admin:
+            return "All branches (super admin)"
+        names = ", ".join(obj.branches.values_list("name", flat=True)[:3])
+        extra = max(obj.branches.count() - 3, 0)
+        return f"{names} +{extra} more" if extra else names or "—"
+    branch_list.short_description = "Branches"
+
+    def save_model(self, request, obj, form, change):
+        if obj.is_super_admin:
+            existing = Admin.objects.filter(is_super_admin=True).exclude(pk=obj.pk)
+            if existing.exists():
+                name = existing.first().admin.get_full_name() or existing.first().admin.email
+                self.message_user(
+                    request,
+                    f"Could not save: {name} is already the super admin. "
+                    "Only one super admin is allowed. Demote the existing super admin first.",
+                    level="error",
+                )
+                return
+        super().save_model(request, obj, form, change)
+
+    def has_add_permission(self, request):
+        # Admin profiles are created automatically via signal — block manual creation.
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # Protect the only super admin from deletion.
+        if obj is not None and obj.is_super_admin:
+            other_super = Admin.objects.filter(is_super_admin=True).exclude(pk=obj.pk)
+            if not other_super.exists():
+                return False
+        return super().has_delete_permission(request, obj)
 
 
 @admin.register(CustomUser)

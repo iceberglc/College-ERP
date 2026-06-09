@@ -631,6 +631,29 @@
   line-height: 1.35;
 }
 
+.ice-admin-scope-toggle--locked {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: rgba(100, 116, 139, 0.08);
+  border-color: rgba(100, 116, 139, 0.16);
+}
+.ice-admin-scope-toggle--locked input {
+  cursor: not-allowed;
+}
+.ice-admin-lock-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: rgba(100, 116, 139, 0.15);
+  color: #64748b;
+  font-size: 9px;
+  vertical-align: middle;
+}
+
 .ice-admin-access-branches {
   display: flex;
   flex-wrap: wrap;

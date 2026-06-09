@@ -393,6 +393,7 @@
   gap: 5px;
   height: 42px;
   margin-top: 10px;
+  overflow: hidden;
 }
 
 .admin-spark span {
@@ -766,6 +767,38 @@
 @keyframes adminSkeleton {
   0% { background-position: 160% 0; }
   100% { background-position: -160% 0; }
+}
+
+@keyframes adminSparkPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* Metric card skeleton shimmer — shown briefly while charts init */
+.admin-metric-card--skeleton {
+  pointer-events: none;
+}
+.admin-metric-card--skeleton .admin-metric-card__value,
+.admin-metric-card--skeleton .admin-metric-card__label,
+.admin-metric-card--skeleton .admin-metric-card__meta,
+.admin-metric-card--skeleton .admin-trend,
+.admin-metric-card--skeleton .admin-metric-card__icon {
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(0,207,232,.12) 25%, rgba(255,255,255,.22) 50%, rgba(0,207,232,.12) 75%);
+  background-size: 220% 100%;
+  animation: adminSkeleton 1.4s ease infinite;
+  color: transparent !important;
+}
+.admin-metric-card--skeleton .admin-spark span {
+  animation: adminSparkPulse 1.4s ease infinite;
+}
+
+/* Performance: defer rendering of below-fold dashboard sections */
+.admin-grid--analytics,
+.admin-grid--live,
+.admin-grid--mini {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 400px;
 }
 
 @keyframes adminIconPop {

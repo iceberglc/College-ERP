@@ -63,11 +63,17 @@
           </span>
         </div>
 
-        <label class="ice-admin-scope-toggle">
-          <input type="checkbox" name="is_super_admin" {% if admin_profile.is_super_admin %}checked{% endif %}>
+        <label class="ice-admin-scope-toggle {% if admin_profile.superadmin_toggle_locked %}ice-admin-scope-toggle--locked{% endif %}">
+          <input type="checkbox" name="is_super_admin"
+                 {% if admin_profile.is_super_admin %}checked{% endif %}
+                 {% if admin_profile.superadmin_toggle_locked %}disabled{% endif %}>
           <span>
-            <strong>Super admin</strong>
-            <small>Can see and manage every branch.</small>
+            <strong>Super admin
+              {% if admin_profile.superadmin_toggle_locked %}
+              <span class="ice-admin-lock-badge" title="Only super admin — cannot be demoted without promoting another admin first"><i class="fas fa-lock" aria-hidden="true"></i></span>
+              {% endif %}
+            </strong>
+            <small>{% if admin_profile.superadmin_toggle_locked %}Only super admin. Promote another admin first to change this.{% else %}Can see and manage every branch.{% endif %}</small>
           </span>
         </label>
 

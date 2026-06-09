@@ -126,9 +126,9 @@ def admin_home(request):
     def spark_points(values):
         max_value = max(values) if values else 0
         if max_value <= 0:
-            return [{"value": value, "height": 18} for value in values]
+            return [{"value": value, "height": "20%"} for value in values]
         return [
-            {"value": value, "height": 18 + round((value / max_value) * 34)}
+            {"value": value, "height": f"{max(18, round((value / max_value) * 100))}%"}
             for value in values
         ]
 
@@ -1323,17 +1323,33 @@ def manage_branch(request):
     branches = branching.filter_branches_for_user(request.user, Branch.objects.all())
     admin_profiles = []
     all_branches = Branch.objects.all().order_by("name")
+    current_admin_profile = None
     if is_super_admin:
+        try:
+            current_admin_profile = Admin.objects.get(admin=request.user)
+        except Admin.DoesNotExist:
+            pass
         admin_profiles = list(
             Admin.objects.select_related("admin")
             .prefetch_related("branches")
             .order_by("admin__first_name", "admin__last_name", "admin__email")
         )
+        super_admin_count = sum(1 for ap in admin_profiles if ap.is_super_admin)
         for admin_profile in admin_profiles:
             assigned_branches = list(admin_profile.branches.all())
             admin_profile.assigned_branch_ids = {branch.id for branch in assigned_branches}
             admin_profile.assigned_branch_names = ", ".join(
                 branch.name for branch in assigned_branches
+            )
+            admin_profile.is_current_user = (
+                current_admin_profile is not None
+                and admin_profile.id == current_admin_profile.id
+            )
+            # Lock the super-admin toggle when this IS the only super admin
+            # (removing them would leave zero super admins).
+            admin_profile.superadmin_toggle_locked = (
+                admin_profile.is_super_admin
+                and super_admin_count == 1
             )
     return render(
         request,
@@ -1362,6 +1378,18 @@ def update_admin_branch_access(request, admin_id):
     )
     make_super_admin = request.POST.get("is_super_admin") == "on"
     branch_ids = request.POST.getlist("branches")
+
+    # Single-superadmin enforcement: block promoting a second admin to superadmin.
+    if make_super_admin and not admin_profile.is_super_admin:
+        existing_super = Admin.objects.filter(is_super_admin=True).exclude(id=admin_profile.id).first()
+        if existing_super:
+            name = existing_super.admin.get_full_name() or existing_super.admin.email
+            messages.error(
+                request,
+                f"Only one super admin is allowed. {name} is already the super admin. "
+                "Demote them first before promoting another admin.",
+            )
+            return redirect(reverse("manage_branch"))
 
     if not make_super_admin:
         if not branch_ids:
