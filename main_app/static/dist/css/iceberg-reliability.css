@@ -370,6 +370,14 @@ canvas {
     bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
     width: min(380px, calc(100vw - 24px));
   }
+
+  /* Shrink textarea on mobile so the submit button doesn't hide behind
+     the fixed bottom nav on short-form pages like leave/feedback. */
+  body.has-glow-bottom-nav .pf-field textarea,
+  body.has-glow-bottom-nav .pf-field textarea.form-control {
+    min-height: 70px !important;
+    max-height: 160px !important;
+  }
 }
 
 @media (min-width: 768px) and (max-width: 1023.98px) {

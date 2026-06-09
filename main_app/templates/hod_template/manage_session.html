@@ -2,15 +2,41 @@
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock %}
 
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
+{% endblock custom_css %}
+
 {% block content %}
-<div class="dt-card">
-  <div class="dt-header">
-    <div class="dt-title"><i class="fas fa-calendar-alt me-2"></i>{{ page_title }} <span class="dt-count">{{ sessions|length }}</span></div>
-    <a href="{% url 'add_session' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add Session</a>
+<div class="ice-manage-page" data-manage-search-scope>
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-calendar-alt"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Manage Sessions</h2>
+        <p class="ice-manage-hero__subtitle">Define academic year start and end dates.</p>
+      </div>
+    </div>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count"><span data-manage-visible-count>{{ sessions|length }}</span>&nbsp;total</span>
+      <a href="{% url 'add_session' %}" class="ice-manage-add-btn">
+        <i class="fas fa-plus" aria-hidden="true"></i> Add Session
+      </a>
+    </div>
+  </section>
+
+  <label class="ice-manage-search" aria-label="Search sessions">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search by year..." autocomplete="off">
+  </label>
+
+  <div class="ice-manage-empty" data-manage-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No sessions found</strong>
+    <span>Try a different year.</span>
   </div>
-  {% if sessions %}
-  <div style="overflow-x:auto;">
-    <table class="dt">
+
+  <div class="ice-manage-table-wrap">
+    <table class="ice-manage-table">
       <thead>
         <tr>
           <th>#</th>
@@ -21,18 +47,31 @@
       </thead>
       <tbody>
         {% for session in sessions %}
-        <tr>
-          <td style="color:var(--ice-muted);">{{ forloop.counter }}</td>
-          <td>{{ session.start_year }}</td>
-          <td>{{ session.end_year }}</td>
+        <tr data-manage-search-item
+            data-manage-search-text="{{ session.start_year }} {{ session.end_year }}">
+          <td>{{ forloop.counter }}</td>
+          <td><strong>{{ session.start_year }}</strong></td>
+          <td style="color:var(--ice-muted);">{{ session.end_year }}</td>
           <td>
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <a href="{% url 'edit_session' session.id %}" class="ab-edit"><i class="fas fa-edit me-1"></i>Edit</a>
-              <a href="{% url 'delete_session' session.id %}" class="ab-danger"
-                 data-confirm-post="Delete this session? This cannot be undone."
-                 onclick="return confirm('Delete this session? This cannot be undone.')">
-                <i class="fas fa-trash me-1"></i>Delete
+            <div class="ice-manage-actions">
+              <a href="{% url 'edit_session' session.id %}" class="ice-manage-action">
+                <i class="fas fa-edit" aria-hidden="true"></i> Edit
               </a>
+              <a href="{% url 'delete_session' session.id %}" class="ice-manage-action ice-manage-action--danger"
+                 data-confirm-post="Delete this session? This cannot be undone."
+                 onclick="return confirm('Delete this session? This cannot be undone.');">
+                <i class="fas fa-trash" aria-hidden="true"></i> Delete
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4">
+            <div class="ice-manage-empty">
+              <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+              <strong>No sessions yet</strong>
+              <span>Add your first academic session to get started.</span>
             </div>
           </td>
         </tr>
@@ -40,11 +79,42 @@
       </tbody>
     </table>
   </div>
-  {% else %}
-  <div style="text-align:center; padding:48px; color:var(--ice-muted);">
-    <i class="fas fa-calendar-alt" style="font-size:36px; opacity:.2; display:block; margin-bottom:12px;"></i>
-    No academic sessions defined yet. <a href="{% url 'add_session' %}">Add one</a>.
+
+  <div class="ice-manage-mobile-list">
+    {% for session in sessions %}
+    <article class="ice-manage-card"
+             data-manage-search-item
+             data-manage-search-primary
+             data-manage-search-text="{{ session.start_year }} {{ session.end_year }}">
+      <div class="ice-manage-card__top">
+        <span class="ice-manage-card__avatar" aria-hidden="true"><i class="fas fa-calendar-alt"></i></span>
+        <div class="ice-manage-card__main">
+          <h3 class="ice-manage-card__title">{{ session.start_year }} – {{ session.end_year }}</h3>
+          <div class="ice-manage-card__subtitle">Academic Session</div>
+        </div>
+      </div>
+      <div class="ice-manage-actions">
+        <a href="{% url 'edit_session' session.id %}" class="ice-manage-action">
+          <i class="fas fa-edit" aria-hidden="true"></i> Edit
+        </a>
+        <a href="{% url 'delete_session' session.id %}" class="ice-manage-action ice-manage-action--danger"
+           data-confirm-post="Delete this session? This cannot be undone."
+           onclick="return confirm('Delete this session? This cannot be undone.');">
+          <i class="fas fa-trash" aria-hidden="true"></i> Delete
+        </a>
+      </div>
+    </article>
+    {% empty %}
+    <div class="ice-manage-empty">
+      <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+      <strong>No sessions yet</strong>
+      <span>Add your first academic session to get started.</span>
+    </div>
+    {% endfor %}
   </div>
-  {% endif %}
 </div>
-{% endblock %}
+{% endblock content %}
+
+{% block custom_js %}
+<script src="{% static 'dist/js/admin-manage-mobile.js' %}"></script>
+{% endblock custom_js %}
