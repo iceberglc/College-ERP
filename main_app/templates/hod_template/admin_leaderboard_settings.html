@@ -204,8 +204,9 @@
 
 <script>
 (function () {
-  /* Live total recompute */
-  var inputs = document.querySelectorAll('.lset-weight');
+  /* Live total recompute. Django renders the weight fields without a class,
+     so select the number inputs inside each row instead. */
+  var inputs = document.querySelectorAll('.lset-row input[type=number]');
   var toggles = document.querySelectorAll('.lset-toggle input[type=checkbox]');
   function recalc() {
     var total = 0;
@@ -219,7 +220,6 @@
     document.getElementById('lset-total-num').textContent = total;
   }
   inputs.forEach(function (inp) {
-    inp.classList.add('lset-weight');
     inp.addEventListener('input', recalc);
   });
   toggles.forEach(function (t) { t.addEventListener('change', recalc); });
