@@ -791,53 +791,103 @@
 
 @media (max-width: 768px) {
   .admin-dashboard {
-    gap: 12px;
+    gap: 10px;
     padding-bottom: 110px;
   }
   .admin-command {
     min-height: auto;
-    padding: 16px;
-    border-radius: 22px;
+    padding: 14px;
+    border-radius: 20px;
   }
   .admin-command__panel {
-    min-height: 190px;
+    min-height: 160px;
+    padding: 14px;
+    gap: 10px;
   }
-  .admin-metrics,
+  /* Metric cards: 2-column on phones */
+  .admin-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* Live cards: 2-column on phones */
   .admin-grid--live {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .admin-quick-actions,
   .admin-card,
   .admin-metric-card {
-    border-radius: 20px;
+    border-radius: 18px;
   }
+  /* Quick actions: 2-column grid on phones (was 1-column = 8 tall rows) */
   .admin-quick-actions__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
   .admin-quick-action {
-    min-height: 66px;
+    min-height: 56px;
+    padding: 9px;
+    border-radius: 16px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    column-gap: 8px;
+  }
+  .admin-quick-action span {
+    width: 38px;
+    height: 38px;
+    border-radius: 13px;
+  }
+  .admin-quick-action strong {
+    font-size: 12px;
+  }
+  .admin-quick-action small {
+    font-size: 11px;
   }
   .admin-primary-action,
   .admin-secondary-action,
   .admin-link {
-    min-height: 44px;
+    min-height: 40px;
   }
   .admin-link {
     padding-inline: 12px;
   }
   .admin-metric-card {
-    min-height: 154px;
-    padding: 14px;
+    min-height: 130px;
+    padding: 12px;
   }
   .admin-metric-card__value {
-    font-size: 30px;
+    font-size: 26px;
+  }
+  .admin-metric-card__label {
+    font-size: 12px;
   }
   .admin-spark {
-    height: 32px;
+    height: 28px;
   }
   .admin-chart-stage,
   .admin-chart-stage--donut {
-    min-height: 214px;
+    min-height: 200px;
+  }
+  /* Row items: slightly tighter on mobile */
+  .admin-attendance-row,
+  .admin-activity-item,
+  .admin-person-row,
+  .admin-class-row {
+    min-height: 50px;
+    padding: 8px;
+    gap: 9px;
+    border-radius: 14px;
+  }
+  .admin-attendance-list,
+  .admin-activity-feed,
+  .admin-person-list,
+  .admin-class-list {
+    gap: 7px;
+  }
+  /* Card inner lists: cap at 4 items so cards stay compact */
+  .admin-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .admin-card__header {
+    margin-bottom: 10px;
   }
 }
 
