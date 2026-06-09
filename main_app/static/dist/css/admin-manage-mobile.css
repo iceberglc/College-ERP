@@ -685,11 +685,16 @@
   white-space: nowrap;
 }
 
+.ice-admin-access-footer {
+  margin-top: 4px;
+}
+
 .ice-admin-access-save {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  width: 100%;
   min-height: 44px;
   padding: 0 14px;
   border: 0;
@@ -704,6 +709,16 @@
 .ice-admin-access-save:hover,
 .ice-admin-access-save:focus {
   filter: brightness(1.05);
+}
+
+/* On narrow screens give the last card's save button enough clearance above the fixed nav */
+@media (max-width: 767px) {
+  .ice-admin-access-card:last-child .ice-admin-access-footer {
+    padding-bottom: 8px;
+  }
+  .ice-admin-access__grid {
+    padding-bottom: 80px;
+  }
 }
 
 .ice-admin-access-empty {

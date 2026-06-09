@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, OperationalError, ProgrammingError, models, transaction
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
@@ -1474,17 +1475,21 @@ def edit_branch(request, branch_id):
 
 
 @admin_only
+@require_POST
 def delete_branch(request, branch_id):
-    # Branch admins must not delete branches (data-loss risk across branches).
     if not branching.is_super_admin(request.user):
         messages.error(request, "Only a super admin can delete branches.")
         return redirect(reverse("manage_branch"))
+    if Branch.objects.count() <= 1:
+        messages.error(request, "Cannot delete the only branch. Add another branch first.")
+        return redirect(reverse("manage_branch"))
     branch = get_object_or_404(Branch, id=branch_id)
+    branch_name = branch.name
     try:
         branch.delete()
-        messages.success(request, "Branch deleted!")
-    except Exception:
-        messages.error(request, "Could not delete branch — it has groups linked to it.")
+        messages.success(request, f'Branch “{branch_name}” deleted.')
+    except Exception as exc:
+        messages.error(request, f"Could not delete branch — {exc}")
     return redirect(reverse("manage_branch"))
 
 
