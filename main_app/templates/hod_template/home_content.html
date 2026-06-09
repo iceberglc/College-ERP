@@ -455,6 +455,37 @@ document.addEventListener('DOMContentLoaded', function () {
     return chart;
   }
 
+  /* Soft vertical gradient under a line — falls back to a flat colour until
+     the chart area is measured on first paint. */
+  function areaGradient(context, top, bottom) {
+    var chart = context.chart;
+    var ctx = chart.ctx;
+    var area = chart.chartArea;
+    if (!area) return top;
+    var g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
+    g.addColorStop(0, top);
+    g.addColorStop(1, bottom);
+    return g;
+  }
+
+  function lineDataset(label, data, color, fillTop, fillBottom) {
+    return {
+      label: label,
+      data: data,
+      borderColor: color,
+      backgroundColor: function (context) { return areaGradient(context, fillTop, fillBottom); },
+      borderWidth: 3,
+      tension: 0.4,
+      fill: true,
+      pointRadius: isMobileChart() ? 0 : 3,
+      pointHoverRadius: 6,
+      pointBackgroundColor: '#fff',
+      pointBorderColor: color,
+      pointBorderWidth: 2,
+      pointHitRadius: 16
+    };
+  }
+
   function createDashboardCharts() {
     var root = document.querySelector('[data-admin-dashboard]');
     if (typeof Chart === 'undefined') {
@@ -496,24 +527,16 @@ document.addEventListener('DOMContentLoaded', function () {
       showChartState('barChart', 'Attendance sessions will appear after teachers take attendance.');
     } else {
     register(new Chart(document.getElementById('barChart'), {
-      type: 'bar',
+      type: 'line',
       data: {
         labels: compactGroups.labels,
-        datasets: [{
-          label: 'Sessions',
-          data: compactGroups.values,
-          backgroundColor: 'rgba(0, 207, 232, .78)',
-          borderColor: BRAND.cyan,
-          borderWidth: 1,
-          borderRadius: 9,
-          borderSkipped: false,
-          maxBarThickness: isMobileChart() ? 30 : 48
-        }]
+        datasets: [lineDataset('Sessions', compactGroups.values, BRAND.cyan, 'rgba(0,207,232,.34)', 'rgba(0,207,232,0)')]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
+        interaction: { mode: 'index', intersect: false },
         plugins: { legend: { display: false }, tooltip: tooltipOptions() },
         scales: {
           y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { color: mutedColor(), padding: isMobileChart() ? 4 : 8, maxTicksLimit: isMobileChart() ? 4 : 6 } },
@@ -527,18 +550,19 @@ document.addEventListener('DOMContentLoaded', function () {
       showChartState('barChart2', 'Student attendance overview will appear when attendance records exist.');
     } else {
     register(new Chart(document.getElementById('barChart2'), {
-      type: 'bar',
+      type: 'line',
       data: {
         labels: compactStudents.labels,
         datasets: [
-          { label: 'Present', data: compactStudents.first, backgroundColor: 'rgba(34,197,94,.82)', borderRadius: 8, borderSkipped: false, maxBarThickness: isMobileChart() ? 26 : 40 },
-          { label: 'Absent / Leave', data: compactStudents.second, backgroundColor: 'rgba(239,68,68,.76)', borderRadius: 8, borderSkipped: false, maxBarThickness: isMobileChart() ? 26 : 40 }
+          lineDataset('Present', compactStudents.first, BRAND.green, 'rgba(34,197,94,.30)', 'rgba(34,197,94,0)'),
+          lineDataset('Absent / Leave', compactStudents.second, BRAND.red, 'rgba(239,68,68,.26)', 'rgba(239,68,68,0)')
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
+        interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: !isMobileChart(), position: 'top', labels: { color: textColor(), usePointStyle: true, boxWidth: 8, padding: 12 } },
           tooltip: tooltipOptions()

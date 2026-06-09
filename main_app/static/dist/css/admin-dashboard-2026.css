@@ -789,6 +789,48 @@
   }
 }
 
+/* Tablet (769–1024px): trim chrome — smaller hero text, buttons, rows, cards.
+   Charts keep their full size; only the surrounding UI shrinks. */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .admin-command {
+    padding: 20px;
+  }
+  .admin-command h1 {
+    font-size: clamp(26px, 3.4vw, 36px);
+  }
+  .admin-command p {
+    font-size: 13.5px;
+    margin-top: 11px;
+  }
+  .admin-primary-action,
+  .admin-secondary-action {
+    min-height: 38px;
+    padding: 0 13px;
+    font-size: 12.5px;
+  }
+  .admin-metric-card {
+    padding: 14px;
+    min-height: 140px;
+  }
+  .admin-metric-card__value {
+    font-size: 29px;
+  }
+  .admin-quick-action {
+    min-height: 64px;
+    padding: 9px;
+  }
+  .admin-attendance-row,
+  .admin-activity-item,
+  .admin-person-row,
+  .admin-class-row {
+    min-height: 52px;
+    padding: 9px;
+  }
+  .admin-card {
+    padding: 15px;
+  }
+}
+
 @media (max-width: 768px) {
   .admin-dashboard {
     gap: 10px;
@@ -796,13 +838,60 @@
   }
   .admin-command {
     min-height: auto;
-    padding: 14px;
-    border-radius: 20px;
+    padding: 16px 14px;
+    border-radius: 18px;
+    gap: 12px;
   }
+  /* Drop the long marketing paragraph + eyebrow on phones — pure noise */
+  .admin-command p,
+  .admin-eyebrow {
+    display: none;
+  }
+  .admin-command h1 {
+    font-size: 24px;
+    line-height: 1.05;
+  }
+  .admin-command__actions {
+    margin-top: 14px;
+    gap: 8px;
+  }
+  /* Compact "Today" panel — was a tall radial block eating the viewport */
   .admin-command__panel {
-    min-height: 160px;
-    padding: 14px;
+    min-height: auto;
+    padding: 12px;
+    border-radius: 16px;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 10px;
+  }
+  .admin-command__panel-header {
+    flex: 1 1 auto;
+    align-items: center;
+  }
+  .admin-command__panel-header strong {
+    font-size: 24px;
+  }
+  .admin-radial {
+    width: 64px;
+    height: 64px;
+  }
+  .admin-radial span {
+    width: 46px;
+    height: 46px;
+    font-size: 18px;
+  }
+  .admin-command__panel > p {
+    display: none;
+  }
+  .admin-mini-stack {
+    flex: 1 1 100%;
+    grid-template-columns: 1fr 1fr;
+    display: grid;
+    gap: 6px;
+  }
+  .admin-mini-stack span {
+    font-size: 11px;
   }
   /* Metric cards: 2-column on phones */
   .admin-metrics {
@@ -815,7 +904,7 @@
   .admin-quick-actions,
   .admin-card,
   .admin-metric-card {
-    border-radius: 18px;
+    border-radius: 16px;
   }
   /* Quick actions: 2-column grid on phones (was 1-column = 8 tall rows) */
   .admin-quick-actions__grid {
@@ -823,43 +912,50 @@
     gap: 8px;
   }
   .admin-quick-action {
-    min-height: 56px;
-    padding: 9px;
-    border-radius: 16px;
-    grid-template-columns: 38px minmax(0, 1fr);
+    min-height: 52px;
+    padding: 8px;
+    border-radius: 14px;
+    grid-template-columns: 34px minmax(0, 1fr);
     column-gap: 8px;
   }
   .admin-quick-action span {
-    width: 38px;
-    height: 38px;
-    border-radius: 13px;
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
   }
   .admin-quick-action strong {
     font-size: 12px;
   }
   .admin-quick-action small {
-    font-size: 11px;
+    font-size: 10.5px;
   }
+  /* Smaller pill buttons */
   .admin-primary-action,
-  .admin-secondary-action,
-  .admin-link {
-    min-height: 40px;
+  .admin-secondary-action {
+    min-height: 36px;
+    padding: 0 13px;
+    font-size: 12px;
+    border-radius: 12px;
   }
   .admin-link {
-    padding-inline: 12px;
+    min-height: 30px;
+    padding-inline: 11px;
+    font-size: 12px;
   }
   .admin-metric-card {
-    min-height: 130px;
+    min-height: 118px;
     padding: 12px;
   }
   .admin-metric-card__value {
-    font-size: 26px;
+    font-size: 24px;
+    margin-top: 10px;
   }
   .admin-metric-card__label {
-    font-size: 12px;
+    font-size: 11.5px;
+    margin-top: 5px;
   }
   .admin-spark {
-    height: 28px;
+    height: 26px;
   }
   .admin-chart-stage,
   .admin-chart-stage--donut {
@@ -870,7 +966,7 @@
   .admin-activity-item,
   .admin-person-row,
   .admin-class-row {
-    min-height: 50px;
+    min-height: 48px;
     padding: 8px;
     gap: 9px;
     border-radius: 14px;
@@ -884,7 +980,7 @@
   /* Card inner lists: cap at 4 items so cards stay compact */
   .admin-card {
     padding: 14px;
-    border-radius: 18px;
+    border-radius: 16px;
   }
   .admin-card__header {
     margin-bottom: 10px;

@@ -510,20 +510,35 @@
         showState('scoresChart', 'Score overview chart is unavailable right now.');
       } else {
         var bars = compact({{ chart_labels|safe }}, {{ chart_test|safe }}, {{ chart_exam|safe }}, {{ chart_total|safe }});
+        function areaGrad(context, top, bottom) {
+          var chart = context.chart; var ctx2 = chart.ctx; var area = chart.chartArea;
+          if (!area) return top;
+          var g = ctx2.createLinearGradient(0, area.top, 0, area.bottom);
+          g.addColorStop(0, top); g.addColorStop(1, bottom); return g;
+        }
+        function lineDs(label, data, color, fillTop, fillBot) {
+          return { label: label, data: data, borderColor: color,
+            backgroundColor: function(c) { return areaGrad(c, fillTop, fillBot); },
+            borderWidth: 2.5, tension: 0.4, fill: true,
+            pointRadius: isMobileChart() ? 0 : 3, pointHoverRadius: 5,
+            pointBackgroundColor: '#fff', pointBorderColor: color,
+            pointBorderWidth: 2, pointHitRadius: 14 };
+        }
         register(new Chart(ctx, {
-      type: 'bar',
+      type: 'line',
       data: {
         labels: bars.labels,
         datasets: [
-          { label: 'Test (max 40)', data: bars.test, backgroundColor: 'rgba(7,26,82,.82)', borderRadius: 8, borderSkipped: false, maxBarThickness: isMobileChart() ? 22 : 36 },
-          { label: 'Exam (max 60)', data: bars.exam, backgroundColor: 'rgba(0,207,232,.76)', borderRadius: 8, borderSkipped: false, maxBarThickness: isMobileChart() ? 22 : 36 },
-          { label: 'Total (max 100)', data: bars.total, backgroundColor: 'rgba(34,197,94,.78)', borderRadius: 8, borderSkipped: false, maxBarThickness: isMobileChart() ? 22 : 36 },
+          lineDs('Test /40',   bars.test,  BRAND.ocean, 'rgba(11,79,138,.32)',  'rgba(11,79,138,0)'),
+          lineDs('Exam /60',   bars.exam,  BRAND.cyan,  'rgba(0,207,232,.26)',  'rgba(0,207,232,0)'),
+          lineDs('Total /100', bars.total, BRAND.green, 'rgba(34,197,94,.22)',  'rgba(34,197,94,0)'),
         ],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         layout: { padding: { top: 8, bottom: 0, left: 2, right: 2 } },
         animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
+        interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: !isMobileChart(), position: 'bottom', labels: { font:{size:11,weight:'700'}, usePointStyle: true, boxWidth:8, padding:12, color:legendColor() } },
           tooltip: tooltipOptions(),
