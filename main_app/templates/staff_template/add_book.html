@@ -1,55 +1,16 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}Add Book{% endblock page_title %}
-{% block content %}
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="card card-dark">
-                    <div class="card-header">
-                        <h3 class="card-title">Add Book to Library</h3>
-                    </div>
-                    <form method="POST" novalidate>
-                        {% csrf_token %}
-                        <div class="card-body">
-                            {% if messages %}
-                                {% for message in messages %}
-                                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                                {% endfor %}
-                            {% endif %}
+{% block page_title %}{{ page_title }}{% endblock %}
 
-                            <div class="form-group mb-3">
-                                <label for="{{ form.name.id_for_label }}">Book Title</label>
-                                {{ form.name }}
-                                {% if form.name.errors %}<small class="text-danger">{{ form.name.errors|join:", " }}</small>{% endif %}
-                            </div>
-                            <div class="form-group mb-3">
-                                <label for="{{ form.author.id_for_label }}">Author</label>
-                                {{ form.author }}
-                                {% if form.author.errors %}<small class="text-danger">{{ form.author.errors|join:", " }}</small>{% endif %}
-                            </div>
-                            <div class="form-group mb-3">
-                                <label for="{{ form.isbn.id_for_label }}">ISBN</label>
-                                {{ form.isbn }}
-                                {% if form.isbn.errors %}<small class="text-danger">{{ form.isbn.errors|join:", " }}</small>{% endif %}
-                            </div>
-                            <div class="form-group mb-3">
-                                <label for="{{ form.category.id_for_label }}">Category</label>
-                                {{ form.category }}
-                                {% if form.category.errors %}<small class="text-danger">{{ form.category.errors|join:", " }}</small>{% endif %}
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <button type="submit" class="btn btn-primary w-100">Add Book</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+{% block content %}
+<div class="page-card">
+  <div class="page-card-header">
+    <i class="fas fa-book"></i>
+    <div>
+      <div class="page-card-title">{{ page_title }}</div>
+      <div class="page-card-subtitle">Add a new book to the library catalogue.</div>
     </div>
-</section>
-{% endblock content %}
+  </div>
+  {% include "main_app/form_template.html" with messages=messages form=form button_text=page_title %}
+</div>
+{% endblock %}

@@ -3,132 +3,149 @@
 {% block page_title %}{{ page_title }}{% endblock %}
 
 {% block custom_css %}
-<style>
-  .assign-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 16px;
-  }
-  .assign-card {
-    background: var(--ice-surface);
-    border: 1px solid var(--ice-border);
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 1px 4px rgba(27,63,122,.05);
-    transition: box-shadow .18s, transform .18s;
-    display: flex;
-    flex-direction: column;
-  }
-  .assign-card:hover {
-    box-shadow: 0 4px 16px rgba(27,63,122,.10);
-    transform: translateY(-2px);
-  }
-  .assign-card-header {
-    padding: 16px 18px 12px;
-    border-bottom: 1px solid var(--ice-border);
-    background: var(--ice-surface2);
-  }
-  .assign-title { font-size: 15px; font-weight: 700; color: var(--ice-text); margin-bottom: 4px; }
-  .assign-meta  { font-size: 11px; color: var(--ice-muted); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .assign-card-body { padding: 14px 18px; flex: 1; }
-  .assign-desc { font-size: 13px; color: var(--ice-muted); line-height: 1.5; }
-
-  .assign-card-footer {
-    padding: 12px 18px;
-    border-top: 1px solid var(--ice-border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .due-chip {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 20px;
-    background: rgba(245,158,11,.10);
-    color: var(--ice-warning);
-  }
-  .due-chip.overdue {
-    background: rgba(239,68,68,.10);
-    color: var(--ice-danger);
-  }
-  .action-row { display: flex; gap: 6px; flex-wrap: wrap; }
-  .btn-view   { padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 600; background: rgba(16,185,129,.10); color: var(--ice-success); border: 1px solid rgba(16,185,129,.2); text-decoration: none; transition: all .15s; }
-  .btn-edit   { padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 600; background: rgba(59,130,246,.10); color: var(--ice-info); border: 1px solid rgba(59,130,246,.2); text-decoration: none; transition: all .15s; }
-  .btn-delete { padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 600; background: rgba(239,68,68,.10); color: var(--ice-danger); border: 1px solid rgba(239,68,68,.2); text-decoration: none; transition: all .15s; }
-  .btn-view:hover   { background: rgba(16,185,129,.18); text-decoration: none; color: var(--ice-success); }
-  .btn-edit:hover   { background: rgba(59,130,246,.18); text-decoration: none; color: var(--ice-info); }
-  .btn-delete:hover { background: rgba(239,68,68,.18); text-decoration: none; color: var(--ice-danger); }
-
-  .page-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .page-count { font-size: 13px; color: var(--ice-muted); }
-
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--ice-muted);
-    background: var(--ice-surface);
-    border: 1px solid var(--ice-border);
-    border-radius: 14px;
-  }
-  .empty-state i { font-size: 48px; opacity: .2; display: block; margin-bottom: 16px; }
-</style>
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
 {% endblock custom_css %}
 
 {% block content %}
+<div class="ice-manage-page" data-manage-search-scope>
 
-<div class="page-toolbar">
-  <div class="page-count"><i class="fas fa-tasks me-1" style="color:var(--ice-cyan);"></i> {{ assignments|length }} assignment{{ assignments|length|pluralize }}</div>
-  <a href="{% url 'add_assignment' %}" class="btn btn-primary btn-sm">
-    <i class="fas fa-plus me-1"></i> New Assignment
-  </a>
-</div>
-
-{% if assignments %}
-<div class="assign-grid">
-  {% for a in assignments %}
-  <div class="assign-card">
-    <div class="assign-card-header">
-      <div class="assign-title">{{ a.title }}</div>
-      <div class="assign-meta">
-        <span><i class="fas fa-layer-group me-1"></i>{{ a.group|default:"All Groups" }}</span>
+  {# ── Hero ──────────────────────────────────────────────────────────── #}
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-tasks"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Assignments</h2>
+        <p class="ice-manage-hero__subtitle">Create assignments and review student submissions.</p>
       </div>
     </div>
-    {% if a.description %}
-    <div class="assign-card-body">
-      <div class="assign-desc">{{ a.description|truncatewords:20 }}</div>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count"><span data-manage-visible-count>{{ assignments|length }}</span>&nbsp;total</span>
+      <a href="{% url 'add_assignment' %}" class="ice-manage-add-btn">
+        <i class="fas fa-plus" aria-hidden="true"></i> New Assignment
+      </a>
     </div>
-    {% endif %}
-    <div class="assign-card-footer">
-      <span class="due-chip">
-        <i class="fas fa-calendar-alt me-1"></i>Due {{ a.due_date }}
-      </span>
-      <div class="action-row">
-        <a href="{% url 'view_submissions' a.id %}" class="btn-view"><i class="fas fa-eye me-1"></i>Submissions</a>
-        <a href="{% url 'edit_assignment' a.id %}" class="btn-edit"><i class="fas fa-edit me-1"></i>Edit</a>
-        <a href="{% url 'delete_assignment' a.id %}" class="btn-delete"
-           data-confirm-post="Delete this assignment?"><i class="fas fa-trash"></i></a>
-      </div>
-    </div>
+  </section>
+
+  {# ── Search ────────────────────────────────────────────────────────── #}
+  <label class="ice-manage-search" aria-label="Search assignments">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search assignments..." autocomplete="off">
+  </label>
+
+  <div class="ice-manage-empty" data-manage-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No assignments found</strong>
+    <span>Try another title, group or subject.</span>
   </div>
-  {% endfor %}
-</div>
-{% else %}
-<div class="empty-state">
-  <i class="fas fa-tasks"></i>
-  <p style="font-size:16px; font-weight:600; color:var(--ice-text); margin-bottom:8px;">No Assignments Yet</p>
-  <p>Create your first assignment to get started.</p>
-  <a href="{% url 'add_assignment' %}" class="btn btn-primary mt-3"><i class="fas fa-plus me-1"></i>New Assignment</a>
-</div>
-{% endif %}
 
+  {# ── Desktop table ─────────────────────────────────────────────────── #}
+  <div class="ice-manage-table-wrap">
+    <table class="ice-manage-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Assignment</th>
+          <th>Group</th>
+          <th>Due</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in assignments %}
+        <tr data-manage-search-item
+            data-manage-search-text="{{ a.title }} {{ a.group|default:'All Groups' }} {{ a.subject }} {{ a.description }}">
+          <td>{{ forloop.counter }}</td>
+          <td>
+            <strong>{{ a.title }}</strong>
+            {% if a.description %}
+            <small class="text-muted d-block">{{ a.description|truncatewords:20 }}</small>
+            {% endif %}
+          </td>
+          <td>{{ a.group|default:"All Groups" }}</td>
+          <td>{{ a.due_date }}</td>
+          <td>
+            <div class="ice-manage-actions">
+              <a href="{% url 'view_submissions' a.id %}" class="ice-manage-action">
+                <i class="fas fa-eye" aria-hidden="true"></i> Submissions
+              </a>
+              <a href="{% url 'edit_assignment' a.id %}" class="ice-manage-action">
+                <i class="fas fa-edit" aria-hidden="true"></i> Edit
+              </a>
+              <a href="{% url 'delete_assignment' a.id %}"
+                 class="ice-manage-action ice-manage-action--danger"
+                 data-confirm-post="Delete assignment &quot;{{ a.title }}&quot;? This cannot be undone.">
+                <i class="fas fa-trash" aria-hidden="true"></i> Delete
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5">
+            <div class="ice-manage-empty">
+              <i class="fas fa-tasks" aria-hidden="true"></i>
+              <strong>No assignments yet</strong>
+              <span>Create your first assignment to get started.</span>
+              <a href="{% url 'add_assignment' %}" class="ice-manage-add-btn">
+                <i class="fas fa-plus" aria-hidden="true"></i> New Assignment
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# ── Mobile cards ──────────────────────────────────────────────────── #}
+  <div class="ice-manage-mobile-list">
+    {% for a in assignments %}
+    <article class="ice-manage-card"
+             data-manage-search-item
+             data-manage-search-primary
+             data-manage-search-text="{{ a.title }} {{ a.group|default:'All Groups' }} {{ a.subject }} {{ a.description }}">
+      <div class="ice-manage-card__top">
+        <span class="ice-manage-card__avatar" aria-hidden="true"><i class="fas fa-tasks"></i></span>
+        <div class="ice-manage-card__main">
+          <h3 class="ice-manage-card__title">{{ a.title }}</h3>
+          <div class="ice-manage-card__subtitle">
+            {% if a.description %}{{ a.description|truncatewords:20 }}{% else %}No description{% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="ice-manage-card__meta">
+        <span class="ice-manage-chip"><i class="fas fa-layer-group" aria-hidden="true"></i><span>{{ a.group|default:"All Groups" }}</span></span>
+        <span class="ice-manage-chip ice-manage-chip--warning"><i class="fas fa-calendar-alt" aria-hidden="true"></i><span>Due {{ a.due_date }}</span></span>
+      </div>
+      <div class="ice-manage-actions">
+        <a href="{% url 'view_submissions' a.id %}" class="ice-manage-action">
+          <i class="fas fa-eye" aria-hidden="true"></i> Submissions
+        </a>
+        <a href="{% url 'edit_assignment' a.id %}" class="ice-manage-action">
+          <i class="fas fa-edit" aria-hidden="true"></i> Edit
+        </a>
+        <a href="{% url 'delete_assignment' a.id %}"
+           class="ice-manage-action ice-manage-action--danger"
+           data-confirm-post="Delete assignment &quot;{{ a.title }}&quot;? This cannot be undone.">
+          <i class="fas fa-trash" aria-hidden="true"></i> Delete
+        </a>
+      </div>
+    </article>
+    {% empty %}
+    <div class="ice-manage-empty">
+      <i class="fas fa-tasks" aria-hidden="true"></i>
+      <strong>No assignments yet</strong>
+      <span>Create your first assignment to get started.</span>
+      <a href="{% url 'add_assignment' %}" class="ice-manage-add-btn">
+        <i class="fas fa-plus" aria-hidden="true"></i> New Assignment
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
 {% endblock %}
+
+{% block custom_js %}
+<script src="{% static 'dist/js/admin-manage-mobile.js' %}"></script>
+{% endblock custom_js %}

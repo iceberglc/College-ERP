@@ -1,91 +1,166 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}Issued Books{% endblock page_title %}
+{% block page_title %}{{ page_title }}{% endblock page_title %}
+
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
+{% endblock custom_css %}
+
 {% block content %}
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card card-dark">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h3 class="card-title mb-0">Issued Books</h3>
-                        <a href="{% url 'issue_book' %}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-plus"></i> New Loan
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        {% if loans %}
-                        <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Book</th>
-                                    <th>Borrower</th>
-                                    <th>Issued</th>
-                                    <th>Due</th>
-                                    <th>Returned</th>
-                                    <th>Fine</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for loan in loans %}
-                                <tr>
-                                    <td>{{ forloop.counter }}</td>
-                                    <td>
-                                        {{ loan.book.name }}
-                                        <small class="text-muted d-block">ISBN&nbsp;{{ loan.book.isbn }}</small>
-                                    </td>
-                                    <td>
-                                        {{ loan.student.admin.last_name }}, {{ loan.student.admin.first_name }}
-                                        <small class="text-muted d-block">{{ loan.student.admin.email }}</small>
-                                    </td>
-                                    <td>{{ loan.issued_on|date:"Y-m-d" }}</td>
-                                    <td>
-                                        {{ loan.due_on|date:"Y-m-d" }}
-                                        {% if loan.is_overdue %}
-                                        <small class="badge badge-danger">+{{ loan.days_overdue }}d</small>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if loan.returned_on %}
-                                            {{ loan.returned_on|date:"Y-m-d" }}
-                                        {% else %}
-                                            <span class="badge badge-warning">Open</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if loan.fine_amount > 0 %}
-                                        <span class="badge badge-danger">₹{{ loan.fine_amount }}</span>
-                                        {% else %}
-                                        <span class="badge badge-success">—</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if loan.is_active %}
-                                        <form method="post" action="{% url 'return_book' loan.id %}" class="m-0">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-outline-success">
-                                                <i class="fas fa-undo"></i> Return
-                                            </button>
-                                        </form>
-                                        {% else %}
-                                        <span class="text-muted">Returned</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        </div>
-                        {% else %}
-                        <p class="text-muted text-center my-4">No loans recorded yet.</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="ice-manage-page" data-manage-search-scope>
+
+  {# ── Hero ──────────────────────────────────────────────────────────── #}
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-book-reader"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Issued Books</h2>
+        <p class="ice-manage-hero__subtitle">Track active loans, due dates and returns.</p>
+      </div>
     </div>
-</section>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count"><span data-manage-visible-count>{{ loans|length }}</span>&nbsp;total</span>
+      <a href="{% url 'issue_book' %}" class="ice-manage-add-btn">
+        <i class="fas fa-plus" aria-hidden="true"></i> New Loan
+      </a>
+    </div>
+  </section>
+
+  {# ── Search ────────────────────────────────────────────────────────── #}
+  <label class="ice-manage-search" aria-label="Search loans">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search by book, ISBN or student..." autocomplete="off">
+  </label>
+
+  <div class="ice-manage-empty" data-manage-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No loans found</strong>
+    <span>Try another book title, ISBN or student name.</span>
+  </div>
+
+  {# ── Desktop table ─────────────────────────────────────────────────── #}
+  <div class="ice-manage-table-wrap">
+    <table class="ice-manage-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Book</th>
+          <th>Borrower</th>
+          <th>Issued</th>
+          <th>Due</th>
+          <th>Status</th>
+          <th>Fine</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for loan in loans %}
+        <tr data-manage-search-item
+            data-manage-search-text="{{ loan.book.name }} {{ loan.book.isbn }} {{ loan.student.admin.first_name }} {{ loan.student.admin.last_name }} {{ loan.student.admin.email }}">
+          <td>{{ forloop.counter }}</td>
+          <td>
+            <strong>{{ loan.book.name }}</strong>
+            <small class="text-muted d-block">ISBN&nbsp;{{ loan.book.isbn }}</small>
+          </td>
+          <td>
+            {{ loan.student.admin.last_name }}, {{ loan.student.admin.first_name }}
+            <small class="text-muted d-block">{{ loan.student.admin.email }}</small>
+          </td>
+          <td>{{ loan.issued_on|date:"Y-m-d" }}</td>
+          <td>{{ loan.due_on|date:"Y-m-d" }}</td>
+          <td>
+            {% if loan.returned_on %}
+            <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-check-circle" aria-hidden="true"></i><span>Returned {{ loan.returned_on|date:"Y-m-d" }}</span></span>
+            {% elif loan.is_overdue %}
+            <span class="ice-manage-chip ice-manage-chip--warning"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i><span>Overdue {{ loan.days_overdue }}d</span></span>
+            {% else %}
+            <span class="ice-manage-chip"><i class="fas fa-clock" aria-hidden="true"></i><span>Open</span></span>
+            {% endif %}
+          </td>
+          <td>
+            {% if loan.fine_amount > 0 %}
+            <span class="ice-manage-chip ice-manage-chip--danger"><i class="fas fa-rupee-sign" aria-hidden="true"></i><span>{{ loan.fine_amount }}</span></span>
+            {% else %}
+            <span class="ice-manage-chip ice-manage-chip--muted"><span>—</span></span>
+            {% endif %}
+          </td>
+          <td>
+            {% if loan.is_active %}
+            <form method="post" action="{% url 'return_book' loan.id %}" class="m-0 ice-manage-actions">
+              {% csrf_token %}
+              <button type="submit" class="ice-manage-action">
+                <i class="fas fa-undo" aria-hidden="true"></i> Return
+              </button>
+            </form>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8">
+            <div class="ice-manage-empty">
+              <i class="fas fa-book-reader" aria-hidden="true"></i>
+              <strong>No loans recorded yet</strong>
+              <span>Issue a book to a student to start tracking loans.</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# ── Mobile cards ──────────────────────────────────────────────────── #}
+  <div class="ice-manage-mobile-list">
+    {% for loan in loans %}
+    <article class="ice-manage-card"
+             data-manage-search-item
+             data-manage-search-primary
+             data-manage-search-text="{{ loan.book.name }} {{ loan.book.isbn }} {{ loan.student.admin.first_name }} {{ loan.student.admin.last_name }} {{ loan.student.admin.email }}">
+      <div class="ice-manage-card__top">
+        <span class="ice-manage-card__avatar" aria-hidden="true"><i class="fas fa-book"></i></span>
+        <div class="ice-manage-card__main">
+          <h3 class="ice-manage-card__title">{{ loan.book.name }}</h3>
+          <div class="ice-manage-card__subtitle">{{ loan.student.admin.first_name }} {{ loan.student.admin.last_name }}</div>
+        </div>
+      </div>
+      <div class="ice-manage-card__meta">
+        <span class="ice-manage-chip"><i class="fas fa-calendar-plus" aria-hidden="true"></i><span>Issued {{ loan.issued_on|date:"Y-m-d" }}</span></span>
+        <span class="ice-manage-chip"><i class="fas fa-calendar-day" aria-hidden="true"></i><span>Due {{ loan.due_on|date:"Y-m-d" }}</span></span>
+        {% if loan.returned_on %}
+        <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-check-circle" aria-hidden="true"></i><span>Returned {{ loan.returned_on|date:"Y-m-d" }}</span></span>
+        {% elif loan.is_overdue %}
+        <span class="ice-manage-chip ice-manage-chip--warning"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i><span>Overdue {{ loan.days_overdue }}d</span></span>
+        {% else %}
+        <span class="ice-manage-chip"><i class="fas fa-clock" aria-hidden="true"></i><span>Open</span></span>
+        {% endif %}
+        {% if loan.fine_amount > 0 %}
+        <span class="ice-manage-chip ice-manage-chip--danger"><i class="fas fa-rupee-sign" aria-hidden="true"></i><span>Fine {{ loan.fine_amount }}</span></span>
+        {% endif %}
+      </div>
+      {% if loan.is_active %}
+      <form method="post" action="{% url 'return_book' loan.id %}" class="m-0 ice-manage-actions">
+        {% csrf_token %}
+        <button type="submit" class="ice-manage-action">
+          <i class="fas fa-undo" aria-hidden="true"></i> Return
+        </button>
+      </form>
+      {% endif %}
+    </article>
+    {% empty %}
+    <div class="ice-manage-empty">
+      <i class="fas fa-book-reader" aria-hidden="true"></i>
+      <strong>No loans recorded yet</strong>
+      <span>Issue a book to a student to start tracking loans.</span>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
 {% endblock content %}
+
+{% block custom_js %}
+<script src="{% static 'dist/js/admin-manage-mobile.js' %}"></script>
+{% endblock custom_js %}
