@@ -126,6 +126,9 @@ urlpatterns = [
         name="toggle_course_active",
     ),
     path("subject/edit/<int:subject_id>", hod_views.edit_subject, name="edit_subject"),
+    # Admin management
+    path("admin/manage/", hod_views.manage_admin, name="manage_admin"),
+    path("admin/delete/<int:admin_id>/", hod_views.delete_admin, name="delete_admin"),
     # Branch
     path("branch/manage/", hod_views.manage_branch, name="manage_branch"),
     path("branch/add/", hod_views.add_branch, name="add_branch"),

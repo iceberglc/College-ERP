@@ -1320,6 +1320,87 @@ def get_groups_for_teacher(request):
         return JsonResponse([], safe=False)
 
 
+# ── Admin account management ──────────────────────────────────────────────────
+
+
+@admin_only
+def manage_admin(request):
+    if not branching.is_super_admin(request.user):
+        messages.error(request, "Only a super admin can manage admin accounts.")
+        return redirect(reverse("admin_home"))
+
+    try:
+        current_admin_profile = Admin.objects.get(admin=request.user)
+    except Admin.DoesNotExist:
+        current_admin_profile = None
+
+    admin_profiles = list(
+        Admin.objects.select_related("admin")
+        .prefetch_related("branches")
+        .order_by("admin__first_name", "admin__last_name", "admin__email")
+    )
+    all_branches = Branch.objects.all().order_by("name")
+    super_admin_count = sum(1 for ap in admin_profiles if ap.is_super_admin)
+
+    for admin_profile in admin_profiles:
+        assigned_branches = list(admin_profile.branches.all())
+        admin_profile.assigned_branch_ids = {branch.id for branch in assigned_branches}
+        admin_profile.assigned_branch_names = ", ".join(
+            branch.name for branch in assigned_branches
+        )
+        admin_profile.is_current_user = (
+            current_admin_profile is not None
+            and admin_profile.id == current_admin_profile.id
+        )
+        admin_profile.superadmin_toggle_locked = (
+            admin_profile.is_super_admin and super_admin_count == 1
+        )
+        # Allow delete only when: not the logged-in user AND not the sole super admin
+        admin_profile.can_delete = (
+            not admin_profile.is_current_user
+            and not admin_profile.superadmin_toggle_locked
+        )
+
+    return render(
+        request,
+        "hod_template/manage_admin.html",
+        {
+            "admin_profiles": admin_profiles,
+            "all_branches": all_branches,
+            "page_title": "Manage Admins",
+        },
+    )
+
+
+@admin_only
+@require_POST
+def delete_admin(request, admin_id):
+    if not branching.is_super_admin(request.user):
+        messages.error(request, "Only a super admin can delete admin accounts.")
+        return redirect(reverse("manage_admin"))
+
+    admin_profile = get_object_or_404(Admin, id=admin_id)
+
+    if admin_profile.admin == request.user:
+        messages.error(request, "You cannot delete your own admin account.")
+        return redirect(reverse("manage_admin"))
+
+    if admin_profile.is_super_admin and Admin.objects.filter(is_super_admin=True).count() <= 1:
+        messages.error(
+            request, "Cannot delete the only super admin. Promote another admin first."
+        )
+        return redirect(reverse("manage_admin"))
+
+    name = admin_profile.admin.get_full_name() or admin_profile.admin.email
+    try:
+        admin_profile.admin.delete()
+        messages.success(request, f'Admin account "{name}" deleted.')
+    except Exception as exc:
+        messages.error(request, f"Could not delete admin — {exc}")
+
+    return redirect(reverse("manage_admin"))
+
+
 # ── Branch CRUD ──────────────────────────────────────────────────────────────
 
 
@@ -1327,43 +1408,13 @@ def get_groups_for_teacher(request):
 def manage_branch(request):
     is_super_admin = branching.is_super_admin(request.user)
     branches = branching.filter_branches_for_user(request.user, Branch.objects.all())
-    admin_profiles = []
     all_branches = Branch.objects.all().order_by("name")
-    current_admin_profile = None
-    if is_super_admin:
-        try:
-            current_admin_profile = Admin.objects.get(admin=request.user)
-        except Admin.DoesNotExist:
-            pass
-        admin_profiles = list(
-            Admin.objects.select_related("admin")
-            .prefetch_related("branches")
-            .order_by("admin__first_name", "admin__last_name", "admin__email")
-        )
-        super_admin_count = sum(1 for ap in admin_profiles if ap.is_super_admin)
-        for admin_profile in admin_profiles:
-            assigned_branches = list(admin_profile.branches.all())
-            admin_profile.assigned_branch_ids = {branch.id for branch in assigned_branches}
-            admin_profile.assigned_branch_names = ", ".join(
-                branch.name for branch in assigned_branches
-            )
-            admin_profile.is_current_user = (
-                current_admin_profile is not None
-                and admin_profile.id == current_admin_profile.id
-            )
-            # Lock the super-admin toggle when this IS the only super admin
-            # (removing them would leave zero super admins).
-            admin_profile.superadmin_toggle_locked = (
-                admin_profile.is_super_admin
-                and super_admin_count == 1
-            )
     return render(
         request,
         "hod_template/manage_branch.html",
         {
             "branches": branches,
             "all_branches": all_branches,
-            "admin_profiles": admin_profiles,
             "page_title": "Manage Branches",
             "is_super_admin": is_super_admin,
         },
@@ -1374,10 +1425,10 @@ def manage_branch(request):
 def update_admin_branch_access(request, admin_id):
     if not branching.is_super_admin(request.user):
         messages.error(request, "Only a super admin can change admin branch access.")
-        return redirect(reverse("manage_branch"))
+        return redirect(reverse("manage_admin"))
 
     if request.method != "POST":
-        return redirect(reverse("manage_branch"))
+        return redirect(reverse("manage_admin"))
 
     admin_profile = get_object_or_404(
         Admin.objects.select_related("admin").prefetch_related("branches"), id=admin_id
@@ -1395,7 +1446,7 @@ def update_admin_branch_access(request, admin_id):
                 f"Only one super admin is allowed. {name} is already the super admin. "
                 "Demote them first before promoting another admin.",
             )
-            return redirect(reverse("manage_branch"))
+            return redirect(reverse("manage_admin"))
 
     if not make_super_admin:
         if not branch_ids:
@@ -1403,19 +1454,19 @@ def update_admin_branch_access(request, admin_id):
                 request,
                 "Select at least one dedicated branch for a branch admin.",
             )
-            return redirect(reverse("manage_branch"))
+            return redirect(reverse("manage_admin"))
 
         other_super_admin_exists = (
             Admin.objects.filter(is_super_admin=True).exclude(id=admin_profile.id).exists()
         )
         if admin_profile.is_super_admin and not other_super_admin_exists:
             messages.error(request, "Keep at least one super admin with access to all branches.")
-            return redirect(reverse("manage_branch"))
+            return redirect(reverse("manage_admin"))
 
     selected_branches = Branch.objects.filter(id__in=branch_ids).order_by("name")
     if not make_super_admin and not selected_branches.exists():
         messages.error(request, "Select at least one valid branch for this admin.")
-        return redirect(reverse("manage_branch"))
+        return redirect(reverse("manage_admin"))
 
     admin_profile.is_super_admin = make_super_admin
     admin_profile.save(update_fields=["is_super_admin"])
@@ -1432,7 +1483,7 @@ def update_admin_branch_access(request, admin_id):
             request,
             f"{admin_profile.admin.get_full_name() or admin_profile.admin.email} is assigned to {branch_names}.",
         )
-    return redirect(reverse("manage_branch"))
+    return redirect(reverse("manage_admin"))
 
 
 @admin_only

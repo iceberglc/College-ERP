@@ -111,9 +111,10 @@
               <a href="{% url 'edit_staff' staff.staff.id %}" class="ice-manage-action">
                 <i class="fas fa-edit" aria-hidden="true"></i> Edit
               </a>
-              <a href="{% url 'delete_staff' staff.staff.id %}" class="ice-manage-action ice-manage-action--danger"
-                 data-confirm-post="Delete this teacher? This cannot be undone.">
-                <i class="fas fa-trash" aria-hidden="true"></i> Delete
+              <a href="{% url 'delete_staff' staff.staff.id %}"
+                 class="ice-manage-action ice-manage-action--danger-fill"
+                 data-confirm-post="Delete {{ staff.get_full_name|default:'this teacher' }}? Their account and all related data will be removed. This cannot be undone.">
+                <i class="fas fa-trash" aria-hidden="true"></i>
               </a>
             </div>
           </td>
@@ -179,8 +180,9 @@
         <a href="{% url 'edit_staff' staff.staff.id %}" class="ice-manage-action">
           <i class="fas fa-edit" aria-hidden="true"></i> Edit
         </a>
-        <a href="{% url 'delete_staff' staff.staff.id %}" class="ice-manage-action ice-manage-action--danger"
-           data-confirm-post="Delete this teacher? This cannot be undone.">
+        <a href="{% url 'delete_staff' staff.staff.id %}"
+           class="ice-manage-action ice-manage-action--danger-fill"
+           data-confirm-post="Delete {{ staff.get_full_name|default:'this teacher' }}? Their account and all related data will be removed. This cannot be undone.">
           <i class="fas fa-trash" aria-hidden="true"></i> Delete
         </a>
       </div>

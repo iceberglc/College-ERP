@@ -451,10 +451,35 @@
   border-color: rgba(220, 38, 38, 0.18);
 }
 
+.ice-manage-action--danger-fill {
+  color: #ffffff;
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  border-color: transparent;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.24);
+}
+
+.ice-manage-action--danger-fill:hover,
+.ice-manage-action--danger-fill:focus {
+  color: #ffffff;
+  filter: brightness(1.08);
+}
+
 .ice-manage-action--warning {
   color: var(--ice-manage-warning);
   background: rgba(180, 83, 9, 0.1);
   border-color: rgba(180, 83, 9, 0.18);
+}
+
+.ice-manage-action--neutral {
+  color: var(--ice-manage-muted);
+  background: rgba(100, 116, 139, 0.08);
+  border-color: rgba(100, 116, 139, 0.18);
+}
+
+.ice-manage-action--neutral:hover,
+.ice-manage-action--neutral:focus {
+  color: var(--ice-manage-text);
+  background: rgba(100, 116, 139, 0.14);
 }
 
 .ice-manage-empty {
@@ -724,6 +749,168 @@
 .ice-admin-access-empty {
   width: 100%;
   margin: 0;
+}
+
+/* ── Manage Admins: full admin card ───────────────────────────────────── */
+.ice-admin-full-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1.5px solid var(--ice-manage-border);
+  border-radius: 22px;
+  background: var(--ice-manage-surface);
+  box-shadow: var(--ice-manage-shadow-soft);
+}
+
+.ice-afc-header {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 40px;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ice-afc-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  overflow: hidden;
+  border-radius: 16px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.28), transparent 34%),
+    linear-gradient(135deg, var(--ice-manage-navy), var(--ice-manage-cyan-2));
+  box-shadow: 0 8px 18px rgba(12, 31, 69, 0.14);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.ice-afc-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ice-afc-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ice-afc-name {
+  display: block;
+  color: var(--ice-manage-text);
+  font-size: 14.5px;
+  font-weight: 900;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ice-afc-you-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--ice-manage-navy);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.ice-afc-email {
+  color: var(--ice-manage-muted);
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ice-afc-role-chip {
+  margin-top: 2px;
+  max-width: 100%;
+}
+
+/* Delete button on the admin card */
+.ice-afc-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 12px;
+  color: var(--ice-manage-danger);
+  background: rgba(220, 38, 38, 0.08);
+  border: 1.5px solid rgba(220, 38, 38, 0.18);
+  font-size: 13px;
+  text-decoration: none;
+  transition: background .14s, border-color .14s;
+}
+
+.ice-afc-delete:hover,
+.ice-afc-delete:focus {
+  background: rgba(220, 38, 38, 0.16);
+  border-color: rgba(220, 38, 38, 0.34);
+  color: var(--ice-manage-danger);
+  text-decoration: none;
+}
+
+.ice-afc-delete--locked {
+  color: var(--ice-manage-muted);
+  background: rgba(100, 116, 139, 0.07);
+  border-color: rgba(100, 116, 139, 0.14);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ice-afc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ice-manage-border);
+}
+
+/* Dark mode */
+.dark-mode .ice-admin-full-card,
+[data-theme="dark"] .ice-admin-full-card {
+  background: rgba(15, 23, 42, 0.72);
+}
+
+@media (max-width: 767px) {
+  .ice-admin-full-card {
+    padding: 14px;
+    border-radius: 20px;
+  }
+  .ice-afc-header {
+    grid-template-columns: 48px minmax(0, 1fr) 36px;
+    gap: 10px;
+  }
+  .ice-afc-avatar {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+    border-radius: 14px;
+    font-size: 16px;
+  }
+  .ice-afc-delete {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
 }
 
 .dark-mode .ice-manage-page,
