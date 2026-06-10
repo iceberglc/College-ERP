@@ -49,24 +49,10 @@
 </style>
 {% endblock %}
 
+{% block page_subtitle %}<p class="page-subtitle">Select a group, choose an attendance date, then review student statuses.</p>{% endblock %}
+
 {% block content %}
 <div class="ice-mobile-page admin-att-shell">
-  <section class="ice-hero">
-    <div class="ice-hero__main">
-      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-clipboard-list"></i></span>
-      <div class="ice-hero__copy">
-        <h2 class="ice-hero__title">{{ page_title }}</h2>
-        <p class="ice-hero__subtitle">Select a group, choose an attendance date, then review student statuses.</p>
-      </div>
-    </div>
-  </section>
-
-  <div class="ice-stepper" aria-label="Attendance steps">
-    <div class="ice-stepper__step"><span class="ice-stepper__num">1</span><span>Select group</span></div>
-    <div class="ice-stepper__step"><span class="ice-stepper__num">2</span><span>Select date</span></div>
-    <div class="ice-stepper__step"><span class="ice-stepper__num">3</span><span>View attendance</span></div>
-  </div>
-
   <div class="ice-form-section">
     <div id="attendance_status"></div>
     <div class="admin-att-controls">
@@ -79,22 +65,9 @@
           {% endfor %}
         </select>
       </div>
-      <div style="display:flex; align-items:end;">
-        <button type="button" id="fetch_dates_btn" class="ice-action ice-action--primary" style="width:100%;">
-          <i class="fas fa-calendar-alt" aria-hidden="true"></i> Load Dates
-        </button>
-      </div>
-    </div>
-
-    <div id="date_section" class="admin-att-controls" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--ice-polish-border);">
-      <div>
+      <div id="date_section" style="display:none;">
         <label class="form-label" for="attendance_date"><i class="fas fa-calendar-day me-1"></i>Attendance Date</label>
         <select id="attendance_date" class="form-control"></select>
-      </div>
-      <div style="display:flex; align-items:end;">
-        <button type="button" id="fetch_students_btn" class="ice-action" style="width:100%;">
-          <i class="fas fa-users" aria-hidden="true"></i> View Attendance
-        </button>
       </div>
     </div>
   </div>
@@ -144,13 +117,16 @@ function setLoading(message) {
   statusBox.innerHTML = '<div class="ice-loading-state" style="padding:18px;"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><strong>Loading</strong><span>' + message + '</span></div>';
 }
 
-document.getElementById('fetch_dates_btn').addEventListener('click', function () {
-  const group = document.getElementById('group').value;
-  if (!group) { showStatus('Please select a group.', 'warning'); return; }
-
-  setLoading('Loading attendance dates...');
+/* Dates load when the group changes; records load when the date changes —
+   the most recent date is shown immediately. No extra clicks. */
+document.getElementById('group').addEventListener('change', function () {
+  const group = this.value;
   document.getElementById('date_section').style.display = 'none';
   document.getElementById('student_section').style.display = 'none';
+  clearStatus();
+  if (!group) return;
+
+  setLoading('Loading attendance dates...');
 
   fetch("{% url 'get_admin_attendance' %}", {
     method: 'POST',
@@ -166,15 +142,18 @@ document.getElementById('fetch_dates_btn').addEventListener('click', function ()
     }
     const sel = document.getElementById('attendance_date');
     sel.innerHTML = arr.map(a => `<option value="${a.id}">${a.attendance_date}</option>`).join('');
-    document.getElementById('date_section').style.display = 'grid';
+    document.getElementById('date_section').style.display = 'block';
     clearStatus();
+    loadAttendanceRecords();
   })
   .catch(() => showStatus("Couldn't load data. Please try again.", 'error'));
 });
 
-document.getElementById('fetch_students_btn').addEventListener('click', function () {
+document.getElementById('attendance_date').addEventListener('change', loadAttendanceRecords);
+
+function loadAttendanceRecords() {
   const attendance_date_id = document.getElementById('attendance_date').value;
-  if (!attendance_date_id) { showStatus('Please select a date.', 'warning'); return; }
+  if (!attendance_date_id) return;
 
   setLoading('Loading attendance records...');
   fetch("{% url 'get_admin_attendance' %}", {
@@ -211,6 +190,6 @@ document.getElementById('fetch_students_btn').addEventListener('click', function
     clearStatus();
   })
   .catch(() => showStatus("Couldn't load data. Please try again.", 'error'));
-});
+}
 </script>
 {% endblock %}

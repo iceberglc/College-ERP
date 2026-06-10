@@ -75,40 +75,6 @@
         </div>
         {% endif %}
 
-        <div class="profile-left-actions">
-          <a href="{{ dashboard_url }}" class="profile-action-card">
-            <i class="fas fa-th-large" aria-hidden="true"></i>
-            <span><strong>Dashboard</strong><small>Return to your workspace</small></span>
-          </a>
-          <button type="button" class="profile-action-card" data-open-avatar>
-            <i class="fas fa-camera" aria-hidden="true"></i>
-            <span><strong>Avatar</strong><small>Update profile visual</small></span>
-          </button>
-          <a href="#edit-profile" class="profile-action-card" data-open-details="edit-profile" data-focus="#id_first_name">
-            <i class="fas fa-pen-nib" aria-hidden="true"></i>
-            <span><strong>Edit Profile</strong><small>Personal details and password</small></span>
-          </a>
-        </div>
-
-        <div class="profile-activity-summary">
-          <div class="profile-section-heading">
-            <span>Activity Summary</span>
-            <strong>Account</strong>
-          </div>
-          <div class="profile-activity-row">
-            <span class="profile-activity-icon"><i class="fas fa-shield-alt" aria-hidden="true"></i></span>
-            <span><strong>Signed in</strong><small>Authenticated account session</small></span>
-          </div>
-          <div class="profile-activity-row">
-            <span class="profile-activity-icon profile-activity-icon--cyan"><i class="fas fa-clock" aria-hidden="true"></i></span>
-            <span><strong>Account updated</strong><small>{{ request.user.updated_at|date:"M j, Y" }}</small></span>
-          </div>
-          <div class="profile-activity-row">
-            <span class="profile-activity-icon profile-activity-icon--navy"><i class="fas fa-briefcase" aria-hidden="true"></i></span>
-            <span><strong>{{ role_label }} workspace</strong><small>{{ role_group_label }} tools enabled</small></span>
-          </div>
-        </div>
-
         <div class="settings-row settings-row--danger profile-logout-row">
           <span class="settings-row__icon"><i class="fas fa-sign-out-alt icon-hover-pulse" aria-hidden="true"></i></span>
           <span class="settings-row__content">
@@ -121,18 +87,6 @@
     </aside>
 
     <main class="profile-workspace">
-      <header class="profile-workspace-header">
-        <div>
-          <span class="profile-kicker">Profile OS</span>
-          <h1>Settings, access, and preferences</h1>
-          <p>A focused control center for your ICEBERG account.</p>
-        </div>
-        <a href="{{ dashboard_url }}" class="profile-dashboard-link">
-          <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          Dashboard
-        </a>
-      </header>
-
       {% if profile_stats %}
       <div class="profile-snapshot" aria-label="Profile summary">
         {% for stat in profile_stats %}
@@ -140,7 +94,6 @@
           <span class="profile-snapshot__icon"><i class="fas {{ stat.icon }}" aria-hidden="true"></i></span>
           <span class="profile-snapshot__value">{{ stat.value }}</span>
           <span class="profile-snapshot__label">{{ stat.label }}</span>
-          <span class="profile-snapshot__trend"><i class="fas fa-chart-line" aria-hidden="true"></i> Live metric</span>
         </div>
         {% endfor %}
       </div>

@@ -2,24 +2,10 @@
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock %}
 
+{% block page_subtitle %}<p class="page-subtitle">Manage uploaded result files for groups and individual students.</p>{% endblock %}
+
 {% block content %}
 <div class="ice-mobile-page" data-ice-search-scope>
-  <section class="ice-hero">
-    <div class="ice-hero__main">
-      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-file-alt"></i></span>
-      <div class="ice-hero__copy">
-        <h2 class="ice-hero__title">{{ page_title }}</h2>
-        <p class="ice-hero__subtitle">Manage uploaded result files for groups and individual students.</p>
-      </div>
-    </div>
-    <div class="ice-hero__actions">
-      <span class="ice-chip ice-chip--info"><i class="fas fa-folder-open" aria-hidden="true"></i><span><span data-ice-visible-count>{{ files|length }}</span> files</span></span>
-      <a href="{% url 'upload_result_file' %}" class="ice-action ice-action--primary">
-        <i class="fas fa-upload" aria-hidden="true"></i> Upload File
-      </a>
-    </div>
-  </section>
-
   <label class="ice-searchbar" aria-label="Search result files">
     <i class="fas fa-search" aria-hidden="true"></i>
     <input type="search" class="ice-searchbar__input" data-ice-search placeholder="Search title, group, student..." autocomplete="off">

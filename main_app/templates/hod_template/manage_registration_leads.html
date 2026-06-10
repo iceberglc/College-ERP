@@ -160,21 +160,10 @@
 </style>
 {% endblock %}
 
+{% block page_subtitle %}<p class="page-subtitle">Track incoming registrations, update status, and keep follow-up notes.</p>{% endblock %}
+
 {% block content %}
 <div class="lead-shell ice-mobile-page" data-ice-search-scope>
-  <section class="ice-hero">
-    <div class="ice-hero__main">
-      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-user-clock"></i></span>
-      <div class="ice-hero__copy">
-        <h2 class="ice-hero__title">{{ page_title }}</h2>
-        <p class="ice-hero__subtitle">Track incoming registrations, update status, and keep follow-up notes.</p>
-      </div>
-    </div>
-    <div class="ice-hero__actions">
-      <span class="ice-chip ice-chip--info"><i class="fas fa-list" aria-hidden="true"></i><span><span data-ice-visible-count>{{ leads|length }}</span> showing</span></span>
-    </div>
-  </section>
-
   <div class="lead-summary">
     {% for item in status_summary %}
     <a class="lead-stat" href="{% url 'manage_registration_leads' %}?status={{ item.value }}" style="text-decoration:none;">

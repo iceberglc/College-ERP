@@ -213,7 +213,7 @@
         <div class="page-header ice-page-header">
             <div class="page-header-content">
                 <h1 class="page-title">{% block page_title %}Dashboard{% endblock page_title %}</h1>
-                {% if page_subtitle %}<p class="page-subtitle">{{ page_subtitle }}</p>{% endif %}
+                {% block page_subtitle %}{% if page_subtitle %}<p class="page-subtitle">{{ page_subtitle }}</p>{% endif %}{% endblock page_subtitle %}
             </div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">

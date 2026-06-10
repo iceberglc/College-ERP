@@ -2,22 +2,10 @@
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock %}
 
+{% block page_subtitle %}<p class="page-subtitle">Review student group membership and remove outdated enrollments.</p>{% endblock %}
+
 {% block content %}
 <div class="ice-mobile-page" data-ice-search-scope>
-  <section class="ice-hero">
-    <div class="ice-hero__main">
-      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-id-card"></i></span>
-      <div class="ice-hero__copy">
-        <h2 class="ice-hero__title">{{ page_title }}</h2>
-        <p class="ice-hero__subtitle">Review student group membership and remove outdated enrollments.</p>
-      </div>
-    </div>
-    <div class="ice-hero__actions">
-      <span class="ice-chip ice-chip--info"><i class="fas fa-users" aria-hidden="true"></i><span><span data-ice-visible-count>{{ enrollments|length }}</span> total</span></span>
-      <a href="{% url 'add_enrollment' %}" class="ice-action ice-action--primary"><i class="fas fa-plus" aria-hidden="true"></i> Enroll Student</a>
-    </div>
-  </section>
-
   <div class="ice-form-section">
     <form method="get" class="ice-form-grid">
       <div>

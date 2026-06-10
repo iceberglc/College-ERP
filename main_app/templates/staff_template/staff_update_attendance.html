@@ -117,18 +117,10 @@
 </style>
 {% endblock custom_css %}
 
+{% block page_subtitle %}<p class="page-subtitle">Choose a group and saved date, then update each student's attendance status.</p>{% endblock %}
+
 {% block content %}
 <div class="ice-mobile-page att-wrap">
-  <section class="ice-hero">
-    <div class="ice-hero__main">
-      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-calendar-check"></i></span>
-      <div class="ice-hero__copy">
-        <h2 class="ice-hero__title">{{ page_title }}</h2>
-        <p class="ice-hero__subtitle">Choose a group and saved date, then update each student's attendance status.</p>
-      </div>
-    </div>
-  </section>
-
   <div class="ice-stepper" aria-label="Update attendance workflow">
     <div class="ice-stepper__step"><span class="ice-stepper__num">1</span><span>Select group</span></div>
     <div class="ice-stepper__step"><span class="ice-stepper__num">2</span><span>Load dates</span></div>
