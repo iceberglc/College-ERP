@@ -813,7 +813,8 @@ def _rank_score(student_id, time_start, weights, enrolled_by_student):
     if time_start:
         rs_qs = rs_qs.filter(created_at__gte=time_start)
     rs_avg = rs_qs.aggregate(a=Avg(F("test") + F("exam")))["a"]
-    results = round(rs_avg) if rs_avg is not None else None
+    # Clamp to 100 so legacy out-of-scale rows can never produce >100% ranks.
+    results = min(round(rs_avg), 100) if rs_avg is not None else None
 
     # ── Composite score: weighted mean of available metrics ──
     metrics = {

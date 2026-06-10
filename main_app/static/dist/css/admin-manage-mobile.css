@@ -451,17 +451,19 @@
   border-color: rgba(220, 38, 38, 0.18);
 }
 
+/* Destructive actions stay quiet until hovered — red tint, not a filled
+   alarm button on every table row. */
 .ice-manage-action--danger-fill {
-  color: #ffffff;
-  background: linear-gradient(135deg, #b91c1c, #dc2626);
-  border-color: transparent;
-  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.24);
+  color: var(--ice-manage-danger);
+  background: rgba(220, 38, 38, 0.07);
+  border-color: rgba(220, 38, 38, 0.16);
 }
 
 .ice-manage-action--danger-fill:hover,
 .ice-manage-action--danger-fill:focus {
   color: #ffffff;
-  filter: brightness(1.08);
+  background: #dc2626;
+  border-color: #dc2626;
 }
 
 .ice-manage-action--warning {

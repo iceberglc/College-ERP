@@ -76,7 +76,11 @@ class CustomUserForm(FormSettings):
         input_formats=["%Y-%m-%d"],
         help_text="Format: YYYY-MM-DD. Used to generate the unique login ID.",
     )
-    address = forms.CharField(widget=forms.Textarea)
+    address = forms.CharField(
+        widget=forms.TextInput(
+            attrs={"placeholder": "e.g. Chilonzor 9, Tashkent", "class": "form-control"}
+        )
+    )
     password = forms.CharField(widget=forms.PasswordInput)
     profile_pic = forms.ImageField()
 
@@ -571,6 +575,11 @@ class BranchForm(FormSettings):
     class Meta:
         model = Branch
         fields = ["name", "address"]
+        widgets = {
+            "address": forms.TextInput(
+                attrs={"placeholder": "e.g. Chilonzor 9, Tashkent", "class": "form-control"}
+            ),
+        }
 
 
 class GroupForm(FormSettings):

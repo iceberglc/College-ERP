@@ -2,18 +2,10 @@
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock %}
 
+{% block page_subtitle %}<p class="page-subtitle">Submit a leave request and follow the admin decision from your phone.</p>{% endblock %}
+
 {% block content %}
 <div class="ice-mobile-page" style="max-width:760px; margin:0 auto;">
-  <section class="ice-hero">
-    <div class="ice-hero__main">
-      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-calendar-plus"></i></span>
-      <div class="ice-hero__copy">
-        <h2 class="ice-hero__title">{{ page_title }}</h2>
-        <p class="ice-hero__subtitle">Submit a leave request and follow the admin decision from your phone.</p>
-      </div>
-    </div>
-  </section>
-
   <section class="ice-form-section">
     <h3 class="ice-form-section__title">New Leave Request</h3>
     {% include "main_app/form_template.html" with messages=messages form=form button_text="Submit Request" %}

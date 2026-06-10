@@ -507,20 +507,13 @@ def profile_settings_hub(request):
         else:
             messages.error(request, "Please fix the highlighted profile fields.")
 
+    # One row per distinct destination — several earlier rows all opened the
+    # same edit panel under different names.
     account_rows = [
         _settings_row(
             "Personal Information",
             "Name, contact details, birthday, and profile basics",
             "fa-user",
-            kind="details",
-            details_id="edit-profile",
-            focus="#id_first_name",
-        ),
-        _settings_row(
-            "Edit Profile",
-            "Update the details available for your role",
-            "fa-edit",
-            anim="icon-hover-wiggle",
             kind="details",
             details_id="edit-profile",
             focus="#id_first_name",
@@ -534,18 +527,9 @@ def profile_settings_hub(request):
         ),
         _settings_row(
             "Change Password",
-            "Set a new password from the edit panel",
+            request.user.email or request.user.login_id or "Account credentials",
             "fa-key",
             anim="icon-hover-rotate",
-            kind="details",
-            details_id="edit-profile",
-            focus="#id_password",
-        ),
-        _settings_row(
-            "Login & Security",
-            request.user.email or request.user.login_id or "Account credentials",
-            "fa-lock",
-            anim="icon-hover-lock",
             kind="details",
             details_id="edit-profile",
             focus="#id_password",

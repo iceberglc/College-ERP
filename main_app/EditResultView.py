@@ -35,11 +35,20 @@ class EditResultView(LoginRequiredMixin, View):
         student = get_object_or_404(Student, id=student_id)
 
         try:
-            result = StudentResult.objects.get(student=student, group=group)
-            result.test = float(test)
-            result.exam = float(exam)
-            result.save()
-            messages.success(request, "Result updated successfully.")
+            test_val = float(test)
+            exam_val = float(exam)
+            if not (0 <= test_val <= StudentResult.TEST_MAX and 0 <= exam_val <= StudentResult.EXAM_MAX):
+                messages.warning(
+                    request,
+                    f"Scores out of range: test must be 0–{StudentResult.TEST_MAX}, "
+                    f"exam 0–{StudentResult.EXAM_MAX}.",
+                )
+            else:
+                result = StudentResult.objects.get(student=student, group=group)
+                result.test = test_val
+                result.exam = exam_val
+                result.save()
+                messages.success(request, "Result updated successfully.")
         except StudentResult.DoesNotExist:
             messages.warning(request, "No result found for this student in the selected group.")
         except (ValueError, TypeError) as e:

@@ -9,6 +9,8 @@ class MainAppConfig(AppConfig):
     def ready(self):
         from django.db.models.signals import post_migrate
 
+        from . import checks  # noqa: F401 — registers deployment checks
+
         # Seed admin accounts after migrations complete.  We intentionally
         # avoid any DB calls here — doing so triggers Django's "Accessing the
         # database during app initialization is discouraged" RuntimeWarning and

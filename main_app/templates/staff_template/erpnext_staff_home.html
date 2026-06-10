@@ -182,7 +182,7 @@
   <div>
     <div class="erpnext-card ice-chart-card h-100">
       <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-chart-pie me-2" style="color:var(--ice-cyan);"></i>Attendance vs Leave</h3>
+        <h3 class="card-title"><i class="fas fa-percentage me-2" style="color:var(--ice-cyan);"></i>Attendance Rate by Group</h3>
       </div>
       <div class="teacher-chart-body">
         <canvas id="pieChart"></canvas>
@@ -218,6 +218,7 @@ document.addEventListener('DOMContentLoaded', function () {
   };
   const subjects = {{ subject_list|safe }};
   const attendance = {{ attendance_list|safe }};
+  const attendanceRates = {{ attendance_rate_list|default:"[]"|safe }};
 
   function isDarkTheme() {
     return document.documentElement.getAttribute('data-theme') === 'dark' ||
@@ -292,24 +293,37 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     Chart.defaults.font.family = "'Inter', sans-serif";
     var compacted = compact(subjects, attendance);
-    var totalActivity = Number({{ total_attendance }}) + Number({{ total_leave }});
-
-    if (!totalActivity) {
-      showChartState('pieChart', 'Attendance and leave analytics will appear once activity exists.');
+    if (!hasData(attendanceRates)) {
+      showChartState('pieChart', 'Attendance rates will appear after attendance is taken for your groups.');
     } else {
       register(new Chart(document.getElementById('pieChart'), {
-        type: 'doughnut',
+        /* Horizontal bars: % of students present (incl. late) per group. */
+        type: 'bar',
         data: {
-          labels: ['Sessions Taken', 'Leave Applied'],
-          datasets: [{ data: [{{ total_attendance }}, {{ total_leave }}], backgroundColor: [BRAND.green, BRAND.red], borderWidth: 0, cutout: '70%' }]
+          labels: subjects,
+          datasets: [{
+            label: 'Present %',
+            data: attendanceRates,
+            backgroundColor: attendanceRates.map(function (v) {
+              return v >= 85 ? 'rgba(34,197,94,.7)' : v >= 60 ? 'rgba(245,158,11,.7)' : 'rgba(239,68,68,.65)';
+            }),
+            borderRadius: 8,
+            borderSkipped: false,
+            maxBarThickness: 30
+          }]
         },
         options: {
+          indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
           animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
           plugins: {
-            legend: { display: !isMobileChart(), position: 'bottom', labels: { color: mutedColor(), usePointStyle: true, boxWidth: 8, padding: 12 } },
+            legend: { display: false },
             tooltip: tooltipOptions()
+          },
+          scales: {
+            x: { min: 0, max: 100, grid: { color: gridColor() }, ticks: { color: mutedColor(), callback: function (v) { return v + '%'; } } },
+            y: { grid: { display: false }, ticks: { color: textColor(), font: { size: isMobileChart() ? 12 : 13, weight: '700' } } }
           }
         }
       }));
@@ -319,23 +333,18 @@ document.addEventListener('DOMContentLoaded', function () {
       showChartState('barChart', 'Attendance sessions will appear after attendance is taken for your groups.');
     } else {
       register(new Chart(document.getElementById('barChart'), {
-        type: 'line',
+        /* Groups are categories, not a continuum — bars, not a line. */
+        type: 'bar',
         data: {
           labels: compacted.labels,
           datasets: [{
             label: 'Sessions',
             data: compacted.values,
-            borderColor: BRAND.cyan,
-            backgroundColor: function (context) { return areaGradient(context, 'rgba(0,207,232,.34)', 'rgba(0,207,232,0)'); },
-            borderWidth: 3,
-            tension: 0.4,
-            fill: true,
-            pointRadius: isMobileChart() ? 0 : 3,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#fff',
-            pointBorderColor: BRAND.cyan,
-            pointBorderWidth: 2,
-            pointHitRadius: 16
+            backgroundColor: 'rgba(0,207,232,.65)',
+            hoverBackgroundColor: BRAND.cyan,
+            borderRadius: 10,
+            borderSkipped: false,
+            maxBarThickness: isMobileChart() ? 34 : 48
           }]
         },
         options: {

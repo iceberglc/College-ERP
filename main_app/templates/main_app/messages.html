@@ -291,6 +291,9 @@
 }
 
 .ice-chat-room__chips {
+  /* Span the full identity grid — otherwise the chips wrap into the
+     56px avatar column and render as crushed slivers. */
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
@@ -418,13 +421,181 @@
 
 .ice-chat-composer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 52px;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
   gap: 10px;
   align-items: end;
   flex: 0 0 auto;
   padding: 14px;
   border-top: 1px solid var(--ice-chat-border);
   background: rgba(255, 255, 255, 0.96);
+}
+
+.ice-chat-attach {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 17px;
+  color: var(--ice-chat-muted);
+  background: #f8fbff;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+  font-size: 17px;
+}
+
+.ice-chat-attach:hover,
+.ice-chat-attach:focus {
+  color: var(--ice-chat-cyan-2);
+  border-color: rgba(56, 189, 248, 0.5);
+  background: #ffffff;
+}
+
+.ice-chat-attach.has-file {
+  color: var(--ice-chat-cyan-2);
+  border-color: rgba(56, 189, 248, 0.64);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.ice-chat-attach input[type="file"] {
+  display: none;
+}
+
+.ice-chat-file-preview {
+  display: none;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  border-radius: 14px;
+  background: rgba(56, 189, 248, 0.08);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ice-chat-text);
+}
+
+.ice-chat-file-preview.is-visible {
+  display: flex;
+}
+
+.ice-chat-file-preview i {
+  color: var(--ice-chat-cyan-2);
+  flex: 0 0 auto;
+}
+
+.ice-chat-file-preview__name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ice-chat-file-preview__size {
+  flex: 0 0 auto;
+  color: var(--ice-chat-muted);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.ice-chat-file-preview__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  color: var(--ice-chat-muted);
+  background: rgba(148, 163, 184, 0.16);
+  cursor: pointer;
+}
+
+.ice-chat-file-preview__remove:hover {
+  color: var(--ice-chat-danger);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.ice-chat-flash {
+  grid-column: 1 / -1;
+  padding: 9px 12px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ice-chat-message__image {
+  display: block;
+  max-width: 100%;
+  margin-top: 4px;
+}
+
+.ice-chat-message__image img {
+  display: block;
+  max-width: min(380px, 100%);
+  max-height: 320px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.ice-chat-message__file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 14px;
+  background: rgba(148, 163, 184, 0.08);
+  color: inherit;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ice-chat-message__file:hover,
+.ice-chat-message__file:focus {
+  color: inherit;
+  border-color: rgba(56, 189, 248, 0.5);
+  text-decoration: none;
+}
+
+.ice-chat-message.is-mine .ice-chat-message__file {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.ice-chat-message__file i {
+  flex: 0 0 auto;
+  font-size: 19px;
+  color: var(--ice-chat-cyan-2);
+}
+
+.ice-chat-message.is-mine .ice-chat-message__file i {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ice-chat-message__file-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ice-chat-message__file-hint {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.75;
 }
 
 .ice-chat-composer__label {
@@ -569,6 +740,12 @@
 [data-theme="dark"] .ice-chat-composer textarea {
   background: #0b1426;
   color: var(--ice-chat-text);
+}
+
+.dark-mode .ice-chat-attach,
+[data-theme="dark"] .ice-chat-attach {
+  background: #0b1426;
+  color: var(--ice-chat-muted);
 }
 
 .dark-mode .ice-chat-messages,
@@ -741,7 +918,7 @@
 
   .ice-chat-room__header {
     display: grid;
-    grid-template-columns: 46px minmax(0, 1fr);
+    grid-template-columns: 42px minmax(0, 1fr);
     align-items: center;
     gap: 10px;
     flex: 0 0 auto;
@@ -749,23 +926,25 @@
 
   .ice-chat-back {
     display: inline-flex;
-    width: 46px;
-    height: 46px;
-    flex-basis: 46px;
-    border-radius: 16px;
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
+    align-self: center;
+    border-radius: 14px;
   }
 
   .ice-chat-room__identity {
-    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-columns: 44px minmax(0, 1fr);
     gap: 10px;
+    align-items: center;
   }
 
   .ice-chat-room__identity .ice-chat-avatar {
-    width: 48px;
-    height: 48px;
-    flex-basis: 48px;
-    border-radius: 16px;
-    font-size: 18px;
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+    border-radius: 14px;
+    font-size: 17px;
   }
 
   .ice-chat-room__name {
@@ -777,17 +956,11 @@
     font-size: 12.5px;
   }
 
+  /* The subtitle already covers teacher, students, and course — the chip
+     row duplicated it and made the header tall enough that the back button
+     looked detached. Hide chips on phones. */
   .ice-chat-room__chips {
-    grid-column: 1 / -1;
-    gap: 6px;
-    margin-top: 10px;
-  }
-
-  .ice-chat-chip {
-    min-height: 30px;
-    padding: 6px 9px;
-    background: rgba(255, 255, 255, 0.76);
-    font-size: 11.5px;
+    display: none;
   }
 
   .ice-chat-messages {
@@ -825,11 +998,18 @@
   }
 
   .ice-chat-composer {
-    grid-template-columns: minmax(0, 1fr) 52px;
+    grid-template-columns: 46px minmax(0, 1fr) 52px;
     gap: 9px;
     padding: 10px 0 0;
     border-top: 1px solid rgba(148, 163, 184, 0.24);
     background: transparent;
+  }
+
+  .ice-chat-attach {
+    width: 46px;
+    height: 52px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.86);
   }
 
   .ice-chat-composer textarea {
@@ -951,7 +1131,13 @@
               <span class="ice-chat-thread__preview-name">
                 {% if card.last_message.sender_id == request.user.id %}Me{% else %}{{ card.last_message.sender.get_full_name|default:card.last_message.sender.email }}{% endif %}:
               </span>
-              {{ card.last_message.body|truncatechars:96 }}
+              {% if card.last_message.body %}
+                {{ card.last_message.body|truncatechars:96 }}
+              {% elif card.last_message.attachment_is_image %}
+                <i class="fas fa-image" aria-hidden="true"></i> Photo
+              {% elif card.last_message.attachment %}
+                <i class="fas fa-paperclip" aria-hidden="true"></i> {{ card.last_message.attachment_display_name|truncatechars:60 }}
+              {% endif %}
             {% else %}
               No messages yet.
             {% endif %}
@@ -1028,7 +1214,22 @@
               </span>
               <time class="ice-chat-message__time" datetime="{{ msg.created_at|date:'c' }}">{{ msg.created_at|date:"M j, H:i" }}</time>
             </div>
+            {% if msg.body %}
             <div class="ice-chat-message__text">{{ msg.body|linebreaksbr }}</div>
+            {% endif %}
+            {% if msg.attachment %}
+              {% if msg.attachment_is_image %}
+              <a class="ice-chat-message__image" href="{{ msg.attachment.url }}" target="_blank" rel="noopener">
+                <img src="{{ msg.attachment.url }}" alt="{{ msg.attachment_display_name }}" loading="lazy">
+              </a>
+              {% else %}
+              <a class="ice-chat-message__file" href="{{ msg.attachment.url }}" target="_blank" rel="noopener" download="{{ msg.attachment_display_name }}">
+                <i class="fas fa-file-alt" aria-hidden="true"></i>
+                <span class="ice-chat-message__file-name">{{ msg.attachment_display_name }}</span>
+                <span class="ice-chat-message__file-hint"><i class="fas fa-download" aria-hidden="true"></i></span>
+              </a>
+              {% endif %}
+            {% endif %}
           </div>
         </article>
         {% endfor %}
@@ -1041,10 +1242,29 @@
       {% endif %}
     </div>
 
-    <form method="post" class="ice-chat-composer" action="{% url 'message_thread' active_group.id %}">
+    <form method="post" class="ice-chat-composer" action="{% url 'message_thread' active_group.id %}"
+          enctype="multipart/form-data" id="chat-form">
       {% csrf_token %}
+      {% if messages %}
+        {% for message in messages %}
+        <div class="ice-chat-flash" role="alert">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      <div class="ice-chat-file-preview" id="chat-file-preview" aria-live="polite">
+        <i class="fas fa-paperclip" aria-hidden="true"></i>
+        <span class="ice-chat-file-preview__name" id="chat-file-name"></span>
+        <span class="ice-chat-file-preview__size" id="chat-file-size"></span>
+        <button type="button" class="ice-chat-file-preview__remove" id="chat-file-remove" aria-label="Remove attachment">
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+      </div>
+      <label class="ice-chat-attach" id="chat-attach" aria-label="Attach a file or photo">
+        <i class="fas fa-paperclip" aria-hidden="true"></i>
+        <input type="file" name="attachment" id="chat-attachment"
+               accept=".jpg,.jpeg,.png,.gif,.webp,.bmp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.mp3,.mp4,.m4a,.wav">
+      </label>
       <label for="chat-body" class="ice-chat-composer__label">Message</label>
-      <textarea id="chat-body" name="body" class="form-control" maxlength="4000" placeholder="Write a message..." required rows="1"></textarea>
+      <textarea id="chat-body" name="body" class="form-control" maxlength="4000" placeholder="Write a message..." rows="1"></textarea>
       <button type="submit" class="ice-chat-send" aria-label="Send message">
         <i class="fas fa-paper-plane" aria-hidden="true"></i>
       </button>
@@ -1090,6 +1310,59 @@ document.addEventListener('DOMContentLoaded', function () {
     textarea.addEventListener('input', resizeComposer);
     textarea.addEventListener('focus', function () {
       setTimeout(scrollToLatest, 120);
+    });
+  }
+
+  /* ── Attachment picker ─────────────────────────────────────────── */
+  var form = document.getElementById('chat-form');
+  var fileInput = document.getElementById('chat-attachment');
+  var attachBtn = document.getElementById('chat-attach');
+  var preview = document.getElementById('chat-file-preview');
+  var previewName = document.getElementById('chat-file-name');
+  var previewSize = document.getElementById('chat-file-size');
+  var removeBtn = document.getElementById('chat-file-remove');
+  var MAX_BYTES = 10 * 1024 * 1024;
+
+  function formatSize(bytes) {
+    if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes >= 1024) return Math.round(bytes / 1024) + ' KB';
+    return bytes + ' B';
+  }
+
+  function clearAttachment() {
+    if (!fileInput) return;
+    fileInput.value = '';
+    preview.classList.remove('is-visible');
+    attachBtn.classList.remove('has-file');
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', function () {
+      var file = this.files && this.files[0];
+      if (!file) { clearAttachment(); return; }
+      if (file.size > MAX_BYTES) {
+        alert('File is too large. Maximum size is 10 MB.');
+        clearAttachment();
+        return;
+      }
+      previewName.textContent = file.name;
+      previewSize.textContent = formatSize(file.size);
+      preview.classList.add('is-visible');
+      attachBtn.classList.add('has-file');
+    });
+    removeBtn.addEventListener('click', clearAttachment);
+  }
+
+  /* Body is no longer `required` (attachment-only messages are valid), so
+     block truly empty submissions client-side. */
+  if (form) {
+    form.addEventListener('submit', function (event) {
+      var hasText = textarea && textarea.value.trim().length > 0;
+      var hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+      if (!hasText && !hasFile) {
+        event.preventDefault();
+        if (textarea) textarea.focus();
+      }
     });
   }
 });

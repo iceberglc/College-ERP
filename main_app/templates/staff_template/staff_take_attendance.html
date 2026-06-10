@@ -10,7 +10,7 @@
   }
   .att-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1.3fr) minmax(150px, .8fr) auto;
+    grid-template-columns: minmax(0, 1.3fr) minmax(150px, .8fr);
     gap: 14px;
     align-items: end;
   }
@@ -112,23 +112,6 @@
 
 {% block content %}
 <div class="ice-mobile-page att-wrap">
-  <section class="ice-hero">
-    <div class="ice-hero__main">
-      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-clipboard-check"></i></span>
-      <div class="ice-hero__copy">
-        <h2 class="ice-hero__title">{{ page_title }}</h2>
-        <p class="ice-hero__subtitle">Load your group roster, mark each student, and save attendance for the selected date.</p>
-      </div>
-    </div>
-  </section>
-
-  <div class="ice-stepper" aria-label="Attendance workflow">
-    <div class="ice-stepper__step"><span class="ice-stepper__num">1</span><span>Select group</span></div>
-    <div class="ice-stepper__step"><span class="ice-stepper__num">2</span><span>Choose date</span></div>
-    <div class="ice-stepper__step"><span class="ice-stepper__num">3</span><span>Mark students</span></div>
-    <div class="ice-stepper__step"><span class="ice-stepper__num">4</span><span>Save</span></div>
-  </div>
-
   {% if not groups %}
   <div class="ice-empty-state">
     <i class="fas fa-layer-group" aria-hidden="true"></i>
@@ -142,7 +125,7 @@
       <div>
         <label class="form-label" for="group"><i class="fas fa-layer-group me-1"></i>Group</label>
         <select id="group" class="form-control">
-          <option value="">Select your group</option>
+          {% if groups|length != 1 %}<option value="">Select your group</option>{% endif %}
           {% for g in groups %}
           <option value="{{ g.id }}">{{ g.name }}{% if g.course %} - {{ g.course.name }}{% endif %}</option>
           {% endfor %}
@@ -152,10 +135,8 @@
         <label class="form-label" for="attendance_date"><i class="fas fa-calendar-day me-1"></i>Date</label>
         <input type="date" id="attendance_date" class="form-control" value="{{ today }}" max="{{ today }}">
       </div>
-      <button type="button" id="fetch_btn" class="ice-action ice-action--primary" disabled>
-        <i class="fas fa-users" aria-hidden="true"></i> Load Roster
-      </button>
     </div>
+    <div id="roster_loading" class="ice-skel" style="display:none;height:56px;margin-top:14px;" aria-hidden="true"></div>
   </section>
 
   <section id="roster_card" class="ice-form-section" style="display:none;">
@@ -239,39 +220,31 @@ function markAll(status) {
   document.querySelectorAll('#student_list .att-student').forEach(r => setStatus(r, status));
 }
 
+/* Roster loads automatically when group or date changes — no extra click. */
 const groupSel = document.getElementById('group');
-if (groupSel) {
-  groupSel.addEventListener('change', function () {
-    document.getElementById('fetch_btn').disabled = !this.value;
-    document.getElementById('roster_card').style.display = 'none';
-    clearStatus();
-  });
-}
+const dateInput = document.getElementById('attendance_date');
+const rosterLoading = document.getElementById('roster_loading');
 
-const fetchBtn = document.getElementById('fetch_btn');
-if (fetchBtn) {
-  fetchBtn.addEventListener('click', function () {
-    const group = document.getElementById('group').value;
-    const attDate = document.getElementById('attendance_date').value;
-    if (!group) { showStatus('Please select a group first.', 'warning'); return; }
-    if (!attDate) { showStatus('Please select a date.', 'warning'); return; }
+function loadRoster() {
+  const group = groupSel.value;
+  const attDate = dateInput.value;
+  document.getElementById('roster_card').style.display = 'none';
+  clearStatus();
+  if (!group || !attDate) return;
 
-    this.disabled = true;
-    this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Loading...';
-    clearStatus();
+  rosterLoading.style.display = 'block';
 
-    fetch("{% url 'get_students' %}", {
-      method: 'POST',
-      headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ group })
-    })
+  fetch("{% url 'get_students' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ group })
+  })
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(data => {
       const arr = asArray(data);
-      fetchBtn.disabled = false;
-      fetchBtn.innerHTML = '<i class="fas fa-users" aria-hidden="true"></i> Load Roster';
+      rosterLoading.style.display = 'none';
 
-      if (!arr.length) { showStatus('No records found', 'warning'); return; }
+      if (!arr.length) { showStatus('No students enrolled in this group yet.', 'warning'); return; }
 
       document.getElementById('student_list').innerHTML = arr.map(s => `
         <article class="att-student" data-id="${s.id}">
@@ -286,19 +259,24 @@ if (fetchBtn) {
           <input type="hidden" class="student-status" value="1">
         </article>`).join('');
 
-      const grpOpt = document.getElementById('group').selectedOptions[0].text;
-      document.getElementById('roster_title').textContent = `${grpOpt} - ${attDate} - ${arr.length} students`;
+      const grpOpt = groupSel.selectedOptions[0].text;
+      document.getElementById('roster_title').textContent = `${grpOpt} — ${attDate} — ${arr.length} students`;
       document.getElementById('roster_card').style.display = 'block';
       document.getElementById('save_btn').style.display = '';
       document.getElementById('save_msg').innerHTML = '';
       updateSummary();
     })
     .catch(() => {
-      fetchBtn.disabled = false;
-      fetchBtn.innerHTML = '<i class="fas fa-users" aria-hidden="true"></i> Load Roster';
+      rosterLoading.style.display = 'none';
       showStatus("Couldn't load data. Please try again.", 'error');
     });
-  });
+}
+
+if (groupSel) {
+  groupSel.addEventListener('change', loadRoster);
+  dateInput.addEventListener('change', loadRoster);
+  /* Single group: it's preselected — load its roster immediately. */
+  if (groupSel.value) loadRoster();
 }
 
 const saveBtn = document.getElementById('save_btn');

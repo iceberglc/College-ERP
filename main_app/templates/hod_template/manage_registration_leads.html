@@ -160,21 +160,10 @@
 </style>
 {% endblock %}
 
+{% block page_subtitle %}<p class="page-subtitle">Track incoming registrations, update status, and keep follow-up notes.</p>{% endblock %}
+
 {% block content %}
 <div class="lead-shell ice-mobile-page" data-ice-search-scope>
-  <section class="ice-hero">
-    <div class="ice-hero__main">
-      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-user-clock"></i></span>
-      <div class="ice-hero__copy">
-        <h2 class="ice-hero__title">{{ page_title }}</h2>
-        <p class="ice-hero__subtitle">Track incoming registrations, update status, and keep follow-up notes.</p>
-      </div>
-    </div>
-    <div class="ice-hero__actions">
-      <span class="ice-chip ice-chip--info"><i class="fas fa-list" aria-hidden="true"></i><span><span data-ice-visible-count>{{ leads|length }}</span> showing</span></span>
-    </div>
-  </section>
-
   <div class="lead-summary">
     {% for item in status_summary %}
     <a class="lead-stat" href="{% url 'manage_registration_leads' %}?status={{ item.value }}" style="text-decoration:none;">
@@ -184,14 +173,10 @@
     {% endfor %}
   </div>
 
-  <form method="get" class="lead-toolbar">
-    <div>
-      <label class="form-label">Search</label>
-      <input class="form-control" type="search" name="q" value="{{ search }}" placeholder="Name, phone, email, program...">
-    </div>
+  <form method="get" class="lead-toolbar" id="lead-filter-form">
     <div>
       <label class="form-label">Status</label>
-      <select class="form-control" name="status">
+      <select class="form-control" name="status" onchange="this.form.submit()">
         <option value="">All statuses</option>
         {% for value, label in status_choices %}
         <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
@@ -200,19 +185,19 @@
     </div>
     <div>
       <label class="form-label">Source</label>
-      <select class="form-control" name="source">
+      <select class="form-control" name="source" onchange="this.form.submit()">
         <option value="">All sources</option>
         {% for source in sources %}
         <option value="{{ source }}" {% if source_filter == source %}selected{% endif %}>{{ source }}</option>
         {% endfor %}
       </select>
     </div>
-    <button class="btn btn-primary" type="submit"><i class="fas fa-filter me-1"></i>Filter</button>
+    <noscript><button class="btn btn-primary" type="submit"><i class="fas fa-filter me-1"></i>Filter</button></noscript>
   </form>
 
-  <label class="ice-searchbar" aria-label="Quick search visible leads">
+  <label class="ice-searchbar" aria-label="Search leads">
     <i class="fas fa-search" aria-hidden="true"></i>
-    <input type="search" class="ice-searchbar__input" data-ice-search placeholder="Quick search visible leads..." autocomplete="off">
+    <input type="search" class="ice-searchbar__input" data-ice-search placeholder="Search by name, phone, email, program..." autocomplete="off">
   </label>
 
   <div class="ice-empty-state" data-ice-empty-state hidden>

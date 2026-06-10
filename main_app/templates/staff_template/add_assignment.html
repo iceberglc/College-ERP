@@ -2,21 +2,10 @@
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock page_title %}
 
+{% block page_subtitle %}<p class="page-subtitle">Create or update a class assignment with a clear due date.</p>{% endblock %}
+
 {% block content %}
 <div class="ice-mobile-page" style="max-width:760px; margin:0 auto;">
-  <section class="ice-hero">
-    <div class="ice-hero__main">
-      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-tasks"></i></span>
-      <div class="ice-hero__copy">
-        <h2 class="ice-hero__title">{{ page_title }}</h2>
-        <p class="ice-hero__subtitle">Create or update a class assignment with a clear due date.</p>
-      </div>
-    </div>
-    <div class="ice-hero__actions">
-      <a href="{% url 'staff_assignments' %}" class="ice-action"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
-    </div>
-  </section>
-
   <section class="ice-form-section">
     {% include "main_app/form_template.html" with messages=messages form=form button_text="Save Assignment" %}
   </section>

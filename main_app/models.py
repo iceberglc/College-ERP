@@ -1,4 +1,5 @@
 from django.contrib.auth.hashers import make_password
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth.models import UserManager
 from django.dispatch import receiver
 from django.db.models.signals import post_save
@@ -467,10 +468,20 @@ class RegistrationLead(models.Model):
 
 
 class StudentResult(models.Model):
+    # Grading scale: test is out of 40, exam out of 60 → total out of 100.
+    TEST_MAX = 40
+    EXAM_MAX = 60
+
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     group = models.ForeignKey("Group", on_delete=models.CASCADE, null=True, blank=True)
-    test = models.FloatField(default=0)
-    exam = models.FloatField(default=0)
+    test = models.FloatField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(TEST_MAX)],
+    )
+    exam = models.FloatField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(EXAM_MAX)],
+    )
     comment = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -595,9 +606,15 @@ class ChatThread(models.Model):
 
 
 class ChatMessage(models.Model):
+    IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "bmp"}
+
     thread = models.ForeignKey(ChatThread, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="chat_messages")
-    body = models.TextField()
+    body = models.TextField(blank=True, default="")
+    attachment = models.FileField(
+        upload_to="chat_attachments/%Y/%m/", blank=True, null=True
+    )
+    attachment_name = models.CharField(max_length=255, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -606,6 +623,17 @@ class ChatMessage(models.Model):
             models.Index(fields=["thread", "created_at"]),
             models.Index(fields=["sender", "created_at"]),
         ]
+
+    @property
+    def attachment_is_image(self):
+        if not self.attachment:
+            return False
+        ext = (self.attachment_name or self.attachment.name).rsplit(".", 1)[-1].lower()
+        return ext in self.IMAGE_EXTENSIONS
+
+    @property
+    def attachment_display_name(self):
+        return self.attachment_name or (self.attachment.name.rsplit("/", 1)[-1] if self.attachment else "")
 
     def __str__(self):
         return f"{self.sender.email} -> {self.thread.group.name}: {self.body[:50]}"

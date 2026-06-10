@@ -34,6 +34,16 @@ su - "$APP_USER" -c "
   venv/bin/pip install -q -r requirements.txt
 "
 
+echo "▶  Creating persistent media directory (outside the repo — survives re-clones)…"
+MEDIA_DIR="/home/$APP_USER/media"
+mkdir -p "$MEDIA_DIR"
+chown "$APP_USER:$APP_USER" "$MEDIA_DIR"
+# Migrate any uploads from an older in-repo media/ directory.
+if [ -d "$APP_DIR/media" ] && [ -n "$(ls -A "$APP_DIR/media" 2>/dev/null)" ]; then
+    echo "   Moving existing uploads from $APP_DIR/media to $MEDIA_DIR…"
+    cp -an "$APP_DIR/media/." "$MEDIA_DIR/"
+fi
+
 echo "▶  Setting up .env — EDIT THIS FILE before starting the service!"
 if [ ! -f "$APP_DIR/.env" ]; then
     cp "$APP_DIR/.env.example" "$APP_DIR/.env"
@@ -46,6 +56,10 @@ if [ ! -f "$APP_DIR/.env" ]; then
     echo "⚠  Edit $APP_DIR/.env and set:"
     echo "     DATABASE_URL, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD"
     echo "   Then run: sudo systemctl start gunicorn-iceberg"
+fi
+# Ensure uploads live outside the repo even on re-runs of this script.
+if ! grep -q "^DJANGO_MEDIA_ROOT=" "$APP_DIR/.env"; then
+    echo "DJANGO_MEDIA_ROOT=$MEDIA_DIR" >> "$APP_DIR/.env"
 fi
 
 echo "▶  Running Django setup…"
