@@ -1,0 +1,49 @@
+"""Deployment safety checks.
+
+Registered in MainAppConfig.ready(); they run on `manage.py check`,
+`check --deploy`, `migrate`, and every server start.
+"""
+
+from django.conf import settings
+from django.core.checks import Warning, register
+
+
+@register(deploy=True)
+def check_media_storage_persistence(app_configs, **kwargs):
+    """Warn when production uploads would not survive a redeploy.
+
+    Uploads are safe when either:
+      - an S3/Spaces bucket is the default storage backend, or
+      - MEDIA_ROOT points outside the repo clone (so git operations,
+        re-clones, and platform rebuilds can't delete it).
+    """
+    errors = []
+
+    if settings.DEBUG:
+        return errors
+
+    default_backend = settings.STORAGES.get("default", {}).get("BACKEND", "")
+    uses_object_storage = "s3" in default_backend.lower()
+    if uses_object_storage:
+        return errors
+
+    media_root = str(settings.MEDIA_ROOT)
+    base_dir = str(settings.BASE_DIR)
+    if media_root.startswith(base_dir):
+        errors.append(
+            Warning(
+                "User uploads are stored inside the repository directory "
+                f"({media_root}) with no object storage configured. "
+                "A re-clone, `git clean`, or platform redeploy will DELETE "
+                "every uploaded file (profile pictures, chat attachments, "
+                "story images, result files).",
+                hint=(
+                    "Either set DJANGO_MEDIA_ROOT to a directory outside the "
+                    "repo (e.g. /home/iceberg/media) or configure DigitalOcean "
+                    "Spaces via SPACES_KEY / SPACES_SECRET / SPACES_BUCKET. "
+                    "See .env.example."
+                ),
+                id="main_app.W001",
+            )
+        )
+    return errors

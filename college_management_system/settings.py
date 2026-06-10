@@ -172,7 +172,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 WHITENOISE_ROOT = BASE_DIR / "public"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# Uploads must survive redeploys. On a VPS, set DJANGO_MEDIA_ROOT to a
+# directory OUTSIDE the repo clone (e.g. /home/iceberg/media) so git
+# operations and re-clones can never touch user uploads. The in-repo
+# default is for local development only.
+MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT") or (BASE_DIR / "media"))
 
 # ---------------------------------------------------------------------------
 # Media file storage — DigitalOcean Spaces (S3-compatible)
