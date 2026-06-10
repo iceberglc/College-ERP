@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 from django.views.static import serve
 from rest_framework_simplejwt.views import TokenRefreshView
 from . import settings
@@ -17,6 +18,9 @@ urlpatterns = [
         SafePasswordResetView.as_view(),
         name="password_reset",
     ),
+    # Single login experience: the auth app's default login page duplicated
+    # the main /login/ screen with a different design. Redirect it.
+    path("accounts/login/", RedirectView.as_view(url="/login/", permanent=False)),
     path("accounts/", include("django.contrib.auth.urls")),
     path("admin/", admin.site.urls),
     # Mobile API v1

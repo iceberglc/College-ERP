@@ -34,9 +34,18 @@ def staff_home(request):
 
     group_label_list = []
     attendance_list = []
+    attendance_rate_list = []
     for group in groups:
         group_label_list.append(group.name[:12])
         attendance_list.append(Attendance.objects.filter(group=group).count())
+        reports = AttendanceReport.objects.filter(attendance__group=group)
+        total_reports = reports.count()
+        present_reports = reports.filter(
+            status__in=[AttendanceReport.PRESENT, AttendanceReport.LATE]
+        ).count()
+        attendance_rate_list.append(
+            round(present_reports / total_reports * 100) if total_reports else 0
+        )
 
     context = {
         "page_title": f"{staff.admin.first_name} {staff.admin.last_name}"
@@ -47,6 +56,7 @@ def staff_home(request):
         "total_subject": total_groups,
         "subject_list": group_label_list,
         "attendance_list": attendance_list,
+        "attendance_rate_list": attendance_rate_list,
         "groups": groups,
     }
     return render(request, "staff_template/erpnext_staff_home.html", context)
