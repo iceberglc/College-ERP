@@ -581,9 +581,15 @@ class ChatThread(models.Model):
 
 
 class ChatMessage(models.Model):
+    IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "bmp"}
+
     thread = models.ForeignKey(ChatThread, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="chat_messages")
-    body = models.TextField()
+    body = models.TextField(blank=True, default="")
+    attachment = models.FileField(
+        upload_to="chat_attachments/%Y/%m/", blank=True, null=True
+    )
+    attachment_name = models.CharField(max_length=255, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -592,6 +598,17 @@ class ChatMessage(models.Model):
             models.Index(fields=["thread", "created_at"]),
             models.Index(fields=["sender", "created_at"]),
         ]
+
+    @property
+    def attachment_is_image(self):
+        if not self.attachment:
+            return False
+        ext = (self.attachment_name or self.attachment.name).rsplit(".", 1)[-1].lower()
+        return ext in self.IMAGE_EXTENSIONS
+
+    @property
+    def attachment_display_name(self):
+        return self.attachment_name or (self.attachment.name.rsplit("/", 1)[-1] if self.attachment else "")
 
     def __str__(self):
         return f"{self.sender.email} -> {self.thread.group.name}: {self.body[:50]}"
