@@ -44,6 +44,16 @@
   --ib-shadow-soft: 0 12px 34px rgba(0, 0, 0, .26);
 }
 
+/* The light viewport wash above washes out the dark body gradient, so swap
+   it for translucent navy glows that let the page background show through. */
+.dark-mode .admin-dashboard::before,
+[data-theme="dark"] .admin-dashboard::before {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(0, 207, 232, .08), transparent 30rem),
+    radial-gradient(circle at 86% 22%, rgba(11, 79, 138, .18), transparent 28rem),
+    linear-gradient(180deg, rgba(5, 13, 32, .35), rgba(5, 13, 32, 0));
+}
+
 .admin-command,
 .admin-card,
 .admin-metric-card {
