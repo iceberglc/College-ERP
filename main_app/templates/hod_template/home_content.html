@@ -35,6 +35,7 @@
       </div>
     </div>
     <div class="admin-command__panel" aria-label="Today snapshot">
+      {% if today_attendance_total %}
       <div class="admin-command__panel-header">
         <span>Today</span>
         <strong>{{ attendance_today_rate }}%</strong>
@@ -43,6 +44,13 @@
         <span>{{ today_attendance_present }}</span>
       </div>
       <p>{{ today_attendance_present }} present out of {{ today_attendance_total }} attendance records today.</p>
+      {% else %}
+      <div class="admin-command__panel-header">
+        <span>Today</span>
+        <strong><i class="far fa-calendar" aria-hidden="true"></i></strong>
+      </div>
+      <p style="margin-top:6px;">No classes recorded yet today. Attendance appears here as teachers take it.</p>
+      {% endif %}
       <div class="admin-mini-stack">
         <span><i class="fas fa-user-plus" aria-hidden="true"></i>{{ new_students_7 }} new this week</span>
         <span><i class="fas fa-user-clock" aria-hidden="true"></i>{{ recent_leads|length }} pending leads</span>
@@ -545,10 +553,19 @@ document.addEventListener('DOMContentLoaded', function () {
       showChartState('barChart', 'Attendance sessions will appear after teachers take attendance.');
     } else {
     register(new Chart(document.getElementById('barChart'), {
-      type: 'line',
+      /* Groups are categories, not a continuum — bars, not a line. */
+      type: 'bar',
       data: {
         labels: compactGroups.labels,
-        datasets: [lineDataset('Sessions', compactGroups.values, BRAND.cyan, 'rgba(0,207,232,.34)', 'rgba(0,207,232,0)')]
+        datasets: [{
+          label: 'Sessions',
+          data: compactGroups.values,
+          backgroundColor: 'rgba(0,207,232,.65)',
+          hoverBackgroundColor: BRAND.cyan,
+          borderRadius: 10,
+          borderSkipped: false,
+          maxBarThickness: isMobileChart() ? 34 : 48
+        }]
       },
       options: {
         responsive: true,
@@ -568,12 +585,17 @@ document.addEventListener('DOMContentLoaded', function () {
       showChartState('barChart2', 'Student attendance overview will appear when attendance records exist.');
     } else {
     register(new Chart(document.getElementById('barChart2'), {
-      type: 'line',
+      /* Students are categories — grouped bars read better than crossing lines. */
+      type: 'bar',
       data: {
         labels: compactStudents.labels,
         datasets: [
-          lineDataset('Present', compactStudents.first, BRAND.green, 'rgba(34,197,94,.30)', 'rgba(34,197,94,0)'),
-          lineDataset('Absent / Leave', compactStudents.second, BRAND.red, 'rgba(239,68,68,.26)', 'rgba(239,68,68,0)')
+          { label: 'Present', data: compactStudents.first,
+            backgroundColor: 'rgba(34,197,94,.7)', hoverBackgroundColor: BRAND.green,
+            borderRadius: 8, borderSkipped: false, maxBarThickness: 26 },
+          { label: 'Absent / Leave', data: compactStudents.second,
+            backgroundColor: 'rgba(239,68,68,.55)', hoverBackgroundColor: BRAND.red,
+            borderRadius: 8, borderSkipped: false, maxBarThickness: 26 }
         ]
       },
       options: {

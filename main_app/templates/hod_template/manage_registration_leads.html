@@ -184,14 +184,10 @@
     {% endfor %}
   </div>
 
-  <form method="get" class="lead-toolbar">
-    <div>
-      <label class="form-label">Search</label>
-      <input class="form-control" type="search" name="q" value="{{ search }}" placeholder="Name, phone, email, program...">
-    </div>
+  <form method="get" class="lead-toolbar" id="lead-filter-form">
     <div>
       <label class="form-label">Status</label>
-      <select class="form-control" name="status">
+      <select class="form-control" name="status" onchange="this.form.submit()">
         <option value="">All statuses</option>
         {% for value, label in status_choices %}
         <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
@@ -200,19 +196,19 @@
     </div>
     <div>
       <label class="form-label">Source</label>
-      <select class="form-control" name="source">
+      <select class="form-control" name="source" onchange="this.form.submit()">
         <option value="">All sources</option>
         {% for source in sources %}
         <option value="{{ source }}" {% if source_filter == source %}selected{% endif %}>{{ source }}</option>
         {% endfor %}
       </select>
     </div>
-    <button class="btn btn-primary" type="submit"><i class="fas fa-filter me-1"></i>Filter</button>
+    <noscript><button class="btn btn-primary" type="submit"><i class="fas fa-filter me-1"></i>Filter</button></noscript>
   </form>
 
-  <label class="ice-searchbar" aria-label="Quick search visible leads">
+  <label class="ice-searchbar" aria-label="Search leads">
     <i class="fas fa-search" aria-hidden="true"></i>
-    <input type="search" class="ice-searchbar__input" data-ice-search placeholder="Quick search visible leads..." autocomplete="off">
+    <input type="search" class="ice-searchbar__input" data-ice-search placeholder="Search by name, phone, email, program..." autocomplete="off">
   </label>
 
   <div class="ice-empty-state" data-ice-empty-state hidden>

@@ -1,4 +1,5 @@
 from django.contrib.auth.hashers import make_password
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth.models import UserManager
 from django.dispatch import receiver
 from django.db.models.signals import post_save
@@ -458,10 +459,20 @@ class RegistrationLead(models.Model):
 
 
 class StudentResult(models.Model):
+    # Grading scale: test is out of 40, exam out of 60 → total out of 100.
+    TEST_MAX = 40
+    EXAM_MAX = 60
+
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     group = models.ForeignKey("Group", on_delete=models.CASCADE, null=True, blank=True)
-    test = models.FloatField(default=0)
-    exam = models.FloatField(default=0)
+    test = models.FloatField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(TEST_MAX)],
+    )
+    exam = models.FloatField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(EXAM_MAX)],
+    )
     comment = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

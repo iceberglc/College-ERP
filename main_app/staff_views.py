@@ -392,6 +392,13 @@ def staff_add_result(request):
             group_id = request.POST.get("group")
             test = float(request.POST.get("test") or 0)
             exam = float(request.POST.get("exam") or 0)
+            if not (0 <= test <= StudentResult.TEST_MAX and 0 <= exam <= StudentResult.EXAM_MAX):
+                messages.warning(
+                    request,
+                    f"Scores out of range: test must be 0–{StudentResult.TEST_MAX}, "
+                    f"exam 0–{StudentResult.EXAM_MAX}.",
+                )
+                return render(request, "staff_template/staff_add_result.html", context)
             comment = (request.POST.get("comment") or "").strip()
             group = get_object_or_404(Group, id=group_id, teacher=staff)
             student = get_object_or_404(Student, id=student_id)

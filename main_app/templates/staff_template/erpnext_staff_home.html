@@ -319,23 +319,18 @@ document.addEventListener('DOMContentLoaded', function () {
       showChartState('barChart', 'Attendance sessions will appear after attendance is taken for your groups.');
     } else {
       register(new Chart(document.getElementById('barChart'), {
-        type: 'line',
+        /* Groups are categories, not a continuum — bars, not a line. */
+        type: 'bar',
         data: {
           labels: compacted.labels,
           datasets: [{
             label: 'Sessions',
             data: compacted.values,
-            borderColor: BRAND.cyan,
-            backgroundColor: function (context) { return areaGradient(context, 'rgba(0,207,232,.34)', 'rgba(0,207,232,0)'); },
-            borderWidth: 3,
-            tension: 0.4,
-            fill: true,
-            pointRadius: isMobileChart() ? 0 : 3,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#fff',
-            pointBorderColor: BRAND.cyan,
-            pointBorderWidth: 2,
-            pointHitRadius: 16
+            backgroundColor: 'rgba(0,207,232,.65)',
+            hoverBackgroundColor: BRAND.cyan,
+            borderRadius: 10,
+            borderSkipped: false,
+            maxBarThickness: isMobileChart() ? 34 : 48
           }]
         },
         options: {
