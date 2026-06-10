@@ -327,11 +327,22 @@ class CourseForm(forms.Form):
         label="Subject / Program",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
+    monthly_fee = forms.DecimalField(
+        required=False,
+        min_value=0,
+        decimal_places=0,
+        max_digits=12,
+        label="Monthly fee (UZS soʻm)",
+        help_text="Default tuition per month. Groups may override it.",
+        widget=forms.NumberInput(attrs={"class": "form-control", "step": "1000", "placeholder": "e.g. 600000"}),
+    )
 
     def __init__(self, *args, instance=None, **kwargs):
         initial = kwargs.get("initial", {})
         if instance and instance.name and not initial.get("name"):
             initial["name"] = instance.name
+        if instance and instance.monthly_fee is not None and "monthly_fee" not in initial:
+            initial["monthly_fee"] = instance.monthly_fee
         kwargs["initial"] = initial
         super().__init__(*args, **kwargs)
         # If editing a course whose name isn't in the predefined list, add it
@@ -580,6 +591,7 @@ class GroupForm(FormSettings):
             "room",
             "schedule",
             "capacity",
+            "monthly_fee",
             "start_date",
         ]
         labels = {
@@ -589,10 +601,14 @@ class GroupForm(FormSettings):
             "room": "Room / Classroom",
             "schedule": "Schedule",
             "capacity": "Capacity (max students)",
+            "monthly_fee": "Monthly fee (UZS soʻm)",
             "start_date": "Starting Date",
         }
         widgets = {
             "start_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "monthly_fee": forms.NumberInput(
+                attrs={"class": "form-control", "step": "1000", "placeholder": "Blank = course fee"}
+            ),
         }
 
 
@@ -837,3 +853,127 @@ class LeaderboardSeasonForm(FormSettings):
             "end_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "is_active": forms.CheckboxInput(),
         }
+
+
+# ── Payments ──────────────────────────────────────────────────────────────────
+
+
+class GenerateInvoicesForm(forms.Form):
+    """Monthly tuition invoice generation for all active enrollments."""
+
+    month = forms.CharField(
+        label="Billing month",
+        widget=forms.TextInput(attrs={"type": "month", "class": "form-control"}),
+        help_text="Invoices are created for every active enrollment in this month.",
+    )
+    branch = forms.ModelChoiceField(
+        queryset=Branch.objects.none(),
+        required=False,
+        label="Branch / Location",
+        empty_label="All my branches",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    due_date = forms.DateField(
+        label="Payment due date",
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+    )
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        qs = Branch.objects.all().order_by("name")
+        if user is not None:
+            qs = branching.filter_branches_for_user(user, qs)
+        self.fields["branch"].queryset = qs
+
+    def clean_month(self):
+        raw = self.cleaned_data["month"]
+        try:
+            year, month = raw.split("-")
+            return date(int(year), int(month), 1)
+        except (ValueError, AttributeError):
+            raise forms.ValidationError("Pick a month in the YYYY-MM format.")
+
+
+class RecordPaymentForm(FormSettings):
+    class Meta:
+        model = Payment
+        fields = ["amount", "method", "paid_on", "note"]
+        labels = {
+            "amount": "Amount (UZS soʻm)",
+            "method": "Payment method",
+            "paid_on": "Payment date",
+            "note": "Note (optional)",
+        }
+        widgets = {
+            "amount": forms.NumberInput(attrs={"class": "form-control", "step": "1000", "min": "1"}),
+            "paid_on": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "note": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "e.g. receipt #, payer name"}
+            ),
+        }
+
+    def __init__(self, *args, invoice=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.invoice = invoice
+        if invoice is not None and not self.initial.get("amount") and not self.data:
+            self.initial["amount"] = invoice.balance
+
+    def clean_amount(self):
+        amount = self.cleaned_data["amount"]
+        if amount <= 0:
+            raise forms.ValidationError("Amount must be greater than zero.")
+        if self.invoice is not None and amount > self.invoice.balance:
+            raise forms.ValidationError(
+                f"Amount exceeds the remaining balance ({self.invoice.balance:,.0f} soʻm)."
+            )
+        return amount
+
+
+class ManualInvoiceForm(FormSettings):
+    """One-off invoice for a single student (extra charge, materials, etc.)."""
+
+    month = forms.CharField(
+        label="Billing month",
+        widget=forms.TextInput(attrs={"type": "month", "class": "form-control"}),
+    )
+
+    class Meta:
+        model = Invoice
+        fields = ["student", "amount", "discount", "due_date", "note"]
+        labels = {
+            "amount": "Amount (UZS soʻm)",
+            "discount": "Discount (UZS soʻm)",
+            "due_date": "Payment due date",
+            "note": "Note (optional)",
+        }
+        widgets = {
+            "amount": forms.NumberInput(attrs={"class": "form-control", "step": "1000", "min": "0"}),
+            "discount": forms.NumberInput(attrs={"class": "form-control", "step": "1000", "min": "0"}),
+            "due_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "note": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "e.g. course books, exam fee"}
+            ),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        qs = Student.objects.select_related("admin").order_by("admin__last_name")
+        if user is not None:
+            qs = branching.filter_students_for_user(user, qs)
+        self.fields["student"].queryset = qs
+
+    def clean_month(self):
+        raw = self.cleaned_data["month"]
+        try:
+            year, month = raw.split("-")
+            return date(int(year), int(month), 1)
+        except (ValueError, AttributeError):
+            raise forms.ValidationError("Pick a month in the YYYY-MM format.")
+
+    def clean(self):
+        cleaned = super().clean()
+        amount = cleaned.get("amount")
+        discount = cleaned.get("discount") or 0
+        if amount is not None and discount > amount:
+            self.add_error("discount", "Discount cannot exceed the invoice amount.")
+        return cleaned

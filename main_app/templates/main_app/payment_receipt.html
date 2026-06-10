@@ -1,0 +1,46 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% load uzs %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block custom_css %}
+<style>
+.receipt-card { max-width: 560px; margin: 0 auto; }
+.receipt-row { display:flex; justify-content:space-between; gap:16px; padding:10px 0; border-bottom:1px dashed var(--ice-border,#E4E7EC); font-size:14px; }
+.receipt-row:last-child { border-bottom:none; }
+.receipt-label { color:var(--ice-muted,#64748B); font-weight:600; }
+.receipt-value { font-weight:700; text-align:right; }
+.receipt-total { font-size:20px; font-weight:800; color:#16A34A; }
+@media print {
+  .main-sidebar, .main-header, .ice-bottom-nav, .no-print, nav, footer { display:none !important; }
+  .content-wrapper { margin:0 !important; background:#fff !important; }
+}
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+<div class="page-card receipt-card">
+  <div class="page-card-header">
+    <i class="fas fa-receipt"></i>
+    <div>
+      <div class="page-card-title">Payment Receipt</div>
+      <div class="page-card-subtitle">Iceberg Study Center · {{ payment.receipt_no }}</div>
+    </div>
+  </div>
+  <div style="padding: 6px 22px 22px;">
+    <div class="receipt-row"><span class="receipt-label">Receipt No.</span><span class="receipt-value">{{ payment.receipt_no }}</span></div>
+    <div class="receipt-row"><span class="receipt-label">Date</span><span class="receipt-value">{{ payment.paid_on }}</span></div>
+    <div class="receipt-row"><span class="receipt-label">Student</span><span class="receipt-value">{{ invoice.student }}{% if invoice.student.admin.login_id %} ({{ invoice.student.admin.login_id }}){% endif %}</span></div>
+    <div class="receipt-row"><span class="receipt-label">For</span><span class="receipt-value">{{ invoice.period_label }}{% if invoice.group %} · {{ invoice.group.name }}{% endif %}</span></div>
+    <div class="receipt-row"><span class="receipt-label">Method</span><span class="receipt-value">{{ payment.get_method_display }}</span></div>
+    {% if payment.note %}<div class="receipt-row"><span class="receipt-label">Note</span><span class="receipt-value">{{ payment.note }}</span></div>{% endif %}
+    {% if payment.received_by %}<div class="receipt-row"><span class="receipt-label">Received by</span><span class="receipt-value">{{ payment.received_by.get_full_name }}</span></div>{% endif %}
+    <div class="receipt-row"><span class="receipt-label">Amount paid</span><span class="receipt-value receipt-total">{{ payment.amount|uzs }}</span></div>
+    <div class="receipt-row"><span class="receipt-label">Invoice balance after payment</span><span class="receipt-value">{{ invoice.balance|uzs }}</span></div>
+
+    <div class="no-print" style="display:flex; gap:10px; margin-top:18px;">
+      <button type="button" class="pf-submit" style="flex:1;" onclick="window.print()"><i class="fas fa-print me-1"></i> Print</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -18,7 +18,16 @@ from django.urls import path
 
 from main_app.EditResultView import EditResultView
 
-from . import hod_views, messaging_views, password_recovery, public_views, staff_views, student_views, views
+from . import (
+    hod_views,
+    messaging_views,
+    password_recovery,
+    payments_views,
+    public_views,
+    staff_views,
+    student_views,
+    views,
+)
 
 urlpatterns = [
     # Password recovery (custom code-based flow)
@@ -344,4 +353,41 @@ urlpatterns = [
     path("admin/stories/<int:story_id>/delete/", hod_views.delete_story, name="delete_story"),
     # Dashboard Stories (Staff)
     path("staff/stories/post/", staff_views.staff_create_story, name="staff_create_story"),
+    # Payments (Admin/HOD)
+    path("admin/payments/", payments_views.admin_payments, name="admin_payments"),
+    path(
+        "admin/payments/generate/",
+        payments_views.admin_generate_invoices,
+        name="admin_generate_invoices",
+    ),
+    path("admin/payments/invoice/add/", payments_views.admin_add_invoice, name="admin_add_invoice"),
+    path(
+        "admin/payments/invoice/<int:invoice_id>/record/",
+        payments_views.admin_record_payment,
+        name="admin_record_payment",
+    ),
+    path(
+        "admin/payments/invoice/<int:invoice_id>/cancel/",
+        payments_views.admin_cancel_invoice,
+        name="admin_cancel_invoice",
+    ),
+    path(
+        "admin/payments/invoice/<int:invoice_id>/remind/",
+        payments_views.admin_send_payment_reminder,
+        name="admin_send_payment_reminder",
+    ),
+    path(
+        "admin/payments/payment/<int:payment_id>/void/",
+        payments_views.admin_void_payment,
+        name="admin_void_payment",
+    ),
+    # Payments (Staff — read-only)
+    path("staff/payments/", payments_views.staff_payments, name="staff_payments"),
+    # Payments (Student)
+    path("student/payments/", payments_views.student_payments, name="student_payments"),
+    path(
+        "payments/receipt/<int:payment_id>/",
+        payments_views.payment_receipt,
+        name="payment_receipt",
+    ),
 ]

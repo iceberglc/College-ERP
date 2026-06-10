@@ -1,0 +1,92 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% load uzs %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="ice-mobile-page">
+  <section class="ice-hero">
+    <div class="ice-hero__main">
+      <span class="ice-hero__icon" aria-hidden="true"><i class="fas fa-wallet"></i></span>
+      <div class="ice-hero__copy">
+        <h2 class="ice-hero__title">{{ page_title }}</h2>
+        <p class="ice-hero__subtitle">Your tuition invoices and payment history.</p>
+      </div>
+    </div>
+    <div class="ice-hero__actions">
+      {% if total_outstanding > 0 %}
+      <span class="ice-chip" style="border-color:rgba(220,38,38,.4); color:#DC2626;"><i class="fas fa-exclamation-circle" aria-hidden="true"></i><span>To pay: {{ total_outstanding|uzs }}</span></span>
+      {% else %}
+      <span class="ice-chip ice-chip--success"><i class="fas fa-check-circle" aria-hidden="true"></i><span>All paid up 🎉</span></span>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if overdue_count %}
+  <div class="ice-form-section" style="border:1px solid rgba(220,38,38,.4); border-radius:14px; background:rgba(220,38,38,.05); padding:14px 16px; font-weight:600; color:#DC2626;">
+    <i class="fas fa-bell me-1" aria-hidden="true"></i>
+    You have {{ overdue_count }} overdue invoice{{ overdue_count|pluralize }}. Please pay at the front desk of your branch, by card transfer, or contact your administrator.
+  </div>
+  {% endif %}
+
+  {% if invoices %}
+  <div class="ice-card-grid">
+    {% for inv in invoices %}
+    <article class="ice-mobile-card">
+      <div class="ice-mobile-card__top">
+        <span class="ice-mobile-card__avatar" aria-hidden="true"><i class="fas fa-file-invoice"></i></span>
+        <div class="ice-mobile-card__main">
+          <h3 class="ice-mobile-card__title">{{ inv.period_label }}</h3>
+          <div class="ice-mobile-card__subtitle">{{ inv.group.name|default:"Additional charge" }}{% if inv.note %} · {{ inv.note }}{% endif %}</div>
+        </div>
+      </div>
+      <div class="ice-mobile-card__meta">
+        <span class="ice-chip"><i class="fas fa-coins" aria-hidden="true"></i><span>{{ inv.total_due|uzs }}</span></span>
+        {% if inv.discount > 0 %}<span class="ice-chip ice-chip--info"><i class="fas fa-tag" aria-hidden="true"></i><span>−{{ inv.discount|uzs }} discount</span></span>{% endif %}
+        {% if inv.status == 'paid' %}
+          <span class="ice-chip ice-chip--success"><i class="fas fa-check-circle" aria-hidden="true"></i><span>Paid</span></span>
+        {% elif inv.is_overdue %}
+          <span class="ice-chip" style="border-color:rgba(220,38,38,.4); color:#DC2626;"><i class="fas fa-exclamation-circle" aria-hidden="true"></i><span>Overdue · {{ inv.balance|uzs }} left</span></span>
+        {% elif inv.status == 'partial' %}
+          <span class="ice-chip" style="border-color:rgba(245,158,11,.45); color:#B45309;"><i class="fas fa-hourglass-half" aria-hidden="true"></i><span>{{ inv.balance|uzs }} left · due {{ inv.due_date|date:"d M" }}</span></span>
+        {% else %}
+          <span class="ice-chip ice-chip--info"><i class="fas fa-hourglass-half" aria-hidden="true"></i><span>Due by {{ inv.due_date|date:"d M Y" }}</span></span>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="ice-empty-state">
+    <i class="fas fa-file-invoice" aria-hidden="true"></i>
+    <strong>No invoices yet</strong>
+    <span>Your tuition invoices will appear here once they are issued.</span>
+  </div>
+  {% endif %}
+
+  {% if payment_history %}
+  <section class="ice-form-section">
+    <h3 style="font-size:15px; font-weight:800; margin:6px 0 12px;"><i class="fas fa-history me-1" aria-hidden="true"></i> Payment history</h3>
+    <div class="ice-table-card">
+      <table class="dt">
+        <thead>
+          <tr><th>Receipt</th><th>Date</th><th>For</th><th>Method</th><th>Amount</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for p in payment_history %}
+          <tr>
+            <td style="font-weight:600;">{{ p.receipt_no }}</td>
+            <td style="color:var(--ice-muted);">{{ p.paid_on }}</td>
+            <td style="color:var(--ice-muted);">{{ p.invoice.period_label }}</td>
+            <td>{{ p.get_method_display }}</td>
+            <td style="font-weight:700; color:#16A34A;">{{ p.amount|uzs }}</td>
+            <td><a href="{% url 'payment_receipt' p.id %}" class="ab-secondary"><i class="fas fa-receipt me-1"></i>Receipt</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -664,6 +664,7 @@ def add_course(request):
                 course.name = form.cleaned_data.get("name")
                 course.is_english = _derive_is_english(course.name)
                 course.is_active = True
+                course.monthly_fee = form.cleaned_data.get("monthly_fee")
                 course.save()
                 messages.success(request, "Program added successfully.")
                 return redirect(reverse("add_course"))
@@ -876,6 +877,7 @@ def edit_course(request, course_id):
                 course = Course.objects.get(id=course_id)
                 course.name = form.cleaned_data.get("name")
                 course.is_english = _derive_is_english(course.name)
+                course.monthly_fee = form.cleaned_data.get("monthly_fee")
                 course.save()
                 messages.success(request, "Program updated successfully.")
             except Exception:

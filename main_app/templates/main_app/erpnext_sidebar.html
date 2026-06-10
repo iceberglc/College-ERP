@@ -102,6 +102,16 @@
             </a>
         </div>
 
+        <h6 class="nav-section-title">Finance</h6>
+
+        <div class="nav-item">
+            {% url 'admin_payments' as admin_payments_url %}
+            <a href="{{ admin_payments_url }}" class="nav-link {% if 'admin/payments' in request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-money-bill-wave"></i>
+                <span class="nav-text">Payments</span>
+            </a>
+        </div>
+
         <h6 class="nav-section-title">Vocabulary & Content</h6>
 
         <div class="nav-item">
@@ -253,6 +263,14 @@
         </div>
 
         <div class="nav-item">
+            {% url 'staff_payments' as staff_payments_url %}
+            <a href="{{ staff_payments_url }}" class="nav-link {% if staff_payments_url == request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-money-check-alt"></i>
+                <span class="nav-text">Payments</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
             {% url 'staff_vocabulary_days' as staff_vocabulary_days %}
             <a href="{{ staff_vocabulary_days }}" class="nav-link {% if 'vocabulary-day' in request.path %}active{% endif %}">
                 <i class="nav-icon fas fa-language"></i>
@@ -382,6 +400,14 @@
             <a href="{{ student_progress }}" class="nav-link {% if student_progress == request.path %}active{% endif %}">
                 <i class="nav-icon fas fa-chart-line"></i>
                 <span class="nav-text">Progress</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            {% url 'student_payments' as student_payments_url %}
+            <a href="{{ student_payments_url }}" class="nav-link {% if 'student/payments' in request.path or 'payments/receipt' in request.path %}active{% endif %}">
+                <i class="nav-icon fas fa-wallet"></i>
+                <span class="nav-text">Payments</span>
             </a>
         </div>
 

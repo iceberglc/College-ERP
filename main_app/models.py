@@ -130,6 +130,13 @@ class Course(models.Model):
         default=False,
         help_text="Mark as English program to enable level tracking and vocabulary features.",
     )
+    monthly_fee = models.DecimalField(
+        max_digits=12,
+        decimal_places=0,
+        null=True,
+        blank=True,
+        help_text="Default monthly tuition in UZS soʻm. Groups may override this.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -369,6 +376,7 @@ class Notification(models.Model):
     ANNOUNCEMENT = "announcement"
     HOMEWORK = "homework"
     VOCABULARY = "vocabulary"
+    PAYMENT = "payment"
     GENERAL = "general"
     CATEGORY_CHOICES = [
         (ATTENDANCE, "Attendance"),
@@ -376,6 +384,7 @@ class Notification(models.Model):
         (ANNOUNCEMENT, "Announcement"),
         (HOMEWORK, "Homework"),
         (VOCABULARY, "Vocabulary"),
+        (PAYMENT, "Payment"),
         (GENERAL, "General"),
     ]
 
@@ -516,6 +525,13 @@ class Group(models.Model):
         max_length=200, blank=True, default="", help_text="e.g. Mon/Wed 10:00–12:00"
     )
     capacity = models.PositiveIntegerField(default=20)
+    monthly_fee = models.DecimalField(
+        max_digits=12,
+        decimal_places=0,
+        null=True,
+        blank=True,
+        help_text="Monthly tuition in UZS soʻm for this group. Leave blank to use the course fee.",
+    )
     start_date = models.DateField(
         null=True, blank=True, help_text="The date when this group starts classes"
     )
@@ -531,6 +547,15 @@ class Group(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def effective_monthly_fee(self):
+        """Tuition for this group: explicit override, else the course default."""
+        if self.monthly_fee is not None:
+            return self.monthly_fee
+        if self.course_id and self.course.monthly_fee is not None:
+            return self.course.monthly_fee
+        return None
 
 
 class Enrollment(models.Model):
@@ -1040,3 +1065,171 @@ class DashboardStory(models.Model):
             return self.image.url
         except (ValueError, AttributeError):
             return ""
+
+
+# ── Payments (Uzbekistan tuition billing, amounts in UZS soʻm) ────────────────
+
+
+class Invoice(models.Model):
+    """A monthly tuition charge for one student.
+
+    Anchored to Student (PROTECT, like Loan) rather than Enrollment so that
+    moving a student between groups or removing an enrollment never destroys
+    financial history. `group` is a soft reference kept for reporting.
+    Amounts are UZS soʻm — whole numbers only (tiyin is unused in practice).
+    """
+
+    STATUS_DUE = "due"
+    STATUS_PARTIAL = "partial"
+    STATUS_PAID = "paid"
+    STATUS_CANCELLED = "cancelled"
+    STATUS_CHOICES = [
+        (STATUS_DUE, "Due"),
+        (STATUS_PARTIAL, "Partially paid"),
+        (STATUS_PAID, "Paid"),
+        (STATUS_CANCELLED, "Cancelled"),
+    ]
+
+    student = models.ForeignKey(Student, on_delete=models.PROTECT, related_name="invoices")
+    group = models.ForeignKey(
+        Group, on_delete=models.SET_NULL, null=True, blank=True, related_name="invoices"
+    )
+    period = models.DateField(help_text="First day of the month this invoice covers.")
+    amount = models.DecimalField(max_digits=12, decimal_places=0)
+    discount = models.DecimalField(
+        max_digits=12,
+        decimal_places=0,
+        default=0,
+        help_text="Discount in UZS soʻm subtracted from the amount.",
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_DUE)
+    due_date = models.DateField()
+    note = models.TextField(blank=True, default="")
+    created_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_invoices",
+    )
+    last_reminded_on = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-period", "-created_at"]
+        indexes = [
+            models.Index(fields=["student", "status"]),
+            models.Index(fields=["group", "period"]),
+            models.Index(fields=["status", "due_date"]),
+        ]
+        constraints = [
+            # One generated invoice per student/group/month. NULL groups
+            # (manual one-off invoices) are exempt by the condition.
+            models.UniqueConstraint(
+                fields=["student", "group", "period"],
+                condition=Q(group__isnull=False),
+                name="one_invoice_per_student_group_period",
+            ),
+            models.CheckConstraint(
+                condition=Q(discount__gte=0) & Q(amount__gte=0),
+                name="invoice_amounts_non_negative",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Invoice #{self.pk} {self.student} {self.period:%Y-%m} ({self.get_status_display()})"
+
+    @property
+    def period_label(self):
+        return self.period.strftime("%B %Y")
+
+    @property
+    def total_due(self):
+        return self.amount - self.discount
+
+    @property
+    def paid_amount(self):
+        # Sum in Python when payments were prefetched (list pages) so each
+        # row doesn't issue its own aggregate query.
+        if "payments" in getattr(self, "_prefetched_objects_cache", {}):
+            return sum((p.amount for p in self.payments.all()), 0)
+        return self.payments.aggregate(total=models.Sum("amount"))["total"] or 0
+
+    @property
+    def balance(self):
+        return self.total_due - self.paid_amount
+
+    @property
+    def is_overdue(self):
+        return (
+            self.status in (self.STATUS_DUE, self.STATUS_PARTIAL)
+            and timezone.localdate() > self.due_date
+        )
+
+    def refresh_status(self, save=True):
+        """Recompute status from recorded payments. Cancelled is sticky."""
+        if self.status == self.STATUS_CANCELLED:
+            return self.status
+        paid = self.paid_amount
+        if paid >= self.total_due and self.total_due > 0:
+            new_status = self.STATUS_PAID
+        elif paid > 0:
+            new_status = self.STATUS_PARTIAL
+        else:
+            new_status = self.STATUS_DUE
+        if new_status != self.status:
+            self.status = new_status
+            if save:
+                self.save(update_fields=["status", "updated_at"])
+        return self.status
+
+
+class Payment(models.Model):
+    """Money received against an invoice (cash desk, card terminal, transfer…)."""
+
+    METHOD_CASH = "cash"
+    METHOD_CARD = "card"
+    METHOD_TRANSFER = "transfer"
+    METHOD_PAYME = "payme"
+    METHOD_CLICK = "click"
+    METHOD_UZUM = "uzum"
+    METHOD_CHOICES = [
+        (METHOD_CASH, "Cash"),
+        (METHOD_CARD, "Card terminal"),
+        (METHOD_TRANSFER, "Bank transfer"),
+        (METHOD_PAYME, "Payme"),
+        (METHOD_CLICK, "Click"),
+        (METHOD_UZUM, "Uzum"),
+    ]
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.PROTECT, related_name="payments")
+    amount = models.DecimalField(max_digits=12, decimal_places=0)
+    method = models.CharField(max_length=10, choices=METHOD_CHOICES, default=METHOD_CASH)
+    received_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="received_payments",
+    )
+    paid_on = models.DateField(default=timezone.localdate)
+    note = models.CharField(max_length=300, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-paid_on", "-created_at"]
+        indexes = [
+            models.Index(fields=["invoice"]),
+            models.Index(fields=["paid_on"]),
+        ]
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gt=0), name="payment_amount_positive"),
+        ]
+
+    def __str__(self):
+        return f"{self.receipt_no} {self.amount} soʻm ({self.get_method_display()})"
+
+    @property
+    def receipt_no(self):
+        return f"PAY-{self.pk:06d}" if self.pk else "PAY-——"
