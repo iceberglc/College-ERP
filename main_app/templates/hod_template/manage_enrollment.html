@@ -2,39 +2,58 @@
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock %}
 
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
+{% endblock custom_css %}
+
 {% block page_subtitle %}<p class="page-subtitle">Review student group membership and remove outdated enrollments.</p>{% endblock %}
 
 {% block content %}
-<div class="ice-mobile-page" data-ice-search-scope>
-  <div class="ice-form-section">
-    <form method="get" class="ice-form-grid">
-      <div>
-        <label class="form-label" for="group-filter">Group</label>
-        <select id="group-filter" name="group" class="form-control" onchange="this.form.submit()">
-          <option value="">All Groups</option>
-          {% for g in groups %}
-          <option value="{{ g.id }}" {% if selected_group == g.id|stringformat:"s" %}selected{% endif %}>
-            {{ g.name }}{% if g.course %} - {{ g.course.name }}{% endif %}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-      <label class="ice-searchbar" aria-label="Search enrollments">
-        <i class="fas fa-search" aria-hidden="true"></i>
-        <input type="search" class="ice-searchbar__input" data-ice-search placeholder="Search student, group, course..." autocomplete="off">
-      </label>
-    </form>
-  </div>
+<div class="ice-manage-page" data-manage-search-scope>
 
-  <div class="ice-empty-state" data-ice-empty-state hidden>
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-id-card"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Enrollments</h2>
+        <p class="ice-manage-hero__subtitle">Review student group membership and remove outdated enrollments.</p>
+      </div>
+    </div>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count"><span data-manage-visible-count>{{ enrollments|length }}</span>&nbsp;enrollment{{ enrollments|length|pluralize }}</span>
+      <a href="{% url 'add_enrollment' %}" class="ice-manage-add-btn">
+        <i class="fas fa-plus" aria-hidden="true"></i> Add Enrollment
+      </a>
+    </div>
+  </section>
+
+  <label class="ice-manage-search" aria-label="Search enrollments">
     <i class="fas fa-search" aria-hidden="true"></i>
-    <strong>No records found</strong>
-    <span>Try another student, group, teacher, course, or status.</span>
+    <input type="search" class="ice-manage-search__input" data-manage-search
+           placeholder="Search student, group, course…" autocomplete="off">
+  </label>
+
+  <form method="get" class="ice-manage-filter">
+    <label for="group-filter" class="ice-manage-filter__label"><i class="fas fa-layer-group" aria-hidden="true"></i> Group</label>
+    <select id="group-filter" name="group" class="ice-manage-filter__select" onchange="this.form.submit()">
+      <option value="">All Groups</option>
+      {% for g in groups %}
+      <option value="{{ g.id }}" {% if selected_group == g.id|stringformat:"s" %}selected{% endif %}>
+        {{ g.name }}{% if g.course %} — {{ g.course.name }}{% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <div class="ice-manage-empty" data-manage-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No enrollments found</strong>
+    <span>Try a different student, group, or course.</span>
   </div>
 
   {% if enrollments %}
-  <div class="ice-table-card ice-desktop-only">
-    <table class="dt">
+  <div class="ice-manage-table-wrap">
+    <table class="ice-manage-table">
       <thead>
         <tr>
           <th>#</th>
@@ -49,25 +68,52 @@
       </thead>
       <tbody>
         {% for e in enrollments %}
-        <tr data-ice-search-item data-ice-search-text="{{ e.student }} {{ e.student.admin.login_id }} {{ e.group.name }} {{ e.group.course.name }} {{ e.group.teacher }} {% if e.is_active %}active{% else %}inactive{% endif %}">
+        <tr data-manage-search-item
+            data-manage-search-text="{{ e.student }} {{ e.student.admin.login_id }} {{ e.group.name }} {{ e.group.course.name }} {{ e.group.teacher }} {% if e.is_active %}active{% else %}inactive{% endif %}">
           <td style="color:var(--ice-muted);">{{ forloop.counter }}</td>
-          <td style="font-weight:600;">{{ e.student }}</td>
-          <td style="color:var(--ice-muted);">{{ e.group.course.name|default:"-" }}</td>
+          <td>
+            <div class="ice-manage-person">
+              <span class="ice-manage-card__avatar" aria-hidden="true">
+                {% if e.student.admin.profile_pic %}
+                  <img src="{{ e.student.admin.profile_pic.url }}" alt="{{ e.student }}">
+                {% else %}
+                  {{ e.student.admin.first_name|first|upper }}{{ e.student.admin.last_name|first|upper }}
+                {% endif %}
+              </span>
+              <span class="ice-manage-person__copy">
+                <span class="ice-manage-person__name">{{ e.student }}</span>
+                <span class="ice-manage-person__sub">{{ e.student.admin.login_id|default:"No ID" }}</span>
+              </span>
+            </div>
+          </td>
+          <td style="color:var(--ice-muted); font-size:12px;">{{ e.group.course.name|default:"—" }}</td>
           <td>{{ e.group.name }}</td>
-          <td style="color:var(--ice-muted);">{{ e.group.teacher|default:"-" }}</td>
+          <td style="color:var(--ice-muted); font-size:12px;">{{ e.group.teacher|default:"—" }}</td>
           <td style="color:var(--ice-muted); font-size:12px;">{{ e.enrolled_on }}</td>
           <td>
             {% if e.is_active %}
-              <span class="sb sb-success"><i class="fas fa-circle me-1" style="font-size:7px;"></i>Active</span>
+              <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-circle" style="font-size:7px;"></i> Active</span>
             {% else %}
-              <span class="sb" style="background:rgba(100,116,139,.10); color:var(--ice-muted);"><i class="fas fa-circle me-1" style="font-size:7px;"></i>Inactive</span>
+              <span class="ice-manage-chip"><i class="fas fa-circle" style="font-size:7px;"></i> Inactive</span>
             {% endif %}
           </td>
           <td>
-            <a href="{% url 'delete_enrollment' e.id %}" class="ab-danger"
-               data-confirm-post="Remove this enrollment?">
-              <i class="fas fa-times me-1"></i>Remove
-            </a>
+            <div class="ice-manage-actions">
+              <a href="{% url 'delete_enrollment' e.id %}" class="ice-manage-action ice-manage-action--danger"
+                 data-confirm-post="Remove this enrollment?">
+                <i class="fas fa-times" aria-hidden="true"></i> Remove
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8">
+            <div class="ice-manage-empty">
+              <i class="fas fa-id-card" aria-hidden="true"></i>
+              <strong>No enrollments found</strong>
+              <span>Enroll a student into a group to see them here.</span>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -75,36 +121,37 @@
     </table>
   </div>
 
-  <div class="ice-card-grid ice-mobile-only">
+  <div class="ice-manage-mobile-list">
     {% for e in enrollments %}
-    <article class="ice-mobile-card" data-ice-search-item data-ice-search-primary data-ice-search-text="{{ e.student }} {{ e.student.admin.login_id }} {{ e.group.name }} {{ e.group.course.name }} {{ e.group.teacher }} {% if e.is_active %}active{% else %}inactive{% endif %}">
-      <div class="ice-mobile-card__top">
-        <span class="ice-mobile-card__avatar" aria-hidden="true">
+    <article class="ice-manage-card"
+             data-manage-search-item
+             data-manage-search-primary
+             data-manage-search-text="{{ e.student }} {{ e.student.admin.login_id }} {{ e.group.name }} {{ e.group.course.name }} {{ e.group.teacher }} {% if e.is_active %}active{% else %}inactive{% endif %}">
+      <div class="ice-manage-card__top">
+        <span class="ice-manage-card__avatar" aria-hidden="true">
           {% if e.student.admin.profile_pic %}
             <img src="{{ e.student.admin.profile_pic.url }}" alt="{{ e.student }}">
           {% else %}
             {{ e.student.admin.first_name|first|upper }}{{ e.student.admin.last_name|first|upper }}
           {% endif %}
         </span>
-        <div class="ice-mobile-card__main">
-          <h3 class="ice-mobile-card__title">{{ e.student }}</h3>
-          <div class="ice-mobile-card__subtitle">{{ e.group.name }}{% if e.group.course %} - {{ e.group.course.name }}{% endif %}</div>
+        <div class="ice-manage-card__main">
+          <h3 class="ice-manage-card__title">{{ e.student }}</h3>
+          <div class="ice-manage-card__subtitle">{{ e.group.name }}{% if e.group.course %} — {{ e.group.course.name }}{% endif %}</div>
         </div>
       </div>
-      <div class="ice-mobile-card__meta">
-        <span class="ice-chip"><i class="fas fa-id-badge" aria-hidden="true"></i><span>{{ e.student.admin.login_id|default:"No ID" }}</span></span>
-        <span class="ice-chip"><i class="fas fa-layer-group" aria-hidden="true"></i><span>{{ e.group.name }}</span></span>
-        <span class="ice-chip"><i class="fas fa-book-open" aria-hidden="true"></i><span>{{ e.group.course.name|default:"No course" }}</span></span>
-        <span class="ice-chip"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i><span>{{ e.group.teacher|default:"No teacher" }}</span></span>
-        <span class="ice-chip"><i class="fas fa-calendar-alt" aria-hidden="true"></i><span>{{ e.enrolled_on }}</span></span>
+      <div class="ice-manage-card__chips">
+        <span class="ice-manage-chip"><i class="fas fa-id-badge" aria-hidden="true"></i> {{ e.student.admin.login_id|default:"No ID" }}</span>
+        <span class="ice-manage-chip"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> {{ e.group.teacher|default:"No teacher" }}</span>
+        <span class="ice-manage-chip"><i class="fas fa-calendar-alt" aria-hidden="true"></i> {{ e.enrolled_on }}</span>
         {% if e.is_active %}
-          <span class="ice-chip ice-chip--success"><i class="fas fa-check-circle" aria-hidden="true"></i><span>Active</span></span>
+          <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-check-circle" aria-hidden="true"></i> Active</span>
         {% else %}
-          <span class="ice-chip"><i class="fas fa-pause-circle" aria-hidden="true"></i><span>Inactive</span></span>
+          <span class="ice-manage-chip"><i class="fas fa-pause-circle" aria-hidden="true"></i> Inactive</span>
         {% endif %}
       </div>
-      <div class="ice-actions">
-        <a href="{% url 'delete_enrollment' e.id %}" class="ice-action ice-action--danger"
+      <div class="ice-manage-actions">
+        <a href="{% url 'delete_enrollment' e.id %}" class="ice-manage-action ice-manage-action--danger"
            data-confirm-post="Remove this enrollment?">
           <i class="fas fa-times" aria-hidden="true"></i> Remove
         </a>
@@ -112,12 +159,14 @@
     </article>
     {% endfor %}
   </div>
+
   {% else %}
-  <div class="ice-empty-state">
+  <div class="ice-manage-empty">
     <i class="fas fa-id-card" aria-hidden="true"></i>
-    <strong>No records found</strong>
+    <strong>No enrollments yet</strong>
     <span>Enroll a student into a group to see them here.</span>
   </div>
   {% endif %}
+
 </div>
 {% endblock %}

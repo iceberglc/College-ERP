@@ -4,144 +4,124 @@
 
 {% block custom_css %}
 <style>
-  .email-hint { font-size: 12px; margin-top: 5px; display: block; }
+  .email-hint { font-size: 12px; margin-top: 4px; display: block; }
   .email-hint.valid   { color: var(--ice-success); }
   .email-hint.invalid { color: var(--ice-danger); }
-  /* Collapse the inline 2-column grids to a single column on phones */
-  @media (max-width: 640px) {
-    div[style*="grid-template-columns:1fr 1fr"] {
-      grid-template-columns: 1fr !important;
-    }
-  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-card" style="max-width:860px;">
-  <div class="page-card-header">
+<div class="ice-form-card">
+  <div class="ice-info-card-head">
     <i class="fas fa-user-plus"></i>
-    <div>
-      <div class="page-card-title">{{ page_title }}</div>
-      <div class="page-card-subtitle">Fill in the details below to register a new student</div>
-    </div>
+    <span>{{ page_title }}</span>
   </div>
 
   <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-    <div class="pf-body">
+    <div class="ice-form-body">
 
       {% if messages %}
-      {% for msg in messages %}
-      <div class="pf-alert pf-alert-{{ msg.tags }} mb-3">{{ msg }}</div>
-      {% endfor %}
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags|default:'info' }}">{{ msg }}</div>
+        {% endfor %}
       {% endif %}
 
       {% if form.non_field_errors %}
-      <div class="pf-alert pf-alert-danger mb-3">
-        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      <div class="alert alert-danger">
+        <i class="fas fa-exclamation-circle me-1"></i>
+        {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
       </div>
       {% endif %}
 
-      <div class="form-section-title">Personal Information</div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-        <div class="pf-field">
-          <label class="pf-label">{{ form.first_name.label }}</label>
+      <div class="ice-section-title">Personal Information</div>
+      <div class="ice-form-grid cols-2">
+        <div class="ice-field">
+          <label>{{ form.first_name.label }}<span class="ice-field-req">*</span></label>
           {{ form.first_name }}
-          {% if form.first_name.errors %}<div class="pf-error">{{ form.first_name.errors.0 }}</div>{% endif %}
+          {% if form.first_name.errors %}<div class="ice-field-error">{{ form.first_name.errors.0 }}</div>{% endif %}
         </div>
-        <div class="pf-field">
-          <label class="pf-label">{{ form.last_name.label }}</label>
+        <div class="ice-field">
+          <label>{{ form.last_name.label }}<span class="ice-field-req">*</span></label>
           {{ form.last_name }}
-          {% if form.last_name.errors %}<div class="pf-error">{{ form.last_name.errors.0 }}</div>{% endif %}
+          {% if form.last_name.errors %}<div class="ice-field-error">{{ form.last_name.errors.0 }}</div>{% endif %}
         </div>
-      </div>
-
-      <div class="pf-field">
-        <label class="pf-label">{{ form.email.label }}</label>
-        {{ form.email }}
-        {% if form.email.errors %}<div class="pf-error">{{ form.email.errors.0 }}</div>{% endif %}
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-        <div class="pf-field">
-          <label class="pf-label">{{ form.gender.label }}</label>
+        <div class="ice-field">
+          <label>{{ form.gender.label }}</label>
           {{ form.gender }}
         </div>
-        <div class="pf-field">
-          <label class="pf-label">
-            {{ form.date_of_birth.label }}
-            <span style="color:var(--ice-danger);">*</span>
-          </label>
+        <div class="ice-field">
+          <label>{{ form.date_of_birth.label }}<span class="ice-field-req">*</span></label>
           {{ form.date_of_birth }}
-          {% if form.date_of_birth.errors %}<div class="pf-error">{{ form.date_of_birth.errors.0 }}</div>{% endif %}
-          <small class="pf-help">YYYY-MM-DD — used to generate the login ID (e.g. IC052401).</small>
+          {% if form.date_of_birth.errors %}<div class="ice-field-error">{{ form.date_of_birth.errors.0 }}</div>{% endif %}
+          <small class="ice-field-help">YYYY-MM-DD — used to generate the login ID (e.g. IC052401).</small>
         </div>
       </div>
 
-      <div class="pf-field">
-        <label class="pf-label">{{ form.password.label }}</label>
-        {{ form.password }}
-      </div>
-
-      <div class="pf-field">
-        <label class="pf-label">{{ form.address.label }}</label>
-        {{ form.address }}
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-        <div class="pf-field">
-          <label class="pf-label">Phone Number</label>
+      <div class="ice-section-title" style="margin-top:22px;">Account &amp; Contact</div>
+      <div class="ice-form-grid cols-2">
+        <div class="ice-field">
+          <label>{{ form.password.label }}</label>
+          {{ form.password }}
+          {% if form.password.errors %}<div class="ice-field-error">{{ form.password.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="ice-field">
+          <label>Phone Number</label>
           {{ form.phone }}
-          {% if form.phone.errors %}<div class="pf-error">{{ form.phone.errors.0 }}</div>{% endif %}
+          {% if form.phone.errors %}<div class="ice-field-error">{{ form.phone.errors.0 }}</div>{% endif %}
         </div>
-        <div class="pf-field">
-          <label class="pf-label">Status</label>
+        <div class="ice-field">
+          <label>Status</label>
           {{ form.status }}
-          {% if form.status.errors %}<div class="pf-error">{{ form.status.errors.0 }}</div>{% endif %}
+          {% if form.status.errors %}<div class="ice-field-error">{{ form.status.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="ice-field span-2">
+          <label>{{ form.address.label }}</label>
+          {{ form.address }}
+        </div>
+        <div class="ice-field span-2">
+          <label>{{ form.profile_pic.label }}</label>
+          {{ form.profile_pic }}
+          <small class="ice-field-help">Optional — PNG, JPG up to 5 MB.</small>
         </div>
       </div>
 
-      <div class="pf-field">
-        <label class="pf-label">{{ form.profile_pic.label }}</label>
-        {{ form.profile_pic }}
-        <small class="pf-help">Optional — PNG, JPG up to 5 MB.</small>
-      </div>
-
-      <div class="form-section-title" style="margin-top:8px;">Program &amp; Class Assignment</div>
-
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px;">
-        <div class="pf-field">
-          <label class="pf-label">Program <span style="color:var(--ice-danger);">*</span></label>
+      <div class="ice-section-title" style="margin-top:22px;">Program &amp; Class Assignment</div>
+      <div class="ice-form-grid cols-2">
+        <div class="ice-field">
+          <label>Program <span class="ice-field-req">*</span></label>
           {{ form.course }}
-          {% if form.course.errors %}<div class="pf-error">{{ form.course.errors.0 }}</div>{% endif %}
+          {% if form.course.errors %}<div class="ice-field-error">{{ form.course.errors.0 }}</div>{% endif %}
         </div>
-        <div class="pf-field">
-          <label class="pf-label">Teacher <span style="font-weight:400; text-transform:none; font-size:11px;">(filter)</span></label>
+        <div class="ice-field">
+          <label>Teacher <small style="font-weight:400;">(filter groups)</small></label>
           <select id="teacher_filter" class="form-control">
             <option value="">— All Teachers —</option>
           </select>
-          <small class="pf-help">Select program first.</small>
+          <small class="ice-field-help">Select program first.</small>
         </div>
-        <div class="pf-field">
-          <label class="pf-label">Class Group <span style="font-weight:400; text-transform:none; font-size:11px;">(optional)</span></label>
+        <div class="ice-field">
+          <label>Class Group <small style="font-weight:400;">(optional)</small></label>
           {{ form.group }}
-          {% if form.group.errors %}<div class="pf-error">{{ form.group.errors.0 }}</div>{% endif %}
-          <small class="pf-help">Select program to load groups.</small>
+          {% if form.group.errors %}<div class="ice-field-error">{{ form.group.errors.0 }}</div>{% endif %}
+          <small class="ice-field-help">Select program to load groups.</small>
         </div>
-        <div class="pf-field">
-          <label class="pf-label">{{ form.level.label }}</label>
+        <div class="ice-field">
+          <label>{{ form.level.label }}</label>
           {{ form.level }}
-          {% if form.level.errors %}<div class="pf-error">{{ form.level.errors.0 }}</div>{% endif %}
-          <small class="pf-help">English level 1–6. Leave blank for non-English programs.</small>
+          {% if form.level.errors %}<div class="ice-field-error">{{ form.level.errors.0 }}</div>{% endif %}
+          <small class="ice-field-help">English level 1–6. Leave blank for non-English programs.</small>
         </div>
       </div>
 
     </div>
-    <div class="pf-footer" style="display:flex; gap:10px; flex-direction:column;">
-      <button type="submit" class="pf-submit"><i class="fas fa-user-plus me-1"></i> Add Student</button>
-      <a href="{% url 'manage_student' %}" class="btn btn-secondary" style="width:100%; text-align:center;">
-        <i class="fas fa-list me-1"></i> View All Students
+
+    <div class="ice-submit-bar">
+      <button type="submit" class="ice-btn-primary">
+        <i class="fas fa-user-plus"></i> Add Student
+      </button>
+      <a href="{% url 'manage_student' %}" class="ice-btn-secondary">
+        <i class="fas fa-list"></i> View All Students
       </a>
     </div>
   </form>
@@ -155,13 +135,11 @@ const courseSelect  = document.getElementById('id_course');
 const teacherFilter = document.getElementById('teacher_filter');
 const groupSelect   = document.getElementById('id_group');
 
-// Email availability check
 const emailField = document.getElementById('id_email');
 if (emailField) {
   emailField.addEventListener('input', function () {
     const val = this.value;
-    const prev = document.querySelector('.email-hint');
-    if (prev) prev.remove();
+    document.querySelector('.email-hint')?.remove();
     if (!val.includes('@')) return;
     fetch("{% url 'check_email_availability' %}", {
       method: 'POST',
@@ -175,7 +153,7 @@ if (emailField) {
       hint.innerHTML = resp === 'True'
         ? '<i class="fas fa-times-circle me-1"></i>Email already registered'
         : '<i class="fas fa-check-circle me-1"></i>Email available';
-      emailField.parentNode.parentNode.appendChild(hint);
+      emailField.closest('.ice-field').appendChild(hint);
     });
   });
 }
@@ -186,11 +164,7 @@ function loadTeachers(courseId) {
   if (!courseId) return;
   fetch(`{% url 'get_teachers_for_course' %}?course_id=${courseId}`)
     .then(r => r.json())
-    .then(data => {
-      data.forEach(t => {
-        teacherFilter.innerHTML += `<option value="${t.id}">${t.name}</option>`;
-      });
-    })
+    .then(data => { data.forEach(t => { teacherFilter.innerHTML += `<option value="${t.id}">${t.name}</option>`; }); })
     .catch(() => {});
   loadGroupsByCourse(courseId);
 }
@@ -201,16 +175,8 @@ function loadGroupsByCourse(courseId) {
   fetch(`{% url 'get_groups_for_teacher' %}?course_id=${courseId}`)
     .then(r => r.json())
     .then(data => {
-      if (!data.length) {
-        groupSelect.innerHTML += '<option disabled>No groups for this course yet</option>';
-        return;
-      }
-      data.forEach(g => {
-        const opt = document.createElement('option');
-        opt.value = g.id;
-        opt.textContent = g.name;
-        groupSelect.appendChild(opt);
-      });
+      if (!data.length) { groupSelect.innerHTML += '<option disabled>No groups for this course yet</option>'; return; }
+      data.forEach(g => { const opt = document.createElement('option'); opt.value = g.id; opt.textContent = g.name; groupSelect.appendChild(opt); });
       const preGroup = groupSelect.dataset.preselect;
       if (preGroup) groupSelect.value = preGroup;
     })
@@ -227,12 +193,7 @@ function loadGroupsByTeacher(teacherId) {
   fetch(url)
     .then(r => r.json())
     .then(data => {
-      data.forEach(g => {
-        const opt = document.createElement('option');
-        opt.value = g.id;
-        opt.textContent = g.name;
-        groupSelect.appendChild(opt);
-      });
+      data.forEach(g => { const opt = document.createElement('option'); opt.value = g.id; opt.textContent = g.name; groupSelect.appendChild(opt); });
       const preGroup = groupSelect.dataset.preselect;
       if (preGroup) groupSelect.value = preGroup;
     })
@@ -245,9 +206,7 @@ teacherFilter.addEventListener('change', function () { loadGroupsByTeacher(this.
 document.addEventListener('DOMContentLoaded', function () {
   const courseVal = courseSelect.value;
   const preGroupVal = '{{ form.group.value }}';
-  if (preGroupVal && preGroupVal !== 'None') {
-    groupSelect.dataset.preselect = preGroupVal;
-  }
+  if (preGroupVal && preGroupVal !== 'None') groupSelect.dataset.preselect = preGroupVal;
   if (courseVal) loadTeachers(courseVal);
 });
 </script>
