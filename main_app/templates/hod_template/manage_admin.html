@@ -20,6 +20,9 @@
     </div>
     <div class="ice-manage-hero__actions">
       <span class="ice-manage-count">{{ admin_profiles|length }}&nbsp;admin{{ admin_profiles|length|pluralize }}</span>
+      <a href="{% url 'add_admin' %}" class="ice-manage-add-btn">
+        <i class="fas fa-plus" aria-hidden="true"></i> Add Admin
+      </a>
     </div>
   </section>
 

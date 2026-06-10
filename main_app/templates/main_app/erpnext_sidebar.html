@@ -62,7 +62,7 @@
 
         <div class="nav-item">
             {% url 'manage_admin' as manage_admin_url %}
-            <a href="{{ manage_admin_url }}" class="nav-link {% if 'admin/manage' in request.path or 'admin/delete' in request.path %}active{% endif %}">
+            <a href="{{ manage_admin_url }}" class="nav-link {% if 'admin/manage' in request.path or 'admin/delete' in request.path or 'admin/add' in request.path %}active{% endif %}">
                 <i class="nav-icon fas fa-user-shield"></i>
                 <span class="nav-text">Admins</span>
             </a>

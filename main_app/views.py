@@ -659,8 +659,11 @@ def get_attendance(request):
     group_id = request.POST.get("group")
     try:
         from .models import Group
+        from . import branching
 
         group = get_object_or_404(Group, id=group_id)
+        if not branching.user_can_access_group(request.user, group):
+            return JsonResponse({"error": "Access denied."}, status=403)
         attendance_qs = Attendance.objects.filter(group=group).order_by("-date")
         attendance_list = [{"id": a.id, "attendance_date": str(a.date)} for a in attendance_qs]
         return JsonResponse(attendance_list, safe=False)
