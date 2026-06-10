@@ -358,6 +358,8 @@ def staff_view_profile(request):
 @staff_only
 def staff_fcmtoken(request):
     token = request.POST.get("token")
+    if not token:
+        return HttpResponse("False")
     try:
         staff_user = get_object_or_404(CustomUser, id=request.user.id)
         staff_user.fcm_token = token

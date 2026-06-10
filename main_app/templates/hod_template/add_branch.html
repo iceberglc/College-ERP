@@ -1,19 +1,18 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{page_title}}{% endblock page_title %}
+{% block title %}{{ page_title }} — Iceberg Study Center{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock page_title %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Branches</li>{% endblock %}
+
 {% block content %}
-<section class="content">
-  <div class="container-fluid">
-    <div class="row justify-content-center">
-      <div class="col-md-6">
-        <div class="card card-dark">
-          <div class="card-header">
-            <h3 class="card-title">{{page_title}}</h3>
-          </div>
-          {% include "main_app/form_template.html" with messages=messages form=form button_text="Save Branch" %}
-        </div>
-      </div>
+<div class="page-card" style="max-width:640px;">
+  <div class="page-card-header">
+    <i class="fas fa-map-marker-alt"></i>
+    <div>
+      <div class="page-card-title">{{ page_title }}</div>
+      <div class="page-card-subtitle">Add a study center location</div>
     </div>
   </div>
-</section>
+  {% include "main_app/form_template.html" with messages=messages form=form button_text="Save Branch" %}
+</div>
 {% endblock content %}

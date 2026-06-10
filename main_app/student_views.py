@@ -594,6 +594,8 @@ def student_save_theme(request):
 @student_only
 def student_fcmtoken(request):
     token = request.POST.get("token")
+    if not token:
+        return HttpResponse("False")
     student_user = get_object_or_404(CustomUser, id=request.user.id)
     try:
         student_user.fcm_token = token

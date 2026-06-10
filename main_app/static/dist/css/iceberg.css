@@ -1400,7 +1400,9 @@ textarea.form-control { height: auto; min-height: 90px; }
 .dark-mode .navbar-toggle { color: var(--text-muted) !important; }
 .dark-mode .navbar-toggle:hover { background: var(--surface-2) !important; }
 .dark-mode .navbar-notification { color: var(--text-muted); }
-.dark-mode .navbar-notification:hover { background: var(--surface-2); color: var(--text); }
+/* !important needed: the light-mode hover sets background:#F3F4F6 !important,
+   which otherwise wins in dark mode and hides the white icon */
+.dark-mode .navbar-notification:hover { background: var(--surface-2) !important; color: var(--text) !important; }
 .dark-mode .navbar-user-chip {
   background: var(--surface-2);
   border-color: var(--border);

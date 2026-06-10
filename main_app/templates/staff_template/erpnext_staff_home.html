@@ -66,14 +66,14 @@
 {% block content %}
 
 {# ── Greeting banner ────────────────────────────────────────────────────────── #}
-<section class="teacher-hero ice-hero">
-  <div class="teacher-hero-inner ice-hero-grid">
+<section class="teacher-hero">
+  <div class="teacher-hero-inner">
     <div>
-      <div class="teacher-hero-kicker ice-hero-kicker">Teacher command center</div>
-      <h1 class="teacher-hero-title ice-hero-title">{{ request.user.get_full_name }}</h1>
-      <p class="teacher-hero-subtitle ice-hero-subtitle">Manage your groups, attendance, results, assignments, vocabulary, and updates from one focused workspace.</p>
+      <div class="teacher-hero-kicker">Teacher command center</div>
+      <h1 class="teacher-hero-title">{{ request.user.get_full_name }}</h1>
+      <p class="teacher-hero-subtitle">Manage your groups, attendance, results, assignments, vocabulary, and updates from one focused workspace.</p>
     </div>
-    <div class="teacher-hero-actions ice-hero-actions">
+    <div class="teacher-hero-actions">
       <a href="{% url 'staff_take_attendance' %}" class="teacher-hero-action">
         <i class="fas fa-check-circle"></i>Take Attendance
       </a>

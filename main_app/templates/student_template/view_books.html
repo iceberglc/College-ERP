@@ -1,54 +1,106 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
+{% block title %}Library — Iceberg Study Center{% endblock %}
 {% block page_title %}Library{% endblock page_title %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Library</li>{% endblock %}
+
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
+{% endblock custom_css %}
+
 {% block content %}
-
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-12">
-                <!-- general form elements -->
-                <div class="card card-dark">
-                    <div class="card-header">
-                        <h3 class="card-title">Available Books </h3>
-                    </div>
-
-
-                    <!-- /.card-header -->
-                    <!-- form start -->
-                <div class="card-body">
-                <div class="form-group" style="color: red;">
-                    <label>Available books which you can issue from college library !</label>
-                </div>
-            <div class="form-group table" style="overflow-x: auto; overflow-y: auto; max-height: 500px;">
-              <table class="table table-bordered" style="min-width: 600px;">
-                  <tr>
-                    <th>Sr.No</th>
-                    <th>Book Name</th>
-                    <th>Author</th>
-                    <th>ISBN Number</th>
-                    <th>Category</th>
-                  </tr>
-                  {% for book in books %}
-                  <tr>
-                      <td>{{forloop.counter}}.</td>
-                      <td>{{book.name}}</td>
-                      <td>{{book.author}}</td>
-                      <td>{{book.isbn}}</td>
-                      <td>{{book.category}}</td>
-                  </tr>
-                  {% endfor %}
-              </table>
-                        </div>
-                   
-                    </div>
-                    <!-- /.card-body -->
-
-                <!-- /.card -->
-
-            </div>
-        </div>
+<div class="ice-manage-page" data-manage-search-scope>
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-book"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Library</h2>
+        <p class="ice-manage-hero__subtitle">Browse available books — ask your teacher to issue one to you.</p>
+      </div>
     </div>
-</section>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count"><span data-manage-visible-count>{{ books|length }}</span>&nbsp;books</span>
+    </div>
+  </section>
+
+  <label class="ice-manage-search" aria-label="Search books">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-manage-search__input" data-manage-search
+           placeholder="Search by title, author, or category..." autocomplete="off">
+  </label>
+
+  <div class="ice-manage-empty" data-manage-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No books found</strong>
+    <span>Try another title, author, or category.</span>
+  </div>
+
+  <div class="ice-manage-table-wrap">
+    <table class="ice-manage-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Book</th>
+          <th>Author</th>
+          <th>ISBN</th>
+          <th>Category</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for book in books %}
+        <tr data-manage-search-item
+            data-manage-search-text="{{ book.name }} {{ book.author }} {{ book.isbn }} {{ book.category }}">
+          <td>{{ forloop.counter }}</td>
+          <td><div class="ice-manage-person__name">{{ book.name }}</div></td>
+          <td>{{ book.author }}</td>
+          <td><span class="ice-manage-person__sub">{{ book.isbn }}</span></td>
+          <td><span class="ice-manage-chip"><i class="fas fa-tag" aria-hidden="true"></i> {{ book.category }}</span></td>
+        </tr>
+        {% endfor %}
+        {% if not books %}
+        <tr>
+          <td colspan="5">
+            <div class="ice-manage-empty">
+              <i class="fas fa-book" aria-hidden="true"></i>
+              <strong>The library is empty for now</strong>
+              <span>New books will appear here as soon as they are added.</span>
+            </div>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="ice-manage-mobile-list">
+    {% for book in books %}
+    <article class="ice-manage-card"
+             data-manage-search-item
+             data-manage-search-primary
+             data-manage-search-text="{{ book.name }} {{ book.author }} {{ book.isbn }} {{ book.category }}">
+      <div class="ice-manage-card__top">
+        <span class="ice-manage-card__avatar" aria-hidden="true"><i class="fas fa-book"></i></span>
+        <div class="ice-manage-card__main">
+          <h3 class="ice-manage-card__title">{{ book.name }}</h3>
+          <div class="ice-manage-card__subtitle">{{ book.author }}</div>
+        </div>
+      </div>
+      <div class="ice-manage-card__meta">
+        <span class="ice-manage-chip"><i class="fas fa-tag" aria-hidden="true"></i><span>{{ book.category }}</span></span>
+        <span class="ice-manage-chip ice-manage-chip--muted"><i class="fas fa-barcode" aria-hidden="true"></i><span>{{ book.isbn }}</span></span>
+      </div>
+    </article>
+    {% empty %}
+    <div class="ice-manage-empty">
+      <i class="fas fa-book" aria-hidden="true"></i>
+      <strong>The library is empty for now</strong>
+      <span>New books will appear here as soon as they are added.</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
 {% endblock content %}
 
+{% block custom_js %}
+<script src="{% static 'dist/js/admin-manage-mobile.js' %}"></script>
+{% endblock custom_js %}

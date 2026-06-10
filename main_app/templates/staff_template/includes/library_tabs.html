@@ -1,0 +1,63 @@
+{% comment %}
+Staff library section navigation — shared across Add Book / Issue Book / Loans.
+Pass active="add" | "issue" | "loans".
+{% endcomment %}
+<style>
+.ice-lib-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+}
+.ice-lib-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--ice-border, #E4E7EC);
+  border-radius: 999px;
+  background: var(--ice-surface, #fff);
+  color: var(--ice-muted, #64748B);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color .15s, border-color .15s, box-shadow .15s, transform .12s;
+}
+.ice-lib-tab:hover {
+  color: var(--ice-navy, #071A52);
+  border-color: rgba(56,189,248,.6);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+.ice-lib-tab.is-active {
+  color: #fff;
+  background: linear-gradient(135deg, #071A52, #0B4F8A);
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(12,31,69,.25);
+}
+.ice-lib-tab.is-active:hover { color: #fff; transform: none; }
+.dark-mode .ice-lib-tab {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.12);
+  color: #A8B7C8;
+}
+.dark-mode .ice-lib-tab.is-active {
+  background: linear-gradient(135deg, #0B4F8A, #0891B2);
+  color: #fff;
+}
+</style>
+<nav class="ice-lib-tabs" aria-label="Library sections">
+  <a href="{% url 'add_book' %}" class="ice-lib-tab {% if active == 'add' %}is-active{% endif %}"
+     {% if active == 'add' %}aria-current="page"{% endif %}>
+    <i class="fas fa-book-medical" aria-hidden="true"></i> Add Book
+  </a>
+  <a href="{% url 'issue_book' %}" class="ice-lib-tab {% if active == 'issue' %}is-active{% endif %}"
+     {% if active == 'issue' %}aria-current="page"{% endif %}>
+    <i class="fas fa-hand-holding" aria-hidden="true"></i> Issue Book
+  </a>
+  <a href="{% url 'view_issued_book' %}" class="ice-lib-tab {% if active == 'loans' %}is-active{% endif %}"
+     {% if active == 'loans' %}aria-current="page"{% endif %}>
+    <i class="fas fa-book-reader" aria-hidden="true"></i> Loans
+  </a>
+</nav>

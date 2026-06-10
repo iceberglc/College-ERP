@@ -659,6 +659,7 @@ class BookForm(forms.ModelForm):
     class Meta:
         model = models.Book
         fields = ["name", "author", "isbn", "category"]
+        labels = {"name": "Book Title", "isbn": "ISBN"}
         widgets = {
             "name": TextInput(attrs={"class": "form-control", "placeholder": "Book title"}),
             "author": TextInput(attrs={"class": "form-control", "placeholder": "Author name"}),
