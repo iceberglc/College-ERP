@@ -610,7 +610,9 @@
     position: fixed !important;
     inset: 0 !important;
     z-index: 1035 !important;
-    width: 100vw !important;
+    /* 100% (not 100vw) so the fixed overlay fills the inset box without
+       including the scrollbar width — avoids a hairline horizontal overflow. */
+    width: 100% !important;
     min-height: 100vh !important;
     min-height: 100dvh !important;
     margin: 0 !important;

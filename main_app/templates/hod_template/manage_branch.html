@@ -8,17 +8,22 @@
 
 {% block content %}
 <div class="ice-manage-page" data-manage-search-scope>
+
+  {# ── Hero ──────────────────────────────────────────────────────────── #}
   <section class="ice-manage-hero">
     <div class="ice-manage-hero__main">
       <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-building"></i></span>
       <div class="ice-manage-hero__copy">
         <h2 class="ice-manage-hero__title">Manage Branches</h2>
-        <p class="ice-manage-hero__subtitle">Manage center locations and branches.</p>
+        <p class="ice-manage-hero__subtitle">Add, edit, or remove center locations.</p>
       </div>
     </div>
     <div class="ice-manage-hero__actions">
       <span class="ice-manage-count"><span data-manage-visible-count>{{ branches|length }}</span>&nbsp;total</span>
       {% if is_super_admin %}
+      <a href="{% url 'manage_admin' %}" class="ice-manage-action ice-manage-action--neutral">
+        <i class="fas fa-user-shield" aria-hidden="true"></i> Admins
+      </a>
       <a href="{% url 'add_branch' %}" class="ice-manage-add-btn">
         <i class="fas fa-plus" aria-hidden="true"></i> Add Branch
       </a>
@@ -26,97 +31,7 @@
     </div>
   </section>
 
-  {% if is_super_admin %}
-  <section class="ice-admin-access" aria-labelledby="admin-branch-access-title">
-    <div class="ice-admin-access__header">
-      <span class="ice-admin-access__icon" aria-hidden="true"><i class="fas fa-user-shield"></i></span>
-      <div>
-        <h3 id="admin-branch-access-title">Admin Branch Access</h3>
-        <p>To add an admin to a dedicated branch, turn off all-branch access, select one or more branches, then save.</p>
-      </div>
-    </div>
-
-    <div class="ice-admin-access__grid">
-      {% for admin_profile in admin_profiles %}
-      <form method="post"
-            action="{% url 'update_admin_branch_access' admin_profile.id %}"
-            class="ice-admin-access-card">
-        {% csrf_token %}
-        <div class="ice-admin-access-card__top">
-          <span class="ice-manage-card__avatar" aria-hidden="true">
-            {% if admin_profile.admin.profile_pic %}
-              <img src="{{ admin_profile.admin.profile_pic.url }}" alt="{{ admin_profile.admin.get_full_name|default:admin_profile.admin.email }}">
-            {% elif admin_profile.admin.first_name or admin_profile.admin.last_name %}
-              {{ admin_profile.admin.first_name|first|upper }}{{ admin_profile.admin.last_name|first|upper }}
-            {% else %}
-              <i class="fas fa-user-shield"></i>
-            {% endif %}
-          </span>
-          <span class="ice-admin-access-card__identity">
-            <strong>{{ admin_profile.admin.get_full_name|default:admin_profile.admin.email }}</strong>
-            <small>{{ admin_profile.admin.email }}</small>
-            {% if admin_profile.is_super_admin %}
-            <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-globe" aria-hidden="true"></i><span>All branches</span></span>
-            {% else %}
-            <span class="ice-manage-chip"><i class="fas fa-code-branch" aria-hidden="true"></i><span>{{ admin_profile.assigned_branch_names|default:"No branch assigned" }}</span></span>
-            {% endif %}
-          </span>
-        </div>
-
-        <label class="ice-admin-scope-toggle">
-          <input type="checkbox" name="is_super_admin" {% if admin_profile.is_super_admin %}checked{% endif %}>
-          <span>
-            <strong>Super admin</strong>
-            <small>Can see and manage every branch.</small>
-          </span>
-        </label>
-
-        <div class="ice-admin-access-branches" aria-label="Dedicated branches">
-          {% for branch in all_branches %}
-          <label class="ice-admin-access-branch">
-            <input type="checkbox"
-                   name="branches"
-                   value="{{ branch.id }}"
-                   {% if branch.id in admin_profile.assigned_branch_ids %}checked{% endif %}>
-            <span>{{ branch.name }}</span>
-          </label>
-          {% empty %}
-          <p class="ice-admin-access-empty">Add a branch before assigning branch admins.</p>
-          {% endfor %}
-        </div>
-
-        <button type="submit" class="ice-admin-access-save">
-          <i class="fas fa-save" aria-hidden="true"></i> Save Access
-        </button>
-      </form>
-      {% empty %}
-      <div class="ice-manage-empty">
-        <i class="fas fa-user-shield" aria-hidden="true"></i>
-        <strong>No admin profiles found</strong>
-        <span>Create an admin account before assigning branch access.</span>
-      </div>
-      {% endfor %}
-    </div>
-  </section>
-  {% else %}
-  <section class="ice-admin-access ice-admin-access--readonly" aria-label="Your branch access">
-    <div class="ice-admin-access__header">
-      <span class="ice-admin-access__icon" aria-hidden="true"><i class="fas fa-code-branch"></i></span>
-      <div>
-        <h3>Your Branch Access</h3>
-        <p>You can manage only your assigned branches. A super admin changes admin-to-branch assignments.</p>
-      </div>
-    </div>
-    <div class="ice-manage-card__meta">
-      {% for branch in branches %}
-      <span class="ice-manage-chip"><i class="fas fa-building" aria-hidden="true"></i><span>{{ branch.name }}</span></span>
-      {% empty %}
-      <span class="ice-manage-chip ice-manage-chip--warning"><i class="fas fa-exclamation-circle" aria-hidden="true"></i><span>No branch assigned</span></span>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
+  {# ── Search ────────────────────────────────────────────────────────── #}
   <label class="ice-manage-search" aria-label="Search branches">
     <i class="fas fa-search" aria-hidden="true"></i>
     <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search branches..." autocomplete="off">
@@ -128,6 +43,7 @@
     <span>Try another branch name or address.</span>
   </div>
 
+  {# ── Desktop table ─────────────────────────────────────────────────── #}
   <div class="ice-manage-table-wrap">
     <table class="ice-manage-table">
       <thead>
@@ -150,9 +66,9 @@
                 <i class="fas fa-edit" aria-hidden="true"></i> Edit
               </a>
               {% if is_super_admin %}
-              <a href="{% url 'delete_branch' branch.id %}" class="ice-manage-action ice-manage-action--danger"
-                 data-confirm-post="Delete this branch? This cannot be undone."
-                 onclick="return confirm('Are you sure you want to delete this?');">
+              <a href="{% url 'delete_branch' branch.id %}"
+                 class="ice-manage-action ice-manage-action--danger"
+                 data-confirm-post="Delete branch "{{ branch.name }}"? Students and staff assigned here will have their branch cleared. This cannot be undone.">
                 <i class="fas fa-trash" aria-hidden="true"></i> Delete
               </a>
               {% endif %}
@@ -164,7 +80,7 @@
           <td colspan="4">
             <div class="ice-manage-empty">
               <i class="fas fa-building" aria-hidden="true"></i>
-              <strong>No branches found</strong>
+              <strong>No branches yet</strong>
               <span>Add a branch to organize your center locations.</span>
             </div>
           </td>
@@ -174,6 +90,7 @@
     </table>
   </div>
 
+  {# ── Mobile cards ──────────────────────────────────────────────────── #}
   <div class="ice-manage-mobile-list">
     {% for branch in branches %}
     <article class="ice-manage-card"
@@ -195,9 +112,9 @@
           <i class="fas fa-edit" aria-hidden="true"></i> Edit
         </a>
         {% if is_super_admin %}
-        <a href="{% url 'delete_branch' branch.id %}" class="ice-manage-action ice-manage-action--danger"
-           data-confirm-post="Delete this branch? This cannot be undone."
-           onclick="return confirm('Are you sure you want to delete this?');">
+        <a href="{% url 'delete_branch' branch.id %}"
+           class="ice-manage-action ice-manage-action--danger"
+           data-confirm-post="Delete branch "{{ branch.name }}"? Students and staff assigned here will have their branch cleared. This cannot be undone.">
           <i class="fas fa-trash" aria-hidden="true"></i> Delete
         </a>
         {% endif %}
@@ -206,11 +123,32 @@
     {% empty %}
     <div class="ice-manage-empty">
       <i class="fas fa-building" aria-hidden="true"></i>
-      <strong>No branches found</strong>
+      <strong>No branches yet</strong>
       <span>Add a branch to organize your center locations.</span>
     </div>
     {% endfor %}
   </div>
+
+  {# ── Branch-admin read-only view (non-super-admin) ─────────────────── #}
+  {% if not is_super_admin %}
+  <section class="ice-admin-access ice-admin-access--readonly" aria-label="Your branch access">
+    <div class="ice-admin-access__header">
+      <span class="ice-admin-access__icon" aria-hidden="true"><i class="fas fa-code-branch"></i></span>
+      <div>
+        <h3>Your Branch Access</h3>
+        <p>You can manage only your assigned branches. A super admin changes admin-to-branch assignments.</p>
+      </div>
+    </div>
+    <div class="ice-manage-card__meta">
+      {% for branch in branches %}
+      <span class="ice-manage-chip"><i class="fas fa-building" aria-hidden="true"></i><span>{{ branch.name }}</span></span>
+      {% empty %}
+      <span class="ice-manage-chip ice-manage-chip--warning"><i class="fas fa-exclamation-circle" aria-hidden="true"></i><span>No branch assigned</span></span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
 </div>
 {% endblock content %}
 

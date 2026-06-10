@@ -2,47 +2,154 @@
 {% load static %}
 {% block page_title %}{{ page_title }}{% endblock %}
 
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
+<style>
+.ice-feedback-msg { margin-top: 10px; font-size: 13px; color: var(--ice-text); line-height: 1.6; background: var(--ice-surface2); border: 1px solid var(--ice-border); border-radius: 12px; padding: 10px 14px; }
+.ice-feedback-reply { margin-top: 8px; background: rgba(6,182,212,.07); border-left: 3px solid var(--ice-cyan); border-radius: 0 10px 10px 0; padding: 10px 14px; font-size: 12px; line-height: 1.55; color: var(--ice-text); }
+.ice-feedback-reply small { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--ice-cyan); margin-bottom: 4px; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="dt-card">
-  <div class="dt-header">
-    <div class="dt-title"><i class="fas fa-comments me-2"></i>{{ page_title }} <span class="dt-count">{{ feedbacks|length }}</span></div>
+<div class="ice-manage-page" data-manage-search-scope>
+
+  {# ── Hero ──────────────────────────────────────────────────────────── #}
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-comment-dots"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Teacher Feedback</h2>
+        <p class="ice-manage-hero__subtitle">Read and reply to messages sent by teachers.</p>
+      </div>
+    </div>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count"><span data-manage-visible-count>{{ feedbacks|length }}</span>&nbsp;total</span>
+    </div>
+  </section>
+
+  {# ── Search ────────────────────────────────────────────────────────── #}
+  <label class="ice-manage-search" aria-label="Search feedback">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search by teacher or message..." autocomplete="off">
+  </label>
+
+  <div class="ice-manage-empty" data-manage-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No matching feedback</strong>
+    <span>Try another teacher name or keyword.</span>
   </div>
-  {% if feedbacks %}
-  <div style="padding:16px 20px; display:grid; gap:12px;">
+
+  {# ── Desktop table ─────────────────────────────────────────────────── #}
+  <div class="ice-manage-table-wrap">
+    <table class="ice-manage-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Teacher</th>
+          <th>Received</th>
+          <th>Feedback</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for feedback in feedbacks %}
+        <tr data-manage-search-item
+            data-manage-search-text="{{ feedback.staff }} {{ feedback.feedback }} {{ feedback.reply }} {% if feedback.reply %}replied{% else %}pending{% endif %}">
+          <td>{{ forloop.counter }}</td>
+          <td>
+            <div class="ice-manage-person">
+              <div class="ice-manage-person__copy">
+                <span class="ice-manage-person__name">{{ feedback.staff }}</span>
+                <span class="ice-manage-person__sub">{{ feedback.staff.course|default:"" }}</span>
+              </div>
+            </div>
+          </td>
+          <td>{{ feedback.created_at|date:"d M Y, H:i" }}</td>
+          <td>
+            {{ feedback.feedback|truncatechars:90 }}
+            {% if feedback.reply %}
+            <div class="ice-feedback-reply"><small><i class="fas fa-reply" aria-hidden="true"></i> Your reply · {{ feedback.updated_at|date:"d M Y, H:i" }}</small>{{ feedback.reply|truncatechars:120 }}</div>
+            {% endif %}
+          </td>
+          <td>
+            {% if feedback.reply %}
+            <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-check" aria-hidden="true"></i><span>Replied</span></span>
+            {% else %}
+            <span class="ice-manage-chip ice-manage-chip--warning"><i class="fas fa-clock" aria-hidden="true"></i><span>Pending reply</span></span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="ice-manage-actions">
+              {% if not feedback.reply %}
+              <button type="button" class="ice-manage-action ice-manage-action--primary reply-btn"
+                      data-id="{{ feedback.id }}" data-name="{{ feedback.staff }}">
+                <i class="fas fa-reply" aria-hidden="true"></i> Reply
+              </button>
+              {% else %}
+              <span class="ice-manage-chip ice-manage-chip--muted"><i class="fas fa-check-double" aria-hidden="true"></i><span>Done</span></span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="ice-manage-empty">
+              <i class="fas fa-comment-dots" aria-hidden="true"></i>
+              <strong>No feedback yet</strong>
+              <span>Messages from teachers will appear here.</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# ── Mobile cards ──────────────────────────────────────────────────── #}
+  <div class="ice-manage-mobile-list">
     {% for feedback in feedbacks %}
-    <div style="background:var(--ice-surface2); border:1px solid var(--ice-border); border-radius:10px; padding:14px 18px;">
-      <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-        <div>
-          <div style="font-weight:600; font-size:13px; color:var(--ice-text);">{{ feedback.staff }}</div>
-          <div style="font-size:11px; color:var(--ice-muted);">{{ feedback.staff.course }}</div>
+    <article class="ice-manage-card"
+             data-manage-search-item
+             data-manage-search-primary
+             data-manage-search-text="{{ feedback.staff }} {{ feedback.feedback }} {{ feedback.reply }} {% if feedback.reply %}replied{% else %}pending{% endif %}">
+      <div class="ice-manage-card__top">
+        <span class="ice-manage-card__avatar" aria-hidden="true"><i class="fas fa-chalkboard-teacher"></i></span>
+        <div class="ice-manage-card__main">
+          <h3 class="ice-manage-card__title">{{ feedback.staff }}</h3>
+          <div class="ice-manage-card__subtitle">{{ feedback.created_at|date:"d M Y, H:i" }}</div>
         </div>
-        <div style="font-size:11px; color:var(--ice-muted);"><i class="fas fa-clock me-1"></i>{{ feedback.created_at|date:"d M Y, H:i" }}</div>
       </div>
-      <div style="font-size:13px; color:var(--ice-text); line-height:1.6; margin-bottom:10px;">{{ feedback.feedback }}</div>
+      <div class="ice-manage-card__meta">
+        {% if feedback.reply %}
+        <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-check" aria-hidden="true"></i><span>Replied</span></span>
+        {% else %}
+        <span class="ice-manage-chip ice-manage-chip--warning"><i class="fas fa-clock" aria-hidden="true"></i><span>Pending reply</span></span>
+        {% endif %}
+      </div>
+      <div class="ice-feedback-msg">{{ feedback.feedback }}</div>
       {% if feedback.reply %}
-      <div style="background:rgba(6,182,212,.07); border-left:3px solid var(--ice-cyan); border-radius:0 8px 8px 0; padding:10px 14px; font-size:12px; line-height:1.5;">
-        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--ice-cyan); margin-bottom:4px;">
-          <i class="fas fa-reply me-1"></i>Your Reply · {{ feedback.updated_at|date:"d M Y, H:i" }}
-        </div>
-        {{ feedback.reply }}
-      </div>
+      <div class="ice-feedback-reply"><small><i class="fas fa-reply" aria-hidden="true"></i> Your reply · {{ feedback.updated_at|date:"d M Y, H:i" }}</small>{{ feedback.reply }}</div>
       {% else %}
-      <div style="display:flex; align-items:center; gap:10px;">
-        <span class="sb sb-warning"><i class="fas fa-clock me-1"></i>Pending Reply</span>
-        <button class="btn btn-success btn-sm reply-btn" data-id="{{ feedback.id }}" data-name="{{ feedback.staff }}">
-          <i class="fas fa-reply me-1"></i>Reply
+      <div class="ice-manage-actions">
+        <button type="button" class="ice-manage-action ice-manage-action--primary reply-btn"
+                data-id="{{ feedback.id }}" data-name="{{ feedback.staff }}">
+          <i class="fas fa-reply" aria-hidden="true"></i> Reply
         </button>
       </div>
       {% endif %}
+    </article>
+    {% empty %}
+    <div class="ice-manage-empty">
+      <i class="fas fa-comment-dots" aria-hidden="true"></i>
+      <strong>No feedback yet</strong>
+      <span>Messages from teachers will appear here.</span>
     </div>
     {% endfor %}
   </div>
-  {% else %}
-  <div style="text-align:center; padding:48px; color:var(--ice-muted);">
-    <i class="fas fa-comments" style="font-size:36px; opacity:.2; display:block; margin-bottom:12px;"></i>
-    No feedback from teachers yet.
-  </div>
-  {% endif %}
+
 </div>
 
 <!-- Reply Modal -->
@@ -72,6 +179,7 @@
 {% endblock %}
 
 {% block custom_js %}
+<script src="{% static 'dist/js/admin-manage-mobile.js' %}"></script>
 <script>
 const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? '';
 

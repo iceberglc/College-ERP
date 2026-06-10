@@ -203,20 +203,20 @@
 }
 
 .ice-manage-table th {
-  padding: 13px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--ice-manage-border);
   color: var(--ice-manage-muted);
   background: rgba(238, 246, 255, 0.8);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 900;
-  letter-spacing: 0;
+  letter-spacing: .2px;
   text-align: left;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .ice-manage-table td {
-  padding: 14px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--ice-manage-border);
   color: var(--ice-manage-text);
   font-size: 13px;
@@ -261,9 +261,9 @@
 
 .ice-manage-card {
   min-width: 0;
-  padding: 15px;
+  padding: 12px;
   border: 1px solid var(--ice-manage-border);
-  border-radius: 24px;
+  border-radius: 20px;
   background: var(--ice-manage-surface);
   box-shadow: var(--ice-manage-shadow-soft);
 }
@@ -274,8 +274,8 @@
 
 .ice-manage-card__top {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
-  gap: 13px;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 10px;
   align-items: center;
 }
 
@@ -283,16 +283,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 14px;
   color: #ffffff;
   background:
     radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.28), transparent 34%),
     linear-gradient(135deg, var(--ice-manage-navy), var(--ice-manage-cyan-2));
-  box-shadow: 0 12px 24px rgba(12, 31, 69, 0.16);
-  font-size: 20px;
+  box-shadow: 0 8px 18px rgba(12, 31, 69, 0.14);
+  font-size: 17px;
   font-weight: 900;
 }
 
@@ -310,7 +310,7 @@
   margin: 0;
   overflow: hidden;
   color: var(--ice-manage-text);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -318,10 +318,10 @@
 }
 
 .ice-manage-card__subtitle {
-  margin-top: 4px;
+  margin-top: 3px;
   overflow: hidden;
   color: var(--ice-manage-muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -331,22 +331,22 @@
 .ice-manage-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 13px;
+  gap: 5px;
+  margin-top: 10px;
 }
 
 .ice-manage-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   max-width: 100%;
-  min-height: 30px;
-  padding: 5px 9px;
+  min-height: 26px;
+  padding: 3px 8px;
   border: 1px solid rgba(56, 189, 248, 0.16);
   border-radius: 999px;
   color: var(--ice-manage-muted);
   background: rgba(56, 189, 248, 0.08);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   line-height: 1.2;
 }
@@ -397,8 +397,8 @@
 .ice-manage-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 7px;
+  margin-top: 11px;
 }
 
 .ice-manage-table .ice-manage-actions {
@@ -451,10 +451,35 @@
   border-color: rgba(220, 38, 38, 0.18);
 }
 
+.ice-manage-action--danger-fill {
+  color: #ffffff;
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  border-color: transparent;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.24);
+}
+
+.ice-manage-action--danger-fill:hover,
+.ice-manage-action--danger-fill:focus {
+  color: #ffffff;
+  filter: brightness(1.08);
+}
+
 .ice-manage-action--warning {
   color: var(--ice-manage-warning);
   background: rgba(180, 83, 9, 0.1);
   border-color: rgba(180, 83, 9, 0.18);
+}
+
+.ice-manage-action--neutral {
+  color: var(--ice-manage-muted);
+  background: rgba(100, 116, 139, 0.08);
+  border-color: rgba(100, 116, 139, 0.18);
+}
+
+.ice-manage-action--neutral:hover,
+.ice-manage-action--neutral:focus {
+  color: var(--ice-manage-text);
+  background: rgba(100, 116, 139, 0.14);
 }
 
 .ice-manage-empty {
@@ -631,6 +656,29 @@
   line-height: 1.35;
 }
 
+.ice-admin-scope-toggle--locked {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: rgba(100, 116, 139, 0.08);
+  border-color: rgba(100, 116, 139, 0.16);
+}
+.ice-admin-scope-toggle--locked input {
+  cursor: not-allowed;
+}
+.ice-admin-lock-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: rgba(100, 116, 139, 0.15);
+  color: #64748b;
+  font-size: 9px;
+  vertical-align: middle;
+}
+
 .ice-admin-access-branches {
   display: flex;
   flex-wrap: wrap;
@@ -662,11 +710,16 @@
   white-space: nowrap;
 }
 
+.ice-admin-access-footer {
+  margin-top: 4px;
+}
+
 .ice-admin-access-save {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  width: 100%;
   min-height: 44px;
   padding: 0 14px;
   border: 0;
@@ -683,9 +736,201 @@
   filter: brightness(1.05);
 }
 
+/* On narrow screens give the last card's save button enough clearance above the fixed nav */
+@media (max-width: 767px) {
+  .ice-admin-access-card:last-child .ice-admin-access-footer {
+    padding-bottom: 8px;
+  }
+  .ice-admin-access__grid {
+    padding-bottom: 80px;
+  }
+}
+
 .ice-admin-access-empty {
   width: 100%;
   margin: 0;
+}
+
+/* ── Manage Admins: full admin card ───────────────────────────────────── */
+.ice-admin-full-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1.5px solid var(--ice-manage-border);
+  border-radius: 22px;
+  background: var(--ice-manage-surface);
+  box-shadow: var(--ice-manage-shadow-soft);
+}
+
+.ice-afc-header {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 40px;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ice-afc-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  overflow: hidden;
+  border-radius: 16px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.28), transparent 34%),
+    linear-gradient(135deg, var(--ice-manage-navy), var(--ice-manage-cyan-2));
+  box-shadow: 0 8px 18px rgba(12, 31, 69, 0.14);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.ice-afc-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ice-afc-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ice-afc-name {
+  display: block;
+  color: var(--ice-manage-text);
+  font-size: 14.5px;
+  font-weight: 900;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ice-afc-you-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--ice-manage-navy);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.ice-afc-email {
+  color: var(--ice-manage-muted);
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ice-afc-role-chip {
+  margin-top: 2px;
+  max-width: 100%;
+}
+
+/* Delete button on the admin card */
+.ice-afc-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 12px;
+  color: var(--ice-manage-danger);
+  background: rgba(220, 38, 38, 0.08);
+  border: 1.5px solid rgba(220, 38, 38, 0.18);
+  font-size: 13px;
+  text-decoration: none;
+  transition: background .14s, border-color .14s;
+}
+
+.ice-afc-delete:hover,
+.ice-afc-delete:focus {
+  background: rgba(220, 38, 38, 0.16);
+  border-color: rgba(220, 38, 38, 0.34);
+  color: var(--ice-manage-danger);
+  text-decoration: none;
+}
+
+.ice-afc-delete--locked {
+  color: var(--ice-manage-muted);
+  background: rgba(100, 116, 139, 0.07);
+  border-color: rgba(100, 116, 139, 0.14);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ice-afc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ice-manage-border);
+}
+
+.ice-afc-locked-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid rgba(100, 116, 139, 0.16);
+  border-radius: 14px;
+  background: rgba(100, 116, 139, 0.07);
+  color: var(--ice-manage-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.ice-afc-locked-note i {
+  margin-top: 2px;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+/* Dark mode */
+.dark-mode .ice-admin-full-card,
+[data-theme="dark"] .ice-admin-full-card {
+  background: rgba(15, 23, 42, 0.72);
+}
+
+@media (max-width: 767px) {
+  .ice-admin-full-card {
+    padding: 14px;
+    border-radius: 20px;
+  }
+  .ice-afc-header {
+    grid-template-columns: 48px minmax(0, 1fr) 36px;
+    gap: 10px;
+  }
+  .ice-afc-avatar {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+    border-radius: 14px;
+    font-size: 16px;
+  }
+  .ice-afc-delete {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
 }
 
 .dark-mode .ice-manage-page,
@@ -738,23 +983,38 @@
   background: rgba(56, 189, 248, 0.1);
 }
 
-@media (min-width: 769px) {
+/* Desktop only (>=1025px): show the data table, hide the card list. */
+@media (min-width: 1025px) {
   .ice-manage-mobile-list {
     display: none !important;
   }
 }
 
+/* Tablet (769–1024px): the 11-column table is cramped and overflows here,
+   so show the clean card list in a 2-up grid instead — far less bulky and
+   no horizontal scroll. The table returns at desktop widths. */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ice-manage-table-wrap {
+    display: none;
+  }
+  .ice-manage-mobile-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
 @media (max-width: 768px) {
   .ice-manage-page {
-    gap: 14px;
+    gap: 12px;
     padding-bottom: 156px;
   }
 
   .ice-manage-hero {
     align-items: stretch;
     flex-direction: column;
-    padding: 16px;
-    border-radius: 22px;
+    padding: 14px;
+    border-radius: 20px;
   }
 
   .ice-manage-hero__main {
@@ -816,7 +1076,7 @@
   }
 
   .ice-manage-card {
-    border-radius: 22px;
+    border-radius: 18px;
   }
 
   .ice-manage-actions {
@@ -825,26 +1085,27 @@
   }
 
   .ice-manage-action {
-    min-height: 46px;
+    min-height: 42px;
     padding: 0 10px;
+    font-size: 11px;
   }
 }
 
 @media (max-width: 420px) {
   .ice-manage-hero__main {
-    gap: 11px;
+    gap: 10px;
   }
 
   .ice-manage-card__top {
-    grid-template-columns: 50px minmax(0, 1fr);
-    gap: 11px;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 9px;
   }
 
   .ice-manage-card__avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 16px;
-    font-size: 18px;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    font-size: 16px;
   }
 
   .ice-manage-actions {

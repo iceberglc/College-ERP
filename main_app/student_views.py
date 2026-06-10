@@ -445,7 +445,9 @@ def student_view_attendance(request):
                 )
 
         month_pct = round(((month_present + month_late) / month_total) * 100) if month_total else 0
-        if month_pct >= 90:
+        if month_total == 0:
+            month_message = "No classes recorded yet"
+        elif month_pct >= 90:
             month_message = "Excellent consistency"
         elif month_pct >= 75:
             month_message = "Healthy attendance"

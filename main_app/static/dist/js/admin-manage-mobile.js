@@ -15,10 +15,6 @@ document.addEventListener("DOMContentLoaded", function () {
       return (item.dataset.manageSearchText || item.textContent || "").toLowerCase();
     }
 
-    function isItemVisible(item) {
-      return !item.hidden;
-    }
-
     function filterItems() {
       const query = input.value.trim().toLowerCase();
 
@@ -26,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
         item.hidden = Boolean(query) && !getSearchText(item).includes(query);
       });
 
-      const matchedCount = countItems.filter(isItemVisible).length;
+      const matchedCount = countItems.filter((item) => !item.hidden).length;
 
       if (visibleCount) {
         visibleCount.textContent = String(matchedCount);
@@ -37,7 +33,12 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    input.addEventListener("input", filterItems);
+    // Debounce: wait 150ms after last keystroke before filtering (smoother on mobile)
+    var debounceTimer;
+    input.addEventListener("input", function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(filterItems, 150);
+    });
     filterItems();
   });
 });

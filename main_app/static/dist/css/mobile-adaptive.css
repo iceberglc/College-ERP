@@ -241,7 +241,7 @@ html[data-theme="dark"] {
    Tablet/desktop keep the real <table>. Below 600px each row becomes a
    card and each cell shows its column label (injected by
    responsive-tables.js as data-label). */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   table.dt,
   table.data-table,
   table.table {
@@ -270,10 +270,10 @@ html[data-theme="dark"] {
   table.table > tbody > tr {
     display: block;
     width: 100%;
-    margin: 0 0 12px;
-    padding: 6px 14px;
+    margin: 0 0 9px;
+    padding: 4px 12px;
     border: 1px solid var(--ice-border, #E4E7EC);
-    border-radius: var(--radius-lg, 14px);
+    border-radius: var(--radius-lg, 12px);
     background: var(--ice-surface, #fff);
     box-shadow: var(--shadow-sm, 0 1px 3px rgba(12,31,69,.08));
   }
@@ -285,12 +285,13 @@ html[data-theme="dark"] {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 14px;
+    gap: 12px;
     width: auto;
-    padding: 9px 0;
+    padding: 7px 0;
     border: 0;
     border-bottom: 1px solid var(--ice-border, #E4E7EC);
     text-align: right;
+    font-size: 13px;
     white-space: normal;
     word-break: break-word;
   }
@@ -303,8 +304,8 @@ html[data-theme="dark"] {
   table.table > tbody > tr > td::before {
     content: attr(data-label);
     flex: 0 0 auto;
-    margin-right: 12px;
-    font-size: 12px;
+    margin-right: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: .02em;
     text-transform: uppercase;

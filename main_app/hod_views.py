@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, OperationalError, ProgrammingError, models, transaction
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, redirect, render
 from django.templatetags.static import static
 from django.urls import reverse
@@ -126,9 +127,9 @@ def admin_home(request):
     def spark_points(values):
         max_value = max(values) if values else 0
         if max_value <= 0:
-            return [{"value": value, "height": 18} for value in values]
+            return [{"value": value, "height": "20%"} for value in values]
         return [
-            {"value": value, "height": 18 + round((value / max_value) * 34)}
+            {"value": value, "height": f"{max(18, round((value / max_value) * 100))}%"}
             for value in values
         ]
 
@@ -580,8 +581,12 @@ def add_student(request):
 
 @admin_only
 def manage_registration_leads(request):
+    base_qs = branching.filter_registration_leads_for_user(
+        request.user, RegistrationLead.objects.all()
+    )
+
     if request.method == "POST":
-        lead = get_object_or_404(RegistrationLead, id=request.POST.get("lead_id"))
+        lead = get_object_or_404(base_qs, id=request.POST.get("lead_id"))
         status = request.POST.get("status", lead.status)
         if status in dict(RegistrationLead.STATUS_CHOICES):
             lead.status = status
@@ -591,7 +596,7 @@ def manage_registration_leads(request):
         query_string = request.POST.get("next", "")
         return redirect(reverse("manage_registration_leads") + query_string)
 
-    leads = RegistrationLead.objects.all()
+    leads = base_qs
     status_filter = request.GET.get("status", "").strip()
     source_filter = request.GET.get("source", "").strip()
     branch_filter = request.GET.get("branch", "").strip()
@@ -601,7 +606,7 @@ def manage_registration_leads(request):
         leads = leads.filter(status=status_filter)
     if source_filter:
         leads = leads.filter(source__iexact=source_filter)
-    # RegistrationLead.branch is still free text (pre-enrollment), so this is a
+    # RegistrationLead.branch is free text (pre-enrollment); this is a
     # best-effort contains match rather than a strict FK scope.
     if branch_filter:
         leads = leads.filter(branch__icontains=branch_filter)
@@ -619,14 +624,14 @@ def manage_registration_leads(request):
 
     status_counts = {
         row["status"]: row["count"]
-        for row in RegistrationLead.objects.values("status").annotate(count=models.Count("id"))
+        for row in base_qs.values("status").annotate(count=models.Count("id"))
     }
     status_summary = [
         {"value": value, "label": label, "count": status_counts.get(value, 0)}
         for value, label in RegistrationLead.STATUS_CHOICES
     ]
     sources = (
-        RegistrationLead.objects.exclude(source="")
+        base_qs.exclude(source="")
         .values_list("source", flat=True)
         .distinct()
         .order_by("source")
@@ -1189,10 +1194,16 @@ def send_staff_notification(request):
 
 
 @admin_only
+@require_POST
 def delete_staff(request, staff_id):
-    staff = get_object_or_404(CustomUser, staff__id=staff_id)
+    staff_obj = get_object_or_404(Staff, id=staff_id)
+    if not branching.filter_staff_for_user(
+        request.user, Staff.objects.filter(id=staff_id)
+    ).exists():
+        messages.error(request, "You don't have permission to delete this teacher.")
+        return redirect(reverse("manage_staff"))
     try:
-        staff.delete()
+        staff_obj.admin.delete()
         messages.success(request, "Staff deleted successfully!")
     except IntegrityError:
         messages.error(request, "Could not delete staff because related attendance data exists.")
@@ -1200,13 +1211,19 @@ def delete_staff(request, staff_id):
 
 
 @admin_only
+@require_POST
 def delete_student(request, student_id):
-    student_user = get_object_or_404(CustomUser, student__id=student_id)
+    student_obj = get_object_or_404(Student, id=student_id)
+    if not branching.filter_students_for_user(
+        request.user, Student.objects.filter(id=student_id)
+    ).exists():
+        messages.error(request, "You don't have permission to delete this student.")
+        return redirect(reverse("manage_student"))
+    student_user = student_obj.admin
     try:
         with transaction.atomic():
-            student_profile = student_user.student
             # AttendanceReport keeps a DO_NOTHING FK to Student, so remove it manually.
-            AttendanceReport.objects.filter(student=student_profile).delete()
+            AttendanceReport.objects.filter(student=student_obj).delete()
             student_user.delete()
         messages.success(request, "Student deleted successfully!")
     except IntegrityError:
@@ -1215,6 +1232,7 @@ def delete_student(request, student_id):
 
 
 @admin_only
+@require_POST
 def delete_course(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     try:
@@ -1243,6 +1261,7 @@ def toggle_course_active(request, course_id):
 
 
 @admin_only
+@require_POST
 def delete_subject(request, subject_id):
     subject = get_object_or_404(Subject, id=subject_id)
     try:
@@ -1256,6 +1275,7 @@ def delete_subject(request, subject_id):
 
 
 @admin_only
+@require_POST
 def delete_session(request, session_id):
     session = get_object_or_404(Session, id=session_id)
     try:
@@ -1314,6 +1334,172 @@ def get_groups_for_teacher(request):
         return JsonResponse([], safe=False)
 
 
+# ── Admin account management ──────────────────────────────────────────────────
+
+
+
+
+@admin_only
+def add_admin(request):
+    if not branching.is_super_admin(request.user):
+        messages.error(request, "Only a super admin can add admin accounts.")
+        return redirect(reverse("admin_home"))
+
+    all_branches = Branch.objects.all().order_by("name")
+
+    if request.method == "POST":
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
+        gender = request.POST.get("gender", "")
+        address = request.POST.get("address", "").strip()
+        branch_ids = request.POST.getlist("branches")
+
+        errors = []
+        if not first_name:
+            errors.append("First name is required.")
+        if not last_name:
+            errors.append("Last name is required.")
+        if not email:
+            errors.append("Email address is required.")
+        elif CustomUser.objects.filter(email__iexact=email).exists():
+            errors.append("An account with this email already exists.")
+        if not password:
+            errors.append("Password is required.")
+        if len(password) < 6:
+            errors.append("Password must be at least 6 characters.")
+        if not branch_ids:
+            errors.append("Assign at least one branch to this admin.")
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, "hod_template/add_admin_template.html", {
+                "all_branches": all_branches,
+                "page_title": "Add Admin",
+                "form_data": {
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "email": email,
+                    "gender": gender,
+                    "address": address,
+                },
+                "selected_branch_ids": branch_ids,
+            })
+
+        try:
+            user = CustomUser.objects.create_user(
+                email=email,
+                password=password,
+                user_type=1,
+                first_name=first_name,
+                last_name=last_name,
+            )
+            user.gender = gender
+            user.address = address
+            user.save()
+
+            # Signal already created Admin with is_super_admin=True. Override it
+            # to branch admin so we don't accidentally create a second super admin.
+            admin_profile = user.admin
+            admin_profile.is_super_admin = False
+            admin_profile.save(update_fields=["is_super_admin"])
+            selected_branches = Branch.objects.filter(id__in=branch_ids)
+            admin_profile.branches.set(selected_branches)
+
+            name = f"{first_name} {last_name}".strip()
+            messages.success(request, f'Admin account "{name}" created. They can log in with their email.')
+            return redirect(reverse("manage_admin"))
+        except Exception as exc:
+            messages.error(request, f"Could not create admin — {exc}")
+
+    return render(request, "hod_template/add_admin_template.html", {
+        "all_branches": all_branches,
+        "page_title": "Add Admin",
+        "form_data": {},
+        "selected_branch_ids": [],
+    })
+
+
+@admin_only
+def manage_admin(request):
+    if not branching.is_super_admin(request.user):
+        messages.error(request, "Only a super admin can manage admin accounts.")
+        return redirect(reverse("admin_home"))
+
+    try:
+        current_admin_profile = Admin.objects.get(admin=request.user)
+    except Admin.DoesNotExist:
+        current_admin_profile = None
+
+    admin_profiles = list(
+        Admin.objects.select_related("admin")
+        .prefetch_related("branches")
+        .order_by("admin__first_name", "admin__last_name", "admin__email")
+    )
+    all_branches = Branch.objects.all().order_by("name")
+    super_admin_count = sum(1 for ap in admin_profiles if ap.is_super_admin)
+
+    for admin_profile in admin_profiles:
+        assigned_branches = list(admin_profile.branches.all())
+        admin_profile.assigned_branch_ids = {branch.id for branch in assigned_branches}
+        admin_profile.assigned_branch_names = ", ".join(
+            branch.name for branch in assigned_branches
+        )
+        admin_profile.is_current_user = (
+            current_admin_profile is not None
+            and admin_profile.id == current_admin_profile.id
+        )
+        admin_profile.superadmin_toggle_locked = (
+            admin_profile.is_super_admin and super_admin_count == 1
+        )
+        # Allow delete only when: not the logged-in user AND not the sole super admin
+        admin_profile.can_delete = (
+            not admin_profile.is_current_user
+            and not admin_profile.superadmin_toggle_locked
+        )
+
+    return render(
+        request,
+        "hod_template/manage_admin.html",
+        {
+            "admin_profiles": admin_profiles,
+            "all_branches": all_branches,
+            "page_title": "Manage Admins",
+        },
+    )
+
+
+@admin_only
+@require_POST
+def delete_admin(request, admin_id):
+    if not branching.is_super_admin(request.user):
+        messages.error(request, "Only a super admin can delete admin accounts.")
+        return redirect(reverse("manage_admin"))
+
+    admin_profile = get_object_or_404(Admin, id=admin_id)
+
+    if admin_profile.admin == request.user:
+        messages.error(request, "You cannot delete your own admin account.")
+        return redirect(reverse("manage_admin"))
+
+    if admin_profile.is_super_admin and Admin.objects.filter(is_super_admin=True).count() <= 1:
+        messages.error(
+            request, "Cannot delete the only super admin. Promote another admin first."
+        )
+        return redirect(reverse("manage_admin"))
+
+    name = admin_profile.admin.get_full_name() or admin_profile.admin.email
+    try:
+        admin_profile.admin.delete()
+        messages.success(request, f'Admin account "{name}" deleted.')
+    except Exception as exc:
+        messages.error(request, f"Could not delete admin — {exc}")
+
+    return redirect(reverse("manage_admin"))
+
+
 # ── Branch CRUD ──────────────────────────────────────────────────────────────
 
 
@@ -1321,27 +1507,13 @@ def get_groups_for_teacher(request):
 def manage_branch(request):
     is_super_admin = branching.is_super_admin(request.user)
     branches = branching.filter_branches_for_user(request.user, Branch.objects.all())
-    admin_profiles = []
     all_branches = Branch.objects.all().order_by("name")
-    if is_super_admin:
-        admin_profiles = list(
-            Admin.objects.select_related("admin")
-            .prefetch_related("branches")
-            .order_by("admin__first_name", "admin__last_name", "admin__email")
-        )
-        for admin_profile in admin_profiles:
-            assigned_branches = list(admin_profile.branches.all())
-            admin_profile.assigned_branch_ids = {branch.id for branch in assigned_branches}
-            admin_profile.assigned_branch_names = ", ".join(
-                branch.name for branch in assigned_branches
-            )
     return render(
         request,
         "hod_template/manage_branch.html",
         {
             "branches": branches,
             "all_branches": all_branches,
-            "admin_profiles": admin_profiles,
             "page_title": "Manage Branches",
             "is_super_admin": is_super_admin,
         },
@@ -1352,10 +1524,10 @@ def manage_branch(request):
 def update_admin_branch_access(request, admin_id):
     if not branching.is_super_admin(request.user):
         messages.error(request, "Only a super admin can change admin branch access.")
-        return redirect(reverse("manage_branch"))
+        return redirect(reverse("manage_admin"))
 
     if request.method != "POST":
-        return redirect(reverse("manage_branch"))
+        return redirect(reverse("manage_admin"))
 
     admin_profile = get_object_or_404(
         Admin.objects.select_related("admin").prefetch_related("branches"), id=admin_id
@@ -1363,25 +1535,37 @@ def update_admin_branch_access(request, admin_id):
     make_super_admin = request.POST.get("is_super_admin") == "on"
     branch_ids = request.POST.getlist("branches")
 
+    # Single-superadmin enforcement: block promoting a second admin to superadmin.
+    if make_super_admin and not admin_profile.is_super_admin:
+        existing_super = Admin.objects.filter(is_super_admin=True).exclude(id=admin_profile.id).first()
+        if existing_super:
+            name = existing_super.admin.get_full_name() or existing_super.admin.email
+            messages.error(
+                request,
+                f"Only one super admin is allowed. {name} is already the super admin. "
+                "Demote them first before promoting another admin.",
+            )
+            return redirect(reverse("manage_admin"))
+
     if not make_super_admin:
         if not branch_ids:
             messages.error(
                 request,
                 "Select at least one dedicated branch for a branch admin.",
             )
-            return redirect(reverse("manage_branch"))
+            return redirect(reverse("manage_admin"))
 
         other_super_admin_exists = (
             Admin.objects.filter(is_super_admin=True).exclude(id=admin_profile.id).exists()
         )
         if admin_profile.is_super_admin and not other_super_admin_exists:
             messages.error(request, "Keep at least one super admin with access to all branches.")
-            return redirect(reverse("manage_branch"))
+            return redirect(reverse("manage_admin"))
 
     selected_branches = Branch.objects.filter(id__in=branch_ids).order_by("name")
     if not make_super_admin and not selected_branches.exists():
         messages.error(request, "Select at least one valid branch for this admin.")
-        return redirect(reverse("manage_branch"))
+        return redirect(reverse("manage_admin"))
 
     admin_profile.is_super_admin = make_super_admin
     admin_profile.save(update_fields=["is_super_admin"])
@@ -1398,7 +1582,7 @@ def update_admin_branch_access(request, admin_id):
             request,
             f"{admin_profile.admin.get_full_name() or admin_profile.admin.email} is assigned to {branch_names}.",
         )
-    return redirect(reverse("manage_branch"))
+    return redirect(reverse("manage_admin"))
 
 
 @admin_only
@@ -1446,17 +1630,21 @@ def edit_branch(request, branch_id):
 
 
 @admin_only
+@require_POST
 def delete_branch(request, branch_id):
-    # Branch admins must not delete branches (data-loss risk across branches).
     if not branching.is_super_admin(request.user):
         messages.error(request, "Only a super admin can delete branches.")
         return redirect(reverse("manage_branch"))
+    if Branch.objects.count() <= 1:
+        messages.error(request, "Cannot delete the only branch. Add another branch first.")
+        return redirect(reverse("manage_branch"))
     branch = get_object_or_404(Branch, id=branch_id)
+    branch_name = branch.name
     try:
         branch.delete()
-        messages.success(request, "Branch deleted!")
-    except Exception:
-        messages.error(request, "Could not delete branch — it has groups linked to it.")
+        messages.success(request, f'Branch “{branch_name}” deleted.')
+    except Exception as exc:
+        messages.error(request, f"Could not delete branch — {exc}")
     return redirect(reverse("manage_branch"))
 
 
@@ -1599,6 +1787,7 @@ def edit_group(request, group_id):
 
 
 @admin_only
+@require_POST
 def delete_group(request, group_id):
     group = get_object_or_404(Group, id=group_id)
     if not branching.user_can_access_group(request.user, group):
@@ -1632,6 +1821,7 @@ def delete_group(request, group_id):
 
 
 @admin_only
+@require_POST
 def archive_group(request, group_id):
     group = get_object_or_404(Group, id=group_id)
     if not branching.user_can_access_group(request.user, group):
@@ -1783,6 +1973,7 @@ def get_group_info(request):
 
 
 @admin_only
+@require_POST
 def delete_enrollment(request, enrollment_id):
     enrollment = get_object_or_404(Enrollment.objects.select_related("group"), id=enrollment_id)
     if not branching.user_can_access_group(request.user, enrollment.group):
@@ -1847,11 +2038,7 @@ def manage_stories(request):
     )
 
 
-def _story_storage_ok():
-    """True when a persistent remote storage backend is active (e.g. S3/Spaces)."""
-    import os
-
-    return bool(os.environ.get("SPACES_KEY") and os.environ.get("SPACES_BUCKET"))
+_story_storage_ok = branching.story_storage_ok
 
 
 @admin_only
@@ -1904,6 +2091,7 @@ def edit_story(request, story_id):
 
 
 @admin_only
+@require_POST
 def delete_story(request, story_id):
     story = get_object_or_404(DashboardStory, id=story_id)
     story.delete()

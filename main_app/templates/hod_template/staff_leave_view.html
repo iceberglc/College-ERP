@@ -3,55 +3,150 @@
 {% block page_title %}{{ page_title }}{% endblock %}
 
 {% block custom_css %}
-<style>
-.leave-card { background: var(--ice-surface); border: 1px solid var(--ice-border); border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; transition: box-shadow .18s; }
-.leave-card:hover { box-shadow: 0 4px 16px rgba(27,63,122,.08); }
-.leave-person { font-size: 14px; font-weight: 600; color: var(--ice-text); margin-bottom: 4px; }
-.leave-meta   { font-size: 12px; color: var(--ice-muted); display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
-.leave-msg    { font-size: 13px; color: var(--ice-text); background: var(--ice-surface2); border-radius: 8px; padding: 10px 14px; border: 1px solid var(--ice-border); margin-bottom: 12px; line-height: 1.5; }
-.leave-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-</style>
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="dt-card">
-  <div class="dt-header">
-    <div class="dt-title"><i class="fas fa-calendar-check"></i> {{ page_title }} <span class="dt-count">{{ allLeave|length }} requests</span></div>
+{% regroup allLeave|dictsort:"status" by status as status_groups %}
+<div class="ice-manage-page" data-manage-search-scope>
+
+  {# ── Hero ──────────────────────────────────────────────────────────── #}
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-calendar-check"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Teacher Leave</h2>
+        <p class="ice-manage-hero__subtitle">Review and respond to leave applications from teachers.</p>
+      </div>
+    </div>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count"><span data-manage-visible-count>{{ allLeave|length }}</span>&nbsp;total</span>
+      {% for group in status_groups %}{% if group.grouper == 0 %}
+      <span class="ice-manage-chip ice-manage-chip--warning"><i class="fas fa-clock" aria-hidden="true"></i><span>{{ group.list|length }} pending</span></span>
+      {% endif %}{% endfor %}
+    </div>
+  </section>
+
+  {# ── Search ────────────────────────────────────────────────────────── #}
+  <label class="ice-manage-search" aria-label="Search leave requests">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-manage-search__input" data-manage-search placeholder="Search by teacher, date or message..." autocomplete="off">
+  </label>
+
+  <div class="ice-manage-empty" data-manage-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No matching requests</strong>
+    <span>Try another teacher name, date or keyword.</span>
   </div>
-  <div style="padding: 20px;">
-    {% if allLeave %}
-      {% for leave in allLeave %}
-      <div class="leave-card">
-        <div class="leave-person">
-          <i class="fas fa-chalkboard-teacher me-2" style="color:var(--ice-cyan);"></i>{{ leave.staff }}
-        </div>
-        <div class="leave-meta">
-          <span><i class="fas fa-book me-1"></i>{{ leave.staff.course|default:"—" }}</span>
-          <span><i class="fas fa-calendar-alt me-1"></i>{{ leave.date }}</span>
-          <span><i class="fas fa-clock me-1"></i>{{ leave.created_at|date:"d M Y, H:i" }}</span>
-        </div>
-        <div class="leave-msg">{{ leave.message }}</div>
-        <div class="leave-actions">
-          {% if leave.status == 0 %}
-            <button class="btn btn-success btn-sm reply-btn" data-id="{{ leave.id }}" data-name="{{ leave.staff }}">
-              <i class="fas fa-reply me-1"></i> Reply
-            </button>
-            <span class="sb sb-warning"><i class="fas fa-clock me-1"></i>Pending</span>
-          {% elif leave.status == -1 %}
-            <span class="sb sb-danger"><i class="fas fa-times me-1"></i>Rejected</span>
-          {% else %}
-            <span class="sb sb-success"><i class="fas fa-check me-1"></i>Approved</span>
-          {% endif %}
+
+  {# ── Desktop table ─────────────────────────────────────────────────── #}
+  <div class="ice-manage-table-wrap">
+    <table class="ice-manage-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Teacher</th>
+          <th>Leave Date</th>
+          <th>Message</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for leave in allLeave %}
+        <tr data-manage-search-item
+            data-manage-search-text="{{ leave.staff }} {{ leave.date }} {{ leave.message }} {% if leave.status == 0 %}pending{% elif leave.status == 1 %}approved{% else %}rejected{% endif %}">
+          <td>{{ forloop.counter }}</td>
+          <td>
+            <div class="ice-manage-person">
+              <div class="ice-manage-person__copy">
+                <span class="ice-manage-person__name">{{ leave.staff }}</span>
+                {% if leave.staff.course %}<span class="ice-manage-person__sub">{{ leave.staff.course }}</span>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td>{{ leave.date|date:"d M Y"|default:"—" }}</td>
+          <td>{{ leave.message|truncatechars:90 }}</td>
+          <td>
+            {% if leave.status == 0 %}
+            <span class="ice-manage-chip ice-manage-chip--warning"><i class="fas fa-clock" aria-hidden="true"></i><span>Pending</span></span>
+            {% elif leave.status == -1 %}
+            <span class="ice-manage-chip ice-manage-chip--danger"><i class="fas fa-times" aria-hidden="true"></i><span>Rejected</span></span>
+            {% else %}
+            <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-check" aria-hidden="true"></i><span>Approved</span></span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="ice-manage-actions">
+              {% if leave.status == 0 %}
+              <button type="button" class="ice-manage-action ice-manage-action--primary reply-btn"
+                      data-id="{{ leave.id }}" data-name="{{ leave.staff }}">
+                <i class="fas fa-reply" aria-hidden="true"></i> Review
+              </button>
+              {% else %}
+              <span class="ice-manage-chip ice-manage-chip--muted"><i class="fas fa-check-double" aria-hidden="true"></i><span>Reviewed</span></span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="ice-manage-empty">
+              <i class="fas fa-calendar-check" aria-hidden="true"></i>
+              <strong>No leave requests yet</strong>
+              <span>Teacher leave applications will appear here for review.</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# ── Mobile cards ──────────────────────────────────────────────────── #}
+  <div class="ice-manage-mobile-list">
+    {% for leave in allLeave %}
+    <article class="ice-manage-card"
+             data-manage-search-item
+             data-manage-search-primary
+             data-manage-search-text="{{ leave.staff }} {{ leave.date }} {{ leave.message }} {% if leave.status == 0 %}pending{% elif leave.status == 1 %}approved{% else %}rejected{% endif %}">
+      <div class="ice-manage-card__top">
+        <span class="ice-manage-card__avatar" aria-hidden="true"><i class="fas fa-chalkboard-teacher"></i></span>
+        <div class="ice-manage-card__main">
+          <h3 class="ice-manage-card__title">{{ leave.staff }}</h3>
+          <div class="ice-manage-card__subtitle">{% if leave.staff.course %}{{ leave.staff.course }} · {% endif %}applied {{ leave.created_at|date:"d M Y, H:i" }}</div>
         </div>
       </div>
-      {% endfor %}
-    {% else %}
-      <div style="text-align:center; padding:48px; color:var(--ice-muted);">
-        <i class="fas fa-calendar-check" style="font-size:40px; opacity:.2; display:block; margin-bottom:12px;"></i>
-        No leave requests at this time.
+      <div class="ice-manage-card__meta">
+        <span class="ice-manage-chip"><i class="fas fa-calendar-alt" aria-hidden="true"></i><span>{{ leave.date|date:"d M Y"|default:"No date" }}</span></span>
+        {% if leave.status == 0 %}
+        <span class="ice-manage-chip ice-manage-chip--warning"><i class="fas fa-clock" aria-hidden="true"></i><span>Pending</span></span>
+        {% elif leave.status == -1 %}
+        <span class="ice-manage-chip ice-manage-chip--danger"><i class="fas fa-times" aria-hidden="true"></i><span>Rejected</span></span>
+        {% else %}
+        <span class="ice-manage-chip ice-manage-chip--success"><i class="fas fa-check" aria-hidden="true"></i><span>Approved</span></span>
+        {% endif %}
       </div>
-    {% endif %}
+      <p class="ice-manage-card__subtitle" style="margin-top:10px; white-space:normal; line-height:1.5;">{{ leave.message }}</p>
+      {% if leave.status == 0 %}
+      <div class="ice-manage-actions">
+        <button type="button" class="ice-manage-action ice-manage-action--primary reply-btn"
+                data-id="{{ leave.id }}" data-name="{{ leave.staff }}">
+          <i class="fas fa-reply" aria-hidden="true"></i> Review Request
+        </button>
+      </div>
+      {% endif %}
+    </article>
+    {% empty %}
+    <div class="ice-manage-empty">
+      <i class="fas fa-calendar-check" aria-hidden="true"></i>
+      <strong>No leave requests yet</strong>
+      <span>Teacher leave applications will appear here for review.</span>
+    </div>
+    {% endfor %}
   </div>
+
 </div>
 
 <!-- Reply Modal -->
@@ -85,6 +180,7 @@
 {% endblock %}
 
 {% block custom_js %}
+<script src="{% static 'dist/js/admin-manage-mobile.js' %}"></script>
 <script>
 const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? '';
 

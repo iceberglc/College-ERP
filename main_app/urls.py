@@ -126,6 +126,10 @@ urlpatterns = [
         name="toggle_course_active",
     ),
     path("subject/edit/<int:subject_id>", hod_views.edit_subject, name="edit_subject"),
+    # Admin management
+    path("admin/add/", hod_views.add_admin, name="add_admin"),
+    path("admin/manage/", hod_views.manage_admin, name="manage_admin"),
+    path("admin/delete/<int:admin_id>/", hod_views.delete_admin, name="delete_admin"),
     # Branch
     path("branch/manage/", hod_views.manage_branch, name="manage_branch"),
     path("branch/add/", hod_views.add_branch, name="add_branch"),
@@ -194,7 +198,6 @@ urlpatterns = [
     path("student/view/profile/", student_views.student_view_profile, name="student_view_profile"),
     path("student/fcmtoken/", student_views.student_fcmtoken, name="student_fcmtoken"),
     path("student/save-theme/", student_views.student_save_theme, name="student_save_theme"),
-    # path('student/todo',student_views.todo,name='todo'),
     path("student/viewbooks/", student_views.view_books, name="view_books"),
     path(
         "student/view/notification/",

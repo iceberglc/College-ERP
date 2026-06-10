@@ -29,7 +29,10 @@ body.has-glow-bottom-nav {
   position: fixed;
   left: 50%;
   bottom: max(10px, env(safe-area-inset-bottom));
-  transform: translateX(-50%);
+  /* translateZ(0) forces the nav onto its own GPU compositor layer,
+     preventing iOS Safari from displacing it during momentum scroll */
+  -webkit-transform: translateX(-50%) translateZ(0);
+  transform: translateX(-50%) translateZ(0);
   width: min(430px, calc(100vw - 28px));
   height: 68px;
   background: var(--glow-nav-light-bg);
@@ -176,7 +179,9 @@ body.has-glow-bottom-nav {
 }
 
 @media (max-width: 768px) {
-  body {
+  /* overflow-x on html (not body) — iOS Safari treats body overflow:hidden as
+     a new scroll container which breaks position:fixed during momentum scroll */
+  html {
     overflow-x: hidden;
   }
 

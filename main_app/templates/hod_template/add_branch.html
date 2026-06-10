@@ -7,12 +7,12 @@
 {% block content %}
 <div class="page-card" style="max-width:640px;">
   <div class="page-card-header">
-    <i class="fas fa-map-marker-alt"></i>
+    <i class="fas fa-building"></i>
     <div>
       <div class="page-card-title">{{ page_title }}</div>
-      <div class="page-card-subtitle">Add a study center location</div>
+      <div class="page-card-subtitle">{% if form.instance.pk %}Update this center location.{% else %}Add a new center location or campus.{% endif %}</div>
     </div>
   </div>
-  {% include "main_app/form_template.html" with messages=messages form=form button_text="Save Branch" %}
+  {% include "main_app/form_template.html" with messages=messages form=form button_text=page_title %}
 </div>
 {% endblock content %}

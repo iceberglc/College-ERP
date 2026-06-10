@@ -272,6 +272,16 @@ document.addEventListener('DOMContentLoaded', function () {
     window.chartInstances.push(chart);
     return chart;
   }
+  function areaGradient(context, top, bottom) {
+    var chart = context.chart;
+    var ctx = chart.ctx;
+    var area = chart.chartArea;
+    if (!area) return top;
+    var g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
+    g.addColorStop(0, top);
+    g.addColorStop(1, bottom);
+    return g;
+  }
   function createTeacherCharts() {
     clearChartState('pieChart');
     clearChartState('barChart');
@@ -309,16 +319,31 @@ document.addEventListener('DOMContentLoaded', function () {
       showChartState('barChart', 'Attendance sessions will appear after attendance is taken for your groups.');
     } else {
       register(new Chart(document.getElementById('barChart'), {
-        type: 'bar',
+        type: 'line',
         data: {
           labels: compacted.labels,
-          datasets: [{ label: 'Sessions', data: compacted.values, backgroundColor: 'rgba(0,207,232,.78)', borderColor: BRAND.cyan, borderWidth: 1, borderRadius: 9, borderSkipped: false, maxBarThickness: isMobileChart() ? 30 : 48 }]
+          datasets: [{
+            label: 'Sessions',
+            data: compacted.values,
+            borderColor: BRAND.cyan,
+            backgroundColor: function (context) { return areaGradient(context, 'rgba(0,207,232,.34)', 'rgba(0,207,232,0)'); },
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointRadius: isMobileChart() ? 0 : 3,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: BRAND.cyan,
+            pointBorderWidth: 2,
+            pointHitRadius: 16
+          }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           layout: { padding: { top: 8, bottom: 0, left: 2, right: 2 } },
           animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
+          interaction: { mode: 'index', intersect: false },
           plugins: { legend: { display: false }, tooltip: tooltipOptions() },
           scales: {
             y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { color: mutedColor(), padding: isMobileChart() ? 4 : 8, maxTicksLimit: isMobileChart() ? 4 : 6 } },

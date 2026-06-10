@@ -553,12 +553,6 @@ class EditResultForm(FormSettings):
         fields = ["group", "student", "test", "exam"]
 
 
-# todos
-# class TodoForm(forms.ModelForm):
-#     class Meta:
-#         model=Todo
-#         fields=["title","is_finished"]
-
 # issue book
 
 

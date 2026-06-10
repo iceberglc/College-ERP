@@ -35,9 +35,6 @@
     <meta name="twitter:description" content="{% block twitter_description %}Online learning and student management platform for Iceberg Study Center.{% endblock %}">
     <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}/og-image.png">
     <meta name="twitter:image:alt" content="ICEBERG Study Center">
-    <!-- CDN preconnect: resolve DNS + TLS before any CDN resource is requested -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Non-blocking font load: swap keeps system font visible until Inter arrives -->
@@ -45,7 +42,8 @@
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
     <link rel="stylesheet" href="{% static 'dist/css/erpnext-style.css' %}">
     <link rel="stylesheet" href="{% static 'plugins/fontawesome-free/css/all.min.css' %}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap served locally: no CDN dependency on flaky mobile connections -->
+    <link href="{% static 'dist/vendor/bootstrap-5.1.3.min.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'dist/css/storefront-ui.css' %}">
     <!-- iceberg.css loads LAST so its premium UI patches take precedence -->
     <link rel="stylesheet" href="{% static 'dist/css/iceberg.css' %}">
@@ -55,12 +53,15 @@
     <link rel="stylesheet" href="{% static 'dist/css/mobile-adaptive.css' %}">
     <link rel="stylesheet" href="{% static 'dist/css/glowing-bottom-nav.css' %}">
     <link rel="stylesheet" href="{% static 'dist/css/iceberg-mobile-polish.css' %}">
-    <!-- premium interaction layer: press/hover/focus utilities, loaders, icon + logout animation -->
+    <!-- premium interaction layer: press/hover/focus utilities, loaders -->
     <link rel="stylesheet" href="{% static 'dist/css/interactions.css' %}">
     <link rel="stylesheet" href="{% static 'dist/css/loading.css' %}">
-    <link rel="stylesheet" href="{% static 'dist/css/animated-icons.css' %}">
-    <link rel="stylesheet" href="{% static 'dist/css/animated-logout.css' %}">
     <link rel="stylesheet" href="{% static 'dist/css/iceberg-reliability.css' %}">
+    <!-- icon + logout animations: non-render-blocking (not needed before first interaction) -->
+    <link rel="preload" href="{% static 'dist/css/animated-icons.css' %}" as="style" onload="this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{% static 'dist/css/animated-icons.css' %}"></noscript>
+    <link rel="preload" href="{% static 'dist/css/animated-logout.css' %}" as="style" onload="this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{% static 'dist/css/animated-logout.css' %}"></noscript>
     <style>
 /* ── ICEBERG page enter (subtle, calm) ──────────────────────────────── */
 /* A single short fade on first paint of the main content. No exit
@@ -261,9 +262,9 @@
 
     <!-- ── Scripts ────────────────────────────────────────────────────────── -->
     <!-- Chart.js deferred: was blocking <head>; loaded here so it never delays first paint -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="{% static 'dist/vendor/chart.umd.min.js' %}" defer></script>
     <script src="{% static 'dist/js/trend-chart.js' %}" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'dist/vendor/bootstrap-5.1.3.bundle.min.js' %}"></script>
     <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
     <script src="{% static 'dist/js/csrf-setup.js' %}"></script>
     <!-- Iceberg interactivity: table search/sort, stat count-up, scroll reveal -->

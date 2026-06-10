@@ -79,7 +79,9 @@ form.is-submitting {
 
 .ice-toast-stack {
   position: fixed;
-  z-index: 2147483000;
+  /* Above the page loader (100000) and app loader (99990) so confirmations
+     remain visible, without resorting to a near-INT_MAX value. */
+  z-index: 100001;
   right: max(16px, env(safe-area-inset-right));
   bottom: max(18px, calc(env(safe-area-inset-bottom) + 18px));
   display: grid;
@@ -367,6 +369,14 @@ canvas {
     right: max(12px, env(safe-area-inset-right));
     bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
     width: min(380px, calc(100vw - 24px));
+  }
+
+  /* Shrink textarea on mobile so the submit button doesn't hide behind
+     the fixed bottom nav on short-form pages like leave/feedback. */
+  body.has-glow-bottom-nav .pf-field textarea,
+  body.has-glow-bottom-nav .pf-field textarea.form-control {
+    min-height: 70px !important;
+    max-height: 160px !important;
   }
 }
 

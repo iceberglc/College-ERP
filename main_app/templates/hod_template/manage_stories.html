@@ -4,6 +4,7 @@
 {% block breadcrumb %}<li class="breadcrumb-item active">Stories</li>{% endblock %}
 
 {% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
 <style>
 .story-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .story-card {
@@ -40,15 +41,24 @@
 {% endblock %}
 
 {% block content %}
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px;">
-  <div>
-    <h2 style="font-size:20px;font-weight:900;color:var(--ice-text);margin:0;">Dashboard Stories</h2>
-    <p style="font-size:13px;color:var(--ice-muted);margin:4px 0 0;">Cards shown in the student dashboard stories strip.</p>
-  </div>
-  <a href="{% url 'add_story' %}" class="btn" style="background:linear-gradient(135deg,#0C1F45,#1B3F7A);color:#fff;padding:10px 20px;border-radius:12px;font-weight:700;font-size:13px;text-decoration:none;">
-    <i class="fas fa-plus me-1"></i> New Story
-  </a>
-</div>
+<div class="ice-manage-page">
+
+  {# ── Hero ──────────────────────────────────────────────────────────── #}
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-film"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Dashboard Stories</h2>
+        <p class="ice-manage-hero__subtitle">Cards shown in the student dashboard stories strip.</p>
+      </div>
+    </div>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count">{{ stories|length }}&nbsp;total</span>
+      <a href="{% url 'add_story' %}" class="ice-manage-add-btn">
+        <i class="fas fa-plus" aria-hidden="true"></i> New Story
+      </a>
+    </div>
+  </section>
 
 {% if messages %}{% for m in messages %}<div class="alert alert-{{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
 
@@ -73,18 +83,19 @@
       <div class="story-actions">
         <a href="{% url 'edit_story' s.id %}" class="btn-sm btn-edit"><i class="fas fa-edit"></i> Edit</a>
         <a href="{% url 'delete_story' s.id %}" class="btn-sm btn-del"
-           data-confirm-post="Delete this story?"
-           onclick="return confirm('Delete this story?')"><i class="fas fa-trash"></i> Delete</a>
+           data-confirm-post="Delete this story?"><i class="fas fa-trash"></i> Delete</a>
       </div>
     </div>
   </div>
   {% endfor %}
 </div>
 {% else %}
-<div style="text-align:center;padding:64px 24px;color:var(--ice-muted);">
-  <i class="fas fa-film" style="font-size:40px;opacity:.25;display:block;margin-bottom:14px;"></i>
-  <strong style="display:block;margin-bottom:6px;color:var(--ice-text);">No stories yet</strong>
-  <a href="{% url 'add_story' %}">Create your first story →</a>
+<div class="ice-manage-empty">
+  <i class="fas fa-film" aria-hidden="true"></i>
+  <strong>No stories yet</strong>
+  <span><a href="{% url 'add_story' %}">Create your first story →</a></span>
 </div>
 {% endif %}
+
+</div>
 {% endblock %}

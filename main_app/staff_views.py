@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST
 from .decorators import staff_only
 from .forms import *
 from .models import *
-from . import forms
+from . import branching, forms
 from datetime import date
 
 logger = logging.getLogger(__name__)
@@ -593,6 +593,7 @@ def edit_assignment(request, assignment_id):
 
 
 @staff_only
+@require_POST
 def delete_assignment(request, assignment_id):
     staff = get_object_or_404(Staff, admin=request.user)
     assignment = get_object_or_404(Assignment, id=assignment_id, created_by=staff)
@@ -745,6 +746,7 @@ def upload_result_file(request):
 
 
 @staff_only
+@require_POST
 def delete_result_file(request, file_id):
     staff = get_object_or_404(Staff, admin=request.user)
     result_file = get_object_or_404(ResultFile, id=file_id, uploaded_by=staff)
@@ -950,6 +952,7 @@ def edit_vocabulary_day(request, day_id):
 
 
 @staff_only
+@require_POST
 def delete_vocabulary_day(request, day_id):
     staff = get_object_or_404(Staff, admin=request.user)
     day = get_object_or_404(VocabularyDay, id=day_id, created_by=staff)
@@ -1041,11 +1044,7 @@ def _notify_vocab_day(day: VocabularyDay):
         day.notified_students.add(*new_notified)
 
 
-def _story_storage_ok():
-    """True when a persistent remote storage backend (S3/Spaces) is configured."""
-    import os
-
-    return bool(os.environ.get("SPACES_KEY") and os.environ.get("SPACES_BUCKET"))
+_story_storage_ok = branching.story_storage_ok
 
 
 @staff_only

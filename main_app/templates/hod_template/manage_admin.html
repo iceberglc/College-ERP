@@ -1,0 +1,169 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{ page_title }}{% endblock page_title %}
+
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/admin-manage-mobile.css' %}">
+{% endblock custom_css %}
+
+{% block content %}
+<div class="ice-manage-page" data-manage-search-scope>
+
+  {# ── Hero ────────────────────────────────────────────────────────────── #}
+  <section class="ice-manage-hero">
+    <div class="ice-manage-hero__main">
+      <span class="ice-manage-hero__icon" aria-hidden="true"><i class="fas fa-user-shield"></i></span>
+      <div class="ice-manage-hero__copy">
+        <h2 class="ice-manage-hero__title">Manage Admins</h2>
+        <p class="ice-manage-hero__subtitle">Control admin accounts, roles, and branch access.</p>
+      </div>
+    </div>
+    <div class="ice-manage-hero__actions">
+      <span class="ice-manage-count">{{ admin_profiles|length }}&nbsp;admin{{ admin_profiles|length|pluralize }}</span>
+      <a href="{% url 'add_admin' %}" class="ice-manage-add-btn">
+        <i class="fas fa-plus" aria-hidden="true"></i> Add Admin
+      </a>
+    </div>
+  </section>
+
+  {# ── Search ──────────────────────────────────────────────────────────── #}
+  <label class="ice-manage-search" aria-label="Search admins">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" class="ice-manage-search__input" data-manage-search
+           placeholder="Search admins by name or email…" autocomplete="off">
+  </label>
+
+  <div class="ice-manage-empty" data-manage-empty-state hidden>
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <strong>No admins found</strong>
+    <span>Try a different name or email.</span>
+  </div>
+
+  {# ── Admin cards ─────────────────────────────────────────────────────── #}
+  {% if admin_profiles %}
+  <div class="ice-admin-access__grid" data-manage-search-scope>
+    {% for ap in admin_profiles %}
+    <div class="ice-admin-full-card"
+         data-manage-search-item
+         data-manage-search-primary
+         data-manage-search-text="{{ ap.admin.get_full_name }} {{ ap.admin.email }} {{ ap.assigned_branch_names }}">
+
+      {# ── Card header: avatar + identity + role badge + delete ── #}
+      <div class="ice-afc-header">
+        <span class="ice-afc-avatar" aria-hidden="true">
+          {% if ap.admin.profile_pic %}
+            <img src="{{ ap.admin.profile_pic.url }}" alt="{{ ap.admin.get_full_name|default:ap.admin.email }}">
+          {% elif ap.admin.first_name or ap.admin.last_name %}
+            {{ ap.admin.first_name|first|upper }}{{ ap.admin.last_name|first|upper }}
+          {% else %}
+            <i class="fas fa-user-shield"></i>
+          {% endif %}
+        </span>
+        <div class="ice-afc-identity">
+          <strong class="ice-afc-name">
+            {{ ap.admin.get_full_name|default:ap.admin.email }}
+            {% if ap.is_current_user %}
+            <span class="ice-afc-you-badge">You</span>
+            {% endif %}
+          </strong>
+          <small class="ice-afc-email">{{ ap.admin.email }}</small>
+          {% if ap.is_super_admin %}
+          <span class="ice-manage-chip ice-manage-chip--success ice-afc-role-chip">
+            <i class="fas fa-globe" aria-hidden="true"></i><span>Super admin · all branches</span>
+          </span>
+          {% else %}
+          <span class="ice-manage-chip ice-afc-role-chip">
+            <i class="fas fa-code-branch" aria-hidden="true"></i><span>{{ ap.assigned_branch_names|default:"No branch" }}</span>
+          </span>
+          {% endif %}
+        </div>
+        {% if ap.can_delete %}
+        <a href="{% url 'delete_admin' ap.id %}"
+           class="ice-afc-delete"
+           data-confirm-post="Delete admin &quot;{{ ap.admin.get_full_name|default:ap.admin.email }}&quot;? Their account will be permanently removed. This cannot be undone."
+           title="Delete admin account"
+           aria-label="Delete {{ ap.admin.get_full_name|default:ap.admin.email }}">
+          <i class="fas fa-trash" aria-hidden="true"></i>
+        </a>
+        {% else %}
+        <span class="ice-afc-delete ice-afc-delete--locked"
+              title="{% if ap.is_current_user %}Cannot delete your own account{% else %}Cannot delete the only super admin{% endif %}"
+              aria-label="Delete disabled">
+          <i class="fas fa-lock" aria-hidden="true"></i>
+        </span>
+        {% endif %}
+      </div>
+
+      {# ── Branch access form ── #}
+      {% if ap.superadmin_toggle_locked %}
+      {# Sole super admin: nothing here is changeable — show a quiet note instead of a dead form #}
+      <div class="ice-afc-form">
+        <div class="ice-afc-locked-note">
+          <i class="fas fa-lock" aria-hidden="true"></i>
+          <span>Sole super admin with access to all branches. Promote another admin first to change this role.</span>
+        </div>
+      </div>
+      {% else %}
+      <form method="post"
+            action="{% url 'update_admin_branch_access' ap.id %}"
+            class="ice-afc-form">
+        {% csrf_token %}
+
+        <label class="ice-admin-scope-toggle">
+          <input type="checkbox" name="is_super_admin" data-superadmin-toggle
+                 {% if ap.is_super_admin %}checked{% endif %}>
+          <span>
+            <strong>Super admin</strong>
+            <small>Can see and manage every branch.</small>
+          </span>
+        </label>
+
+        {# Branch picker only matters for branch admins — hidden while super admin is on #}
+        <div class="ice-admin-access-branches" aria-label="Assigned branches"
+             data-branch-picker {% if ap.is_super_admin %}hidden{% endif %}>
+          {% for branch in all_branches %}
+          <label class="ice-admin-access-branch">
+            <input type="checkbox"
+                   name="branches"
+                   value="{{ branch.id }}"
+                   {% if branch.id in ap.assigned_branch_ids %}checked{% endif %}>
+            <span>{{ branch.name }}</span>
+          </label>
+          {% empty %}
+          <p class="ice-admin-access-empty">Add a branch before assigning branch admins.</p>
+          {% endfor %}
+        </div>
+
+        <div class="ice-admin-access-footer">
+          <button type="submit" class="ice-admin-access-save">
+            <i class="fas fa-save" aria-hidden="true"></i> Save Access
+          </button>
+        </div>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="ice-manage-empty">
+    <i class="fas fa-user-shield" aria-hidden="true"></i>
+    <strong>No admin profiles found</strong>
+    <span>Create an admin account before managing access here.</span>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock content %}
+
+{% block custom_js %}
+<script src="{% static 'dist/js/admin-manage-mobile.js' %}"></script>
+<script>
+// Branch picker is only relevant for branch admins — hide it while "Super admin" is on.
+document.querySelectorAll('[data-superadmin-toggle]').forEach(function (toggle) {
+  toggle.addEventListener('change', function () {
+    var picker = toggle.closest('form').querySelector('[data-branch-picker]');
+    if (picker) picker.hidden = toggle.checked;
+  });
+});
+</script>
+{% endblock custom_js %}

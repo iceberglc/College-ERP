@@ -112,14 +112,18 @@ body {
   width: 100%;
 }
 
-.ice-hero {
+/* Exclude the dark command-center heroes (.teacher-hero / .admin-hero):
+   they ship their own navy gradient + white text. Without this exclusion
+   the light .ice-hero background painted under their white text, making
+   the title invisible (white-on-white). */
+.ice-hero:not(.teacher-hero):not(.admin-hero) {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
   min-width: 0;
   padding: 20px;
-  border: 1px solid rgba(56, 189, 248, 0.17);
+  border: 1px solid rgba(56, 189, 249, 0.17);
   border-radius: 24px;
   background:
     radial-gradient(circle at 12% 0%, rgba(56, 189, 248, 0.18), transparent 15rem),
@@ -603,7 +607,11 @@ body {
   }
 
   body.has-glow-bottom-nav .content-area {
-    padding-bottom: calc(var(--ice-mobile-bottom-nav-space) + 36px + env(safe-area-inset-bottom)) !important;
+    /* Nav clearance is already applied once on the parent #main-content
+       (padding-bottom: nav-space + 16px). Adding the full nav-space here
+       too double-counts it and leaves ~120px of dead space below the last
+       card on short pages. Keep only a small breathing gap. */
+    padding-bottom: 24px !important;
   }
 
   .ice-hero {

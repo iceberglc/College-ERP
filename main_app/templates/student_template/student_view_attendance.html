@@ -307,7 +307,7 @@ select.att-control {
         <div>
           <div class="att-hero-label">Monthly Report</div>
           <h1 class="att-hero-title">Attendance</h1>
-          <p class="att-hero-sub">{{ month_message }} · {{ month_total }} class{{ month_total|pluralize }} this month</p>
+          <p class="att-hero-sub">{{ month_message }} · {{ month_total }} class{{ month_total|pluralize:"es" }} this month</p>
         </div>
         <div class="att-ring-wrap">
           <svg viewBox="0 0 96 96">
@@ -364,7 +364,8 @@ select.att-control {
     <div>
       <div class="att-insight-head">Iceberg AI · Attendance Insight</div>
       <div class="att-insight-txt">
-        {% if month_pct >= 90 %}Outstanding! Your {{ month_pct }}% attendance this month puts you in the top tier. Consistent presence leads to much better exam results.
+        {% if month_total == 0 %}No attendance has been recorded for you this month yet. Once your teacher takes attendance, your stats and insights will appear here.
+        {% elif month_pct >= 90 %}Outstanding! Your {{ month_pct }}% attendance this month puts you in the top tier. Consistent presence leads to much better exam results.
         {% elif month_pct >= 75 %}Good progress — {{ month_pct }}% this month. You're on track! Attending every session will help close the remaining gap.
         {% elif month_pct >= 50 %}Your {{ month_pct }}% rate this month needs attention. Try to attend at least 80% of classes to protect your academic performance.
         {% else %}You've missed many classes this month. Talk to your teacher soon — catching up early is much easier than before exams.{% endif %}
