@@ -1,53 +1,142 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{ page_title }}{% endblock %}
+{% block title %}Leave — Iceberg Study Center{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
-{% block page_subtitle %}<p class="page-subtitle">Submit a leave request and follow the admin decision from your phone.</p>{% endblock %}
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/student-modern.css' %}">
+{% endblock custom_css %}
 
 {% block content %}
-<div class="ice-mobile-page" style="max-width:760px; margin:0 auto;">
-  <section class="ice-form-section">
-    <h3 class="ice-form-section__title">New Leave Request</h3>
-    {% include "main_app/form_template.html" with messages=messages form=form button_text="Submit Request" %}
-  </section>
+<div class="st-page">
 
-  <section class="ice-form-section">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
-      <h3 class="ice-form-section__title" style="margin:0;"><i class="fas fa-history me-2"></i>Leave History</h3>
-      <span class="ice-chip ice-chip--info"><i class="fas fa-list" aria-hidden="true"></i><span>{{ leave_history|length }} total</span></span>
-    </div>
-
-    {% if leave_history %}
-    <div class="ice-card-grid">
-      {% for leave in leave_history %}
-      <article class="ice-mobile-card">
-        <div class="ice-mobile-card__top">
-          <span class="ice-mobile-card__avatar" aria-hidden="true"><i class="fas fa-calendar-day"></i></span>
-          <div class="ice-mobile-card__main">
-            <h3 class="ice-mobile-card__title">{{ leave.date }}</h3>
-            <div class="ice-mobile-card__subtitle">{{ leave.created_at|date:"d M Y, H:i" }}</div>
-          </div>
+  <!-- ══ HERO ══════════════════════════════════════════════════════ -->
+  <div class="st-hero">
+    <div class="st-hero-inner">
+      <div class="st-hero-label">Student Portal</div>
+      <h1 class="st-hero-title">Leave Request</h1>
+      <p class="st-hero-sub">Submit a leave request and track admin decisions.</p>
+      {% if leave_history %}
+      <div class="st-hero-stats">
+        <div class="st-hstat">
+          <div class="st-hstat-num">{{ leave_history|length }}</div>
+          <div class="st-hstat-lbl">Requests</div>
         </div>
-        <div class="ice-mobile-card__meta">
+        <div class="st-hstat">
+          <div class="st-hstat-num"><i class="fas fa-plane-departure" style="font-size:18px;opacity:.7;"></i></div>
+          <div class="st-hstat-lbl">Leave</div>
+        </div>
+        <div class="st-hstat">
+          <div class="st-hstat-num"><i class="fas fa-calendar-day" style="font-size:18px;opacity:.7;"></i></div>
+          <div class="st-hstat-lbl">Dates</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══ MESSAGES ══════════════════════════════════════════════════ -->
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="st-alert st-anim {% if 'success' in msg.tags %}st-alert-success{% elif 'error' in msg.tags or 'danger' in msg.tags %}st-alert-danger{% elif 'warning' in msg.tags %}st-alert-warning{% else %}st-alert-info{% endif %}" style="margin-top:14px;">
+      <i class="fas {% if 'success' in msg.tags %}fa-check-circle{% elif 'error' in msg.tags or 'danger' in msg.tags %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+      <span>{{ msg }}</span>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- ══ FORM CARD ══════════════════════════════════════════════════ -->
+  <span class="st-lbl st-anim st-anim-2">New Request</span>
+  <div class="st-card st-anim st-anim-2">
+    <div class="st-card-head">
+      <h3 class="st-card-title"><i class="fas fa-plane-departure"></i> Apply for Leave</h3>
+    </div>
+    <form method="POST" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="st-alert st-alert-danger" style="margin:14px 16px 0;">
+        <i class="fas fa-exclamation-circle"></i>
+        <div>{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+      </div>
+      {% endif %}
+      <div class="st-field-body">
+        <div class="st-field">
+          <label for="{{ form.date.id_for_label }}">Date <span class="st-field-req">*</span></label>
+          {{ form.date }}
+          {% if form.date.errors %}<div class="st-field-error">{{ form.date.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="st-field">
+          <label for="{{ form.message.id_for_label }}">Reason <span class="st-field-req">*</span></label>
+          {{ form.message }}
+          {% if form.message.errors %}<div class="st-field-error">{{ form.message.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="st-btn-row">
+        <button type="submit" class="st-btn-primary">
+          <i class="fas fa-paper-plane"></i> Submit Request
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ══ HISTORY ════════════════════════════════════════════════════ -->
+  {% if leave_history %}
+  <span class="st-lbl st-anim st-anim-3">Leave History</span>
+  <div class="st-card st-anim st-anim-3">
+    <div class="st-card-head">
+      <h3 class="st-card-title"><i class="fas fa-history"></i> Previous Requests</h3>
+      <span class="st-card-count">{{ leave_history|length }}</span>
+    </div>
+    <div class="st-hist-list">
+      {% for leave in leave_history %}
+      <div class="st-hist-item">
+        <div class="st-hist-item-top">
+          <div class="st-hist-item-left">
+            <div class="st-hist-date">
+              <i class="fas fa-calendar-day"></i>
+              {{ leave.date }}
+            </div>
+            <div class="st-hist-meta">
+              <i class="fas fa-clock" style="font-size:10px;"></i>
+              Submitted {{ leave.created_at|date:"d M Y, H:i" }}
+            </div>
+          </div>
           {% if leave.status == 0 %}
-            <span class="ice-chip ice-chip--warning"><i class="fas fa-clock" aria-hidden="true"></i><span>Pending</span></span>
+            <span class="st-badge st-badge-pending"><i class="fas fa-clock" style="font-size:9px;"></i> Pending</span>
           {% elif leave.status == 1 %}
-            <span class="ice-chip ice-chip--success"><i class="fas fa-check" aria-hidden="true"></i><span>Approved</span></span>
+            <span class="st-badge st-badge-approved"><i class="fas fa-check" style="font-size:9px;"></i> Approved</span>
           {% else %}
-            <span class="ice-chip ice-chip--danger"><i class="fas fa-times" aria-hidden="true"></i><span>Rejected</span></span>
+            <span class="st-badge st-badge-rejected"><i class="fas fa-times" style="font-size:9px;"></i> Rejected</span>
           {% endif %}
         </div>
-        <p style="margin:12px 0 0; color:var(--ice-polish-text); line-height:1.6;">{{ leave.message }}</p>
-      </article>
+        {% if leave.message %}
+        <div class="st-hist-body">{{ leave.message }}</div>
+        {% endif %}
+      </div>
       {% endfor %}
     </div>
-    {% else %}
-    <div class="ice-empty-state">
-      <i class="fas fa-calendar-times" aria-hidden="true"></i>
-      <strong>No records found</strong>
-      <span>No leave requests yet.</span>
+  </div>
+  {% else %}
+  <div class="st-card st-anim st-anim-3">
+    <div class="st-empty">
+      <i class="fas fa-calendar-times"></i>
+      <div class="st-empty-title">No Leave Requests Yet</div>
+      <div class="st-empty-sub">Your submitted requests will appear here.</div>
     </div>
-    {% endif %}
-  </section>
+  </div>
+  {% endif %}
+
 </div>
-{% endblock %}
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+/* Apply st-control class to form fields rendered by Django */
+(function () {
+  document.querySelectorAll('.st-field input, .st-field textarea, .st-field select').forEach(function (el) {
+    el.classList.add('st-control');
+  });
+})();
+</script>
+{% endblock custom_js %}

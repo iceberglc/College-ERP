@@ -1,59 +1,82 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{ page_title }}{% endblock %}
+{% block title %}Notifications — Iceberg Study Center{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
 {% block custom_css %}
-<link rel="stylesheet" href="{% static 'dist/css/notifications.css' %}">
+<link rel="stylesheet" href="{% static 'dist/css/student-modern.css' %}">
 {% endblock custom_css %}
 
-{% block page_subtitle %}<p class="page-subtitle">Your notifications from teachers, admin, and system events.</p>{% endblock %}
-
 {% block content %}
-<div class="notif-wrap">
+<div class="st-page">
 
-  <div class="notif-header-bar">
-    <div style="font-size:13px; color: var(--ice-muted);">
-      <i class="fas fa-bell me-1"></i>
-      {% with total=notifications|length %}
-        {{ total }} notification{{ total|pluralize }}
-      {% endwith %}
-    </div>
-    {% if notifications %}
-    <span class="notif-count-chip">
-      <i class="fas fa-circle me-1" style="font-size:7px; color: var(--ice-cyan);"></i>
-      {{ notifications|length }} total
-    </span>
-    {% endif %}
-  </div>
-
-  {% if notifications %}
-    {% for n in notifications %}
-    <div class="notif-item {% if not n.is_read %}unread{% endif %}">
-      <div class="notif-icon {{ n.category|default:'general' }}">
-        {% if n.category == 'attendance' %}<i class="fas fa-calendar-check"></i>
-        {% elif n.category == 'result' %}<i class="fas fa-chart-bar"></i>
-        {% elif n.category == 'homework' %}<i class="fas fa-tasks"></i>
-        {% else %}<i class="fas fa-bell"></i>{% endif %}
-      </div>
-      <div class="notif-body">
-        <div class="notif-message">{{ n.message }}</div>
-        <div class="notif-meta">
-          <span><i class="fas fa-clock me-1"></i>{{ n.created_at|date:"M d, Y · H:i" }}</span>
-          <span class="notif-badge nb-{{ n.category|default:'general' }}">
-            {{ n.get_category_display|default:"General" }}
-          </span>
+  <!-- ══ HERO ══════════════════════════════════════════════════════ -->
+  <div class="st-hero">
+    <div class="st-hero-inner">
+      <div class="st-hero-label">Student Portal</div>
+      <h1 class="st-hero-title">Notifications</h1>
+      <p class="st-hero-sub">Attendance updates, results, and announcements.</p>
+      {% if notifications %}
+      <div class="st-hero-stats">
+        <div class="st-hstat">
+          <div class="st-hstat-num">{{ notifications|length }}</div>
+          <div class="st-hstat-lbl">Total</div>
+        </div>
+        <div class="st-hstat">
+          <div class="st-hstat-num">{{ unread_count|default:"—" }}</div>
+          <div class="st-hstat-lbl">Unread</div>
+        </div>
+        <div class="st-hstat">
+          <div class="st-hstat-num"><i class="fas fa-bell" style="font-size:18px;opacity:.7;"></i></div>
+          <div class="st-hstat-lbl">Inbox</div>
         </div>
       </div>
-      {% if not n.is_read %}<div class="unread-dot"></div>{% endif %}
+      {% endif %}
     </div>
-    {% endfor %}
+  </div>
+
+  <!-- ══ NOTIFICATION LIST ══════════════════════════════════════════ -->
+  {% if notifications %}
+  <span class="st-lbl st-anim st-anim-2">All Notifications</span>
+  <div class="st-card st-anim st-anim-2">
+    <div class="st-card-head">
+      <h3 class="st-card-title"><i class="fas fa-bell"></i> Inbox</h3>
+      <span class="st-card-count">{{ notifications|length }}</span>
+    </div>
+    <div class="st-notif-list">
+      {% for n in notifications %}
+      <div class="st-notif-item {% if not n.is_read %}unread{% endif %}">
+        <div class="st-notif-icon {{ n.category|default:'general' }}">
+          {% if n.category == 'attendance' %}<i class="fas fa-calendar-check"></i>
+          {% elif n.category == 'result' %}<i class="fas fa-chart-bar"></i>
+          {% elif n.category == 'homework' %}<i class="fas fa-tasks"></i>
+          {% else %}<i class="fas fa-bell"></i>{% endif %}
+        </div>
+        <div class="st-notif-body">
+          <div class="st-notif-msg">{{ n.message }}</div>
+          <div class="st-notif-meta">
+            <i class="fas fa-clock" style="font-size:10px;"></i>
+            {{ n.created_at|date:"M d, Y · H:i" }}
+            <span class="st-notif-cat {{ n.category|default:'general' }}">
+              {{ n.get_category_display|default:"General" }}
+            </span>
+          </div>
+        </div>
+        {% if not n.is_read %}<div class="st-unread-dot"></div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
   {% else %}
-  <div class="notif-empty-state">
-    <i class="fas fa-bell-slash"></i>
-    <p style="font-size:16px; font-weight:600; color: var(--ice-text); margin-bottom:8px;">No Notifications Yet</p>
-    <p>You'll see attendance updates, results, and announcements here.</p>
+  <div class="st-card st-anim st-anim-2" style="margin-top:16px;">
+    <div class="st-empty">
+      <i class="fas fa-bell-slash"></i>
+      <div class="st-empty-title">No Notifications Yet</div>
+      <div class="st-empty-sub">You'll see attendance updates, results, and announcements here.</div>
+    </div>
   </div>
   {% endif %}
 
 </div>
-{% endblock %}
+{% endblock content %}

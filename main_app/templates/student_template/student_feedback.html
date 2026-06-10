@@ -1,51 +1,141 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{ page_title }}{% endblock %}
+{% block title %}Feedback — Iceberg Study Center{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
-{% block page_subtitle %}<p class="page-subtitle">Share your thoughts with the admin team and track replies here.</p>{% endblock %}
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/student-modern.css' %}">
+{% endblock custom_css %}
 
 {% block content %}
-<div class="ice-mobile-page" style="max-width:760px; margin:0 auto;">
-  <section class="ice-form-section">
-    <h3 class="ice-form-section__title">Send Feedback</h3>
-    {% include "main_app/form_template.html" with messages=messages form=form button_text="Submit Feedback" %}
-  </section>
+<div class="st-page">
 
-  <section class="ice-form-section">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
-      <h3 class="ice-form-section__title" style="margin:0;"><i class="fas fa-comments me-2"></i>Previous Feedback</h3>
-      <span class="ice-chip ice-chip--info"><i class="fas fa-list" aria-hidden="true"></i><span>{{ feedbacks|length }} total</span></span>
+  <!-- ══ HERO ══════════════════════════════════════════════════════ -->
+  <div class="st-hero">
+    <div class="st-hero-inner">
+      <div class="st-hero-label">Student Portal</div>
+      <h1 class="st-hero-title">Feedback</h1>
+      <p class="st-hero-sub">Share your thoughts with the admin team.</p>
+      {% if feedbacks %}
+      <div class="st-hero-stats">
+        <div class="st-hstat">
+          <div class="st-hstat-num">{{ feedbacks|length }}</div>
+          <div class="st-hstat-lbl">Submitted</div>
+        </div>
+        <div class="st-hstat">
+          <div class="st-hstat-num"><i class="fas fa-comment-dots" style="font-size:18px;opacity:.7;"></i></div>
+          <div class="st-hstat-lbl">Feedback</div>
+        </div>
+        <div class="st-hstat">
+          <div class="st-hstat-num"><i class="fas fa-reply" style="font-size:18px;opacity:.7;"></i></div>
+          <div class="st-hstat-lbl">Replies</div>
+        </div>
+      </div>
+      {% endif %}
     </div>
+  </div>
 
-    {% if feedbacks %}
-    <div class="ice-card-grid">
+  <!-- ══ MESSAGES ══════════════════════════════════════════════════ -->
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="st-alert st-anim {% if 'success' in msg.tags %}st-alert-success{% elif 'error' in msg.tags or 'danger' in msg.tags %}st-alert-danger{% elif 'warning' in msg.tags %}st-alert-warning{% else %}st-alert-info{% endif %}" style="margin-top:14px;">
+      <i class="fas {% if 'success' in msg.tags %}fa-check-circle{% elif 'error' in msg.tags or 'danger' in msg.tags %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+      <span>{{ msg }}</span>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- ══ FORM CARD ══════════════════════════════════════════════════ -->
+  <span class="st-lbl st-anim st-anim-2">New Feedback</span>
+  <div class="st-card st-anim st-anim-2">
+    <div class="st-card-head">
+      <h3 class="st-card-title"><i class="fas fa-comment-dots"></i> Send Feedback</h3>
+    </div>
+    <form method="POST" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="st-alert st-alert-danger" style="margin:14px 16px 0;">
+        <i class="fas fa-exclamation-circle"></i>
+        <div>{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+      </div>
+      {% endif %}
+      <div class="st-field-body">
+        <div class="st-field">
+          <label for="{{ form.feedback.id_for_label }}">Your Message <span class="st-field-req">*</span></label>
+          {{ form.feedback }}
+          {% if form.feedback.errors %}<div class="st-field-error">{{ form.feedback.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="st-btn-row">
+        <button type="submit" class="st-btn-primary">
+          <i class="fas fa-paper-plane"></i> Submit Feedback
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ══ HISTORY ════════════════════════════════════════════════════ -->
+  {% if feedbacks %}
+  <span class="st-lbl st-anim st-anim-3">Previous Feedback</span>
+  <div class="st-card st-anim st-anim-3">
+    <div class="st-card-head">
+      <h3 class="st-card-title"><i class="fas fa-comments"></i> Conversation</h3>
+      <span class="st-card-count">{{ feedbacks|length }}</span>
+    </div>
+    <div class="st-hist-list">
       {% for feedback in feedbacks %}
-      <article class="ice-mobile-card">
-        <div class="ice-mobile-card__meta" style="margin-top:0;">
-          <span class="ice-chip"><i class="fas fa-clock" aria-hidden="true"></i><span>{{ feedback.created_at|date:"d M Y, H:i" }}</span></span>
+      <div class="st-hist-item">
+        <div class="st-hist-item-top">
+          <div class="st-hist-item-left">
+            <div class="st-hist-date">
+              <i class="fas fa-comment"></i>
+              Your message
+            </div>
+            <div class="st-hist-meta">
+              <i class="fas fa-clock" style="font-size:10px;"></i>
+              {{ feedback.created_at|date:"d M Y, H:i" }}
+            </div>
+          </div>
           {% if feedback.reply %}
-          <span class="ice-chip ice-chip--success"><i class="fas fa-reply" aria-hidden="true"></i><span>Replied</span></span>
+            <span class="st-badge st-badge-replied"><i class="fas fa-reply" style="font-size:9px;"></i> Replied</span>
           {% else %}
-          <span class="ice-chip ice-chip--warning"><i class="fas fa-clock" aria-hidden="true"></i><span>Awaiting reply</span></span>
+            <span class="st-badge st-badge-waiting"><i class="fas fa-clock" style="font-size:9px;"></i> Awaiting</span>
           {% endif %}
         </div>
-        <p style="margin:12px 0 0; color:var(--ice-polish-text); line-height:1.6;">{{ feedback.feedback }}</p>
+        <div class="st-hist-body">{{ feedback.feedback }}</div>
         {% if feedback.reply %}
-        <div class="ice-inline-alert ice-inline-alert--success" style="margin-top:12px;">
-          <i class="fas fa-reply" aria-hidden="true"></i>
-          <span><strong>Admin Reply:</strong> {{ feedback.reply }}</span>
+        <div class="st-hist-reply">
+          <i class="fas fa-reply"></i>
+          <div>
+            <div class="st-hist-reply-lbl">Admin Reply</div>
+            <div class="st-hist-reply-txt">{{ feedback.reply }}</div>
+          </div>
         </div>
         {% endif %}
-      </article>
+      </div>
       {% endfor %}
     </div>
-    {% else %}
-    <div class="ice-empty-state">
-      <i class="fas fa-comments" aria-hidden="true"></i>
-      <strong>No records found</strong>
-      <span>No feedback submitted yet.</span>
+  </div>
+  {% else %}
+  <div class="st-card st-anim st-anim-3">
+    <div class="st-empty">
+      <i class="fas fa-comments"></i>
+      <div class="st-empty-title">No Feedback Yet</div>
+      <div class="st-empty-sub">Your submitted feedback and admin replies will appear here.</div>
     </div>
-    {% endif %}
-  </section>
+  </div>
+  {% endif %}
+
 </div>
-{% endblock %}
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+(function () {
+  document.querySelectorAll('.st-field input, .st-field textarea, .st-field select').forEach(function (el) {
+    el.classList.add('st-control');
+  });
+})();
+</script>
+{% endblock custom_js %}

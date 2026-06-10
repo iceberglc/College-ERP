@@ -1,0 +1,444 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   STUDENT MODERN  –  Shared CSS for Leave, Feedback, Notifications,
+   Payments. Only loaded on student-facing pages; does not affect
+   Admin or Staff templates.
+═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 0. Layout overrides (same pattern as dashboard / attendance) ── */
+.st-page .page-header,
+.st-page ~ .page-header,
+.page-header               { display: none !important; }
+.erpnext-main              { padding: 0 !important; }
+.content-area              { overflow: visible !important; }
+
+/* ── 1. Page wrapper ─────────────────────────────────────────────── */
+.st-page {
+  --st-navy:     #0C1F45;
+  --st-navy-mid: #1B3F7A;
+  --st-cyan:     #06B6D4;
+  --st-bg:       #EEF3FB;
+  --st-surf:     #ffffff;
+  --st-bdr:      #E2EAF4;
+  --st-txt:      #0C1A36;
+  --st-sub:      #475569;
+  --st-muted:    #94A3B8;
+  --st-green:    #10B981;
+  --st-amber:    #F59E0B;
+  --st-red:      #EF4444;
+  --st-r-sm:     14px;
+  --st-r-md:     22px;
+  --st-r-lg:     32px;
+  --st-sh-soft:  0 2px 10px rgba(12,31,69,.05);
+  --st-sh-card:  0 4px 20px rgba(12,31,69,.09);
+
+  background: var(--st-bg);
+  min-height: 100svh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  color: var(--st-txt);
+}
+.dark-mode .st-page {
+  --st-bg:    #070F1C;
+  --st-surf:  #0D1B2F;
+  --st-bdr:   #18304F;
+  --st-txt:   #E2E8F0;
+  --st-sub:   #94AFC8;
+  --st-muted: #5C7A9A;
+}
+
+/* ── 2. Hero ─────────────────────────────────────────────────────── */
+.st-hero {
+  background: linear-gradient(160deg, #06102A 0%, #0D2657 52%, #0E3E94 100%);
+  padding: 28px 20px 30px;
+  position: relative;
+  overflow: hidden;
+}
+.st-hero::before {
+  content: ''; position: absolute; right: -60px; top: -60px;
+  width: 260px; height: 260px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(6,182,212,.22) 0%, transparent 60%);
+  pointer-events: none;
+}
+.st-hero::after {
+  content: ''; position: absolute; left: -40px; bottom: -80px;
+  width: 200px; height: 200px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(59,130,246,.15) 0%, transparent 65%);
+  pointer-events: none;
+}
+.st-hero-inner {
+  position: relative; z-index: 1;
+  animation: stUp .4s ease both;
+}
+.st-hero-label {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: rgba(255,255,255,.45); margin-bottom: 6px;
+}
+.st-hero-title {
+  font-size: 30px; font-weight: 900; color: #fff;
+  letter-spacing: -.8px; line-height: 1.05; margin: 0 0 5px;
+}
+.st-hero-sub { font-size: 13px; color: rgba(255,255,255,.6); margin: 0; }
+
+/* Hero stat pills */
+.st-hero-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 9px; margin-top: 22px;
+  animation: stUp .4s ease .08s both;
+}
+.st-hstat {
+  background: rgba(255,255,255,.09);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 16px; padding: 12px 8px; text-align: center;
+}
+.st-hstat-num { font-size: 21px; font-weight: 900; color: #fff; line-height: 1; }
+.st-hstat-lbl {
+  font-size: 9.5px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 3px;
+}
+
+/* ── 3. Section label ─────────────────────────────────────────────── */
+.st-lbl {
+  font-size: 11px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--st-muted);
+  padding: 20px 20px 8px; display: block;
+}
+
+/* ── 4. Card ──────────────────────────────────────────────────────── */
+.st-card {
+  background: var(--st-surf);
+  border: 1.5px solid var(--st-bdr);
+  border-radius: var(--st-r-md);
+  margin: 0 16px 16px;
+  box-shadow: var(--st-sh-card);
+  overflow: hidden;
+}
+.dark-mode .st-card { box-shadow: 0 4px 24px rgba(0,0,0,.28); }
+
+.st-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--st-bdr);
+}
+.st-card-title {
+  font-size: 15px; font-weight: 800; color: var(--st-txt);
+  display: flex; align-items: center; gap: 8px; margin: 0; letter-spacing: -.2px;
+}
+.st-card-title i { font-size: 13px; color: var(--st-cyan); }
+.st-card-count {
+  font-size: 12px; font-weight: 700;
+  color: var(--st-muted);
+  background: rgba(6,182,212,.08);
+  border: 1px solid rgba(6,182,212,.18);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+/* ── 5. Form fields ───────────────────────────────────────────────── */
+.st-field-body { padding: 18px 20px 4px; }
+.st-field { margin-bottom: 16px; }
+.st-field label {
+  display: block; font-size: 10px; font-weight: 800; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--st-muted); margin-bottom: 6px;
+}
+.st-field-req { color: #EF4444; margin-left: 2px; }
+.st-control {
+  width: 100%; padding: 12px 14px; font-size: 14px;
+  font-family: 'Inter', sans-serif; color: var(--st-txt);
+  background: var(--st-surf); border: 1.5px solid var(--st-bdr);
+  border-radius: var(--st-r-sm); outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  -webkit-appearance: none; appearance: none;
+}
+.st-control:focus {
+  border-color: var(--st-cyan);
+  box-shadow: 0 0 0 3px rgba(6,182,212,.12);
+}
+textarea.st-control { resize: vertical; min-height: 110px; line-height: 1.55; }
+select.st-control {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+}
+.dark-mode .st-control { background: #111F35; border-color: #18304F; }
+.st-field-error { font-size: 11.5px; font-weight: 600; color: #EF4444; margin-top: 4px; }
+
+/* ── 6. Buttons ───────────────────────────────────────────────────── */
+.st-btn-row { padding: 4px 20px 20px; }
+.st-btn-primary {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; width: 100%; padding: 14px 28px; border: none;
+  border-radius: var(--st-r-sm);
+  background: linear-gradient(135deg, #1B3F7A, #0C1F45);
+  color: #fff; font-size: 15px; font-weight: 800;
+  font-family: 'Inter', sans-serif; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(12,31,69,.25);
+  transition: all .15s; text-decoration: none;
+}
+.st-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(12,31,69,.35);
+  color: #fff; text-decoration: none;
+}
+.st-btn-primary:active { transform: scale(.97); }
+
+/* ── 7. Alerts ────────────────────────────────────────────────────── */
+.st-alert {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 13px 16px; border-radius: 12px;
+  margin: 0 16px 12px;
+  font-size: 13px; font-weight: 600; line-height: 1.45;
+}
+.st-alert i { margin-top: 1px; flex-shrink: 0; }
+.st-alert-success { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; }
+.st-alert-danger  { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+.st-alert-warning { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; }
+.st-alert-info    {
+  background: rgba(6,182,212,.08);
+  border: 1px solid rgba(6,182,212,.22);
+  color: #0E7490;
+}
+.dark-mode .st-alert-success { background: rgba(16,185,129,.08); border-color: rgba(16,185,129,.2); color: #6EE7B7; }
+.dark-mode .st-alert-danger  { background: rgba(239,68,68,.08);  border-color: rgba(239,68,68,.2);  color: #FCA5A5; }
+.dark-mode .st-alert-warning { background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.2); color: #FCD34D; }
+.dark-mode .st-alert-info    { background: rgba(6,182,212,.07);  border-color: rgba(6,182,212,.18); color: #67E8F9; }
+
+/* ── 8. Status badges ─────────────────────────────────────────────── */
+.st-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; flex-shrink: 0; white-space: nowrap;
+}
+.st-badge-pending  { background: #FEF3C7; color: #92400E; }
+.st-badge-approved { background: #D1FAE5; color: #065F46; }
+.st-badge-rejected { background: #FEE2E2; color: #991B1B; }
+.st-badge-replied  { background: #D1FAE5; color: #065F46; }
+.st-badge-waiting  { background: #FEF3C7; color: #92400E; }
+.st-badge-info     { background: rgba(6,182,212,.12); color: #0E7490; border: 1px solid rgba(6,182,212,.2); }
+.dark-mode .st-badge-pending  { background: rgba(245,158,11,.15); color: #FCD34D; }
+.dark-mode .st-badge-approved { background: rgba(16,185,129,.15); color: #6EE7B7; }
+.dark-mode .st-badge-rejected { background: rgba(239,68,68,.15);  color: #FCA5A5; }
+.dark-mode .st-badge-replied  { background: rgba(16,185,129,.15); color: #6EE7B7; }
+.dark-mode .st-badge-waiting  { background: rgba(245,158,11,.15); color: #FCD34D; }
+
+/* ── 9. History list items ───────────────────────────────────────── */
+.st-hist-list { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+.st-hist-item {
+  background: var(--st-surf);
+  border: 1.5px solid var(--st-bdr);
+  border-radius: 18px; padding: 15px 16px;
+  transition: border-color .15s;
+}
+.dark-mode .st-hist-item { box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+.st-hist-item:hover { border-color: rgba(6,182,212,.3); }
+
+.st-hist-item-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 10px; margin-bottom: 7px;
+}
+.st-hist-item-left { flex: 1; min-width: 0; }
+.st-hist-date {
+  font-size: 14px; font-weight: 700; color: var(--st-txt);
+  display: flex; align-items: center; gap: 6px;
+}
+.st-hist-date i { font-size: 12px; color: var(--st-cyan); }
+.st-hist-meta { font-size: 11px; color: var(--st-muted); margin-top: 3px; }
+.st-hist-body { font-size: 13px; color: var(--st-sub); line-height: 1.55; margin-top: 8px; }
+.st-hist-reply {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin-top: 10px; padding: 10px 12px;
+  background: rgba(16,185,129,.07);
+  border: 1px solid rgba(16,185,129,.18);
+  border-radius: 10px;
+}
+.dark-mode .st-hist-reply { background: rgba(16,185,129,.08); border-color: rgba(16,185,129,.15); }
+.st-hist-reply i { color: var(--st-green); margin-top: 2px; flex-shrink: 0; font-size: 11px; }
+.st-hist-reply-txt { font-size: 12.5px; color: var(--st-sub); line-height: 1.5; }
+.st-hist-reply-lbl {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--st-green); margin-bottom: 2px;
+}
+
+/* ── 10. Empty state ──────────────────────────────────────────────── */
+.st-empty {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 48px 20px; text-align: center;
+}
+.st-empty i { font-size: 38px; opacity: .2; display: block; margin-bottom: 14px; color: var(--st-txt); }
+.st-empty-title { font-size: 15px; font-weight: 800; color: var(--st-txt); margin: 0 0 6px; }
+.st-empty-sub { font-size: 13px; color: var(--st-muted); }
+
+/* ── 11. Notification items ───────────────────────────────────────── */
+.st-notif-list { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+.st-notif-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--st-surf); border: 1.5px solid var(--st-bdr);
+  border-radius: 16px; padding: 13px 14px;
+  transition: border-color .15s; position: relative;
+}
+.st-notif-item.unread {
+  border-color: rgba(6,182,212,.32);
+  background: rgba(6,182,212,.04);
+}
+.dark-mode .st-notif-item.unread { background: rgba(6,182,212,.06); }
+.st-notif-item:hover { border-color: rgba(6,182,212,.3); }
+
+.st-notif-icon {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: #fff;
+}
+.st-notif-icon.attendance { background: linear-gradient(135deg, #10B981, #047857); }
+.st-notif-icon.result     { background: linear-gradient(135deg, #06B6D4, #0891B2); }
+.st-notif-icon.homework   { background: linear-gradient(135deg, #8B5CF6, #6D28D9); }
+.st-notif-icon.general,
+.st-notif-icon.default    { background: linear-gradient(135deg, #1B3F7A, #0C1F45); }
+
+.st-notif-body  { flex: 1; min-width: 0; }
+.st-notif-msg   {
+  font-size: 13.5px; font-weight: 600; color: var(--st-txt);
+  line-height: 1.45;
+}
+.st-notif-item.unread .st-notif-msg { font-weight: 700; }
+.st-notif-meta  {
+  font-size: 11px; color: var(--st-muted); margin-top: 5px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.st-notif-cat {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700;
+}
+.st-notif-cat.attendance { background: rgba(16,185,129,.12); color: #065F46; }
+.st-notif-cat.result     { background: rgba(6,182,212,.12);  color: #0E7490; }
+.st-notif-cat.homework   { background: rgba(139,92,246,.12); color: #5B21B6; }
+.st-notif-cat.general,
+.st-notif-cat.default    { background: rgba(27,63,122,.09);  color: var(--st-navy-mid); }
+.dark-mode .st-notif-cat.attendance { background: rgba(16,185,129,.15); color: #6EE7B7; }
+.dark-mode .st-notif-cat.result     { background: rgba(6,182,212,.15);  color: #67E8F9; }
+.dark-mode .st-notif-cat.homework   { background: rgba(139,92,246,.15); color: #C4B5FD; }
+.dark-mode .st-notif-cat.general,
+.dark-mode .st-notif-cat.default    { background: rgba(6,182,212,.1);   color: #67E8F9; }
+
+.st-unread-dot {
+  position: absolute; top: 14px; right: 14px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--st-cyan);
+  box-shadow: 0 0 0 2px rgba(6,182,212,.25);
+  animation: stPulse 2s ease-in-out infinite;
+}
+@keyframes stPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.25)} }
+
+/* ── 12. Payment invoice cards ────────────────────────────────────── */
+.st-invoice-list { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; }
+.st-invoice-card {
+  background: var(--st-surf);
+  border: 1.5px solid var(--st-bdr);
+  border-radius: 18px; padding: 16px;
+  box-shadow: var(--st-sh-soft);
+  transition: border-color .15s, transform .15s;
+}
+.st-invoice-card:hover { border-color: rgba(6,182,212,.3); transform: translateY(-1px); }
+.st-invoice-card.overdue { border-color: rgba(239,68,68,.3); }
+.dark-mode .st-invoice-card { box-shadow: 0 2px 12px rgba(0,0,0,.22); }
+
+.st-invoice-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 10px; margin-bottom: 12px;
+}
+.st-invoice-period { font-size: 15px; font-weight: 800; color: var(--st-txt); }
+.st-invoice-group  { font-size: 12px; color: var(--st-muted); margin-top: 2px; }
+.st-invoice-amount-wrap { text-align: right; flex-shrink: 0; }
+.st-invoice-amount-lbl {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--st-muted); display: block; margin-bottom: 2px;
+}
+.st-invoice-amount {
+  font-size: 19px; font-weight: 900; color: var(--st-txt); line-height: 1;
+}
+.st-invoice-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ── 13. Payment history rows ─────────────────────────────────────── */
+.st-pay-list { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+.st-pay-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--st-surf); border: 1.5px solid var(--st-bdr);
+  border-radius: 14px; padding: 12px 14px;
+  transition: border-color .15s;
+}
+.st-pay-row:hover { border-color: rgba(16,185,129,.3); }
+.st-pay-icon {
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+  background: linear-gradient(135deg, #10B981, #047857);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: #fff;
+}
+.st-pay-body   { flex: 1; min-width: 0; }
+.st-pay-receipt { font-size: 13px; font-weight: 700; color: var(--st-txt); }
+.st-pay-meta   { font-size: 11px; color: var(--st-muted); margin-top: 2px; }
+.st-pay-right  { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+.st-pay-amount { font-size: 15px; font-weight: 900; color: var(--st-green); }
+.st-pay-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 700; color: var(--st-cyan);
+  text-decoration: none; padding: 3px 9px; border-radius: 999px;
+  background: rgba(6,182,212,.08); border: 1px solid rgba(6,182,212,.2);
+  transition: background .15s;
+}
+.st-pay-link:hover { background: rgba(6,182,212,.15); color: var(--st-cyan); text-decoration: none; }
+
+/* ── 14. Overdue alert banner ─────────────────────────────────────── */
+.st-overdue-banner {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: rgba(239,68,68,.07); border: 1.5px solid rgba(239,68,68,.25);
+  border-radius: 16px; padding: 14px 16px; margin: 0 16px 12px;
+}
+.st-overdue-banner i { color: var(--st-red); margin-top: 1px; flex-shrink: 0; }
+.st-overdue-banner-txt { font-size: 13px; font-weight: 600; color: var(--st-red); line-height: 1.5; }
+.dark-mode .st-overdue-banner { background: rgba(239,68,68,.09); border-color: rgba(239,68,68,.3); }
+
+/* ── 15. Animations ──────────────────────────────────────────────── */
+@keyframes stUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.st-anim   { animation: stUp .4s cubic-bezier(.4,0,.2,1) both; }
+.st-anim-2 { animation-delay: .08s; }
+.st-anim-3 { animation-delay: .14s; }
+.st-anim-4 { animation-delay: .20s; }
+.st-anim-5 { animation-delay: .26s; }
+
+/* ── 15b. Django form-control override inside st-field ───────────── */
+/* Django's FormSettings sets class="form-control" on all widgets.
+   Override Bootstrap/base styles with our premium look. */
+.st-field .form-control {
+  width: 100%; padding: 12px 14px; font-size: 14px;
+  font-family: 'Inter', sans-serif; color: var(--st-txt);
+  background: var(--st-surf); border: 1.5px solid var(--st-bdr) !important;
+  border-radius: var(--st-r-sm) !important; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  -webkit-appearance: none; appearance: none;
+  box-shadow: none !important;
+}
+.st-field .form-control:focus {
+  border-color: var(--st-cyan) !important;
+  box-shadow: 0 0 0 3px rgba(6,182,212,.12) !important;
+}
+.st-field textarea.form-control { resize: vertical; min-height: 110px; line-height: 1.55; }
+.dark-mode .st-field .form-control {
+  background: #111F35 !important;
+  border-color: #18304F !important;
+  color: var(--st-txt) !important;
+}
+
+/* ── 16. Mobile adjustments ──────────────────────────────────────── */
+@media (max-width: 600px) {
+  .st-hero-title  { font-size: 26px; }
+  .st-card        { margin: 0 12px 14px; }
+  .st-lbl         { padding: 16px 16px 8px; }
+  .st-btn-row     { padding: 4px 16px 16px; }
+  .st-hist-list,
+  .st-notif-list,
+  .st-invoice-list,
+  .st-pay-list    { padding: 12px; }
+  .st-field-body  { padding: 14px 14px 2px; }
+}
