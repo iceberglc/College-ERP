@@ -30,10 +30,11 @@ class EditResultView(LoginRequiredMixin, View):
         test = request.POST.get("test")
         exam = request.POST.get("exam")
 
+        # Restrict to groups owned by this teacher (raises Http404 on violation).
+        group = get_object_or_404(groups, id=group_id)
+        student = get_object_or_404(Student, id=student_id)
+
         try:
-            # Restrict to groups owned by this teacher to prevent IDOR.
-            group = get_object_or_404(groups, id=group_id)
-            student = get_object_or_404(Student, id=student_id)
             result = StudentResult.objects.get(student=student, group=group)
             result.test = float(test)
             result.exam = float(exam)
@@ -41,7 +42,7 @@ class EditResultView(LoginRequiredMixin, View):
             messages.success(request, "Result updated successfully.")
         except StudentResult.DoesNotExist:
             messages.warning(request, "No result found for this student in the selected group.")
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             messages.warning(request, f"Could not update: {e}")
 
         return render(
