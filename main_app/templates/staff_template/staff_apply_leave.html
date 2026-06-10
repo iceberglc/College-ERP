@@ -1,53 +1,141 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{ page_title }}{% endblock %}
+{% block title %}Leave — Iceberg Study Center{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
-{% block page_subtitle %}<p class="page-subtitle">Submit a leave request and track the admin decision.</p>{% endblock %}
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/staff-modern.css' %}">
+{% endblock custom_css %}
 
 {% block content %}
-<div class="ice-mobile-page" style="max-width:760px; margin:0 auto;">
-  <section class="ice-form-section">
-    <h3 class="ice-form-section__title">New Leave Request</h3>
-    {% include "main_app/form_template.html" with messages=messages form=form button_text="Submit Request" %}
-  </section>
+<div class="sf-page">
 
-  <section class="ice-form-section">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
-      <h3 class="ice-form-section__title" style="margin:0;"><i class="fas fa-history me-2"></i>Leave History</h3>
-      <span class="ice-chip ice-chip--info"><i class="fas fa-list" aria-hidden="true"></i><span>{{ leave_history|length }} total</span></span>
-    </div>
-
-    {% if leave_history %}
-    <div class="ice-card-grid">
-      {% for leave in leave_history %}
-      <article class="ice-mobile-card">
-        <div class="ice-mobile-card__top">
-          <span class="ice-mobile-card__avatar" aria-hidden="true"><i class="fas fa-calendar-day"></i></span>
-          <div class="ice-mobile-card__main">
-            <h3 class="ice-mobile-card__title">{{ leave.date }}</h3>
-            <div class="ice-mobile-card__subtitle">{{ leave.created_at|date:"d M Y, H:i" }}</div>
-          </div>
+  <!-- ══ HERO ══════════════════════════════════════════════════════ -->
+  <div class="sf-hero">
+    <div class="sf-hero-inner">
+      <div class="sf-hero-kicker">Teacher Portal</div>
+      <h1 class="sf-hero-title">Leave Request</h1>
+      <p class="sf-hero-sub">Submit a leave request and track admin decisions.</p>
+      {% if leave_history %}
+      <div class="sf-hero-stats">
+        <div class="sf-hstat">
+          <div class="sf-hstat-num">{{ leave_history|length }}</div>
+          <div class="sf-hstat-lbl">Requests</div>
         </div>
-        <div class="ice-mobile-card__meta">
+        <div class="sf-hstat">
+          <div class="sf-hstat-num"><i class="fas fa-plane-departure" style="font-size:18px;opacity:.7;"></i></div>
+          <div class="sf-hstat-lbl">Leave</div>
+        </div>
+        <div class="sf-hstat">
+          <div class="sf-hstat-num"><i class="fas fa-calendar-day" style="font-size:18px;opacity:.7;"></i></div>
+          <div class="sf-hstat-lbl">Dates</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══ MESSAGES ══════════════════════════════════════════════════ -->
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="sf-alert sf-anim {% if 'success' in msg.tags %}sf-alert-success{% elif 'error' in msg.tags or 'danger' in msg.tags %}sf-alert-danger{% elif 'warning' in msg.tags %}sf-alert-warning{% else %}sf-alert-info{% endif %}">
+      <i class="fas {% if 'success' in msg.tags %}fa-check-circle{% elif 'error' in msg.tags or 'danger' in msg.tags %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+      <span>{{ msg }}</span>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- ══ FORM CARD ══════════════════════════════════════════════════ -->
+  <span class="sf-lbl sf-anim sf-anim-2">New Request</span>
+  <div class="sf-card sf-anim sf-anim-2">
+    <div class="sf-card-head">
+      <h3 class="sf-card-title"><i class="fas fa-plane-departure"></i> Apply for Leave</h3>
+    </div>
+    <form method="POST" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="sf-alert sf-alert-danger" style="margin:14px 16px 0;">
+        <i class="fas fa-exclamation-circle"></i>
+        <div>{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+      </div>
+      {% endif %}
+      <div class="sf-field-body">
+        <div class="sf-field">
+          <label for="{{ form.date.id_for_label }}">Date <span class="sf-field-req">*</span></label>
+          {{ form.date }}
+          {% if form.date.errors %}<div class="sf-field-error">{{ form.date.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="sf-field">
+          <label for="{{ form.message.id_for_label }}">Reason <span class="sf-field-req">*</span></label>
+          {{ form.message }}
+          {% if form.message.errors %}<div class="sf-field-error">{{ form.message.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="sf-btn-row">
+        <button type="submit" class="sf-btn-primary">
+          <i class="fas fa-paper-plane"></i> Submit Request
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ══ HISTORY ════════════════════════════════════════════════════ -->
+  {% if leave_history %}
+  <span class="sf-lbl sf-anim sf-anim-3">Leave History</span>
+  <div class="sf-card sf-anim sf-anim-3">
+    <div class="sf-card-head">
+      <h3 class="sf-card-title"><i class="fas fa-history"></i> Previous Requests</h3>
+      <span class="sf-card-count">{{ leave_history|length }}</span>
+    </div>
+    <div class="sf-hist-list">
+      {% for leave in leave_history %}
+      <div class="sf-hist-item">
+        <div class="sf-hist-item-top">
+          <div class="sf-hist-item-left">
+            <div class="sf-hist-date">
+              <i class="fas fa-calendar-day"></i>
+              {{ leave.date }}
+            </div>
+            <div class="sf-hist-meta">
+              <i class="fas fa-clock" style="font-size:10px;"></i>
+              Submitted {{ leave.created_at|date:"d M Y, H:i" }}
+            </div>
+          </div>
           {% if leave.status == 0 %}
-            <span class="ice-chip ice-chip--warning"><i class="fas fa-clock" aria-hidden="true"></i><span>Pending</span></span>
+            <span class="sf-badge sf-badge-pending"><i class="fas fa-clock" style="font-size:9px;"></i> Pending</span>
           {% elif leave.status == 1 %}
-            <span class="ice-chip ice-chip--success"><i class="fas fa-check" aria-hidden="true"></i><span>Approved</span></span>
+            <span class="sf-badge sf-badge-approved"><i class="fas fa-check" style="font-size:9px;"></i> Approved</span>
           {% else %}
-            <span class="ice-chip ice-chip--danger"><i class="fas fa-times" aria-hidden="true"></i><span>Rejected</span></span>
+            <span class="sf-badge sf-badge-rejected"><i class="fas fa-times" style="font-size:9px;"></i> Rejected</span>
           {% endif %}
         </div>
-        <p style="margin:12px 0 0; color:var(--ice-polish-text); line-height:1.6;">{{ leave.message }}</p>
-      </article>
+        {% if leave.message %}
+        <div class="sf-hist-body">{{ leave.message }}</div>
+        {% endif %}
+      </div>
       {% endfor %}
     </div>
-    {% else %}
-    <div class="ice-empty-state">
-      <i class="fas fa-calendar-times" aria-hidden="true"></i>
-      <strong>No records found</strong>
-      <span>No leave requests yet.</span>
+  </div>
+  {% else %}
+  <div class="sf-card sf-anim sf-anim-3">
+    <div class="sf-empty">
+      <i class="fas fa-calendar-times"></i>
+      <div class="sf-empty-title">No Leave Requests Yet</div>
+      <div class="sf-empty-sub">Your submitted requests will appear here.</div>
     </div>
-    {% endif %}
-  </section>
+  </div>
+  {% endif %}
+
 </div>
-{% endblock %}
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+(function () {
+  document.querySelectorAll('.sf-field input, .sf-field textarea, .sf-field select').forEach(function (el) {
+    el.classList.add('sf-control');
+  });
+})();
+</script>
+{% endblock custom_js %}

@@ -1,195 +1,106 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{ page_title }}{% endblock %}
+{% block title %}Update Attendance — Iceberg Study Center{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
 {% block custom_css %}
-<style>
-  .att-wrap {
-    max-width: 980px;
-    margin: 0 auto;
-  }
-  .att-controls {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 14px;
-    align-items: end;
-  }
-  .att-date-controls {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 14px;
-    align-items: end;
-    margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px solid var(--ice-polish-border);
-  }
-  .att-bulk {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .att-roster {
-    display: grid;
-    gap: 10px;
-  }
-  .att-student {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 12px;
-    align-items: center;
-    padding: 14px;
-    border: 1px solid var(--ice-polish-border);
-    border-radius: 18px;
-    background: var(--ice-polish-surface);
-    box-shadow: var(--ice-polish-shadow-soft);
-  }
-  .att-student__name {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    gap: 10px;
-    color: var(--ice-polish-text);
-    font-size: 14px;
-    font-weight: 900;
-  }
-  .att-student__name i {
-    color: var(--ice-polish-cyan);
-  }
-  .status-btn-group {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-  .status-btn,
-  .bulk-btn {
-    min-height: 42px;
-    border: 1.5px solid var(--ice-polish-border);
-    border-radius: 14px;
-    padding: 0 13px;
-    background: var(--ice-polish-surface-2);
-    color: var(--ice-polish-muted);
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 900;
-    transition: background .15s ease, border-color .15s ease, color .15s ease;
-  }
-  .status-btn.active-present,
-  .bulk-present {
-    background: rgba(16,185,129,.13);
-    color: #059669;
-    border-color: rgba(5,150,105,.35);
-  }
-  .status-btn.active-late,
-  .bulk-late {
-    background: rgba(245,158,11,.13);
-    color: #b45309;
-    border-color: rgba(180,83,9,.35);
-  }
-  .status-btn.active-absent,
-  .bulk-absent {
-    background: rgba(239,68,68,.13);
-    color: #dc2626;
-    border-color: rgba(220,38,38,.35);
-  }
-  @media (max-width: 768px) {
-    .att-controls,
-    .att-date-controls,
-    .att-student {
-      grid-template-columns: 1fr;
-    }
-    .status-btn-group {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      justify-content: stretch;
-    }
-    .att-bulk {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-  @media (max-width: 420px) {
-    .status-btn-group,
-    .att-bulk {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
+<link rel="stylesheet" href="{% static 'dist/css/staff-modern.css' %}">
 {% endblock custom_css %}
 
-{% block page_subtitle %}<p class="page-subtitle">Choose a group and saved date, then update each student's attendance status.</p>{% endblock %}
-
 {% block content %}
-<div class="ice-mobile-page att-wrap">
-  <div class="ice-stepper" aria-label="Update attendance workflow">
-    <div class="ice-stepper__step"><span class="ice-stepper__num">1</span><span>Select group</span></div>
-    <div class="ice-stepper__step"><span class="ice-stepper__num">2</span><span>Load dates</span></div>
-    <div class="ice-stepper__step"><span class="ice-stepper__num">3</span><span>Edit roster</span></div>
-    <div class="ice-stepper__step"><span class="ice-stepper__num">4</span><span>Save updates</span></div>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<div class="sf-hero">
+  <div class="sf-hero-inner">
+    <div class="sf-hero-kicker">Teacher Portal</div>
+    <h1 class="sf-hero-title">Update Attendance</h1>
+    <p class="sf-hero-sub">Choose a group and saved date, then adjust each student's status.</p>
   </div>
+</div>
+
+<div class="sf-tool-wrap">
 
   {% if not groups %}
-  <div class="ice-empty-state">
-    <i class="fas fa-layer-group" aria-hidden="true"></i>
-    <strong>No records found</strong>
-    <span>You have no active groups assigned. Contact your administrator.</span>
+  <div class="sf-card">
+    <div class="sf-empty">
+      <i class="fas fa-layer-group"></i>
+      <div class="sf-empty-title">No Groups Assigned</div>
+      <div class="sf-empty-sub">You have no active groups. Contact your administrator.</div>
+    </div>
   </div>
   {% else %}
-  <section class="ice-form-section">
-    <div id="attendance_status"></div>
-    <div class="att-controls">
-      <div>
-        <label class="form-label" for="group"><i class="fas fa-layer-group me-1"></i>Group</label>
-        <select id="group" class="form-control">
-          <option value="">Select your group</option>
-          {% for g in groups %}
-          <option value="{{ g.id }}">{{ g.name }}{% if g.course %} - {{ g.course.name }}{% endif %}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <button type="button" id="fetch_dates_btn" class="ice-action ice-action--primary" disabled>
-        <i class="fas fa-calendar-alt" aria-hidden="true"></i> Load Dates
-      </button>
-    </div>
 
-    <div id="date_section" class="att-date-controls" style="display:none;">
-      <div>
-        <label class="form-label" for="attendance_date"><i class="fas fa-calendar-day me-1"></i>Attendance Date</label>
-        <select id="attendance_date" class="form-control"></select>
-      </div>
-      <button type="button" id="load_students_btn" class="ice-action">
-        <i class="fas fa-users" aria-hidden="true"></i> Load Students
-      </button>
+  <!-- ══ STEP 1 — Group ═══════════════════════════════════════════ -->
+  <div class="sf-tool-card sf-anim">
+    <div class="sf-card-head">
+      <h3 class="sf-card-title"><i class="fas fa-layer-group"></i> Select Group</h3>
     </div>
-  </section>
-
-  <section id="roster_card" class="ice-form-section" style="display:none;">
-    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
-      <div>
-        <h3 class="ice-form-section__title" id="roster_title" style="margin-bottom:4px;">Edit Attendance</h3>
-        <div class="ice-hero__subtitle" style="margin:0;">Adjust statuses, then save the update.</div>
+    <div class="sf-tool-body">
+      <div id="attendance_status"></div>
+      <div class="sf-select-grid">
+        <div>
+          <div class="sf-label"><i class="fas fa-layer-group"></i> Group</div>
+          <select id="group" class="form-control">
+            <option value="">Select your group</option>
+            {% for g in groups %}
+            <option value="{{ g.id }}">{{ g.name }}{% if g.course %} - {{ g.course.name }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="button" id="fetch_dates_btn" class="sf-load-btn" style="margin-top:24px;" disabled>
+          <i class="fas fa-calendar-alt"></i> Load Dates
+        </button>
       </div>
-      <div class="att-bulk">
-        <button type="button" class="bulk-btn bulk-present" onclick="markAll(1)"><i class="fas fa-check me-1"></i>All Present</button>
-        <button type="button" class="bulk-btn bulk-late" onclick="markAll(2)"><i class="fas fa-clock me-1"></i>All Late</button>
-        <button type="button" class="bulk-btn bulk-absent" onclick="markAll(0)"><i class="fas fa-times me-1"></i>All Absent</button>
+
+      <div id="date_section" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--sf-border);">
+        <div class="sf-select-grid">
+          <div>
+            <div class="sf-label"><i class="fas fa-calendar-day"></i> Attendance Date</div>
+            <select id="attendance_date" class="form-control"></select>
+          </div>
+          <button type="button" id="load_students_btn" class="sf-load-btn secondary" style="margin-top:24px;">
+            <i class="fas fa-users"></i> Load Students
+          </button>
+        </div>
       </div>
     </div>
+  </div>
 
-    <div id="roster_list" class="att-roster"></div>
-
-    <div class="ice-sticky-save">
-      <div class="ice-actions" style="margin:0;">
-        <span class="ice-chip ice-chip--success"><i class="fas fa-check-circle" aria-hidden="true"></i><span>Present: <strong id="cnt_p">0</strong></span></span>
-        <span class="ice-chip ice-chip--warning"><i class="fas fa-clock" aria-hidden="true"></i><span>Late: <strong id="cnt_l">0</strong></span></span>
-        <span class="ice-chip ice-chip--danger"><i class="fas fa-times-circle" aria-hidden="true"></i><span>Absent: <strong id="cnt_a">0</strong></span></span>
-      </div>
-      <button type="button" id="save_btn" class="ice-action ice-action--primary">
-        <i class="fas fa-save" aria-hidden="true"></i> Update Attendance
-      </button>
+  <!-- ══ STEP 2 — Roster ═══════════════════════════════════════════ -->
+  <div id="roster_card" class="sf-tool-card sf-anim sf-anim-2" style="display:none;">
+    <div class="sf-card-head">
+      <h3 class="sf-card-title" id="roster_title"><i class="fas fa-users"></i> Edit Attendance</h3>
     </div>
-    <div id="save_msg" style="margin-top:14px;"></div>
-  </section>
+    <div class="sf-tool-body">
+      <div class="sf-bulk-row">
+        <button type="button" class="sf-bulk-btn sf-bulk-present bulk-btn bulk-present" onclick="markAll(1)">
+          <i class="fas fa-check me-1"></i>All Present
+        </button>
+        <button type="button" class="sf-bulk-btn sf-bulk-late bulk-btn bulk-late" onclick="markAll(2)">
+          <i class="fas fa-clock me-1"></i>All Late
+        </button>
+        <button type="button" class="sf-bulk-btn sf-bulk-absent bulk-btn bulk-absent" onclick="markAll(0)">
+          <i class="fas fa-times me-1"></i>All Absent
+        </button>
+      </div>
+
+      <div id="roster_list" class="att-roster"></div>
+
+      <div class="ice-sticky-save">
+        <div class="ice-actions">
+          <span class="ice-chip ice-chip--success"><i class="fas fa-check-circle"></i><span>Present: <strong id="cnt_p">0</strong></span></span>
+          <span class="ice-chip ice-chip--warning"><i class="fas fa-clock"></i><span>Late: <strong id="cnt_l">0</strong></span></span>
+          <span class="ice-chip ice-chip--danger"><i class="fas fa-times-circle"></i><span>Absent: <strong id="cnt_a">0</strong></span></span>
+        </div>
+        <button type="button" id="save_btn" class="ice-action ice-action--primary">
+          <i class="fas fa-save"></i> Update Attendance
+        </button>
+      </div>
+      <div id="save_msg" style="margin-top:14px;"></div>
+    </div>
+  </div>
+
   {% endif %}
 </div>
 {% endblock %}
@@ -277,15 +188,15 @@ if (fetchDatesBtn) {
     .then(data => {
       const arr = asArray(data);
       fetchDatesBtn.disabled = false;
-      fetchDatesBtn.innerHTML = '<i class="fas fa-calendar-alt" aria-hidden="true"></i> Load Dates';
+      fetchDatesBtn.innerHTML = '<i class="fas fa-calendar-alt"></i> Load Dates';
       if (!arr.length) { showStatus('No attendance dates found for this group.', 'warning'); return; }
       const sel = document.getElementById('attendance_date');
       sel.innerHTML = arr.map(a => `<option value="${a.id}">${a.attendance_date}</option>`).join('');
-      document.getElementById('date_section').style.display = 'grid';
+      document.getElementById('date_section').style.display = 'block';
     })
     .catch(() => {
       fetchDatesBtn.disabled = false;
-      fetchDatesBtn.innerHTML = '<i class="fas fa-calendar-alt" aria-hidden="true"></i> Load Dates';
+      fetchDatesBtn.innerHTML = '<i class="fas fa-calendar-alt"></i> Load Dates';
       showStatus("Couldn't load data. Please try again.", 'error');
     });
   });
@@ -310,7 +221,7 @@ if (loadStudentsBtn) {
     .then(data => {
       const arr = asArray(data);
       loadStudentsBtn.disabled = false;
-      loadStudentsBtn.innerHTML = '<i class="fas fa-users" aria-hidden="true"></i> Load Students';
+      loadStudentsBtn.innerHTML = '<i class="fas fa-users"></i> Load Students';
       if (!arr.length) { showStatus('No student data for this date.', 'warning'); return; }
 
       document.getElementById('roster_list').innerHTML = arr.map(s => `
@@ -328,7 +239,7 @@ if (loadStudentsBtn) {
 
       const dateText = document.getElementById('attendance_date').selectedOptions[0].text;
       const groupText = document.getElementById('group').selectedOptions[0].text;
-      document.getElementById('roster_title').textContent = `${groupText} - ${dateText} - ${arr.length} students`;
+      document.getElementById('roster_title').innerHTML = '<i class="fas fa-users" style="color:var(--sf-cyan);"></i> ' + groupText + ' — ' + dateText + ' — ' + arr.length + ' students';
       document.getElementById('roster_card').style.display = 'block';
       document.getElementById('save_btn').style.display = '';
       document.getElementById('save_msg').innerHTML = '';
@@ -336,7 +247,7 @@ if (loadStudentsBtn) {
     })
     .catch(() => {
       loadStudentsBtn.disabled = false;
-      loadStudentsBtn.innerHTML = '<i class="fas fa-users" aria-hidden="true"></i> Load Students';
+      loadStudentsBtn.innerHTML = '<i class="fas fa-users"></i> Load Students';
       showStatus("Couldn't load data. Please try again.", 'error');
     });
   });

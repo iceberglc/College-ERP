@@ -1,144 +1,98 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{ page_title }}{% endblock %}
+{% block title %}Add Result — Iceberg Study Center{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
 {% block custom_css %}
-<style>
-  .result-wrap { max-width: 760px; margin: 0 auto; }
-  .score-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-  }
-  .field-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 7px;
-    color: var(--ice-polish-muted);
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 0;
-    text-transform: uppercase;
-  }
-  .score-preview {
-    display: none;
-    padding: 14px;
-    margin-top: 16px;
-    border: 1px solid var(--ice-polish-border);
-    border-radius: 18px;
-    background: var(--ice-polish-surface-2);
-  }
-  .score-preview.visible {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-  }
-  .sp-stat {
-    min-width: 0;
-    padding: 10px;
-    border-radius: 14px;
-    background: var(--ice-polish-surface);
-    text-align: center;
-  }
-  .sp-stat .sp-num {
-    color: var(--ice-polish-text);
-    font-size: 22px;
-    font-weight: 900;
-    line-height: 1;
-  }
-  .sp-stat .sp-lbl {
-    margin-top: 5px;
-    color: var(--ice-polish-muted);
-    font-size: 11px;
-    font-weight: 800;
-  }
-  .sp-divider { display: none; }
-  @media (max-width: 520px) {
-    .score-grid,
-    .score-preview.visible {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
+<link rel="stylesheet" href="{% static 'dist/css/staff-modern.css' %}">
 {% endblock custom_css %}
 
 {% block content %}
-<div class="ice-mobile-page result-wrap">
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<div class="sf-hero">
+  <div class="sf-hero-inner">
+    <div class="sf-hero-kicker">Teacher Portal</div>
+    <h1 class="sf-hero-title">Add Result</h1>
+    <p class="sf-hero-sub">Select a group, pick a student, and enter their test and exam scores.</p>
+  </div>
+</div>
+
+<div class="sf-tool-wrap" style="max-width:760px;">
+
   <form method="POST" id="result_form">
     {% csrf_token %}
-    <section class="ice-form-section">
-      <h3 class="ice-form-section__title"><i class="fas fa-layer-group me-2"></i>Class Roster</h3>
-      <div id="result_status"></div>
-      <div>
-        <div class="field-label"><i class="fas fa-layer-group"></i>Group</div>
+
+    <!-- ══ Group select ═══════════════════════════════════════════ -->
+    <div class="sf-tool-card sf-anim">
+      <div class="sf-card-head">
+        <h3 class="sf-card-title"><i class="fas fa-layer-group"></i> Class Roster</h3>
+      </div>
+      <div class="sf-tool-body">
+        <div id="result_status"></div>
+        <div class="sf-label"><i class="fas fa-layer-group"></i> Group</div>
         <select id="group_select" name="group" class="form-control" required>
           {% if groups|length != 1 %}<option value="">Choose a group</option>{% endif %}
           {% for g in groups %}
           <option value="{{ g.id }}">{{ g.name }}{% if g.course %} - {{ g.course.name }}{% endif %}</option>
           {% endfor %}
         </select>
+        <div id="students_loading" class="ice-skel" style="display:none;height:44px;margin-top:14px;" aria-hidden="true"></div>
       </div>
-      <div id="students_loading" class="ice-skel" style="display:none;height:44px;margin-top:14px;" aria-hidden="true"></div>
-    </section>
+    </div>
 
-    <section id="student_section" class="ice-form-section" style="display:none;">
-      <h3 class="ice-form-section__title"><i class="fas fa-user-graduate me-2"></i>Student Scores</h3>
-      <div>
-        <div class="field-label"><i class="fas fa-user-graduate"></i>Student</div>
+    <!-- ══ Student & scores ════════════════════════════════════════ -->
+    <div id="student_section" class="sf-tool-card sf-anim sf-anim-2" style="display:none;">
+      <div class="sf-card-head">
+        <h3 class="sf-card-title"><i class="fas fa-user-graduate"></i> Student Scores</h3>
+      </div>
+      <div class="sf-tool-body">
+        <div class="sf-label"><i class="fas fa-user-graduate"></i> Student</div>
         <select id="student_list" name="student_list" class="form-control" required></select>
-      </div>
 
-      <div class="score-grid" style="margin-top:14px;">
-        <div>
-          <div class="field-label">Test Score <span style="font-size:10px; font-weight:700; color:var(--ice-polish-muted);">(0-40)</span></div>
-          <input type="number" name="test" id="test_score" class="form-control"
-                 min="0" max="40" step="0.5" placeholder="e.g. 35" required>
+        <div class="sf-select-grid-2" style="margin-top:16px;">
+          <div>
+            <div class="sf-label">Test Score <span style="font-size:10px;">(0-40)</span></div>
+            <input type="number" name="test" id="test_score" class="form-control"
+                   min="0" max="40" step="0.5" placeholder="e.g. 35" required>
+          </div>
+          <div>
+            <div class="sf-label">Exam Score <span style="font-size:10px;">(0-60)</span></div>
+            <input type="number" name="exam" id="exam_score" class="form-control"
+                   min="0" max="60" step="0.5" placeholder="e.g. 50" required>
+          </div>
         </div>
-        <div>
-          <div class="field-label">Exam Score <span style="font-size:10px; font-weight:700; color:var(--ice-polish-muted);">(0-60)</span></div>
-          <input type="number" name="exam" id="exam_score" class="form-control"
-                 min="0" max="60" step="0.5" placeholder="e.g. 50" required>
-        </div>
-      </div>
 
-      <div class="score-preview" id="score_preview">
-        <div class="sp-stat">
-          <div class="sp-num" id="prev_test">-</div>
-          <div class="sp-lbl">Test</div>
+        <div class="score-preview" id="score_preview">
+          <div class="sp-stat"><div class="sp-num" id="prev_test">-</div><div class="sp-lbl">Test</div></div>
+          <div class="sp-stat"></div>
+          <div class="sp-stat"><div class="sp-num" id="prev_exam">-</div><div class="sp-lbl">Exam</div></div>
+          <div class="sp-stat"></div>
+          <div class="sp-stat"><div class="sp-num" id="prev_total" style="color:var(--sf-success);">-</div><div class="sp-lbl">Total / 100</div></div>
+          <div class="sp-stat"></div>
+          <div class="sp-stat"><div class="sp-num" id="prev_grade">-</div><div class="sp-lbl">Grade</div></div>
+          <div class="sp-stat"></div>
         </div>
-        <div class="sp-divider"></div>
-        <div class="sp-stat">
-          <div class="sp-num" id="prev_exam">-</div>
-          <div class="sp-lbl">Exam</div>
-        </div>
-        <div class="sp-divider"></div>
-        <div class="sp-stat">
-          <div class="sp-num" id="prev_total" style="color: var(--ice-success);">-</div>
-          <div class="sp-lbl">Total / 100</div>
-        </div>
-        <div class="sp-divider"></div>
-        <div class="sp-stat">
-          <div class="sp-num" id="prev_grade">-</div>
-          <div class="sp-lbl">Grade</div>
-        </div>
-      </div>
 
-      <div style="margin-top:14px;">
-        <div class="field-label"><i class="fas fa-comment-alt"></i>Teacher Comment <span style="font-size:10px; font-weight:700; color:var(--ice-polish-muted);">(optional)</span></div>
-        <textarea name="comment" id="comment_field" class="form-control" rows="3"
-                  placeholder="Feedback or notes for the student"></textarea>
-      </div>
+        <div style="margin-top:14px;">
+          <div class="sf-label"><i class="fas fa-comment-alt"></i> Teacher Comment <span style="font-size:10px;">(optional)</span></div>
+          <textarea name="comment" id="comment_field" class="form-control" rows="3"
+                    placeholder="Feedback or notes for the student"></textarea>
+        </div>
 
-      <div id="existing_scores" class="ice-inline-alert ice-inline-alert--info" style="display:none; margin-top:14px;"></div>
-    </section>
+        <div id="existing_scores" class="ice-inline-alert ice-inline-alert--info" style="display:none; margin-top:14px;"></div>
+      </div>
+    </div>
 
     <div id="save_section" class="ice-sticky-save" style="display:none;">
+      <span></span>
       <button type="submit" class="ice-action ice-action--primary">
         <i class="fas fa-save" aria-hidden="true"></i> Save Scores
       </button>
     </div>
   </form>
+
 </div>
 {% endblock %}
 
@@ -172,9 +126,9 @@ function getGrade(total) {
   return 'F';
 }
 function getGradeColor(total) {
-  if (total >= 75) return 'var(--ice-success)';
-  if (total >= 45) return 'var(--ice-warning)';
-  return 'var(--ice-danger)';
+  if (total >= 75) return 'var(--sf-success)';
+  if (total >= 45) return 'var(--sf-warning)';
+  return 'var(--sf-danger)';
 }
 
 function updatePreview() {
@@ -199,7 +153,6 @@ function updatePreview() {
 document.getElementById('test_score').addEventListener('input', updatePreview);
 document.getElementById('exam_score').addEventListener('input', updatePreview);
 
-/* Students load automatically when the group changes — no extra click. */
 function loadStudents() {
   const group = document.getElementById('group_select').value;
   const loading = document.getElementById('students_loading');
@@ -223,7 +176,7 @@ function loadStudents() {
     const sel = document.getElementById('student_list');
     sel.innerHTML = arr.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
     document.getElementById('student_section').style.display = 'block';
-    document.getElementById('save_section').style.display = 'block';
+    document.getElementById('save_section').style.display = 'flex';
     loadExistingScores();
   })
   .catch(() => {

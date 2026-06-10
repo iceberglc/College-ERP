@@ -2,202 +2,174 @@
 {% load static %}
 
 {% block title %}Teacher Dashboard — Iceberg Study Center{% endblock %}
-{% block page_title %}Teacher Dashboard{% endblock %}
-{% block breadcrumb %}<li class="breadcrumb-item active">Dashboard</li>{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
 {% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/staff-modern.css' %}">
 <style>
-.teacher-dashboard-grid {
+/* Chart cards stay full-width, no sf-page max-width constraint */
+.sf-chart-grid {
   display: grid;
-  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
-  gap: 14px;
-  margin: 4px 0 18px;
+  grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr);
+  gap: 12px;
+  margin-top: 12px;
+  padding-bottom: 120px;
 }
-.teacher-chart-body {
+.sf-chart-card {
+  background: var(--sf-surface);
+  border: 1.5px solid var(--sf-border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(12,31,69,.06);
+}
+.sf-chart-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--sf-border);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--sf-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sf-chart-head i { color: var(--sf-cyan); }
+.sf-chart-body {
   position: relative;
   min-height: 220px;
   padding: 12px 14px 16px;
 }
-.teacher-group-card {
-  margin-top: 14px;
-}
-.teacher-group-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  padding: 11px 14px;
-  border-top: 1px solid var(--ice-border);
-}
-.teacher-group-avatar {
-  display: inline-grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
-  border-radius: 12px;
-  color: #fff;
-  background: linear-gradient(135deg, #071A52, #00CFE8);
-  font-size: 13px;
-  font-weight: 900;
-}
-.teacher-room-pill {
-  flex: 0 0 auto;
-  padding: 4px 9px;
-  border-radius: 999px;
-  color: #0B4F8A;
-  background: rgba(0, 207, 232, .12);
-  font-size: 11px;
-  font-weight: 800;
-}
-@media (max-width: 1023.98px) {
-  .teacher-dashboard-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 767.98px) {
-  .stats-grid { gap: 10px !important; margin-bottom: 14px !important; }
-  .teacher-dashboard-grid { gap: 12px; margin-bottom: 14px; }
-  .teacher-chart-body { min-height: 188px; padding: 10px 12px 12px; }
-  .teacher-group-row { padding: 10px 12px; }
-  .teacher-room-pill { display: none; }
-}
+@media (max-width: 1023px) { .sf-chart-grid { grid-template-columns: 1fr; } }
+@media (max-width: 767px)  { .sf-chart-body { min-height: 188px; } }
 </style>
 {% endblock custom_css %}
 
 {% block content %}
 
-{# ── Greeting banner ────────────────────────────────────────────────────────── #}
-<section class="teacher-hero">
-  <div class="teacher-hero-inner">
-    <div>
-      <div class="teacher-hero-kicker">Teacher command center</div>
-      <h1 class="teacher-hero-title">{{ request.user.get_full_name }}</h1>
-      <p class="teacher-hero-subtitle">Manage your groups, attendance, results, assignments, vocabulary, and updates from one focused workspace.</p>
-    </div>
-    <div class="teacher-hero-actions">
-      <a href="{% url 'staff_take_attendance' %}" class="teacher-hero-action">
-        <i class="fas fa-check-circle"></i>Take Attendance
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<div class="sf-hero" style="max-width:none; border-radius:0 0 28px 28px;">
+  <div class="sf-hero-inner" style="max-width:980px; margin:0 auto;">
+    <div class="sf-hero-kicker">Teacher command center</div>
+    <h1 class="sf-hero-title">{{ request.user.get_full_name }}</h1>
+    <p class="sf-hero-sub">Manage groups, attendance, results, and assignments from one workspace.</p>
+    <div class="sf-hero-actions">
+      <a href="{% url 'staff_take_attendance' %}" class="sf-hero-action">
+        <i class="fas fa-check-circle"></i> Take Attendance
       </a>
-      <a href="{% url 'staff_add_result' %}" class="teacher-hero-action">
-        <i class="fas fa-plus-circle"></i>Add Results
+      <a href="{% url 'staff_add_result' %}" class="sf-hero-action">
+        <i class="fas fa-plus-circle"></i> Add Results
       </a>
     </div>
   </div>
-</section>
-
-{# ── KPI strip ──────────────────────────────────────────────────────────────── #}
-<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:24px;">
-
-  <div class="stat-card ice-stat-card">
-    <div class="stat-icon primary"><i class="fas fa-user-graduate"></i></div>
-    <div class="stat-number" style="color:var(--ice-navy);">{{ total_students }}</div>
-    <p class="stat-label">My Students</p>
-  </div>
-
-  <div class="stat-card ice-stat-card">
-    <div class="stat-icon success"><i class="fas fa-calendar-check"></i></div>
-    <div class="stat-number" style="color:var(--ice-success);">{{ total_attendance }}</div>
-    <p class="stat-label">Attendance Sessions</p>
-  </div>
-
-  <div class="stat-card ice-stat-card">
-    <div class="stat-icon warning"><i class="fas fa-calendar-times"></i></div>
-    <div class="stat-number" style="color:var(--ice-warning);">{{ total_leave }}</div>
-    <p class="stat-label">Leave Requests</p>
-  </div>
-
-  <div class="stat-card ice-stat-card">
-    <div class="stat-icon cyan"><i class="fas fa-layer-group"></i></div>
-    <div class="stat-number" style="color:var(--ice-cyan-dk);">{{ total_subject }}</div>
-    <p class="stat-label">My Groups</p>
-  </div>
-
 </div>
 
-{# ── Quick actions ──────────────────────────────────────────────────────────── #}
-<div class="erpnext-card ice-card">
-  <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-bolt me-2" style="color:var(--ice-cyan);"></i>Quick Actions</h3>
+<!-- ══ MAIN CONTENT ══════════════════════════════════════════════════ -->
+<div style="max-width:980px; margin:0 auto;">
+
+  <!-- KPI strip -->
+  <div class="sf-card sf-anim" style="margin-top:0;">
+    <div class="sf-kpi-grid">
+      <div class="sf-kpi-card">
+        <div class="sf-kpi-icon navy"><i class="fas fa-user-graduate"></i></div>
+        <div>
+          <div class="sf-kpi-num">{{ total_students }}</div>
+          <div class="sf-kpi-lbl">My Students</div>
+        </div>
+      </div>
+      <div class="sf-kpi-card">
+        <div class="sf-kpi-icon green"><i class="fas fa-calendar-check"></i></div>
+        <div>
+          <div class="sf-kpi-num">{{ total_attendance }}</div>
+          <div class="sf-kpi-lbl">Sessions</div>
+        </div>
+      </div>
+      <div class="sf-kpi-card">
+        <div class="sf-kpi-icon amber"><i class="fas fa-calendar-times"></i></div>
+        <div>
+          <div class="sf-kpi-num">{{ total_leave }}</div>
+          <div class="sf-kpi-lbl">Leave Requests</div>
+        </div>
+      </div>
+      <div class="sf-kpi-card">
+        <div class="sf-kpi-icon cyan"><i class="fas fa-layer-group"></i></div>
+        <div>
+          <div class="sf-kpi-num">{{ total_subject }}</div>
+          <div class="sf-kpi-lbl">My Groups</div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="card-body">
-    <div class="quick-action-grid ice-action-grid">
-      <a href="{% url 'staff_take_attendance' %}" class="quick-action-btn">
-        <i class="fas fa-check-circle" style="color:var(--ice-success);"></i>Take Attendance
+
+  <!-- Quick actions -->
+  <span class="sf-lbl sf-anim sf-anim-2">Quick Actions</span>
+  <div class="sf-card sf-anim sf-anim-2" style="overflow:hidden;">
+    <div class="sf-action-grid">
+      <a href="{% url 'staff_take_attendance' %}" class="sf-action-btn">
+        <i class="fas fa-check-circle" style="color:var(--sf-success);"></i> Take Attendance
       </a>
-      <a href="{% url 'staff_update_attendance' %}" class="quick-action-btn">
-        <i class="fas fa-edit" style="color:var(--ice-navy);"></i>Update Attendance
+      <a href="{% url 'staff_update_attendance' %}" class="sf-action-btn">
+        <i class="fas fa-edit" style="color:var(--sf-navy-mid);"></i> Update Attendance
       </a>
-      <a href="{% url 'staff_add_result' %}" class="quick-action-btn">
-        <i class="fas fa-plus-circle" style="color:var(--ice-cyan-dk);"></i>Add Results
+      <a href="{% url 'staff_add_result' %}" class="sf-action-btn">
+        <i class="fas fa-plus-circle" style="color:#0891B2;"></i> Add Results
       </a>
-      <a href="{% url 'edit_student_result' %}" class="quick-action-btn">
-        <i class="fas fa-pen" style="color:var(--ice-warning);"></i>Edit Results
+      <a href="{% url 'edit_student_result' %}" class="sf-action-btn">
+        <i class="fas fa-pen" style="color:var(--sf-warning);"></i> Edit Results
       </a>
-      <a href="{% url 'staff_apply_leave' %}" class="quick-action-btn">
-        <i class="fas fa-calendar-plus" style="color:var(--ice-info);"></i>Apply Leave
+      <a href="{% url 'staff_apply_leave' %}" class="sf-action-btn">
+        <i class="fas fa-calendar-plus" style="color:var(--sf-info);"></i> Apply Leave
       </a>
-      <a href="{% url 'staff_feedback' %}" class="quick-action-btn">
-        <i class="fas fa-comment-alt" style="color:var(--ice-success);"></i>Send Feedback
+      <a href="{% url 'staff_feedback' %}" class="sf-action-btn">
+        <i class="fas fa-comment-alt" style="color:var(--sf-success);"></i> Send Feedback
       </a>
-      <a href="{% url 'messages' %}" class="quick-action-btn">
-        <i class="fas fa-comments" style="color:var(--ice-danger);"></i>Messages
+      <a href="{% url 'messages' %}" class="sf-action-btn">
+        <i class="fas fa-comments" style="color:var(--sf-danger);"></i> Messages
       </a>
-      <a href="{% url 'profile_hub' %}" class="quick-action-btn">
-        <i class="fas fa-user-circle" style="color:var(--ice-navy);"></i>My Profile
+      <a href="{% url 'profile_hub' %}" class="sf-action-btn">
+        <i class="fas fa-user-circle" style="color:var(--sf-navy-mid);"></i> My Profile
       </a>
     </div>
   </div>
 
+  <!-- My groups -->
   {% if groups %}
-  <!-- My Groups with start date -->
-    <div class="dash-card ice-list-card teacher-group-card">
-    <div class="dash-card-header">
-      <span><i class="fas fa-layer-group" style="color:var(--ice-cyan);margin-right:8px;"></i>My Groups</span>
+  <span class="sf-lbl sf-anim sf-anim-3">My Groups</span>
+  <div class="sf-card sf-anim sf-anim-3">
+    <div class="sf-card-head">
+      <h3 class="sf-card-title"><i class="fas fa-layer-group"></i> Active Groups</h3>
+      <span class="sf-card-count">{{ groups|length }}</span>
     </div>
-    <div style="padding:0;">
+    <div class="sf-group-list">
       {% for g in groups %}
-      <div class="teacher-group-row">
-        <div class="teacher-group-avatar">{{ g.name|first|upper }}</div>
+      <div class="sf-group-row">
+        <div class="sf-group-avatar">{{ g.name|first|upper }}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:14px;font-weight:700;color:var(--ice-text);">{{ g.name }}</div>
-          <div style="font-size:12px;color:var(--ice-muted);margin-top:2px;">
+          <div class="sf-group-name">{{ g.name }}</div>
+          <div class="sf-group-meta">
             {% if g.start_date %}
-              <i class="fas fa-calendar-alt" style="color:#06B6D4;margin-right:3px;"></i>Starts {{ g.start_date|date:"M j, Y" }}
+              <i class="fas fa-calendar-alt" style="color:var(--sf-cyan);margin-right:3px;"></i>Starts {{ g.start_date|date:"M j, Y" }}
             {% else %}
-              <i class="fas fa-calendar-alt" style="color:#CBD5E1;margin-right:3px;"></i>Starting date not set yet
+              <i class="fas fa-calendar-alt" style="margin-right:3px;"></i>Start date not set
             {% endif %}
             {% if g.schedule %} &nbsp;·&nbsp; <i class="fas fa-clock" style="margin-right:2px;"></i>{{ g.schedule }}{% endif %}
           </div>
         </div>
-        {% if g.room %}<span class="teacher-room-pill">{{ g.room }}</span>{% endif %}
+        {% if g.room %}<span class="sf-group-room">{{ g.room }}</span>{% endif %}
       </div>
       {% endfor %}
     </div>
   </div>
   {% endif %}
-</div>
 
-{# ── Analytics charts ────────────────────────────────────────────────────────── #}
-<div class="teacher-dashboard-grid">
-
-  <div>
-    <div class="erpnext-card ice-chart-card h-100">
-      <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-percentage me-2" style="color:var(--ice-cyan);"></i>Attendance Rate by Group</h3>
-      </div>
-      <div class="teacher-chart-body">
-        <canvas id="pieChart"></canvas>
-      </div>
+  <!-- Analytics charts -->
+  <div class="sf-chart-grid">
+    <div class="sf-chart-card">
+      <div class="sf-chart-head"><i class="fas fa-percentage"></i> Attendance Rate by Group</div>
+      <div class="sf-chart-body"><canvas id="pieChart"></canvas></div>
     </div>
-  </div>
-
-  <div>
-    <div class="erpnext-card ice-chart-card h-100">
-      <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-chart-bar me-2" style="color:var(--ice-cyan);"></i>Attendance Sessions per Group</h3>
-      </div>
-      <div class="teacher-chart-body">
-        <canvas id="barChart"></canvas>
-      </div>
+    <div class="sf-chart-card">
+      <div class="sf-chart-head"><i class="fas fa-chart-bar"></i> Attendance Sessions per Group</div>
+      <div class="sf-chart-body"><canvas id="barChart"></canvas></div>
     </div>
   </div>
 
@@ -251,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function showChartState(canvasId, message) {
     var canvas = document.getElementById(canvasId);
     if (!canvas) return;
-    var body = canvas.closest('.teacher-chart-body');
+    var body = canvas.closest('.sf-chart-body');
     if (!body) return;
     canvas.hidden = true;
     if (!body.querySelector('.ice-chart-state')) {
@@ -265,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var canvas = document.getElementById(canvasId);
     if (!canvas) return;
     canvas.hidden = false;
-    var body = canvas.closest('.teacher-chart-body');
+    var body = canvas.closest('.sf-chart-body');
     if (body) body.querySelectorAll('.ice-chart-state').forEach(function(node) { node.remove(); });
   }
   function register(chart) {
@@ -273,22 +245,12 @@ document.addEventListener('DOMContentLoaded', function () {
     window.chartInstances.push(chart);
     return chart;
   }
-  function areaGradient(context, top, bottom) {
-    var chart = context.chart;
-    var ctx = chart.ctx;
-    var area = chart.chartArea;
-    if (!area) return top;
-    var g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
-    g.addColorStop(0, top);
-    g.addColorStop(1, bottom);
-    return g;
-  }
   function createTeacherCharts() {
     clearChartState('pieChart');
     clearChartState('barChart');
     if (typeof Chart === 'undefined') {
-      showChartState('pieChart', 'Charts are unavailable right now. The summary cards above are still current.');
-      showChartState('barChart', 'Charts are unavailable right now. Your group data remains accessible.');
+      showChartState('pieChart', 'Charts are unavailable right now.');
+      showChartState('barChart', 'Charts are unavailable right now.');
       return;
     }
     Chart.defaults.font.family = "'Inter', sans-serif";
@@ -297,7 +259,6 @@ document.addEventListener('DOMContentLoaded', function () {
       showChartState('pieChart', 'Attendance rates will appear after attendance is taken for your groups.');
     } else {
       register(new Chart(document.getElementById('pieChart'), {
-        /* Horizontal bars: % of students present (incl. late) per group. */
         type: 'bar',
         data: {
           labels: subjects,
@@ -317,10 +278,7 @@ document.addEventListener('DOMContentLoaded', function () {
           responsive: true,
           maintainAspectRatio: false,
           animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
-          plugins: {
-            legend: { display: false },
-            tooltip: tooltipOptions()
-          },
+          plugins: { legend: { display: false }, tooltip: tooltipOptions() },
           scales: {
             x: { min: 0, max: 100, grid: { color: gridColor() }, ticks: { color: mutedColor(), callback: function (v) { return v + '%'; } } },
             y: { grid: { display: false }, ticks: { color: textColor(), font: { size: isMobileChart() ? 12 : 13, weight: '700' } } }
@@ -328,12 +286,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       }));
     }
-
     if (!hasData(compacted.values)) {
       showChartState('barChart', 'Attendance sessions will appear after attendance is taken for your groups.');
     } else {
       register(new Chart(document.getElementById('barChart'), {
-        /* Groups are categories, not a continuum — bars, not a line. */
         type: 'bar',
         data: {
           labels: compacted.labels,

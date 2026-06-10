@@ -1,51 +1,141 @@
 {% extends 'main_app/base.html' %}
 {% load static %}
-{% block page_title %}{{ page_title }}{% endblock %}
+{% block title %}Feedback — Iceberg Study Center{% endblock %}
+{% block page_title %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
 
-{% block page_subtitle %}<p class="page-subtitle">Share classroom feedback or operational concerns with the admin team.</p>{% endblock %}
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'dist/css/staff-modern.css' %}">
+{% endblock custom_css %}
 
 {% block content %}
-<div class="ice-mobile-page" style="max-width:760px; margin:0 auto;">
-  <section class="ice-form-section">
-    <h3 class="ice-form-section__title">Send Feedback</h3>
-    {% include "main_app/form_template.html" with messages=messages form=form button_text="Submit Feedback" %}
-  </section>
+<div class="sf-page">
 
-  <section class="ice-form-section">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
-      <h3 class="ice-form-section__title" style="margin:0;"><i class="fas fa-comments me-2"></i>Previous Feedback</h3>
-      <span class="ice-chip ice-chip--info"><i class="fas fa-list" aria-hidden="true"></i><span>{{ feedbacks|length }} total</span></span>
+  <!-- ══ HERO ══════════════════════════════════════════════════════ -->
+  <div class="sf-hero">
+    <div class="sf-hero-inner">
+      <div class="sf-hero-kicker">Teacher Portal</div>
+      <h1 class="sf-hero-title">Feedback</h1>
+      <p class="sf-hero-sub">Share your thoughts with the admin team.</p>
+      {% if feedbacks %}
+      <div class="sf-hero-stats">
+        <div class="sf-hstat">
+          <div class="sf-hstat-num">{{ feedbacks|length }}</div>
+          <div class="sf-hstat-lbl">Submitted</div>
+        </div>
+        <div class="sf-hstat">
+          <div class="sf-hstat-num"><i class="fas fa-comment-dots" style="font-size:18px;opacity:.7;"></i></div>
+          <div class="sf-hstat-lbl">Feedback</div>
+        </div>
+        <div class="sf-hstat">
+          <div class="sf-hstat-num"><i class="fas fa-reply" style="font-size:18px;opacity:.7;"></i></div>
+          <div class="sf-hstat-lbl">Replies</div>
+        </div>
+      </div>
+      {% endif %}
     </div>
+  </div>
 
-    {% if feedbacks %}
-    <div class="ice-card-grid">
+  <!-- ══ MESSAGES ══════════════════════════════════════════════════ -->
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="sf-alert sf-anim {% if 'success' in msg.tags %}sf-alert-success{% elif 'error' in msg.tags or 'danger' in msg.tags %}sf-alert-danger{% elif 'warning' in msg.tags %}sf-alert-warning{% else %}sf-alert-info{% endif %}">
+      <i class="fas {% if 'success' in msg.tags %}fa-check-circle{% elif 'error' in msg.tags or 'danger' in msg.tags %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+      <span>{{ msg }}</span>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- ══ FORM CARD ══════════════════════════════════════════════════ -->
+  <span class="sf-lbl sf-anim sf-anim-2">New Feedback</span>
+  <div class="sf-card sf-anim sf-anim-2">
+    <div class="sf-card-head">
+      <h3 class="sf-card-title"><i class="fas fa-comment-dots"></i> Send Feedback</h3>
+    </div>
+    <form method="POST" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="sf-alert sf-alert-danger" style="margin:14px 16px 0;">
+        <i class="fas fa-exclamation-circle"></i>
+        <div>{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+      </div>
+      {% endif %}
+      <div class="sf-field-body">
+        <div class="sf-field">
+          <label for="{{ form.feedback.id_for_label }}">Your Message <span class="sf-field-req">*</span></label>
+          {{ form.feedback }}
+          {% if form.feedback.errors %}<div class="sf-field-error">{{ form.feedback.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="sf-btn-row">
+        <button type="submit" class="sf-btn-primary">
+          <i class="fas fa-paper-plane"></i> Submit Feedback
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ══ HISTORY ════════════════════════════════════════════════════ -->
+  {% if feedbacks %}
+  <span class="sf-lbl sf-anim sf-anim-3">Previous Feedback</span>
+  <div class="sf-card sf-anim sf-anim-3">
+    <div class="sf-card-head">
+      <h3 class="sf-card-title"><i class="fas fa-comments"></i> Conversation</h3>
+      <span class="sf-card-count">{{ feedbacks|length }}</span>
+    </div>
+    <div class="sf-hist-list">
       {% for feedback in feedbacks %}
-      <article class="ice-mobile-card">
-        <div class="ice-mobile-card__meta" style="margin-top:0;">
-          <span class="ice-chip"><i class="fas fa-clock" aria-hidden="true"></i><span>{{ feedback.created_at|date:"d M Y, H:i" }}</span></span>
+      <div class="sf-hist-item">
+        <div class="sf-hist-item-top">
+          <div class="sf-hist-item-left">
+            <div class="sf-hist-date">
+              <i class="fas fa-comment"></i>
+              Your message
+            </div>
+            <div class="sf-hist-meta">
+              <i class="fas fa-clock" style="font-size:10px;"></i>
+              {{ feedback.created_at|date:"d M Y, H:i" }}
+            </div>
+          </div>
           {% if feedback.reply %}
-          <span class="ice-chip ice-chip--success"><i class="fas fa-reply" aria-hidden="true"></i><span>Replied</span></span>
+            <span class="sf-badge sf-badge-replied"><i class="fas fa-reply" style="font-size:9px;"></i> Replied</span>
           {% else %}
-          <span class="ice-chip ice-chip--warning"><i class="fas fa-clock" aria-hidden="true"></i><span>Awaiting reply</span></span>
+            <span class="sf-badge sf-badge-waiting"><i class="fas fa-clock" style="font-size:9px;"></i> Awaiting</span>
           {% endif %}
         </div>
-        <p style="margin:12px 0 0; color:var(--ice-polish-text); line-height:1.6;">{{ feedback.feedback }}</p>
+        <div class="sf-hist-body">{{ feedback.feedback }}</div>
         {% if feedback.reply %}
-        <div class="ice-inline-alert ice-inline-alert--success" style="margin-top:12px;">
-          <i class="fas fa-reply" aria-hidden="true"></i>
-          <span><strong>Admin Reply:</strong> {{ feedback.reply }}</span>
+        <div class="sf-hist-reply">
+          <i class="fas fa-reply"></i>
+          <div>
+            <div class="sf-hist-reply-lbl">Admin Reply</div>
+            <div class="sf-hist-reply-txt">{{ feedback.reply }}</div>
+          </div>
         </div>
         {% endif %}
-      </article>
+      </div>
       {% endfor %}
     </div>
-    {% else %}
-    <div class="ice-empty-state">
-      <i class="fas fa-comments" aria-hidden="true"></i>
-      <strong>No records found</strong>
-      <span>No feedback submitted yet.</span>
+  </div>
+  {% else %}
+  <div class="sf-card sf-anim sf-anim-3">
+    <div class="sf-empty">
+      <i class="fas fa-comments"></i>
+      <div class="sf-empty-title">No Feedback Yet</div>
+      <div class="sf-empty-sub">Your submitted feedback and admin replies will appear here.</div>
     </div>
-    {% endif %}
-  </section>
+  </div>
+  {% endif %}
+
 </div>
-{% endblock %}
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+(function () {
+  document.querySelectorAll('.sf-field input, .sf-field textarea, .sf-field select').forEach(function (el) {
+    el.classList.add('sf-control');
+  });
+})();
+</script>
+{% endblock custom_js %}
