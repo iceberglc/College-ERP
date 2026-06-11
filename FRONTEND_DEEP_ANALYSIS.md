@@ -24,6 +24,8 @@
 11. [Role-Based Feature Matrix](#11-role-based-feature-matrix)
 12. [Known Bugs & Inconsistencies](#12-known-bugs--inconsistencies)
 13. [Data Models Reference](#13-data-models-reference)
+14. [Visual Browser Study (Live Testing)](#14-visual-browser-study-live-testing)
+15. [Gap-Closure Addendum — AJAX & Utility Endpoint Reference](#15-gap-closure-addendum--ajax--utility-endpoint-reference)
 
 ---
 
@@ -1325,14 +1327,14 @@ Icons: FontAwesome icons. Active item glows with `var(--lime)` and `drop-shadow(
 | GET | `/subject/manage/` | `manage_subject` | `manage_subject.html` |
 | GET/POST | `/subject/edit/<int:subject_id>/` | `edit_subject` | `edit_subject_template.html` |
 | GET/POST | `/subject/delete/<int:subject_id>/` | `delete_subject` | — (redirect) |
-| GET/POST | `/session/add/` | `add_session` | `add_session_template.html` |
+| GET/POST | `/add_session/` | `add_session` | `add_session_template.html` |
 | GET | `/session/manage/` | `manage_session` | `manage_session.html` |
 | GET/POST | `/session/edit/<int:session_id>/` | `edit_session` | `edit_session_template.html` |
 | GET/POST | `/session/delete/<int:session_id>/` | `delete_session` | — (redirect) |
 | GET/POST | `/branch/add/` | `add_branch` | `add_branch.html` |
 | GET | `/branch/manage/` | `manage_branch` | `manage_branch.html` |
-| GET/POST | `/branch/edit/<int:pk>/` | `edit_branch` | — |
-| GET/POST | `/branch/delete/<int:pk>/` | `delete_branch` | — (redirect) |
+| GET/POST | `/branch/edit/<int:branch_id>` (no trailing slash) | `edit_branch` | — |
+| GET/POST | `/branch/delete/<int:branch_id>` (no trailing slash) | `delete_branch` | — (redirect) |
 | GET/POST | `/group/add/` | `add_group` | `add_group.html` |
 | GET | `/group/manage/` | `manage_group` | `manage_group.html` |
 | GET | `/group/<int:pk>/` | `group_detail` | `group_detail.html` |
@@ -1377,7 +1379,7 @@ Icons: FontAwesome icons. Active item glows with `var(--lime)` and `drop-shadow(
 | Method | URL Pattern | View Function | Template |
 |---|---|---|---|
 | GET | `/staff/home/` | `staff_home` | `erpnext_staff_home.html` |
-| GET | `/staff/view-profile/` | `staff_view_profile` | `staff_view_profile.html` |
+| GET | `/staff/view/profile/` | `staff_view_profile` | `staff_view_profile.html` |
 | GET/POST | `/staff/take-attendance/` | `staff_take_attendance` | `staff_take_attendance.html` |
 | GET/POST | `/staff/update-attendance/` | `staff_update_attendance` | `staff_update_attendance.html` |
 | GET/POST | `/staff/add-result/` | `staff_add_result` | `staff_add_result.html` |
@@ -1391,7 +1393,7 @@ Icons: FontAwesome icons. Active item glows with `var(--lime)` and `drop-shadow(
 | GET | `/staff/payments/` | `staff_payments` | `staff_payments.html` |
 | GET | `/staff/vocabulary-days/` | `staff_vocabulary_days` | `staff_vocabulary_days.html` |
 | GET | `/staff/vocabulary-day/<int:pk>/` | `staff_vocabulary_day_detail` | `staff_vocabulary_day_detail.html` |
-| GET/POST | `/staff/vocabulary-day/add/` | `add_vocabulary_day` | `add_vocabulary_day.html` |
+| GET/POST | `/staff/vocabulary-days/add/` | `add_vocabulary_day` | `add_vocabulary_day.html` |
 | GET/POST | `/staff/apply-leave/` | `staff_apply_leave` | `staff_apply_leave.html` |
 | GET | `/staff/view-notification/` | `staff_view_notification` | `staff_view_notification.html` |
 | GET/POST | `/staff/feedback/` | `staff_feedback` | `staff_feedback.html` |
@@ -1405,7 +1407,7 @@ Icons: FontAwesome icons. Active item glows with `var(--lime)` and `drop-shadow(
 | Method | URL Pattern | View Function | Template |
 |---|---|---|---|
 | GET | `/student/home/` | `student_home` | `erpnext_student_home.html` |
-| GET | `/student/view-profile/` | `student_view_profile` | `student_view_profile.html` |
+| GET | `/student/view/profile/` | `student_view_profile` | `student_view_profile.html` |
 | GET | `/student/view-attendance/` | `student_view_attendance` | `student_view_attendance.html` |
 | GET | `/student/view-result/` | `student_view_result` | `student_view_result.html` |
 | GET | `/student/result-files/` | `student_result_files` | `student_result_files.html` |
@@ -2066,6 +2068,18 @@ JS-optional: form submits normally without JS.
 **Description**: Overdue fine displayed as `₹5/day` (Indian Rupee) when system is in Uzbekistan and all other monetary values use UZS soʻm.  
 **Fix**: Replace `₹` with `so'm` or UZS in all fine-related display text.
 
+### Bug #8 — Story Edit/Delete Has No Branch Scoping
+
+**Severity**: Medium (authorization gap)  
+**Description**: `edit_story` and `delete_story` in `hod_views.py` do `get_object_or_404(DashboardStory, id=story_id)` with **no branch or ownership check**. The *list* view (`manage_stories`) is branch-scoped, but a branch admin who knows/guesses a story ID can edit or delete any other branch's story (or a superadmin's global story) by URL.  
+**Fix**: Apply the same Q-filter used in `manage_stories` (own-authored OR targets accessible groups OR superadmin) before allowing edit/delete.
+
+### Bug #9 — Library Endpoints Not Branch/Ownership Scoped
+
+**Severity**: Low–Medium  
+**Description**: `view_issued_book` lists **all** loans system-wide and `return_book` lets any staff member return any loan — there is no per-teacher or per-branch scoping on the library feature. `get_student_attendance` (staff) also fetches any `attendance_date_id` without verifying group ownership (write path `update_attendance` IS guarded; the read path is not).  
+**Fix**: Scope loans to the staff's branch; verify `attendance.group.teacher_id == staff.id` in the fetch view too.
+
 ---
 
 ## 13. Data Models Reference
@@ -2499,7 +2513,7 @@ JS-optional: form submits normally without JS.
 
 1. **🐛 Login placeholder says "Student ID"** — the identifier field placeholder reads "Student ID" with label "YOUR ID", but admins must enter an email and teachers a TC-prefixed ID. Confusing for non-students. Suggest "Email or Login ID".
 2. **⚠️ Staff/student email login silently fails** — `EmailBackend` blocks email login for user_type 2/3 by design (must use login_id). The login page gives a generic error with no hint that teachers/students must use their ID. UX improvement: detect `@` + non-admin and show "Please use your Login ID".
-3. **⚠️ `ERR_CERT_AUTHORITY_INVALID` console errors on every page** — an external HTTPS resource fails to load (likely a CDN font or Firebase). Harmless in sandbox; **Needs verification** in production with DevTools to identify which resource.
+3. **✅ RESOLVED: `ERR_CERT_AUTHORITY_INVALID` console error identified** — verified live with Playwright `requestfailed` listener: the failing resource is `https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap` (the Inter font stylesheet). It fails only because the sandbox intercepts TLS; in production Google Fonts loads normally. This is the **only** external runtime resource — Bootstrap, FontAwesome, jQuery, and AdminLTE are all bundled locally in `/static/`. The Firebase service worker (`/firebase-messaging-sw.js`) serves a no-op stub when `FIREBASE_API_KEY` env is unset, so it never causes errors.
 4. **✅ django-axes lockout works** — repeated failed logins increment `AccessAttempt`; lockout message after limit. Verified live.
 5. **✅ No horizontal overflow** on any real page at 390px (only Django debug 404 pages overflow, which is expected).
 6. **✅ Role redirects work** — visiting another role's URL redirects to own home, as documented in Section 9.
@@ -2507,3 +2521,124 @@ JS-optional: form submits normally without JS.
 ### 14.4 Mobile Responsiveness Verdict
 
 The Django frontend is already strongly mobile-adapted: bottom navigation pills, card-ified tables, collapsible sidebar, touch-sized buttons. The Flutter migration should preserve this bottom-nav + card pattern (it already matches the planned Flutter shell design).
+
+---
+
+## 15. Gap-Closure Addendum — AJAX & Utility Endpoint Reference
+
+> Added after a completeness audit cross-checked every `urls.py` route and every
+> template file against this document. This section documents the **46 endpoints**
+> that Section 7 missed (mostly AJAX/JSON endpoints called by inline template JS)
+> plus the 4 previously undocumented templates. With this section, every URL route
+> and every template in the codebase is documented.
+
+### 15.1 Authentication & Session Utilities
+
+| Method | URL | View | Request | Response |
+|---|---|---|---|---|
+| POST | `/doLogin/` | `views.doLogin` | form: `identifier` (email or login_id; falls back to legacy `email` field), `password` | Redirect to role home on success; redirect to `/` with flash message on failure. Distinguishes "ID not found" (`id_error` tag) vs "Incorrect password" (`pw_error` tag); preserves typed ID as `?id=` query param. Has a recovery-admin fallback: if identifier == `RECOVERY_ADMIN_EMAIL` env (default `iceberg.edu.center@gmail.com`) and auth fails, re-seeds the recovery admin then retries. django-axes lockout returns "Too many failed login attempts. Please wait 15 minutes" |
+| GET | `/logout_user/` | `views.logout_user` | — | Logs out, redirects to `/` |
+| GET | `/accounts/login/` | Django auth fallback | — | Redirect target used by `@login_required`; lands on login page |
+| GET | `/firebase-messaging-sw.js` | `views.showFirebaseJS` | — | JS service worker. If `FIREBASE_API_KEY` env unset → no-op stub comment (never breaks). Otherwise emits Firebase v7.22.1 init with env-driven config |
+| GET | `/blog/` | placeholder include | — | Documented in urls.py comments only; inactive |
+
+### 15.2 Profile & Preference AJAX (all roles)
+
+| Method | URL | View | Request | Response |
+|---|---|---|---|---|
+| POST | `/profile/save-avatar/` | `views.save_avatar` | form: `avatar` = "1"–"24" or "" | `{"status":"ok","avatar":"<n>"}`; 400 `{"status":"error","message":"Invalid avatar"}` for anything else. Saves to `CustomUser.avatar` |
+| POST | `/student/save-theme/` | `student_views.student_save_theme` | form: `theme` = "dark"\|"bright"\|"system" (invalid → coerced to "system") | `{"status":"ok","theme":"…"}`. Saves to `Student.theme` |
+| POST | `/staff/fcmtoken/` | `staff_views.staff_fcmtoken` | form: `token` | Plain text `"True"`/`"False"`. Saves to `CustomUser.fcm_token` |
+| POST | `/student/fcmtoken/` | `student_views.student_fcmtoken` | form: `token` | Same as staff version |
+
+### 15.3 Attendance AJAX (the core take/update attendance flow)
+
+| Method | URL | View | Request | Response |
+|---|---|---|---|---|
+| POST | `/get_attendance` | `views.get_attendance` | form: `group` (group id) | JSON list `[{"id": <attendance_pk>, "attendance_date": "YYYY-MM-DD"}]`. **403 `{"error":"Access denied."}` if `user_can_access_group` fails** (IDOR guard verified) |
+| POST | `/staff/get_students/` | `staff_views.get_students` | form: `group` | JSON list `[{"id": <student_pk>, "name": "Last First"}]`. **Scoped to `teacher=staff` — forged group_id returns 400** |
+| POST | `/staff/attendance/save/` | `staff_views.save_attendance` | form: `group`, `date` (YYYY-MM-DD), `student_ids` = JSON string `[{"id":<pk>,"status":0|1|2}]` | Plain text `"OK"` or error w/ status 400/403. Idempotent (wipes prior reports for that group+date). Statuses: 0=Absent, 1=Present, 2=Late. Auto-notifies absent/late students |
+| POST | `/staff/attendance/fetch/` | `staff_views.get_student_attendance` | form: `attendance_date_id` | JSON list `[{"id":<student_pk>,"name":"Last First","status":0|1|2}]` |
+| POST | `/staff/attendance/update_save/` | `staff_views.update_attendance` | form: `date` (= attendance **id**, misleading name!), `student_ids` JSON | `"OK"`. **403 if `attendance.group.teacher_id != staff.id`** (IDOR guard). Notifies only students whose status changed to non-present |
+| POST | `/attendance/fetch/` | `hod_views.get_admin_attendance` | form: either `group` (returns date list) or `attendance_date_id` (returns per-student statuses `[{"status":n,"name":"…"}]`) | Branch-scoped: 403 `{"error":"Not allowed."}` on cross-branch access |
+
+### 15.4 Results AJAX (staff)
+
+| Method | URL | View | Request | Response |
+|---|---|---|---|---|
+| POST | `/staff/result/fetch/` | `staff_views.fetch_student_result` | form: `group`, `student` | JSON `{"exam":n,"test":n,"comment":"…"}` or plain `"False"` if no result. Group scoped to own teacher |
+| GET/POST | `/staff/result/edit/` | `EditResultView` (own file `EditResultView.py`) | POST form: `group`, `student`, `test` (0–40), `exam` (0–60) | Renders `edit_student_result.html` with flash messages. `get_object_or_404(groups, …)` restricts to own groups |
+| GET/POST | `/staff/result/upload-file/` | `staff_views.upload_result_file` | POST multipart: `group`, `student` (optional → group-wide), `title`, `description`, `file` (PDF/Word/image, max 10MB) | Renders `upload_result_file.html` with `errors` dict on validation failure |
+| GET | `/staff/result/files/` | `staff_views.staff_result_files` | — | Lists own uploaded `ResultFile`s (template `staff_result_files.html`) |
+| GET | `/student/result/files/` | `student_views.student_result_files` | — | Lists files for enrolled groups; personal files only if addressed to self |
+| GET | `/result/download/<int:file_id>/` | `views.result_file_download` | — | Streamed file or redirect to CDN. Access: student must be enrolled (+personal file must match self), teacher only own uploads, admin unrestricted. Human-readable error page when file missing from ephemeral disk |
+
+### 15.5 Group / Enrollment AJAX (admin)
+
+| Method | URL | View | Request | Response |
+|---|---|---|---|---|
+| POST | `/enrollment/group-info/` | `hod_views.get_group_info` | form: `group_id` | JSON `{"teacher","program","schedule","enrolled_count","capacity","enrolled_ids":[…]}`. Branch-scoped 403. Used by the add-enrollment page to live-preview a group |
+| GET | `/group/<int:group_id>/students/` | `hod_views.admin_group_detail` | — | HTML `group_detail.html`: active enrollments + `total_inactive` count. Branch-scoped (redirect + flash on violation) |
+| GET/POST | `/group/edit/<int:group_id>` | `hod_views.edit_group` | form fields of group | Setting/changing `start_date` triggers `_notify_group_start_date` — bulk notification to all active enrolled students |
+| POST | `/group/archive/<int:group_id>` / `/group/delete/<int:group_id>` | archive/delete views | — | Redirects; delete only allowed when no enrollments |
+
+### 15.6 Messaging (group chat) — full mechanics
+
+`/messages/` and `/messages/group/<int:group_id>/` → `messaging_views.messages_home`:
+
+- **Thread model**: one `ChatThread` per group, auto-created (`ensure_thread_for_group`). Thread list = all groups accessible to the user (teacher: own groups; student: enrolled groups; admin: branch-scoped), sorted by last activity, each with unread count.
+- **GET**: renders `main_app/messages.html` with last **120 messages** (chronological), marks thread read via `ChatReadState.update_or_create`.
+- **POST** (send): form `body` (max **4000 chars**) + optional `attachment`. Attachment rules: max **10 MB**, extension whitelist (images, documents, audio, video, zip). At least one of body/attachment required. On success redirects to `#latest` anchor.
+- **403** via `PermissionDenied` if group not in user's accessible set.
+
+### 15.7 Library (staff-only feature)
+
+| Method | URL | View | Notes |
+|---|---|---|---|
+| GET/POST | `/staff/addbook/` | `add_book` | `BookForm`; template `add_book.html` |
+| GET/POST | `/staff/issue_book/` | `issue_book` | `IssueBookForm` (validates against active loans); creates `Loan` with auto due date |
+| GET | `/staff/view_issued_book/` | `view_issued_book` | All loans, active first; fine computed by `Loan.fine_amount` property |
+| POST | `/staff/return_book/<int:loan_id>/` | `return_book` | Sets `returned_on=today`; flash shows fine if overdue |
+| GET | `/student/viewbooks/` | `student_views.view_books` | Read-only catalog for students (template `view_books.html`) |
+
+### 15.8 Stories (admin + staff)
+
+| Method | URL | View | Notes |
+|---|---|---|---|
+| GET | `/admin/stories/` | `manage_stories` | Branch admins see: global stories (no target group) + stories targeting their groups + own-authored. Superadmin sees all |
+| GET/POST | `/admin/stories/add/` | `add_story` | `DashboardStoryForm` (POST + FILES); sets `created_by`; template `story_form.html`; passes `storage_ok` flag (S3 health) |
+| GET/POST | `/admin/stories/<int:story_id>/edit/` | `edit_story` | Same form with instance |
+| POST | `/admin/stories/<int:story_id>/delete/` | `delete_story` | `require_POST`; no branch check (⚠️ any admin can delete any story — see bug list) |
+| GET/POST | `/staff/stories/post/` | `staff_create_story` | Staff version, template `staff_story_form.html` |
+
+### 15.9 Misc admin routes
+
+| Method | URL | View | Notes |
+|---|---|---|---|
+| GET | `/admin/vocabulary-days/` | `manage_vocabulary_days` | Branch-scoped read-only list with word/completion counts |
+| GET/POST | `/admin/leaderboard/seasons/` | `admin_manage_seasons` | Season CRUD for leaderboard |
+| GET | `/admin_notify_staff`, `/admin_notify_student` | redirect shims | Both redirect to `/messages/` (legacy URLs kept alive) |
+| POST | `/admin/send-student-notification/` | `send_student_notification` | form: `id` (admin user id!), `message`. Creates `Notification` + fires FCM via legacy `fcm.googleapis.com/fcm/send` with `FCM_SERVER_KEY` env |
+| GET | `/health/` | `views.health` | `{"status":"ok","db":true}` or 503 — load balancer probe |
+
+### 15.10 Error pages
+
+Custom branded handlers in `views.py` registered for 400/403/404/500 — all render `main_app/error.html` with `error_code`, `error_title`, `error_message` context. (404 verified live in Section 14.)
+
+### 15.11 Previously Undocumented Templates (4)
+
+| Template | Purpose |
+|---|---|
+| `main_app/form_template.html` | Generic include: renders any Django form as `pf-field` rows with label, errors, help text, and a submit button (`button_text` context var, default "Submit"). Used by simple add/edit pages |
+| `registration/password_reset_form.html` | "Forgot password?" email entry form (extends `erpnext_base.html`); posts to Django's built-in `PasswordResetView` |
+| `registration/password_reset_email.html` | Plain-text email body with `{{protocol}}://{{domain}}/reset/<uidb64>/<token>/` link; 24h expiry notice |
+| `registration/password_reset_success.html` | Success confirmation with "Sign in now" button |
+
+### 15.12 External Dependencies (verified live)
+
+The **only** external network request the frontend makes at page load is Google Fonts
+(`fonts.googleapis.com/css2?family=Inter` + `fonts.gstatic.com` preconnect). All other
+assets (Bootstrap 4, FontAwesome 5, jQuery, AdminLTE 3, Chart.js) are vendored under
+`main_app/static/`. Firebase scripts are only referenced from the service worker, which
+serves a no-op stub unless `FIREBASE_*` env vars are configured. **Implication for
+Flutter:** the app needs zero external web assets; bundle the Inter font family locally.
