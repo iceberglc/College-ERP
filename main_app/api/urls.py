@@ -45,6 +45,10 @@ urlpatterns = [
     path("invoices/", views.InvoiceView.as_view(), name="api_invoices"),
     path("invoices/<int:pk>/", views.InvoiceDetailView.as_view(), name="api_invoice_detail"),
 
+    # ── Dashboard endpoints (mobile home screens) ────────────────────────────
+    path("student/home/", views.StudentDashboardView.as_view(), name="api_student_home"),
+    path("admin/home/",   views.AdminDashboardView.as_view(),   name="api_admin_home"),
+
     # ── Stats  (staff + admin dashboard) ─────────────────────────────────────
     path("stats/", views.StaffStatsView.as_view(), name="api_stats"),
 

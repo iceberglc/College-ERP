@@ -15,6 +15,7 @@ from ..models import (
     Assignment,
     Attendance,
     AttendanceReport,
+    Branch,
     Course,
     CustomUser,
     Enrollment,
@@ -801,36 +802,134 @@ class AdminEnrollmentView(APIView):
 # ---------------------------------------------------------------------------
 
 
-class StaffStatsView(APIView):
+class StudentDashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
+        if str(user.user_type) != "3":
+            return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            student = user.student
+        except Student.DoesNotExist:
+            return Response({
+                "attendance_percentage": None, "total_subjects": 0,
+                "average_score": None, "enrolled_groups": 0, "notices": [],
+            })
+
+        # Attendance percentage
+        reports = AttendanceReport.objects.filter(student=student)
+        total = reports.count()
+        present = reports.filter(status=AttendanceReport.PRESENT).count()
+        att_pct = round(present / total * 100, 1) if total > 0 else None
+
+        # Enrolled groups + distinct subjects
+        enrollments = Enrollment.objects.filter(
+            student=student, is_active=True
+        ).select_related("group__course")
+        enrolled_count = enrollments.count()
+        course_ids = {e.group.course_id for e in enrollments if e.group.course_id}
+        total_subjects = len(course_ids) if course_ids else enrolled_count
+
+        # Average score (test + exam out of 100)
+        results = StudentResult.objects.filter(student=student)
+        scores = [r.test + r.exam for r in results]
+        avg_score = round(sum(scores) / len(scores), 1) if scores else None
+
+        # Recent notices
+        notifications = Notification.objects.filter(
+            recipient=user
+        ).order_by("-created_at")[:5]
+        notices = [
+            {"title": n.get_category_display(), "message": n.message}
+            for n in notifications
+        ]
+
+        return Response({
+            "attendance_percentage": att_pct,
+            "total_subjects": total_subjects,
+            "average_score": avg_score,
+            "enrolled_groups": enrolled_count,
+            "notices": notices,
+        })
+
+
+class AdminDashboardView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        user = request.user
+        students = branching.filter_students_for_user(user, Student.objects.all())
+        staff    = branching.filter_staff_for_user(user, Staff.objects.all())
+        groups   = branching.filter_groups_for_user(
+            user, Group.objects.filter(is_archived=False)
+        )
+        group_ids = list(groups.values_list("id", flat=True))
+
+        # Avg attendance across all scoped groups
+        total_reports   = AttendanceReport.objects.filter(
+            attendance__group_id__in=group_ids
+        ).count()
+        present_reports = AttendanceReport.objects.filter(
+            attendance__group_id__in=group_ids,
+            status=AttendanceReport.PRESENT,
+        ).count()
+        avg_att = round(present_reports / total_reports * 100, 1) if total_reports else None
+
+        leads          = RegistrationLead.objects.all()
+        total_branches = Branch.objects.count()
+
+        return Response({
+            "total_students":  students.count(),
+            "total_staff":     staff.count(),
+            "total_groups":    groups.count(),
+            "avg_attendance":  avg_att,
+            "new_leads":       leads.count(),
+            "total_leads":     leads.count(),
+            "total_branches":  total_branches,
+        })
+
+
+class StaffStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        import datetime
+        user = request.user
         user_type = str(user.user_type)
+        today = datetime.date.today()
 
         if user_type == "2":
             try:
                 staff = user.staff
             except Staff.DoesNotExist:
-                return Response(StaffStatsSerializer({
+                return Response({
                     "total_students": 0, "total_groups": 0,
-                    "total_sessions": 0, "pending_leave": 0,
-                }).data)
+                    "sessions_today": 0, "avg_attendance": None,
+                })
             groups = Group.objects.filter(teacher=staff, is_archived=False)
             group_ids = list(groups.values_list("id", flat=True))
             student_ids = Enrollment.objects.filter(
                 group_id__in=group_ids, is_active=True
             ).values_list("student_id", flat=True).distinct()
-            total_sessions = Attendance.objects.filter(group_id__in=group_ids).count()
-            pending_leave = LeaveReportStaff.objects.filter(
-                staff=staff, status=LeaveReportStaff.PENDING
+            sessions_today = Attendance.objects.filter(
+                group_id__in=group_ids, date=today
             ).count()
-            return Response(StaffStatsSerializer({
+            total_reports = AttendanceReport.objects.filter(
+                attendance__group_id__in=group_ids
+            ).count()
+            present_reports = AttendanceReport.objects.filter(
+                attendance__group_id__in=group_ids,
+                status=AttendanceReport.PRESENT,
+            ).count()
+            avg_att = round(present_reports / total_reports * 100, 1) if total_reports else None
+            return Response({
                 "total_students": len(set(student_ids)),
                 "total_groups": groups.count(),
-                "total_sessions": total_sessions,
-                "pending_leave": pending_leave,
-            }).data)
+                "sessions_today": sessions_today,
+                "avg_attendance": avg_att,
+            })
 
         # Admin sees branch-scoped totals
         if user_type == "1":
@@ -839,15 +938,23 @@ class StaffStatsView(APIView):
                 user, Group.objects.filter(is_archived=False)
             )
             group_ids = list(groups.values_list("id", flat=True))
-            total_sessions = Attendance.objects.filter(group_id__in=group_ids).count()
-            return Response(StaffStatsSerializer({
+            sessions_today = Attendance.objects.filter(
+                group_id__in=group_ids, date=today
+            ).count()
+            total_reports = AttendanceReport.objects.filter(
+                attendance__group_id__in=group_ids
+            ).count()
+            present_reports = AttendanceReport.objects.filter(
+                attendance__group_id__in=group_ids,
+                status=AttendanceReport.PRESENT,
+            ).count()
+            avg_att = round(present_reports / total_reports * 100, 1) if total_reports else None
+            return Response({
                 "total_students": students.count(),
                 "total_groups": groups.count(),
-                "total_sessions": total_sessions,
-                "pending_leave": LeaveReportStaff.objects.filter(
-                    status=LeaveReportStaff.PENDING
-                ).count(),
-            }).data)
+                "sessions_today": sessions_today,
+                "avg_attendance": avg_att,
+            })
 
         return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
 
