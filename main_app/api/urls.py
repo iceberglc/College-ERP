@@ -111,7 +111,10 @@ urlpatterns = [
     path("admin/subjects/", admin_views.SubjectListView.as_view(), name="api_admin_subjects"),
     path("admin/subjects/<int:pk>/", admin_views.SubjectDetailView.as_view(), name="api_admin_subject_detail"),
 
-    # ── Admin: group detail (with enrolled students) ──────────────────────────
+    # ── Admin: group CRUD + detail (with enrolled students) ──────────────────
+    path("admin/groups-manage/", admin_views.AdminGroupListView.as_view(), name="api_admin_groups_manage"),
+    path("admin/groups-manage/<int:pk>/", admin_views.AdminGroupDetailView.as_view(), name="api_admin_group_manage_detail"),
+    # Legacy detail endpoint (read-only, from admin_views.GroupDetailView):
     path("admin/groups/<int:pk>/", admin_views.GroupDetailView.as_view(), name="api_admin_group_detail"),
 
     # ── Admin: enrollments ────────────────────────────────────────────────────

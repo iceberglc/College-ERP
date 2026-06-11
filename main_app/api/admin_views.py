@@ -1182,3 +1182,205 @@ class AdminRecordPaymentView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+# ---------------------------------------------------------------------------
+# Group CRUD (admin)
+# ---------------------------------------------------------------------------
+
+class AdminGroupListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        ok, err = _require_admin(request)
+        if not ok:
+            return err
+        qs = Group.objects.select_related("course", "teacher__admin", "branch")
+        if request.query_params.get("archived") != "1":
+            qs = qs.filter(is_archived=False)
+        qs = branching.filter_groups_for_user(request.user, qs)
+        data = []
+        for g in qs:
+            teacher_name = None
+            if g.teacher and g.teacher.admin:
+                u = g.teacher.admin
+                teacher_name = f"{u.first_name} {u.last_name}".strip()
+            enrolled = g.enrollments.count() if hasattr(g, "enrollments") else 0
+            data.append({
+                "id": g.id,
+                "name": g.name,
+                "course": g.course_id,
+                "course_name": g.course.name if g.course else None,
+                "teacher": g.teacher_id,
+                "teacher_name": teacher_name,
+                "branch": g.branch_id,
+                "branch_name": g.branch.name if g.branch else None,
+                "room": g.room,
+                "schedule": g.schedule,
+                "capacity": g.capacity,
+                "monthly_fee": str(g.monthly_fee) if g.monthly_fee is not None else None,
+                "start_date": g.start_date.isoformat() if g.start_date else None,
+                "is_archived": g.is_archived,
+                "enrolled_count": enrolled,
+            })
+        return Response(data)
+
+    def post(self, request):
+        ok, err = _require_admin(request)
+        if not ok:
+            return err
+        d = request.data
+        # Validate required fields
+        if not d.get("name"):
+            return Response({"name": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)
+        if not d.get("course"):
+            return Response({"course": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            course = Course.objects.get(pk=d["course"])
+        except Course.DoesNotExist:
+            return Response({"course": ["Not found."]}, status=status.HTTP_400_BAD_REQUEST)
+
+        teacher = None
+        if d.get("teacher"):
+            try:
+                teacher = Staff.objects.get(pk=d["teacher"])
+                if not branching.user_can_access_group(request.user, Group(branch=teacher.branch)):
+                    return Response({"detail": "Access denied to that teacher's branch."}, status=status.HTTP_403_FORBIDDEN)
+            except Staff.DoesNotExist:
+                return Response({"teacher": ["Not found."]}, status=status.HTTP_400_BAD_REQUEST)
+
+        branch = None
+        if d.get("branch"):
+            try:
+                branch = Branch.objects.get(pk=d["branch"])
+                accessible = branching.get_accessible_branches(request.user)
+                if not accessible.filter(pk=branch.pk).exists():
+                    return Response({"detail": "Access denied to that branch."}, status=status.HTTP_403_FORBIDDEN)
+            except Branch.DoesNotExist:
+                return Response({"branch": ["Not found."]}, status=status.HTTP_400_BAD_REQUEST)
+
+        group = Group.objects.create(
+            name=d["name"],
+            course=course,
+            teacher=teacher,
+            branch=branch,
+            room=d.get("room", ""),
+            schedule=d.get("schedule", ""),
+            capacity=int(d.get("capacity", 20)),
+            monthly_fee=d.get("monthly_fee") or None,
+            start_date=d.get("start_date") or None,
+        )
+        return Response({"id": group.id, "name": group.name}, status=status.HTTP_201_CREATED)
+
+
+class AdminGroupDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def _get_group(self, request, pk):
+        try:
+            g = Group.objects.select_related("course", "teacher__admin", "branch").get(pk=pk)
+        except Group.DoesNotExist:
+            return None, Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        ok, err = _require_admin(request)
+        if not ok:
+            return None, err
+        if not branching.user_can_access_group(request.user, g):
+            return None, Response({"detail": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
+        return g, None
+
+    def get(self, request, pk):
+        g, err = self._get_group(request, pk)
+        if err:
+            return err
+        students = []
+        for enr in g.enrollments.select_related("student__admin").all():
+            s = enr.student
+            u = s.admin
+            students.append({
+                "id": s.id,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+                "login_id": u.login_id,
+                "status": s.status,
+            })
+        teacher_name = None
+        if g.teacher and g.teacher.admin:
+            u2 = g.teacher.admin
+            teacher_name = f"{u2.first_name} {u2.last_name}".strip()
+        return Response({
+            "id": g.id,
+            "name": g.name,
+            "course": g.course_id,
+            "course_name": g.course.name if g.course else None,
+            "teacher": g.teacher_id,
+            "teacher_name": teacher_name,
+            "branch": g.branch_id,
+            "branch_name": g.branch.name if g.branch else None,
+            "room": g.room,
+            "schedule": g.schedule,
+            "capacity": g.capacity,
+            "monthly_fee": str(g.monthly_fee) if g.monthly_fee is not None else None,
+            "start_date": g.start_date.isoformat() if g.start_date else None,
+            "is_archived": g.is_archived,
+            "students": students,
+            "enrolled_count": len(students),
+        })
+
+    def patch(self, request, pk):
+        g, err = self._get_group(request, pk)
+        if err:
+            return err
+        d = request.data
+        if "name" in d:
+            g.name = d["name"]
+        if "room" in d:
+            g.room = d["room"]
+        if "schedule" in d:
+            g.schedule = d["schedule"]
+        if "capacity" in d:
+            g.capacity = int(d["capacity"])
+        if "monthly_fee" in d:
+            g.monthly_fee = d["monthly_fee"] or None
+        if "start_date" in d:
+            g.start_date = d["start_date"] or None
+        if "is_archived" in d:
+            g.is_archived = bool(d["is_archived"])
+        if "course" in d:
+            try:
+                g.course = Course.objects.get(pk=d["course"])
+            except Course.DoesNotExist:
+                return Response({"course": ["Not found."]}, status=status.HTTP_400_BAD_REQUEST)
+        if "teacher" in d:
+            if d["teacher"]:
+                try:
+                    g.teacher = Staff.objects.get(pk=d["teacher"])
+                except Staff.DoesNotExist:
+                    return Response({"teacher": ["Not found."]}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                g.teacher = None
+        if "branch" in d:
+            if d["branch"]:
+                try:
+                    b = Branch.objects.get(pk=d["branch"])
+                    if not branching.get_accessible_branches(request.user).filter(pk=b.pk).exists():
+                        return Response({"detail": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
+                    g.branch = b
+                except Branch.DoesNotExist:
+                    return Response({"branch": ["Not found."]}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                g.branch = None
+        g.save()
+        return Response({"id": g.id, "name": g.name, "is_archived": g.is_archived})
+
+    def delete(self, request, pk):
+        g, err = self._get_group(request, pk)
+        if err:
+            return err
+        if g.enrollments.exists():
+            return Response(
+                {"detail": f"Cannot delete group '{g.name}': {g.enrollments.count()} student(s) enrolled. Archive it instead."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        g.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
