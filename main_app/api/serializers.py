@@ -25,6 +25,8 @@ from ..models import (
     VocabularyDay,
     VocabularyDayWord,
     VocabularyDayCompletion,
+    VocabularyQuizResult,
+    DashboardStory,
     LeaderboardSeason,
     LeaderboardSnapshot,
 )
@@ -776,3 +778,93 @@ class LeaderboardSeasonSerializer(serializers.ModelSerializer):
     def get_entries(self, obj):
         snapshots = obj.snapshots.select_related("student__admin").order_by("rank")
         return LeaderboardEntrySerializer(snapshots, many=True, context=self.context).data
+
+
+# ---------------------------------------------------------------------------
+# Vocabulary Quiz
+# ---------------------------------------------------------------------------
+
+
+class QuizChoiceSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    word = serializers.CharField()
+
+
+class QuizQuestionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    meaning = serializers.CharField()
+    example_sentence = serializers.CharField()
+    correct_id = serializers.IntegerField()
+    choices = QuizChoiceSerializer(many=True)
+
+
+class VocabularyQuizSerializer(serializers.Serializer):
+    day_number = serializers.IntegerField()
+    title = serializers.CharField()
+    questions = QuizQuestionSerializer(many=True)
+
+
+# ---------------------------------------------------------------------------
+# Stories
+# ---------------------------------------------------------------------------
+
+
+class StorySerializer(serializers.ModelSerializer):
+    cover_image_url = serializers.SerializerMethodField()
+    creator_name = serializers.SerializerMethodField()
+    target_group_ids = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DashboardStory
+        fields = [
+            "id", "title", "body", "story_type", "emoji", "bg_color",
+            "cover_image_url", "expires_at", "created_at",
+            "creator_name", "target_group_ids",
+        ]
+
+    def get_cover_image_url(self, obj):
+        if not obj.has_valid_image:
+            return None
+        request = self.context.get("request")
+        try:
+            url = obj.image.url
+            return request.build_absolute_uri(url) if request else url
+        except (ValueError, AttributeError):
+            return None
+
+    def get_creator_name(self, obj):
+        u = obj.created_by
+        return f"{u.first_name} {u.last_name}".strip()
+
+    def get_target_group_ids(self, obj):
+        return list(obj.target_groups.values_list("id", flat=True))
+
+
+# ---------------------------------------------------------------------------
+# Staff Vocabulary Management
+# ---------------------------------------------------------------------------
+
+
+class VocabularyWordWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VocabularyDayWord
+        fields = ["id", "word", "meaning", "example_sentence", "pronunciation_note", "order"]
+
+
+class StaffVocabularyDaySerializer(serializers.ModelSerializer):
+    words = VocabularyWordSerializer(many=True, read_only=True)
+    word_count = serializers.ReadOnlyField()
+    is_released = serializers.ReadOnlyField()
+    group_name = serializers.CharField(source="group.name", read_only=True, allow_null=True)
+    completion_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VocabularyDay
+        fields = [
+            "id", "day_number", "title", "group", "group_name",
+            "level", "release_at", "release_scope", "notes",
+            "word_count", "is_released", "completion_count", "words",
+        ]
+
+    def get_completion_count(self, obj):
+        return obj.completions.count()

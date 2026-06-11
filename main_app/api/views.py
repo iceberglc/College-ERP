@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
-from django.db import transaction
+from django.db import transaction, models
 from django.db.models import Q
 from rest_framework import generics, status
 from rest_framework.pagination import PageNumberPagination
@@ -857,12 +857,33 @@ class StudentDashboardView(APIView):
             for n in notifications
         ]
 
+        # Active stories for student's groups
+        enrolled_group_ids = [e.group_id for e in enrollments]
+        from django.utils import timezone as tz
+        now = tz.now()
+        stories_qs = DashboardStory.objects.filter(
+            is_active=True
+        ).filter(
+            models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=now)
+        ).order_by("-created_at")[:20]
+        stories_out = []
+        for s in stories_qs:
+            target_ids = list(s.target_groups.values_list("id", flat=True))
+            if not target_ids or any(gid in target_ids for gid in enrolled_group_ids):
+                stories_out.append({
+                    "id": s.id,
+                    "title": s.title,
+                    "content": s.body,
+                    "author_name": s.created_by.get_full_name() if s.created_by else "",
+                })
+
         return Response({
             "attendance_percentage": att_pct,
             "total_subjects": total_subjects,
             "average_score": avg_score,
             "enrolled_groups": enrolled_count,
             "notices": notices,
+            "stories": stories_out,
         })
 
 
