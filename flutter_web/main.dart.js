@@ -90735,7 +90735,7 @@ if(q===$){s=r.a7e()
 r.b!==$&&A.a2()
 r.b=s
 q=s}return q},
-a7e(){var s="application/json",r=A.aJn(A.aII("https://iceberglc.com/api/v1",B.G2,A.ar(["Content-Type",s,"Accept",s],t.N,t.z),B.Ga)),q=r.Xy$
+a7e(){var s="application/json",r=A.aJn(A.aII("https://app.iceberglc.com/api/v1",B.G2,A.ar(["Content-Type",s,"Accept",s],t.N,t.z),B.Ga)),q=r.Xy$
 q.E(q,new A.OK(new A.a3s(this),new A.a3t(this),null,null,null))
 return r},
 qi(){var s=0,r=A.R(t.y),q,p=2,o=[],n,m,l,k,j,i
@@ -90748,7 +90748,7 @@ s=1
 break}p=5
 l=t.N
 s=8
-return A.N(A.aJn(null).p8("https://iceberglc.com/api/v1/auth/token/refresh/",A.ar(["refresh",j],l,l),t.z),$async$qi)
+return A.N(A.aJn(null).p8("https://app.iceberglc.com/api/v1/auth/token/refresh/",A.ar(["refresh",j],l,l),t.z),$async$qi)
 case 8:n=b
 m=A.cL(J.aV(n.a,"access"))
 s=m!=null?9:10

@@ -28,7 +28,7 @@ services:
         value: "${APP_DOMAIN},app.iceberglc.com"
       - key: CORS_ALLOWED_ORIGINS
         scope: RUN_AND_BUILD_TIME
-        value: "https://iceberglc.com,https://www.iceberglc.com"
+        value: "https://iceberglc.com,https://www.iceberglc.com,https://app.iceberglc.com"
       - key: REGISTRATION_LEADS_API_TOKEN
         scope: RUN_AND_BUILD_TIME
         type: SECRET
