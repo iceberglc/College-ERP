@@ -2467,3 +2467,43 @@ JS-optional: form submits normally without JS.
 
 *End of FRONTEND_DEEP_ANALYSIS.md*  
 *Document covers: 18 CSS files, 12 JS files, 100+ templates, 80+ URL routes, 50+ API endpoints, 30+ data models, 7 known bugs.*
+
+---
+
+## 14. Visual Browser Study (Live Testing)
+
+**Method:** Django server run locally (`DJANGO_DEBUG=True`, port 8877). Playwright Chromium drove the real UI at desktop (1366px) and mobile (390px) widths. Logged in as all 3 roles with real test accounts (admin via email, staff via `TC052401`, student via `IC052401`). 60+ screenshots captured at `/tmp/erp_shots/`.
+
+### 14.1 Pages Tested (all returned HTTP 200, no JS errors, no horizontal overflow)
+
+**Admin (13 pages × 2 widths):** `/admin/home/`, `/student/manage/`, `/staff/manage/`, `/group/manage/`, `/course/manage/`, `/branch/manage/`, `/admin/manage/`, `/admin/add/`, `/admin/registration-leads/`, `/admin/payments/`, `/admin/stories/`, `/attendance/view/`, `/profile/`
+
+**Staff (7 pages × 2 widths):** `/staff/home/`, `/staff/attendance/take/`, `/staff/result/add/`, `/staff/feedback/`, `/staff/apply/leave/`, `/staff/vocabulary-days/`, `/staff/assignments/`
+
+**Student (7 pages × 2 widths):** `/student/home/`, `/student/view/attendance/`, `/student/view/result/`, `/student/feedback/`, `/student/apply/leave/`, `/student/vocabulary-days/`, `/student/leaderboard/`
+
+### 14.2 Visual Observations
+
+| Area | Observation |
+|------|-------------|
+| Design system | ICEBERG teal/lime rebrand is live and consistent: navy `#06343A` heroes, lime `#DFFF2F` active states, white cards on `#FAFAFA` |
+| Login page | Clean centered card, iceberg logo, show-password eye icon. Works at both widths. |
+| Admin dashboard | Hero "Welcome back" banner + KPI metric cards + quick actions render correctly at 1366px; sidebar with grouped sections (Overview/People/Academic/Finance/Vocabulary) |
+| Mobile navigation | Sidebar collapses to hamburger; student/staff get a floating pill bottom-nav (Home/Attendance/Results-Scores/Profile) — already mobile-app-like |
+| Manage Students (mobile) | Tables correctly transform into stacked cards with chips (ID, course, branch, level, status, phone) and full-width Edit/Delete buttons. Excellent mobile adaptation. |
+| Empty states | Well designed everywhere tested: "No Groups Assigned" (staff attendance), "All caught up" (assignments), "No invoices for June 2026" (payments) — icon + title + helper text |
+| Payments page | KPI strip (Billed/Collected/Outstanding/Overdue), month/status/branch/group filters, "Generate Invoices", "One-off Invoice", CSV buttons all render |
+| Student home (mobile) | Dark hero card with avatar, greeting, leaderboard rank badge, 3 stat pills; Quick Access horizontal scroll row; performance trend section |
+
+### 14.3 Issues Found During Live Testing
+
+1. **🐛 Login placeholder says "Student ID"** — the identifier field placeholder reads "Student ID" with label "YOUR ID", but admins must enter an email and teachers a TC-prefixed ID. Confusing for non-students. Suggest "Email or Login ID".
+2. **⚠️ Staff/student email login silently fails** — `EmailBackend` blocks email login for user_type 2/3 by design (must use login_id). The login page gives a generic error with no hint that teachers/students must use their ID. UX improvement: detect `@` + non-admin and show "Please use your Login ID".
+3. **⚠️ `ERR_CERT_AUTHORITY_INVALID` console errors on every page** — an external HTTPS resource fails to load (likely a CDN font or Firebase). Harmless in sandbox; **Needs verification** in production with DevTools to identify which resource.
+4. **✅ django-axes lockout works** — repeated failed logins increment `AccessAttempt`; lockout message after limit. Verified live.
+5. **✅ No horizontal overflow** on any real page at 390px (only Django debug 404 pages overflow, which is expected).
+6. **✅ Role redirects work** — visiting another role's URL redirects to own home, as documented in Section 9.
+
+### 14.4 Mobile Responsiveness Verdict
+
+The Django frontend is already strongly mobile-adapted: bottom navigation pills, card-ified tables, collapsible sidebar, touch-sized buttons. The Flutter migration should preserve this bottom-nav + card pattern (it already matches the planned Flutter shell design).
