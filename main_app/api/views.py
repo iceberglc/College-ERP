@@ -18,16 +18,28 @@ from ..models import (
     Course,
     CustomUser,
     Enrollment,
+    FeedbackStaff,
+    FeedbackStudent,
     Group,
+    Invoice,
+    LeaveReportStaff,
+    LeaveReportStudent,
     Notification,
+    RegistrationLead,
     ResultFile,
     Staff,
     Student,
     StudentResult,
     Submission,
 )
-from .permissions import IsAdmin, IsAdminOrTeacher, IsStudent
+from .permissions import IsAdmin, IsAdminOrTeacher, IsStudent, IsTeacher
 from .serializers import (
+    AdminStaffFeedbackSerializer,
+    AdminStaffLeaveSerializer,
+    AdminStaffSerializer,
+    AdminStudentFeedbackSerializer,
+    AdminStudentLeaveSerializer,
+    AdminStudentSerializer,
     AssignmentDetailSerializer,
     AssignmentSerializer,
     AttendanceSaveSerializer,
@@ -38,8 +50,15 @@ from .serializers import (
     FcmTokenSerializer,
     GroupDetailSerializer,
     GroupSerializer,
+    InvoiceSerializer,
     MeSerializer,
     NotificationSerializer,
+    RegistrationLeadSerializer,
+    StaffFeedbackSerializer,
+    StaffLeaveSerializer,
+    StaffStatsSerializer,
+    StudentFeedbackSerializer,
+    StudentLeaveSerializer,
     StudentResultSerializer,
     SubmissionSerializer,
     SubmitAssignmentSerializer,
@@ -56,14 +75,32 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        email = request.data.get("email", "").strip()
+        # Accept either `email` or `login_id` in the identifier field.
+        # The mobile app sends `identifier`; the web API sends `email`.
+        identifier = (
+            request.data.get("identifier")
+            or request.data.get("email")
+            or request.data.get("login_id")
+            or ""
+        ).strip()
         password = request.data.get("password", "")
 
-        if not email or not password:
+        if not identifier or not password:
             return Response(
-                {"detail": "Email and password are required."},
+                {"detail": "Identifier (email or login ID) and password are required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Resolve login_id → email so Django's auth backend can authenticate.
+        email = identifier
+        if "@" not in identifier:
+            try:
+                email = CustomUser.objects.get(login_id=identifier).email
+            except CustomUser.DoesNotExist:
+                return Response(
+                    {"detail": "Invalid credentials."},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
 
         try:
             user = authenticate(request=request, username=email, password=password)
@@ -75,7 +112,7 @@ class LoginView(APIView):
 
         if user is None:
             return Response(
-                {"detail": "Invalid email or password."},
+                {"detail": "Invalid credentials."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
         if not user.is_active:
@@ -757,3 +794,510 @@ class AdminEnrollmentView(APIView):
         if not updated:
             return Response({"detail": "Enrollment not found."}, status=status.HTTP_404_NOT_FOUND)
         return Response({"detail": "Student unenrolled."})
+
+
+# ---------------------------------------------------------------------------
+# Staff dashboard stats
+# ---------------------------------------------------------------------------
+
+
+class StaffStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        user_type = str(user.user_type)
+
+        if user_type == "2":
+            try:
+                staff = user.staff
+            except Staff.DoesNotExist:
+                return Response(StaffStatsSerializer({
+                    "total_students": 0, "total_groups": 0,
+                    "total_sessions": 0, "pending_leave": 0,
+                }).data)
+            groups = Group.objects.filter(teacher=staff, is_archived=False)
+            group_ids = list(groups.values_list("id", flat=True))
+            student_ids = Enrollment.objects.filter(
+                group_id__in=group_ids, is_active=True
+            ).values_list("student_id", flat=True).distinct()
+            total_sessions = Attendance.objects.filter(group_id__in=group_ids).count()
+            pending_leave = LeaveReportStaff.objects.filter(
+                staff=staff, status=LeaveReportStaff.PENDING
+            ).count()
+            return Response(StaffStatsSerializer({
+                "total_students": len(set(student_ids)),
+                "total_groups": groups.count(),
+                "total_sessions": total_sessions,
+                "pending_leave": pending_leave,
+            }).data)
+
+        # Admin sees branch-scoped totals
+        if user_type == "1":
+            students = branching.filter_students_for_user(user, Student.objects.all())
+            groups = branching.filter_groups_for_user(
+                user, Group.objects.filter(is_archived=False)
+            )
+            group_ids = list(groups.values_list("id", flat=True))
+            total_sessions = Attendance.objects.filter(group_id__in=group_ids).count()
+            return Response(StaffStatsSerializer({
+                "total_students": students.count(),
+                "total_groups": groups.count(),
+                "total_sessions": total_sessions,
+                "pending_leave": LeaveReportStaff.objects.filter(
+                    status=LeaveReportStaff.PENDING
+                ).count(),
+            }).data)
+
+        return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+
+# ---------------------------------------------------------------------------
+# Leave  (GET/POST for the logged-in user; admin PATCH to approve/reject)
+# ---------------------------------------------------------------------------
+
+
+class LeaveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        user_type = str(user.user_type)
+
+        if user_type == "3":
+            try:
+                qs = LeaveReportStudent.objects.filter(student=user.student).order_by("-created_at")
+            except Student.DoesNotExist:
+                return Response({"count": 0, "results": []})
+            paginator = PageNumberPagination()
+            paginator.page_size = 20
+            page = paginator.paginate_queryset(qs, request)
+            return paginator.get_paginated_response(
+                StudentLeaveSerializer(page, many=True).data
+            )
+
+        if user_type == "2":
+            try:
+                qs = LeaveReportStaff.objects.filter(staff=user.staff).order_by("-created_at")
+            except Staff.DoesNotExist:
+                return Response({"count": 0, "results": []})
+            paginator = PageNumberPagination()
+            paginator.page_size = 20
+            page = paginator.paginate_queryset(qs, request)
+            return paginator.get_paginated_response(
+                StaffLeaveSerializer(page, many=True).data
+            )
+
+        # Admin: return combined leave from both students and staff with optional filters
+        if user_type == "1":
+            leave_type = request.query_params.get("type", "student")
+            status_filter = request.query_params.get("status")
+            paginator = PageNumberPagination()
+            paginator.page_size = 20
+
+            if leave_type == "staff":
+                qs = LeaveReportStaff.objects.select_related("staff__admin").order_by("-created_at")
+                qs = branching.filter_staff_leave_for_user(user, qs) if hasattr(
+                    branching, "filter_staff_leave_for_user"
+                ) else qs
+                if status_filter is not None:
+                    qs = qs.filter(status=status_filter)
+                page = paginator.paginate_queryset(qs, request)
+                return paginator.get_paginated_response(
+                    AdminStaffLeaveSerializer(page, many=True).data
+                )
+            else:
+                qs = LeaveReportStudent.objects.select_related("student__admin").order_by("-created_at")
+                if status_filter is not None:
+                    qs = qs.filter(status=status_filter)
+                page = paginator.paginate_queryset(qs, request)
+                return paginator.get_paginated_response(
+                    AdminStudentLeaveSerializer(page, many=True).data
+                )
+
+        return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+    def post(self, request):
+        user = request.user
+        user_type = str(user.user_type)
+
+        if user_type == "3":
+            try:
+                student = user.student
+            except Student.DoesNotExist:
+                return Response({"detail": "Student profile not found."}, status=status.HTTP_403_FORBIDDEN)
+            serializer = StudentLeaveSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            leave = serializer.save(student=student)
+            return Response(StudentLeaveSerializer(leave).data, status=status.HTTP_201_CREATED)
+
+        if user_type == "2":
+            try:
+                staff = user.staff
+            except Staff.DoesNotExist:
+                return Response({"detail": "Staff profile not found."}, status=status.HTTP_403_FORBIDDEN)
+            serializer = StaffLeaveSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            leave = serializer.save(staff=staff)
+            return Response(StaffLeaveSerializer(leave).data, status=status.HTTP_201_CREATED)
+
+        return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+
+class LeaveDetailView(APIView):
+    """Admin: PATCH to approve (status=1) or reject (status=-1)."""
+    permission_classes = [IsAdmin]
+
+    def patch(self, request, pk):
+        leave_type = request.query_params.get("type", "student")
+        new_status = request.data.get("status")
+
+        if new_status not in (1, -1, "1", "-1"):
+            return Response(
+                {"detail": "status must be 1 (approved) or -1 (rejected)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        new_status = int(new_status)
+
+        if leave_type == "staff":
+            try:
+                leave = LeaveReportStaff.objects.get(pk=pk)
+            except LeaveReportStaff.DoesNotExist:
+                return Response({"detail": "Leave not found."}, status=status.HTTP_404_NOT_FOUND)
+            leave.status = new_status
+            leave.save(update_fields=["status", "updated_at"])
+            return Response(AdminStaffLeaveSerializer(leave).data)
+        else:
+            try:
+                leave = LeaveReportStudent.objects.get(pk=pk)
+            except LeaveReportStudent.DoesNotExist:
+                return Response({"detail": "Leave not found."}, status=status.HTTP_404_NOT_FOUND)
+            leave.status = new_status
+            leave.save(update_fields=["status", "updated_at"])
+            return Response(AdminStudentLeaveSerializer(leave).data)
+
+
+# ---------------------------------------------------------------------------
+# Feedback  (GET/POST for the logged-in user; admin PATCH to reply)
+# ---------------------------------------------------------------------------
+
+
+class FeedbackView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        user_type = str(user.user_type)
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+
+        if user_type == "3":
+            try:
+                qs = FeedbackStudent.objects.filter(student=user.student).order_by("-created_at")
+            except Student.DoesNotExist:
+                return Response({"count": 0, "results": []})
+            page = paginator.paginate_queryset(qs, request)
+            return paginator.get_paginated_response(StudentFeedbackSerializer(page, many=True).data)
+
+        if user_type == "2":
+            try:
+                qs = FeedbackStaff.objects.filter(staff=user.staff).order_by("-created_at")
+            except Staff.DoesNotExist:
+                return Response({"count": 0, "results": []})
+            page = paginator.paginate_queryset(qs, request)
+            return paginator.get_paginated_response(StaffFeedbackSerializer(page, many=True).data)
+
+        if user_type == "1":
+            feedback_type = request.query_params.get("type", "student")
+            if feedback_type == "staff":
+                qs = FeedbackStaff.objects.select_related("staff__admin").order_by("-created_at")
+                page = paginator.paginate_queryset(qs, request)
+                return paginator.get_paginated_response(
+                    AdminStaffFeedbackSerializer(page, many=True).data
+                )
+            else:
+                qs = FeedbackStudent.objects.select_related("student__admin").order_by("-created_at")
+                page = paginator.paginate_queryset(qs, request)
+                return paginator.get_paginated_response(
+                    AdminStudentFeedbackSerializer(page, many=True).data
+                )
+
+        return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+    def post(self, request):
+        user = request.user
+        user_type = str(user.user_type)
+
+        if user_type == "3":
+            try:
+                student = user.student
+            except Student.DoesNotExist:
+                return Response({"detail": "Student profile not found."}, status=status.HTTP_403_FORBIDDEN)
+            text = request.data.get("feedback", "").strip()
+            if not text:
+                return Response({"feedback": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
+            fb = FeedbackStudent.objects.create(student=student, feedback=text)
+            return Response(StudentFeedbackSerializer(fb).data, status=status.HTTP_201_CREATED)
+
+        if user_type == "2":
+            try:
+                staff = user.staff
+            except Staff.DoesNotExist:
+                return Response({"detail": "Staff profile not found."}, status=status.HTTP_403_FORBIDDEN)
+            text = request.data.get("feedback", "").strip()
+            if not text:
+                return Response({"feedback": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
+            fb = FeedbackStaff.objects.create(staff=staff, feedback=text)
+            return Response(StaffFeedbackSerializer(fb).data, status=status.HTTP_201_CREATED)
+
+        return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+
+class FeedbackDetailView(APIView):
+    """Admin: PATCH to add a reply."""
+    permission_classes = [IsAdmin]
+
+    def patch(self, request, pk):
+        feedback_type = request.query_params.get("type", "student")
+        reply = request.data.get("reply", "").strip()
+        if not reply:
+            return Response({"reply": "Reply text is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if feedback_type == "staff":
+            try:
+                fb = FeedbackStaff.objects.get(pk=pk)
+            except FeedbackStaff.DoesNotExist:
+                return Response({"detail": "Feedback not found."}, status=status.HTTP_404_NOT_FOUND)
+            fb.reply = reply
+            fb.save(update_fields=["reply", "updated_at"])
+            return Response(AdminStaffFeedbackSerializer(fb).data)
+        else:
+            try:
+                fb = FeedbackStudent.objects.get(pk=pk)
+            except FeedbackStudent.DoesNotExist:
+                return Response({"detail": "Feedback not found."}, status=status.HTTP_404_NOT_FOUND)
+            fb.reply = reply
+            fb.save(update_fields=["reply", "updated_at"])
+            return Response(AdminStudentFeedbackSerializer(fb).data)
+
+
+# ---------------------------------------------------------------------------
+# Invoices (student: own invoices; admin: all)
+# ---------------------------------------------------------------------------
+
+
+class InvoiceView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = InvoiceSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        user_type = str(user.user_type)
+        qs = Invoice.objects.prefetch_related("payments").select_related("group")
+        if user_type == "3":
+            try:
+                return qs.filter(student=user.student).order_by("-period")
+            except Student.DoesNotExist:
+                return qs.none()
+        if user_type == "1":
+            students = branching.filter_students_for_user(user, Student.objects.all())
+            return qs.filter(student__in=students).order_by("-period")
+        return qs.none()
+
+
+class InvoiceDetailView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = InvoiceSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        user_type = str(user.user_type)
+        qs = Invoice.objects.prefetch_related("payments").select_related("group")
+        if user_type == "3":
+            try:
+                return qs.filter(student=user.student)
+            except Student.DoesNotExist:
+                return qs.none()
+        if user_type == "1":
+            students = branching.filter_students_for_user(user, Student.objects.all())
+            return qs.filter(student__in=students)
+        return qs.none()
+
+
+# ---------------------------------------------------------------------------
+# Admin: Registration leads
+# ---------------------------------------------------------------------------
+
+
+class AdminLeadListView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        qs = RegistrationLead.objects.order_by("-created_at")
+        status_filter = request.query_params.get("status")
+        search = request.query_params.get("search")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if search:
+            qs = qs.filter(
+                Q(full_name__icontains=search)
+                | Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+                | Q(phone__icontains=search)
+                | Q(email__icontains=search)
+            )
+        paginator = PageNumberPagination()
+        paginator.page_size = 30
+        page = paginator.paginate_queryset(qs, request)
+        return paginator.get_paginated_response(RegistrationLeadSerializer(page, many=True).data)
+
+    def post(self, request):
+        serializer = RegistrationLeadSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        lead = serializer.save()
+        return Response(RegistrationLeadSerializer(lead).data, status=status.HTTP_201_CREATED)
+
+
+class AdminLeadDetailView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request, pk):
+        try:
+            lead = RegistrationLead.objects.get(pk=pk)
+        except RegistrationLead.DoesNotExist:
+            return Response({"detail": "Lead not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(RegistrationLeadSerializer(lead).data)
+
+    def patch(self, request, pk):
+        try:
+            lead = RegistrationLead.objects.get(pk=pk)
+        except RegistrationLead.DoesNotExist:
+            return Response({"detail": "Lead not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = RegistrationLeadSerializer(lead, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data)
+
+
+# ---------------------------------------------------------------------------
+# Admin: Student management
+# ---------------------------------------------------------------------------
+
+
+class AdminStudentListView(generics.ListAPIView):
+    permission_classes = [IsAdmin]
+    serializer_class = AdminStudentSerializer
+
+    def get_queryset(self):
+        qs = Student.objects.select_related("admin", "course", "branch")
+        qs = branching.filter_students_for_user(self.request.user, qs)
+        search = self.request.query_params.get("search")
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if search:
+            qs = qs.filter(
+                Q(admin__first_name__icontains=search)
+                | Q(admin__last_name__icontains=search)
+                | Q(admin__email__icontains=search)
+                | Q(admin__login_id__icontains=search)
+                | Q(phone__icontains=search)
+            )
+        return qs.order_by("admin__first_name")
+
+
+class AdminStudentDetailView(APIView):
+    permission_classes = [IsAdmin]
+
+    def _get_student(self, request, pk):
+        try:
+            student = Student.objects.select_related("admin", "course", "branch").get(pk=pk)
+        except Student.DoesNotExist:
+            return None, Response({"detail": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+        if not branching.is_super_admin(request.user):
+            allowed = branching.filter_students_for_user(request.user, Student.objects.all())
+            if not allowed.filter(pk=pk).exists():
+                return None, Response({"detail": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
+        return student, None
+
+    def get(self, request, pk):
+        student, err = self._get_student(request, pk)
+        if err:
+            return err
+        return Response(AdminStudentSerializer(student, context={"request": request}).data)
+
+    def patch(self, request, pk):
+        student, err = self._get_student(request, pk)
+        if err:
+            return err
+        serializer = AdminStudentSerializer(
+            student, data=request.data, partial=True, context={"request": request}
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data)
+
+
+# ---------------------------------------------------------------------------
+# Admin: Staff management
+# ---------------------------------------------------------------------------
+
+
+class AdminStaffListView(generics.ListAPIView):
+    permission_classes = [IsAdmin]
+    serializer_class = AdminStaffSerializer
+
+    def get_queryset(self):
+        qs = Staff.objects.select_related("admin", "course", "branch")
+        qs = branching.filter_staff_for_user(self.request.user, qs)
+        search = self.request.query_params.get("search")
+        active_filter = self.request.query_params.get("is_active")
+        if active_filter is not None:
+            qs = qs.filter(is_active=(active_filter == "1"))
+        if search:
+            qs = qs.filter(
+                Q(admin__first_name__icontains=search)
+                | Q(admin__last_name__icontains=search)
+                | Q(admin__email__icontains=search)
+                | Q(admin__login_id__icontains=search)
+                | Q(phone__icontains=search)
+            )
+        return qs.order_by("admin__first_name")
+
+
+class AdminStaffDetailView(APIView):
+    permission_classes = [IsAdmin]
+
+    def _get_staff(self, request, pk):
+        try:
+            staff = Staff.objects.select_related("admin", "course", "branch").get(pk=pk)
+        except Staff.DoesNotExist:
+            return None, Response({"detail": "Staff not found."}, status=status.HTTP_404_NOT_FOUND)
+        if not branching.is_super_admin(request.user):
+            allowed = branching.filter_staff_for_user(request.user, Staff.objects.all())
+            if not allowed.filter(pk=pk).exists():
+                return None, Response({"detail": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
+        return staff, None
+
+    def get(self, request, pk):
+        staff, err = self._get_staff(request, pk)
+        if err:
+            return err
+        return Response(AdminStaffSerializer(staff, context={"request": request}).data)
+
+    def patch(self, request, pk):
+        staff, err = self._get_staff(request, pk)
+        if err:
+            return err
+        serializer = AdminStaffSerializer(
+            staff, data=request.data, partial=True, context={"request": request}
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data)
