@@ -6,22 +6,10 @@ from django.views.static import serve
 from rest_framework_simplejwt.views import TokenRefreshView
 from . import settings
 
-from main_app.views import SafePasswordResetView
-
 urlpatterns = [
     path("", include("main_app.urls")),
-    # Override Django's built-in password_reset with our safe version that
-    # catches SMTP failures instead of returning HTTP 500.
-    # Must be before the accounts/ include so it takes precedence.
-    path(
-        "accounts/password_reset/",
-        SafePasswordResetView.as_view(),
-        name="password_reset",
-    ),
-    # Single login experience: the auth app's default login page duplicated
-    # the main /login/ screen with a different design. Redirect it.
+    # Redirect the Django auth login to our branded login page.
     path("accounts/login/", RedirectView.as_view(url="/login/", permanent=False)),
-    path("accounts/", include("django.contrib.auth.urls")),
     path("admin/", admin.site.urls),
     # Mobile API v1
     path("api/v1/", include("main_app.api.urls")),
