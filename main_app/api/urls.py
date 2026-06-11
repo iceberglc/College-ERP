@@ -72,4 +72,15 @@ urlpatterns = [
     # ── Admin: registration leads ─────────────────────────────────────────────
     path("admin/leads/", views.AdminLeadListView.as_view(), name="api_admin_leads"),
     path("admin/leads/<int:pk>/", views.AdminLeadDetailView.as_view(), name="api_admin_lead_detail"),
+
+    # ── Admin: branches ───────────────────────────────────────────────────────
+    path("admin/branches/", views.AdminBranchListView.as_view(), name="api_admin_branches"),
+
+    # ── Vocabulary (student) ──────────────────────────────────────────────────
+    path("vocabulary/", views.VocabularyDayListView.as_view(), name="api_vocabulary"),
+    path("vocabulary/<int:pk>/", views.VocabularyDayDetailView.as_view(), name="api_vocabulary_detail"),
+    path("vocabulary/<int:pk>/complete/", views.VocabularyDayCompleteView.as_view(), name="api_vocabulary_complete"),
+
+    # ── Leaderboard ───────────────────────────────────────────────────────────
+    path("leaderboard/", views.LeaderboardView.as_view(), name="api_leaderboard"),
 ]
