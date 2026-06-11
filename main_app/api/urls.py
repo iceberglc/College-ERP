@@ -137,4 +137,8 @@ urlpatterns = [
     # ── Admin: invoices ───────────────────────────────────────────────────────
     path("admin/invoices-manage/", admin_views.AdminInvoiceListView.as_view(), name="api_admin_invoices_manage"),
     path("admin/invoices-manage/<int:pk>/pay/", admin_views.AdminRecordPaymentView.as_view(), name="api_admin_invoice_pay"),
+
+    # ── Admin: admin user management (superadmin only) ────────────────────────
+    path("admin/admins/", admin_views.AdminAdminListView.as_view(), name="api_admin_admins"),
+    path("admin/admins/<int:pk>/", admin_views.AdminAdminDetailView.as_view(), name="api_admin_admin_detail"),
 ]

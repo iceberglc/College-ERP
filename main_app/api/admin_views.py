@@ -620,15 +620,23 @@ class EnrollmentView(APIView):
         if not ok:
             return err
 
+        scoped = branching.filter_enrollments_for_user(request.user, Enrollment.objects.all())
+
+        enrollment_id = request.data.get("enrollment_id")
+        if enrollment_id:
+            updated = scoped.filter(id=enrollment_id).update(is_active=False)
+            if not updated:
+                return Response({"detail": "Enrollment not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Student unenrolled."})
+
         student_id = request.data.get("student_id")
         group_id = request.data.get("group_id")
         if not student_id or not group_id:
             return Response(
-                {"detail": "student_id and group_id are required."},
+                {"detail": "enrollment_id or (student_id + group_id) required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        scoped = branching.filter_enrollments_for_user(request.user, Enrollment.objects.all())
         updated = scoped.filter(student_id=student_id, group_id=group_id).update(is_active=False)
         if not updated:
             return Response({"detail": "Enrollment not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -1383,4 +1391,182 @@ class AdminGroupDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         g.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------------------------------------------------------------------
+# Admin user (HOD) management  — superadmin only
+# ---------------------------------------------------------------------------
+
+class AdminAdminListView(APIView):
+    """
+    GET  /admin/admins/        — list all admin users (superadmin only)
+    POST /admin/admins/        — create a new branch admin
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _require_superadmin(self, request):
+        ok, err = _require_admin(request)
+        if not ok:
+            return False, err
+        if not branching.is_super_admin(request.user):
+            return False, Response(
+                {"detail": "Only super-admins can manage admin accounts."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return True, None
+
+    def get(self, request):
+        ok, err = self._require_superadmin(request)
+        if not ok:
+            return err
+
+        qs = CustomUser.objects.filter(user_type="1").order_by("-date_joined")
+        search = request.query_params.get("search", "").strip()
+        if search:
+            qs = qs.filter(
+                Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+                | Q(email__icontains=search)
+            )
+
+        data = []
+        for u in qs:
+            branch_ids = list(u.branches.values_list("id", flat=True))
+            branch_names = list(u.branches.values_list("name", flat=True))
+            data.append({
+                "id": u.id,
+                "email": u.email,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+                "full_name": f"{u.first_name} {u.last_name}".strip(),
+                "phone": getattr(u, "phone", ""),
+                "is_super_admin": u.is_super_admin,
+                "is_active": u.is_active,
+                "date_joined": str(u.date_joined.date()),
+                "branch_ids": branch_ids,
+                "branch_names": branch_names,
+            })
+        return Response(data)
+
+    def post(self, request):
+        ok, err = self._require_superadmin(request)
+        if not ok:
+            return err
+
+        email = request.data.get("email", "").strip().lower()
+        password = request.data.get("password", "").strip()
+        first_name = request.data.get("first_name", "").strip()
+        last_name = request.data.get("last_name", "").strip()
+        phone = request.data.get("phone", "").strip()
+        branch_ids = request.data.get("branch_ids", [])
+
+        if not email or not password:
+            return Response(
+                {"detail": "email and password are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if CustomUser.objects.filter(email=email).exists():
+            return Response(
+                {"detail": "An account with this email already exists."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            user = CustomUser.objects.create_user(
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                user_type="1",
+                is_super_admin=False,
+            )
+            if hasattr(user, "phone"):
+                user.phone = phone
+                user.save(update_fields=["phone"])
+
+            if branch_ids:
+                branches = Branch.objects.filter(pk__in=branch_ids)
+                user.branches.set(branches)
+
+        return Response(
+            {
+                "id": user.id,
+                "email": user.email,
+                "full_name": f"{user.first_name} {user.last_name}".strip(),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminAdminDetailView(APIView):
+    """
+    PATCH  /admin/admins/<pk>/  — update admin details
+    DELETE /admin/admins/<pk>/  — delete admin (cannot delete self or other superadmins)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _get_target(self, request, pk):
+        ok, err = _require_admin(request)
+        if not ok:
+            return None, err
+        if not branching.is_super_admin(request.user):
+            return None, Response(
+                {"detail": "Only super-admins can manage admin accounts."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            return CustomUser.objects.get(pk=pk, user_type="1"), None
+        except CustomUser.DoesNotExist:
+            return None, Response({"detail": "Admin not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, pk):
+        target, err = self._get_target(request, pk)
+        if err:
+            return err
+
+        d = request.data
+        if "first_name" in d:
+            target.first_name = d["first_name"]
+        if "last_name" in d:
+            target.last_name = d["last_name"]
+        if "email" in d:
+            new_email = d["email"].strip().lower()
+            if CustomUser.objects.exclude(pk=pk).filter(email=new_email).exists():
+                return Response(
+                    {"detail": "Email already in use."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            target.email = new_email
+        if "phone" in d and hasattr(target, "phone"):
+            target.phone = d["phone"]
+        if "is_active" in d:
+            target.is_active = bool(d["is_active"])
+        if "password" in d and d["password"]:
+            target.set_password(d["password"])
+        target.save()
+
+        if "branch_ids" in d:
+            branches = Branch.objects.filter(pk__in=(d["branch_ids"] or []))
+            target.branches.set(branches)
+
+        return Response({"id": target.id, "email": target.email})
+
+    def delete(self, request, pk):
+        target, err = self._get_target(request, pk)
+        if err:
+            return err
+
+        if target.pk == request.user.pk:
+            return Response(
+                {"detail": "You cannot delete your own account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if target.is_super_admin:
+            return Response(
+                {"detail": "Super-admin accounts cannot be deleted via API."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        target.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
