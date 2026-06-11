@@ -5,6 +5,7 @@ from django.views.generic import RedirectView
 from django.views.static import serve
 from rest_framework_simplejwt.views import TokenRefreshView
 from . import settings
+from main_app.flutter_view import flutter_app
 
 urlpatterns = [
     path("", include("main_app.urls")),
@@ -15,6 +16,9 @@ urlpatterns = [
     path("api/v1/", include("main_app.api.urls")),
     # JWT token refresh (stateless — no login required)
     path("api/v1/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    # Flutter web app — served at /app/
+    re_path(r"^app(?P<path>/.*)$", flutter_app, name="flutter_app"),
+    path("app", RedirectView.as_view(url="/app/", permanent=False)),
 ]
 
 # Serve uploaded media files (profile pictures, etc.) in all environments.
