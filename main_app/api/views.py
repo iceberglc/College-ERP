@@ -25,6 +25,8 @@ from ..models import (
     Invoice,
     LeaveReportStaff,
     LeaveReportStudent,
+    LeaderboardSeason,
+    LeaderboardSnapshot,
     Notification,
     RegistrationLead,
     ResultFile,
@@ -32,6 +34,9 @@ from ..models import (
     Student,
     StudentResult,
     Submission,
+    VocabularyDay,
+    VocabularyDayCompletion,
+    VocabularyDayWord,
 )
 from .permissions import IsAdmin, IsAdminOrTeacher, IsStudent, IsTeacher
 from .serializers import (
@@ -1316,6 +1321,79 @@ class AdminStudentListView(generics.ListAPIView):
             )
         return qs.order_by("admin__first_name")
 
+    @transaction.atomic
+    def post(self, request):
+        """Create a new student account."""
+        from ..hod_views import _generate_login_id
+        import datetime
+
+        data = request.data
+        first_name = data.get("first_name", "").strip()
+        last_name = data.get("last_name", "").strip()
+        password = data.get("password", "").strip()
+        phone = data.get("phone", "").strip()
+        gender = data.get("gender", "M")
+        address = data.get("address", "").strip()
+        course_id = data.get("course")
+        branch_id = data.get("branch")
+        status_val = data.get("status", Student.STATUS_ACTIVE)
+        level = data.get("level")
+        dob_str = data.get("date_of_birth", "")
+
+        if not first_name or not password:
+            return Response(
+                {"detail": "first_name and password are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        dob = None
+        if dob_str:
+            try:
+                dob = datetime.date.fromisoformat(dob_str)
+            except ValueError:
+                return Response(
+                    {"detail": "Invalid date_of_birth format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        login_id = _generate_login_id("IC", dob)
+        email = f"{login_id.lower()}@iceberg.internal"
+
+        user = CustomUser.objects.create_user(
+            email=email,
+            password=password,
+            user_type=3,
+            first_name=first_name,
+            last_name=last_name,
+            login_id=login_id,
+        )
+        user.gender = gender
+        user.address = address
+        user.date_of_birth = dob
+        user.save()
+
+        student = user.student
+        if course_id:
+            from ..models import Course as CourseModel
+            try:
+                student.course = CourseModel.objects.get(pk=course_id)
+            except CourseModel.DoesNotExist:
+                pass
+        if branch_id:
+            try:
+                student.branch = Branch.objects.get(pk=branch_id)
+            except Branch.DoesNotExist:
+                pass
+        student.phone = phone
+        student.status = status_val
+        student.level = int(level) if level else None
+        student.save()
+
+        return Response(
+            AdminStudentSerializer(student, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
 
 class AdminStudentDetailView(APIView):
     permission_classes = [IsAdmin]
@@ -1376,6 +1454,75 @@ class AdminStaffListView(generics.ListAPIView):
             )
         return qs.order_by("admin__first_name")
 
+    @transaction.atomic
+    def post(self, request):
+        """Create a new staff account."""
+        from ..hod_views import _generate_login_id
+        import datetime
+
+        data = request.data
+        first_name = data.get("first_name", "").strip()
+        last_name = data.get("last_name", "").strip()
+        password = data.get("password", "").strip()
+        phone = data.get("phone", "").strip()
+        specialization = data.get("specialization", "").strip()
+        gender = data.get("gender", "M")
+        course_id = data.get("course")
+        branch_id = data.get("branch")
+        dob_str = data.get("date_of_birth", "")
+
+        if not first_name or not password:
+            return Response(
+                {"detail": "first_name and password are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        dob = None
+        if dob_str:
+            try:
+                dob = datetime.date.fromisoformat(dob_str)
+            except ValueError:
+                return Response(
+                    {"detail": "Invalid date_of_birth format. Use YYYY-MM-DD."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        login_id = _generate_login_id("TC", dob)
+        email = f"{login_id.lower()}@iceberg.internal"
+
+        user = CustomUser.objects.create_user(
+            email=email,
+            password=password,
+            user_type=2,
+            first_name=first_name,
+            last_name=last_name,
+            login_id=login_id,
+        )
+        user.gender = gender
+        user.date_of_birth = dob
+        user.save()
+
+        staff = user.staff
+        if course_id:
+            from ..models import Course as CourseModel
+            try:
+                staff.course = CourseModel.objects.get(pk=course_id)
+            except CourseModel.DoesNotExist:
+                pass
+        if branch_id:
+            try:
+                staff.branch = Branch.objects.get(pk=branch_id)
+            except Branch.DoesNotExist:
+                pass
+        staff.phone = phone
+        staff.specialization = specialization
+        staff.save()
+
+        return Response(
+            AdminStaffSerializer(staff, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
 
 class AdminStaffDetailView(APIView):
     permission_classes = [IsAdmin]
@@ -1408,3 +1555,119 @@ class AdminStaffDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
         return Response(serializer.data)
+
+
+# ---------------------------------------------------------------------------
+# Vocabulary
+# ---------------------------------------------------------------------------
+
+
+class VocabularyDayListView(generics.ListAPIView):
+    """Student: list released vocabulary days for their enrolled groups."""
+    permission_classes = [IsAuthenticated]
+    serializer_class = None  # set below after serializer import
+
+    def get_serializer_class(self):
+        from .serializers import VocabularyDaySerializer
+        return VocabularyDaySerializer
+
+    def get_queryset(self):
+        from django.utils import timezone as tz
+        user = self.request.user
+        try:
+            student = user.student
+        except Exception:
+            return VocabularyDay.objects.none()
+        enrolled_groups = Group.objects.filter(enrollments__student=student)
+        return (
+            VocabularyDay.objects
+            .filter(group__in=enrolled_groups, release_at__lte=tz.now())
+            .prefetch_related("words")
+            .select_related("group")
+            .order_by("group", "day_number")
+        )
+
+
+class VocabularyDayDetailView(APIView):
+    """Student: get full words for one vocabulary day."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        from .serializers import VocabularyDaySerializer
+        from django.utils import timezone as tz
+        try:
+            student = request.user.student
+        except Exception:
+            return Response({"detail": "Students only."}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            day = VocabularyDay.objects.prefetch_related("words").select_related("group").get(pk=pk)
+        except VocabularyDay.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        if not day.is_released:
+            return Response({"detail": "Not released yet."}, status=status.HTTP_403_FORBIDDEN)
+        enrolled = Group.objects.filter(enrollments__student=student, pk=day.group_id).exists()
+        if not enrolled:
+            return Response({"detail": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
+        return Response(VocabularyDaySerializer(day, context={"request": request}).data)
+
+
+class VocabularyDayCompleteView(APIView):
+    """Student: mark a vocabulary day as completed."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            student = request.user.student
+        except Exception:
+            return Response({"detail": "Students only."}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            day = VocabularyDay.objects.get(pk=pk)
+        except VocabularyDay.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        enrolled = Group.objects.filter(enrollments__student=student, pk=day.group_id).exists()
+        if not enrolled:
+            return Response({"detail": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
+        VocabularyDayCompletion.objects.get_or_create(student=student, day=day)
+        return Response({"status": "completed"})
+
+
+# ---------------------------------------------------------------------------
+# Leaderboard
+# ---------------------------------------------------------------------------
+
+
+class LeaderboardView(APIView):
+    """Return the active season leaderboard (or a specified season by ?season_id=)."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from .serializers import LeaderboardSeasonSerializer
+        season_id = request.query_params.get("season_id")
+        if season_id:
+            try:
+                season = LeaderboardSeason.objects.get(pk=season_id)
+            except LeaderboardSeason.DoesNotExist:
+                return Response({"detail": "Season not found."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            season = LeaderboardSeason.objects.filter(is_active=True).order_by("-start_date").first()
+            if not season:
+                return Response({"detail": "No active leaderboard season."}, status=status.HTTP_404_NOT_FOUND)
+        data = LeaderboardSeasonSerializer(season, context={"request": request}).data
+        return Response(data)
+
+
+# ---------------------------------------------------------------------------
+# Admin: Branches (superadmin)
+# ---------------------------------------------------------------------------
+
+
+class AdminBranchListView(generics.ListAPIView):
+    """Superadmin: list all branches; branch-admin: list own branches."""
+    permission_classes = [IsAdmin]
+
+    def get_serializer_class(self):
+        from .serializers import BranchSerializer
+        return BranchSerializer
+
+    def get_queryset(self):
+        return branching.get_accessible_branches(self.request.user)

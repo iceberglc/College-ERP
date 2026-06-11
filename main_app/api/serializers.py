@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from ..models import (
+    Admin,
     CustomUser,
     Course,
     Branch,
@@ -21,6 +22,11 @@ from ..models import (
     Invoice,
     Payment,
     RegistrationLead,
+    VocabularyDay,
+    VocabularyDayWord,
+    VocabularyDayCompletion,
+    LeaderboardSeason,
+    LeaderboardSnapshot,
 )
 
 
@@ -59,6 +65,17 @@ class UserSerializer(serializers.ModelSerializer):
 # ---------------------------------------------------------------------------
 # Profile (GET /me/)
 # ---------------------------------------------------------------------------
+
+
+class AdminRoleSerializer(serializers.ModelSerializer):
+    branch_ids = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Admin
+        fields = ["is_super_admin", "branch_ids"]
+
+    def get_branch_ids(self, obj):
+        return list(obj.branches.values_list("id", flat=True))
 
 
 class StaffRoleSerializer(serializers.ModelSerializer):
@@ -111,6 +128,11 @@ class MeSerializer(serializers.ModelSerializer):
     def get_role_profile(self, obj):
         ctx = self.context
         user_type = str(obj.user_type)
+        if user_type == "1":
+            try:
+                return AdminRoleSerializer(obj.admin, context=ctx).data
+            except Exception:
+                return {"is_super_admin": False, "branch_ids": []}
         if user_type == "2":
             try:
                 return StaffRoleSerializer(obj.staff, context=ctx).data
@@ -677,3 +699,80 @@ class AdminStaffSerializer(serializers.ModelSerializer):
                 setattr(instance.admin, attr, val)
             instance.admin.save()
         return super().update(instance, validated_data)
+
+
+# ---------------------------------------------------------------------------
+# Vocabulary
+# ---------------------------------------------------------------------------
+
+
+class VocabularyWordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VocabularyDayWord
+        fields = ["id", "word", "meaning", "example_sentence", "pronunciation_note", "order"]
+
+
+class VocabularyDaySerializer(serializers.ModelSerializer):
+    words = VocabularyWordSerializer(many=True, read_only=True)
+    word_count = serializers.ReadOnlyField()
+    is_released = serializers.ReadOnlyField()
+    is_completed = serializers.SerializerMethodField()
+    group_name = serializers.CharField(source="group.name", read_only=True)
+
+    class Meta:
+        model = VocabularyDay
+        fields = [
+            "id", "day_number", "title", "level", "release_at",
+            "word_count", "is_released", "is_completed", "group_name", "words",
+        ]
+
+    def get_is_completed(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        try:
+            student = request.user.student
+        except Exception:
+            return False
+        return VocabularyDayCompletion.objects.filter(student=student, day=obj).exists()
+
+
+# ---------------------------------------------------------------------------
+# Leaderboard
+# ---------------------------------------------------------------------------
+
+
+class LeaderboardEntrySerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaderboardSnapshot
+        fields = [
+            "rank", "score", "attendance_pct", "homework_pct",
+            "quizzes_pct", "results_pct", "badge",
+            "student_name", "avatar_url",
+        ]
+
+    def get_student_name(self, obj):
+        u = obj.student.admin
+        return f"{u.first_name} {u.last_name}".strip()
+
+    def get_avatar_url(self, obj):
+        user = obj.student.admin
+        if not user.profile_pic:
+            return None
+        request = self.context.get("request")
+        return request.build_absolute_uri(user.profile_pic.url) if request else user.profile_pic.url
+
+
+class LeaderboardSeasonSerializer(serializers.ModelSerializer):
+    entries = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaderboardSeason
+        fields = ["id", "name", "period", "start_date", "end_date", "is_active", "entries"]
+
+    def get_entries(self, obj):
+        snapshots = obj.snapshots.select_related("student__admin").order_by("rank")
+        return LeaderboardEntrySerializer(snapshots, many=True, context=self.context).data
