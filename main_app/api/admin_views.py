@@ -926,45 +926,54 @@ class AdminStoriesListView(APIView):
         )
 
 
+def _user_can_modify_story(user, story):
+    """Mirror of hod_views._user_can_modify_story: branch admins may only
+    modify stories they authored or stories whose every target group lies
+    within their accessible branches. Global stories (no targets) can only
+    be modified by their author or a super admin."""
+    if branching.is_super_admin(user):
+        return True
+    if story.created_by_id == user.id:
+        return True
+    target_ids = set(story.target_groups.values_list("id", flat=True))
+    if not target_ids:
+        return False
+    accessible_branches = branching.get_accessible_branches(user)
+    accessible_group_ids = set(
+        Group.objects.filter(branch__in=accessible_branches).values_list("id", flat=True)
+    )
+    return target_ids <= accessible_group_ids
+
+
 class AdminStoriesDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, pk):
+    def _get_story(self, request, pk):
         ok, err = _require_admin(request)
         if not ok:
-            return err
-
+            return None, err
         try:
             story = DashboardStory.objects.get(pk=pk)
         except DashboardStory.DoesNotExist:
-            return Response({"detail": "Story not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Branch scoping check
-        if not branching.is_super_admin(request.user):
-            accessible_branches = branching.get_accessible_branches(request.user)
-            accessible_group_ids = set(
-                Group.objects.filter(branch__in=accessible_branches).values_list("id", flat=True)
+            return None, Response({"detail": "Story not found."}, status=status.HTTP_404_NOT_FOUND)
+        if not _user_can_modify_story(request.user, story):
+            return None, Response(
+                {"detail": "You don't have access to modify this story."},
+                status=status.HTTP_403_FORBIDDEN,
             )
-            target_ids = set(story.target_groups.values_list("id", flat=True))
-            # Allow deletion if story has no targets (global) or overlaps with admin's branches.
-            if target_ids and not target_ids.intersection(accessible_group_ids):
-                return Response(
-                    {"detail": "You don't have access to delete this story."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        return story, None
 
+    def delete(self, request, pk):
+        story, err = self._get_story(request, pk)
+        if err:
+            return err
         story.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, pk):
-        ok, err = _require_admin(request)
-        if not ok:
+        story, err = self._get_story(request, pk)
+        if err:
             return err
-
-        try:
-            story = DashboardStory.objects.get(pk=pk)
-        except DashboardStory.DoesNotExist:
-            return Response({"detail": "Story not found."}, status=status.HTTP_404_NOT_FOUND)
 
         for field in ("title", "body", "story_type", "is_active", "expires_at"):
             if field in request.data:

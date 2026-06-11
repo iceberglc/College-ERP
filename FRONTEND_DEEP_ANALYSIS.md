@@ -2068,17 +2068,17 @@ JS-optional: form submits normally without JS.
 **Description**: Overdue fine displayed as `₹5/day` (Indian Rupee) when system is in Uzbekistan and all other monetary values use UZS soʻm.  
 **Fix**: Replace `₹` with `so'm` or UZS in all fine-related display text.
 
-### Bug #8 — Story Edit/Delete Has No Branch Scoping
+### Bug #8 — Story Edit/Delete Has No Branch Scoping — ✅ FIXED
 
 **Severity**: Medium (authorization gap)  
-**Description**: `edit_story` and `delete_story` in `hod_views.py` do `get_object_or_404(DashboardStory, id=story_id)` with **no branch or ownership check**. The *list* view (`manage_stories`) is branch-scoped, but a branch admin who knows/guesses a story ID can edit or delete any other branch's story (or a superadmin's global story) by URL.  
-**Fix**: Apply the same Q-filter used in `manage_stories` (own-authored OR targets accessible groups OR superadmin) before allowing edit/delete.
+**Description**: `edit_story` and `delete_story` in `hod_views.py` did `get_object_or_404(DashboardStory, id=story_id)` with **no branch or ownership check**. The REST API had the same class of hole: `AdminStoriesDetailView.patch` had no scoping at all, and `.delete` allowed any branch admin to delete global stories and used overlap (not subset) matching.  
+**Fix applied**: New `_user_can_modify_story(user, story)` guard in both `hod_views.py` and `api/admin_views.py`: superadmin → anything; branch admin → only stories they authored OR stories whose *every* target group is within their accessible branches; global stories are modifiable only by their author or a superadmin. Verified live: cross-branch admin gets flash-error redirect (HTML) / 403 (API).
 
-### Bug #9 — Library Endpoints Not Branch/Ownership Scoped
+### Bug #9 — Library Endpoints Not Branch/Ownership Scoped — ✅ FIXED
 
 **Severity**: Low–Medium  
-**Description**: `view_issued_book` lists **all** loans system-wide and `return_book` lets any staff member return any loan — there is no per-teacher or per-branch scoping on the library feature. `get_student_attendance` (staff) also fetches any `attendance_date_id` without verifying group ownership (write path `update_attendance` IS guarded; the read path is not).  
-**Fix**: Scope loans to the staff's branch; verify `attendance.group.teacher_id == staff.id` in the fetch view too.
+**Description**: `view_issued_book` listed **all** loans system-wide, `return_book` let any staff member return any loan, and `issue_book`'s student dropdown offered every student in the system. `get_student_attendance` (staff) also fetched any `attendance_date_id` without verifying group ownership (the write path `update_attendance` WAS guarded; the read path was not).  
+**Fix applied**: New `_library_students_for_staff(staff)` helper scopes all three lending views — branch-assigned staff see students of their branch (explicit branch, or group-derived branch for legacy null-branch records); staff without a branch fall back to students enrolled in their own groups. `get_student_attendance` now enforces `attendance.group.teacher_id == staff.id` → 403, mirroring the write path. Verified live with Django test client: owner teacher 200, other teacher 403. (Also replaced the ₹ fine symbol with so'm in the return flash message — partial Bug #7 fix.)
 
 ---
 

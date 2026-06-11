@@ -3,6 +3,7 @@ import logging
 
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -255,7 +256,15 @@ def staff_update_attendance(request):
 def get_student_attendance(request):
     attendance_date_id = request.POST.get("attendance_date_id")
     try:
-        attendance = get_object_or_404(Attendance, id=attendance_date_id)
+        attendance = get_object_or_404(
+            Attendance.objects.select_related("group"), id=attendance_date_id
+        )
+        # Same ownership rule as the write path (update_attendance): a teacher
+        # may only read attendance rows for groups they own — otherwise a
+        # forged attendance_date_id leaks another teacher's roster.
+        staff = get_object_or_404(Staff, admin=request.user)
+        if attendance.group.teacher_id != staff.id:
+            return JsonResponse({"error": "You do not own this group."}, status=403)
         reports = AttendanceReport.objects.filter(attendance=attendance).select_related(
             "student__admin"
         )
@@ -534,15 +543,37 @@ def add_book(request):
 # ── Lending (issue / return) ───────────────────────────────────────────────────
 
 
+def _library_students_for_staff(staff):
+    """Students a staff member may lend to / see loans for.
+
+    Branch-assigned staff are scoped to students of their branch (matching a
+    student's explicit branch, or — for legacy records with no branch set —
+    the branch of any group they're enrolled in). Staff without a branch fall
+    back to students enrolled in their own groups, so nobody gets a
+    system-wide roster.
+    """
+    if staff.branch_id:
+        return Student.objects.filter(
+            Q(branch_id=staff.branch_id)
+            | Q(branch__isnull=True, enrollment__group__branch_id=staff.branch_id)
+        ).distinct()
+    return Student.objects.filter(enrollment__group__teacher=staff).distinct()
+
+
 @staff_only
 def issue_book(request):
     """Create a new Loan from the IssueBookForm.
 
     Validation lives in the form (uniqueness against active loans);
-    the view never reads raw request.POST anymore.
+    the view never reads raw request.POST anymore. The student dropdown is
+    branch-scoped so a teacher cannot issue books to another branch's
+    students.
     """
+    staff = get_object_or_404(Staff, admin=request.user)
+    allowed_students = _library_students_for_staff(staff)
     if request.method == "POST":
         form = forms.IssueBookForm(request.POST)
+        form.fields["student"].queryset = allowed_students
         if form.is_valid():
             loan = Loan.objects.create(
                 student=form.cleaned_data["student"],
@@ -555,6 +586,7 @@ def issue_book(request):
             return redirect("issue_book")
     else:
         form = forms.IssueBookForm()
+        form.fields["student"].queryset = allowed_students
     return render(
         request, "staff_template/issue_book.html", {"form": form, "page_title": "Issue Book"}
     )
@@ -562,15 +594,17 @@ def issue_book(request):
 
 @staff_only
 def view_issued_book(request):
-    """Single-query list of all loans with student + book joined.
+    """Single-query list of loans with student + book joined.
 
-    Eliminates the previous N+1 (one Book lookup per issued row).
-    Fine is computed by the model's property — single source of truth.
+    Scoped to students the staff member may serve (own branch, or own
+    groups when no branch is assigned) — previously listed every loan
+    system-wide.
     """
+    staff = get_object_or_404(Staff, admin=request.user)
     loans = (
-        Loan.objects.select_related("student__admin", "book").order_by(
-            "returned_on", "-issued_on"
-        )  # active first, newest first
+        Loan.objects.filter(student__in=_library_students_for_staff(staff))
+        .select_related("student__admin", "book")
+        .order_by("returned_on", "-issued_on")  # active first, newest first
     )
     return render(
         request,
@@ -582,14 +616,24 @@ def view_issued_book(request):
 @staff_only
 @require_POST
 def return_book(request, loan_id):
-    """Mark a loan as returned. Fine is computed automatically at display time."""
-    loan = get_object_or_404(Loan, id=loan_id, returned_on__isnull=True)
+    """Mark a loan as returned. Fine is computed automatically at display time.
+
+    Scoped like view_issued_book: a teacher can only return loans belonging
+    to students they may serve.
+    """
+    staff = get_object_or_404(Staff, admin=request.user)
+    loan = get_object_or_404(
+        Loan,
+        id=loan_id,
+        returned_on__isnull=True,
+        student__in=_library_students_for_staff(staff),
+    )
     loan.returned_on = timezone.localdate()
     loan.save(update_fields=["returned_on"])
     messages.success(
         request,
         f"Returned '{loan.book.name}' from {loan.student}."
-        + (f" Fine due: ₹{loan.fine_amount}." if loan.days_overdue > 0 else ""),
+        + (f" Fine due: {loan.fine_amount} so'm." if loan.days_overdue > 0 else ""),
     )
     return redirect("view_issued_book")
 

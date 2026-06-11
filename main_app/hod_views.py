@@ -2155,6 +2155,24 @@ def manage_stories(request):
 _story_storage_ok = branching.story_storage_ok
 
 
+def _user_can_modify_story(user, story):
+    """Branch admins may only edit/delete stories they authored or stories
+    whose every target group lies within their accessible branches. Global
+    stories (no target groups) belong to whoever authored them; other branch
+    admins cannot touch them. Super admins can modify anything."""
+    if branching.is_super_admin(user):
+        return True
+    if story.created_by_id == user.id:
+        return True
+    target_ids = set(story.target_groups.values_list("id", flat=True))
+    if not target_ids:
+        return False
+    accessible_ids = set(
+        branching.filter_groups_for_user(user, Group.objects.all()).values_list("id", flat=True)
+    )
+    return target_ids <= accessible_ids
+
+
 @admin_only
 def add_story(request):
     if request.method == "POST":
@@ -2183,6 +2201,9 @@ def add_story(request):
 @admin_only
 def edit_story(request, story_id):
     story = get_object_or_404(DashboardStory, id=story_id)
+    if not _user_can_modify_story(request.user, story):
+        messages.error(request, "You don't have access to modify this story.")
+        return redirect(reverse("manage_stories"))
     if request.method == "POST":
         form = DashboardStoryForm(request.POST, request.FILES, instance=story)
         if form.is_valid():
@@ -2208,6 +2229,9 @@ def edit_story(request, story_id):
 @require_POST
 def delete_story(request, story_id):
     story = get_object_or_404(DashboardStory, id=story_id)
+    if not _user_can_modify_story(request.user, story):
+        messages.error(request, "You don't have access to delete this story.")
+        return redirect(reverse("manage_stories"))
     story.delete()
     messages.success(request, "Story deleted.")
     return redirect(reverse("manage_stories"))
