@@ -103,19 +103,10 @@ class LoginView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Resolve login_id → email so Django's auth backend can authenticate.
-        email = identifier
-        if "@" not in identifier:
-            try:
-                email = CustomUser.objects.get(login_id=identifier).email
-            except CustomUser.DoesNotExist:
-                return Response(
-                    {"detail": "Invalid credentials."},
-                    status=status.HTTP_401_UNAUTHORIZED,
-                )
-
+        # Pass the identifier directly — EmailBackend handles both email (admin)
+        # and login_id (staff/student) lookup internally.
         try:
-            user = authenticate(request=request, username=email, password=password)
+            user = authenticate(request=request, username=identifier, password=password)
         except DjangoPermissionDenied:
             return Response(
                 {"detail": "Account temporarily locked. Try again later."},
