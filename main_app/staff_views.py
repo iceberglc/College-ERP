@@ -18,6 +18,25 @@ from datetime import date
 logger = logging.getLogger(__name__)
 
 
+def _monthly_range(n=6):
+    """Return list of (first_day, last_day, label) tuples for last n months."""
+    today = date.today()
+    months = []
+    for i in range(n - 1, -1, -1):
+        month = today.month - i
+        year = today.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        first = date(year, month, 1)
+        if month == 12:
+            last = date(year + 1, 1, 1)
+        else:
+            last = date(year, month + 1, 1)
+        months.append((first, last, first.strftime("%b")))
+    return months
+
+
 @staff_only
 def staff_home(request):
     staff = get_object_or_404(Staff, admin=request.user)
@@ -47,6 +66,35 @@ def staff_home(request):
             round(present_reports / total_reports * 100) if total_reports else 0
         )
 
+    # Monthly trend: sessions taken and attendance rate over last 6 months
+    monthly_data = _monthly_range(6)
+    monthly_labels = [m[2] for m in monthly_data]
+    monthly_sessions = []
+    monthly_att_rate = []
+    for first, last, _lbl in monthly_data:
+        sessions = Attendance.objects.filter(
+            group__in=groups, date__gte=first, date__lt=last
+        ).count()
+        total_r = AttendanceReport.objects.filter(
+            attendance__group__in=groups,
+            attendance__date__gte=first,
+            attendance__date__lt=last,
+        ).count()
+        present_r = AttendanceReport.objects.filter(
+            attendance__group__in=groups,
+            attendance__date__gte=first,
+            attendance__date__lt=last,
+            status__in=[AttendanceReport.PRESENT, AttendanceReport.LATE],
+        ).count()
+        monthly_sessions.append(sessions)
+        monthly_att_rate.append(round(present_r / total_r * 100) if total_r else 0)
+
+    monthly_chart_json = json.dumps({
+        "labels": monthly_labels,
+        "sessions": monthly_sessions,
+        "att_rate": monthly_att_rate,
+    })
+
     context = {
         "page_title": f"{staff.admin.first_name} {staff.admin.last_name}"
         + (f" · {staff.course}" if staff.course else ""),
@@ -57,6 +105,7 @@ def staff_home(request):
         "subject_list": group_label_list,
         "attendance_list": attendance_list,
         "attendance_rate_list": attendance_rate_list,
+        "monthly_chart_json": monthly_chart_json,
         "groups": groups,
     }
     return render(request, "staff_template/erpnext_staff_home.html", context)

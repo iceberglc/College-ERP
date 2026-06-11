@@ -161,14 +161,14 @@
   </div>
   {% endif %}
 
-  <!-- Analytics charts -->
+  <!-- Analytics charts — monthly area line -->
   <div class="sf-chart-grid">
     <div class="sf-chart-card">
-      <div class="sf-chart-head"><i class="fas fa-percentage"></i> Attendance Rate by Group</div>
+      <div class="sf-chart-head"><i class="fas fa-chart-line"></i> Monthly Attendance Rate</div>
       <div class="sf-chart-body"><canvas id="pieChart"></canvas></div>
     </div>
     <div class="sf-chart-card">
-      <div class="sf-chart-head"><i class="fas fa-chart-bar"></i> Attendance Sessions per Group</div>
+      <div class="sf-chart-head"><i class="fas fa-calendar-check"></i> Monthly Sessions Taken</div>
       <div class="sf-chart-body"><canvas id="barChart"></canvas></div>
     </div>
   </div>
@@ -180,149 +180,120 @@
 {% block custom_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const BRAND = {
-    navy: '#071A52',
-    ocean: '#0B4F8A',
-    cyan: '#00CFE8',
-    softCyan: '#67E8F9',
-    green: '#22C55E',
-    red: '#EF4444'
-  };
-  const subjects = {{ subject_list|safe }};
-  const attendance = {{ attendance_list|safe }};
-  const attendanceRates = {{ attendance_rate_list|default:"[]"|safe }};
+  var monthly = {{ monthly_chart_json|safe }};
 
-  function isDarkTheme() {
+  function isDark() {
     return document.documentElement.getAttribute('data-theme') === 'dark' ||
-      document.documentElement.classList.contains('dark-mode') ||
       document.body.classList.contains('dark-mode');
   }
-  function isMobileChart() { return window.innerWidth <= 767; }
-  function textColor() { return isDarkTheme() ? '#DCEBFF' : '#15345F'; }
-  function mutedColor() { return isDarkTheme() ? '#9CB3CF' : '#64748B'; }
-  function gridColor() { return isDarkTheme() ? 'rgba(234,248,255,.10)' : 'rgba(7,26,82,.08)'; }
-  function hasData(values) { return (values || []).some(function(v) { return Number(v) > 0; }); }
-  function compact(labels, values) {
-    var limit = isMobileChart() ? 6 : 10;
-    if (!labels || labels.length <= limit) return { labels: labels || [], values: values || [] };
-    return { labels: labels.slice(0, limit), values: values.slice(0, limit) };
-  }
-  function tooltipOptions() {
+  function isMobile() { return window.innerWidth <= 767; }
+  function mutedColor() { return isDark() ? '#9CB3CF' : '#64748B'; }
+  function gridColor()  { return isDark() ? 'rgba(234,248,255,.10)' : 'rgba(7,26,82,.07)'; }
+
+  function tooltipOpts() {
     return {
-      backgroundColor: isDarkTheme() ? 'rgba(7,15,28,.96)' : 'rgba(7,26,82,.95)',
-      titleColor: '#fff',
-      bodyColor: BRAND.softCyan,
-      borderColor: 'rgba(0,207,232,.30)',
-      borderWidth: 1,
-      cornerRadius: 12,
-      padding: isMobileChart() ? 10 : 12,
-      titleFont: { size: 11, weight: '700', family: 'Inter, sans-serif' },
-      bodyFont: { size: isMobileChart() ? 12 : 13, weight: '800', family: 'Inter, sans-serif' }
+      backgroundColor: isDark() ? 'rgba(7,15,28,.96)' : 'rgba(7,26,82,.95)',
+      titleColor: '#fff', bodyColor: '#67E8F9',
+      borderColor: 'rgba(6,182,212,.30)', borderWidth: 1,
+      cornerRadius: 12, padding: 12,
+      titleFont: { size: 11, weight: '700', family: 'Inter,sans-serif' },
+      bodyFont:  { size: 13, weight: '800', family: 'Inter,sans-serif' }
     };
   }
-  function showChartState(canvasId, message) {
-    var canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    var body = canvas.closest('.sf-chart-body');
-    if (!body) return;
-    canvas.hidden = true;
-    if (!body.querySelector('.ice-chart-state')) {
-      var state = document.createElement('div');
-      state.className = 'ice-chart-state';
-      state.textContent = message;
-      body.appendChild(state);
-    }
+
+  function areaGrad(ctx, top, bot) {
+    var c = ctx.chart, area = c.chartArea;
+    if (!area) return top;
+    var g = c.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+    g.addColorStop(0, top); g.addColorStop(1, bot); return g;
   }
-  function clearChartState(canvasId) {
-    var canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    canvas.hidden = false;
-    var body = canvas.closest('.sf-chart-body');
-    if (body) body.querySelectorAll('.ice-chart-state').forEach(function(node) { node.remove(); });
+
+  function lineDS(label, data, color, fillTop, fillBot) {
+    return {
+      label: label, data: data, borderColor: color,
+      backgroundColor: function(ctx) { return areaGrad(ctx, fillTop, fillBot); },
+      borderWidth: 2.5, tension: 0.45, fill: true,
+      pointRadius: isMobile() ? 0 : 3, pointHoverRadius: 6,
+      pointBackgroundColor: '#fff', pointBorderColor: color, pointBorderWidth: 2,
+      pointHitRadius: 18
+    };
   }
-  function register(chart) {
+
+  function noState(id, msg) {
+    var el = document.getElementById(id); if (!el) return;
+    var wrap = el.closest('.sf-chart-body'); if (!wrap) return;
+    el.style.display = 'none';
+    var d = document.createElement('div'); d.className = 'ice-chart-state'; d.textContent = msg;
+    wrap.appendChild(d);
+  }
+
+  function hasAny(arr) { return (arr||[]).some(function(v){return Number(v)>0;}); }
+
+  function reg(c) {
     window.chartInstances = window.chartInstances || [];
-    window.chartInstances.push(chart);
-    return chart;
+    window.chartInstances.push(c); return c;
   }
-  function createTeacherCharts() {
-    clearChartState('pieChart');
-    clearChartState('barChart');
+
+  var baseOpts = {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: isMobile() ? 400 : 650, easing: 'easeOutQuart' },
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { display: false }, tooltip: tooltipOpts() },
+    scales: {
+      y: { beginAtZero: true, grid: { color: gridColor() },
+           ticks: { color: mutedColor(), padding: 6, maxTicksLimit: 5 } },
+      x: { grid: { display: false },
+           ticks: { color: mutedColor(), font: { size: 11, weight: '700' } } }
+    }
+  };
+
+  function buildCharts() {
     if (typeof Chart === 'undefined') {
-      showChartState('pieChart', 'Charts are unavailable right now.');
-      showChartState('barChart', 'Charts are unavailable right now.');
+      noState('pieChart', 'Charts unavailable.'); noState('barChart', 'Charts unavailable.');
       return;
     }
     Chart.defaults.font.family = "'Inter', sans-serif";
-    var compacted = compact(subjects, attendance);
-    if (!hasData(attendanceRates)) {
-      showChartState('pieChart', 'Attendance rates will appear after attendance is taken for your groups.');
+
+    /* Attendance rate % — monthly area line */
+    if (!hasAny(monthly.att_rate)) {
+      noState('pieChart', 'Attendance rate trend will appear after sessions are recorded.');
     } else {
-      register(new Chart(document.getElementById('pieChart'), {
-        type: 'bar',
+      reg(new Chart(document.getElementById('pieChart'), {
+        type: 'line',
         data: {
-          labels: subjects,
-          datasets: [{
-            label: 'Present %',
-            data: attendanceRates,
-            backgroundColor: attendanceRates.map(function (v) {
-              return v >= 85 ? 'rgba(34,197,94,.7)' : v >= 60 ? 'rgba(245,158,11,.7)' : 'rgba(239,68,68,.65)';
-            }),
-            borderRadius: 8,
-            borderSkipped: false,
-            maxBarThickness: 30
-          }]
+          labels: monthly.labels,
+          datasets: [lineDS('Attendance %', monthly.att_rate, '#06B6D4',
+            'rgba(6,182,212,.28)', 'rgba(6,182,212,.02)')]
         },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
-          plugins: { legend: { display: false }, tooltip: tooltipOptions() },
-          scales: {
-            x: { min: 0, max: 100, grid: { color: gridColor() }, ticks: { color: mutedColor(), callback: function (v) { return v + '%'; } } },
-            y: { grid: { display: false }, ticks: { color: textColor(), font: { size: isMobileChart() ? 12 : 13, weight: '700' } } }
-          }
-        }
+        options: Object.assign({}, baseOpts, {
+          scales: Object.assign({}, baseOpts.scales, {
+            y: Object.assign({}, baseOpts.scales.y, { max: 100,
+              ticks: Object.assign({}, baseOpts.scales.y.ticks,
+                { callback: function(v){ return v+'%'; } })
+            })
+          })
+        })
       }));
     }
-    if (!hasData(compacted.values)) {
-      showChartState('barChart', 'Attendance sessions will appear after attendance is taken for your groups.');
+
+    /* Sessions taken — monthly area line */
+    if (!hasAny(monthly.sessions)) {
+      noState('barChart', 'Sessions trend will appear after attendance is taken.');
     } else {
-      register(new Chart(document.getElementById('barChart'), {
-        type: 'bar',
+      reg(new Chart(document.getElementById('barChart'), {
+        type: 'line',
         data: {
-          labels: compacted.labels,
-          datasets: [{
-            label: 'Sessions',
-            data: compacted.values,
-            backgroundColor: 'rgba(0,207,232,.65)',
-            hoverBackgroundColor: BRAND.cyan,
-            borderRadius: 10,
-            borderSkipped: false,
-            maxBarThickness: isMobileChart() ? 34 : 48
-          }]
+          labels: monthly.labels,
+          datasets: [lineDS('Sessions', monthly.sessions, '#0E3E94',
+            'rgba(14,62,148,.25)', 'rgba(14,62,148,.02)')]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          layout: { padding: { top: 8, bottom: 0, left: 2, right: 2 } },
-          animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
-          interaction: { mode: 'index', intersect: false },
-          plugins: { legend: { display: false }, tooltip: tooltipOptions() },
-          scales: {
-            y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { color: mutedColor(), padding: isMobileChart() ? 4 : 8, maxTicksLimit: isMobileChart() ? 4 : 6 } },
-            x: { grid: { display: false }, ticks: { color: mutedColor(), maxRotation: isMobileChart() ? 0 : 24, autoSkip: true, maxTicksLimit: isMobileChart() ? 4 : 8 } }
-          }
-        }
+        options: baseOpts
       }));
     }
   }
 
-  createTeacherCharts();
-  if (window.registerChartRecreation) {
-    window.registerChartRecreation(createTeacherCharts);
-  }
+  buildCharts();
+  if (window.registerChartRecreation) window.registerChartRecreation(buildCharts);
 });
 </script>
 {% endblock custom_js %}

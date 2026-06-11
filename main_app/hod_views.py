@@ -3,7 +3,7 @@ import os
 import re
 import logging
 import requests
-from datetime import timedelta
+from datetime import timedelta, date as date_type
 from django.contrib import messages
 from django.core.files.storage import default_storage
 from django.db import IntegrityError, OperationalError, ProgrammingError, models, transaction
@@ -262,6 +262,116 @@ def admin_home(request):
     ]
     student_name_list = [s.admin.first_name for s in students_qs]
 
+    # ── Monthly branch comparison (last 6 months) ──────────────────────────
+    def _month_range(n=6):
+        result = []
+        ref = today
+        for i in range(n - 1, -1, -1):
+            m = ref.month - i
+            y = ref.year
+            while m <= 0:
+                m += 12
+                y -= 1
+            first = date_type(y, m, 1)
+            last = date_type(y + 1, 1, 1) if m == 12 else date_type(y, m + 1, 1)
+            result.append((first, last, first.strftime("%b")))
+        return result
+
+    _months = _month_range(6)
+    _month_labels = [r[2] for r in _months]
+
+    accessible_branches = list(branching.get_accessible_branches(user).order_by("name")[:7])
+    _BRANCH_COLORS = ["#06B6D4", "#0E3E94", "#10B981", "#F59E0B", "#EF4444", "#7C3AED", "#EC4899"]
+    branch_lines = []
+    for _bi, _branch in enumerate(accessible_branches):
+        _att_rates, _avg_scores, _student_counts = [], [], []
+        for _first, _last, _ in _months:
+            _total_r = AttendanceReport.objects.filter(
+                attendance__group__branch=_branch,
+                attendance__date__gte=_first,
+                attendance__date__lt=_last,
+            ).count()
+            _present_r = AttendanceReport.objects.filter(
+                attendance__group__branch=_branch,
+                attendance__date__gte=_first,
+                attendance__date__lt=_last,
+                status__in=[AttendanceReport.PRESENT, AttendanceReport.LATE],
+            ).count()
+            _att_rate = round(_present_r / _total_r * 100) if _total_r else 0
+
+            _result_agg = (
+                StudentResult.objects.filter(
+                    group__branch=_branch,
+                    created_at__date__gte=_first,
+                    created_at__date__lt=_last,
+                )
+                .aggregate(avg=models.Avg(models.F("test") + models.F("exam")))
+            )
+            _avg_score = round(_result_agg["avg"] or 0)
+
+            _active_s = Enrollment.objects.filter(
+                group__branch=_branch,
+                is_active=True,
+            ).values("student").distinct().count()
+
+            # Composite health: 50% attendance, 35% results, 15% presence signal
+            _presence = min(100, round((_active_s / max(total_students, 1)) * 100 * 3))
+            _health = round(_att_rate * 0.50 + _avg_score * 0.35 + min(100, _presence) * 0.15)
+
+            _att_rates.append(_att_rate)
+            _avg_scores.append(_avg_score)
+            _student_counts.append(_active_s)
+
+        branch_lines.append({
+            "label": _branch.name,
+            "health": [round(
+                _att_rates[_i] * 0.50 + _avg_scores[_i] * 0.35 +
+                min(100, round(_student_counts[_i] / max(total_students, 1) * 300)) * 0.15
+            ) for _i in range(6)],
+            "att": _att_rates,
+            "scores": _avg_scores,
+            "students": _student_counts,
+            "color": _BRANCH_COLORS[_bi % len(_BRANCH_COLORS)],
+        })
+
+    # Monthly totals (all branches) for admin-wide trend charts
+    monthly_sessions_list = []
+    monthly_att_rate_list = []
+    monthly_enroll_list = []
+    for _first, _last, _ in _months:
+        _s = Attendance.objects.filter(
+            group_id__in=group_ids, date__gte=_first, date__lt=_last
+        ).count()
+        _tr = AttendanceReport.objects.filter(
+            attendance__group_id__in=group_ids,
+            attendance__date__gte=_first,
+            attendance__date__lt=_last,
+        ).count()
+        _pr = AttendanceReport.objects.filter(
+            attendance__group_id__in=group_ids,
+            attendance__date__gte=_first,
+            attendance__date__lt=_last,
+            status__in=[AttendanceReport.PRESENT, AttendanceReport.LATE],
+        ).count()
+        _new_s = students_base.filter(
+            admin__created_at__date__gte=_first,
+            admin__created_at__date__lt=_last,
+        ).count()
+        monthly_sessions_list.append(_s)
+        monthly_att_rate_list.append(round(_pr / _tr * 100) if _tr else 0)
+        monthly_enroll_list.append(_new_s)
+
+    monthly_chart_json = json.dumps({
+        "labels": _month_labels,
+        "sessions": monthly_sessions_list,
+        "att_rate": monthly_att_rate_list,
+        "new_students": monthly_enroll_list,
+    })
+    branch_chart_json = json.dumps({
+        "labels": _month_labels,
+        "lines": branch_lines,
+    })
+
     branch_names = list(branching.get_accessible_branches(user).values_list("name", flat=True))
     if branching.is_super_admin(user):
         lead_qs = RegistrationLead.objects.all()
@@ -453,6 +563,8 @@ def admin_home(request):
         "student_name_list": student_name_list,
         "student_count_list_in_course": student_count_list_in_course,
         "course_name_list": course_name_list,
+        "monthly_chart_json": monthly_chart_json,
+        "branch_chart_json": branch_chart_json,
     }
     return render(request, "hod_template/home_content.html", context)
 

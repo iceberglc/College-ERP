@@ -140,12 +140,34 @@
     </div>
   </section>
 
+  <!-- Branch comparison chart — super admin priority view -->
+  <section class="admin-grid admin-grid--ops" style="grid-template-columns:1fr;">
+    <article class="admin-card admin-card--wide">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-section-kicker">Branch Intelligence</span>
+          <h2>Branch Performance — Monthly</h2>
+        </div>
+        <span class="admin-soft-badge">Last 6 months</span>
+      </div>
+      <div style="padding:8px 0 4px 16px;font-size:11px;color:var(--ice-muted);">
+        Health score = 50 % attendance · 35 % results · 15 % enrollment
+      </div>
+      <div class="admin-chart-stage admin-chart-stage--bar" style="min-height:240px;">
+        <div class="admin-chart-skeleton" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <canvas id="branchChart"></canvas>
+      </div>
+    </article>
+  </section>
+
   <section class="admin-grid admin-grid--ops">
     <article class="admin-card admin-card--wide">
       <div class="admin-card__header">
         <div>
           <span class="admin-section-kicker">Analytics</span>
-          <h2>Attendance Sessions per Group</h2>
+          <h2>Monthly Attendance Rate</h2>
         </div>
         <a href="{% url 'admin_view_attendance' %}" class="admin-link">View report</a>
       </div>
@@ -325,8 +347,8 @@
     <article class="admin-card">
       <div class="admin-card__header">
         <div>
-          <span class="admin-section-kicker">Composition</span>
-          <h2>People Overview</h2>
+          <span class="admin-section-kicker">Growth</span>
+          <h2>New Students — Monthly</h2>
         </div>
       </div>
       <div class="admin-chart-stage admin-chart-stage--bar">
@@ -338,8 +360,8 @@
     <article class="admin-card">
       <div class="admin-card__header">
         <div>
-          <span class="admin-section-kicker">Programs</span>
-          <h2>Students per Program</h2>
+          <span class="admin-section-kicker">Sessions</span>
+          <h2>Monthly Sessions Taken</h2>
         </div>
       </div>
       <div class="admin-chart-stage admin-chart-stage--bar">
@@ -352,7 +374,7 @@
       <div class="admin-card__header">
         <div>
           <span class="admin-section-kicker">Outcomes</span>
-          <h2>Student Attendance Overview</h2>
+          <h2>Monthly Attendance Rate &amp; Sessions</h2>
         </div>
       </div>
       <div class="admin-chart-stage admin-chart-stage--bar">
@@ -369,289 +391,227 @@
 {% block custom_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const BRAND = {
-    navy: '#071A52',
-    ocean: '#0B4F8A',
-    cyan: '#00CFE8',
-    ice: '#EAF8FF',
-    green: '#22C55E',
-    amber: '#F59E0B',
-    red: '#EF4444',
-    softCyan: '#67E8F9'
-  };
-  const PALETTE = [BRAND.navy, BRAND.cyan, BRAND.ocean, BRAND.green, BRAND.amber, BRAND.red, '#38BDF8', '#14B8A6'];
+  var monthly  = {{ monthly_chart_json|safe }};
+  var branchCh = {{ branch_chart_json|safe }};
 
-  const groupLabels = {{ group_label_list|safe }};
-  const groupData = {{ group_attendance_list|safe }};
-  const studentLabels = {{ student_name_list|safe }};
-  const studentPresent = {{ student_attendance_present_list|safe }};
-  const studentAbsentLeave = {{ student_attendance_leave_list|safe }};
-  const courseLabels = {{ course_name_list|safe }};
-  const courseData = {{ student_count_list_in_course|safe }};
-
-  function chartLimit() {
-    if (window.innerWidth <= 767) return 6;
-    if (window.innerWidth <= 1023) return 8;
-    return 14;
-  }
-
-  function isMobileChart() {
-    return window.innerWidth <= 767;
-  }
-
-  function hasUsefulData(values) {
-    return (values || []).some(function (value) { return Number(value) > 0; });
-  }
-
-  function compactSingle(labels, values, limit) {
-    if (!labels || labels.length <= limit) return { labels: labels || [], values: values || [] };
-    var keptLabels = labels.slice(0, limit);
-    var keptValues = values.slice(0, limit);
-    var rest = values.slice(limit).reduce(function (sum, value) { return sum + Number(value || 0); }, 0);
-    if (rest > 0) {
-      keptLabels.push('Other');
-      keptValues.push(rest);
-    }
-    return { labels: keptLabels, values: keptValues };
-  }
-
-  function compactDual(labels, first, second, limit) {
-    if (!labels || labels.length <= limit) {
-      return { labels: labels || [], first: first || [], second: second || [] };
-    }
-    return {
-      labels: labels.slice(0, limit),
-      first: first.slice(0, limit),
-      second: second.slice(0, limit)
-    };
-  }
-
-  function showChartState(canvasId, message) {
-    var canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    var stage = canvas.closest('.admin-chart-stage');
-    if (!stage) return;
-    canvas.hidden = true;
-    stage.querySelectorAll('.admin-chart-skeleton').forEach(function (node) { node.remove(); });
-    if (!stage.querySelector('.ice-chart-state')) {
-      var state = document.createElement('div');
-      state.className = 'ice-chart-state';
-      state.textContent = message;
-      stage.appendChild(state);
-    }
-  }
-
-  function isDarkTheme() {
+  function isDark() {
     return document.documentElement.getAttribute('data-theme') === 'dark' ||
-      document.documentElement.classList.contains('dark-mode') ||
       document.body.classList.contains('dark-mode');
   }
-  function textColor() { return isDarkTheme() ? '#DCEBFF' : '#15345F'; }
-  function mutedColor() { return isDarkTheme() ? '#9CB3CF' : '#64748B'; }
-  function gridColor() { return isDarkTheme() ? 'rgba(234,248,255,.10)' : 'rgba(7,26,82,.08)'; }
-  function tooltipOptions() {
+  function isMobile() { return window.innerWidth <= 767; }
+  function mutedColor() { return isDark() ? '#9CB3CF' : '#64748B'; }
+  function textColor()  { return isDark() ? '#DCEBFF' : '#15345F'; }
+  function gridColor()  { return isDark() ? 'rgba(234,248,255,.10)' : 'rgba(7,26,82,.07)'; }
+
+  function tooltipOpts(multi) {
     return {
-      backgroundColor: isDarkTheme() ? 'rgba(7,15,28,.96)' : 'rgba(7,26,82,.95)',
-      titleColor: '#fff',
-      bodyColor: BRAND.softCyan,
-      borderColor: 'rgba(0,207,232,.30)',
-      borderWidth: 1,
-      cornerRadius: 12,
-      padding: isMobileChart() ? 10 : 12,
-      displayColors: true,
-      titleFont: { size: 11, weight: '700', family: 'Inter, sans-serif' },
-      bodyFont: { size: isMobileChart() ? 12 : 13, weight: '800', family: 'Inter, sans-serif' }
+      backgroundColor: isDark() ? 'rgba(7,15,28,.96)' : 'rgba(7,26,82,.95)',
+      titleColor: '#fff', bodyColor: '#67E8F9',
+      borderColor: 'rgba(6,182,212,.30)', borderWidth: 1,
+      cornerRadius: 12, padding: 12,
+      displayColors: !!multi,
+      titleFont: { size: 11, weight: '700', family: 'Inter,sans-serif' },
+      bodyFont:  { size: 13, weight: '800', family: 'Inter,sans-serif' }
     };
   }
 
-  function register(chart) {
-    window.chartInstances = window.chartInstances || [];
-    window.chartInstances.push(chart);
-    return chart;
-  }
-
-  /* Soft vertical gradient under a line — falls back to a flat colour until
-     the chart area is measured on first paint. */
-  function areaGradient(context, top, bottom) {
-    var chart = context.chart;
-    var ctx = chart.ctx;
-    var area = chart.chartArea;
+  function areaGrad(ctx, top, bot) {
+    var c = ctx.chart, area = c.chartArea;
     if (!area) return top;
-    var g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
-    g.addColorStop(0, top);
-    g.addColorStop(1, bottom);
-    return g;
+    var g = c.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+    g.addColorStop(0, top); g.addColorStop(1, bot); return g;
   }
 
-  function lineDataset(label, data, color, fillTop, fillBottom) {
+  function hexToRgba(hex, a) {
+    var r = parseInt(hex.slice(1,3),16), g2 = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return 'rgba('+r+','+g2+','+b+','+a+')';
+  }
+
+  function lineDS(label, data, color, fillTop, fillBot) {
     return {
-      label: label,
-      data: data,
-      borderColor: color,
-      backgroundColor: function (context) { return areaGradient(context, fillTop, fillBottom); },
-      borderWidth: 3,
-      tension: 0.4,
-      fill: true,
-      pointRadius: isMobileChart() ? 0 : 3,
-      pointHoverRadius: 6,
-      pointBackgroundColor: '#fff',
-      pointBorderColor: color,
-      pointBorderWidth: 2,
-      pointHitRadius: 16
+      label: label, data: data, borderColor: color,
+      backgroundColor: function(ctx) { return areaGrad(ctx, fillTop, fillBot); },
+      borderWidth: 2.5, tension: 0.45, fill: true,
+      pointRadius: isMobile() ? 0 : 3, pointHoverRadius: 6,
+      pointBackgroundColor: '#fff', pointBorderColor: color, pointBorderWidth: 2,
+      pointHitRadius: 18
     };
   }
 
-  function createDashboardCharts() {
+  function branchLineDS(label, data, color) {
+    return {
+      label: label, data: data, borderColor: color,
+      backgroundColor: function(ctx) { return areaGrad(ctx, hexToRgba(color, 0.15), hexToRgba(color, 0.01)); },
+      borderWidth: 2.5, tension: 0.45, fill: true,
+      pointRadius: isMobile() ? 0 : 3, pointHoverRadius: 6,
+      pointBackgroundColor: '#fff', pointBorderColor: color, pointBorderWidth: 2,
+      pointHitRadius: 18
+    };
+  }
+
+  function noState(id, msg) {
+    var el = document.getElementById(id); if (!el) return;
+    var stage = el.closest('.admin-chart-stage'); if (!stage) return;
+    el.hidden = true;
+    stage.querySelectorAll('.admin-chart-skeleton').forEach(function(n){n.remove();});
+    if (!stage.querySelector('.ice-chart-state')) {
+      var d = document.createElement('div'); d.className = 'ice-chart-state'; d.textContent = msg;
+      stage.appendChild(d);
+    }
+  }
+
+  function hasAny(arr) { return (arr||[]).some(function(v){return Number(v)>0;}); }
+
+  function reg(c) {
+    window.chartInstances = window.chartInstances || [];
+    window.chartInstances.push(c); return c;
+  }
+
+  var lineBase = {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: isMobile() ? 400 : 650, easing: 'easeOutQuart' },
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { display: false }, tooltip: tooltipOpts(false) },
+    scales: {
+      y: { beginAtZero: true, grid: { color: gridColor() },
+           ticks: { color: mutedColor(), padding: 6, maxTicksLimit: 5 } },
+      x: { grid: { display: false },
+           ticks: { color: mutedColor(), font: { size: 11, weight: '700' } } }
+    }
+  };
+
+  function buildCharts() {
     var root = document.querySelector('[data-admin-dashboard]');
+    var ALL = ['branchChart','pieChart','barChart','barChart2','pieChart2'];
     if (typeof Chart === 'undefined') {
-      ['pieChart', 'barChart', 'barChart2', 'pieChart2'].forEach(function (id) {
-        showChartState(id, 'Charts are unavailable right now. The summary cards above are still current.');
-      });
+      ALL.forEach(function(id){ noState(id,'Charts unavailable.'); });
       if (root) root.classList.remove('admin-dashboard--loading');
       return;
     }
-
     Chart.defaults.font.family = "'Inter', sans-serif";
-    var limit = chartLimit();
-    var compactGroups = compactSingle(groupLabels, groupData, limit);
-    var compactCourses = compactSingle(courseLabels, courseData, limit);
-    var compactStudents = compactDual(studentLabels, studentPresent, studentAbsentLeave, limit);
 
-    if (!({{ total_students }} + {{ total_staff }})) {
-      showChartState('pieChart', 'People overview will appear after students or teachers are added.');
+    /* ── Branch comparison — health score multi-line ─────────────────── */
+    if (!branchCh.lines || !branchCh.lines.length) {
+      noState('branchChart', 'Branch data will appear after branches and attendance are set up.');
     } else {
-    register(new Chart(document.getElementById('pieChart'), {
-      type: 'bar',
-      data: {
-        labels: ['Students', 'Teachers'],
-        datasets: [{
-          data: [{{ total_students }}, {{ total_staff }}],
-          backgroundColor: [BRAND.navy, BRAND.cyan],
-          borderRadius: 10,
-          borderSkipped: false,
-          barThickness: isMobileChart() ? 30 : 38
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
-        plugins: {
-          legend: { display: false },
-          tooltip: tooltipOptions()
-        },
-        scales: {
-          x: { beginAtZero: true, grid: { color: gridColor() }, ticks: { precision: 0, color: mutedColor(), padding: 4 } },
-          y: { grid: { display: false }, ticks: { color: textColor(), font: { size: isMobileChart() ? 12 : 13, weight: '700' } } }
-        }
+      var allZero = branchCh.lines.every(function(l){return !hasAny(l.health);});
+      if (allZero) {
+        noState('branchChart', 'Branch performance data will appear after attendance and results are recorded.');
+      } else {
+        reg(new Chart(document.getElementById('branchChart'), {
+          type: 'line',
+          data: {
+            labels: branchCh.labels,
+            datasets: branchCh.lines.map(function(l) {
+              return branchLineDS(l.label, l.health, l.color);
+            })
+          },
+          options: Object.assign({}, lineBase, {
+            plugins: Object.assign({}, lineBase.plugins, {
+              tooltip: tooltipOpts(true),
+              legend: {
+                display: true,
+                position: 'bottom',
+                labels: { color: textColor(), usePointStyle: true, pointStyle: 'circle',
+                          boxWidth: 8, padding: 16, font: { size: 11, weight: '700' } }
+              }
+            }),
+            scales: Object.assign({}, lineBase.scales, {
+              y: Object.assign({}, lineBase.scales.y, { max: 100,
+                ticks: Object.assign({}, lineBase.scales.y.ticks,
+                  { callback: function(v){ return v+'%'; } })
+              })
+            })
+          })
+        }));
       }
-    }));
     }
 
-    if (!hasUsefulData(compactGroups.values)) {
-      showChartState('barChart', 'Attendance sessions will appear after teachers take attendance.');
+    /* ── Attendance rate % monthly line ──────────────────────────────── */
+    if (!hasAny(monthly.att_rate)) {
+      noState('barChart', 'Monthly attendance rate will appear after sessions are recorded.');
     } else {
-    register(new Chart(document.getElementById('barChart'), {
-      /* Groups are categories, not a continuum — bars, not a line. */
-      type: 'bar',
-      data: {
-        labels: compactGroups.labels,
-        datasets: [{
-          label: 'Sessions',
-          data: compactGroups.values,
-          backgroundColor: 'rgba(0,207,232,.65)',
-          hoverBackgroundColor: BRAND.cyan,
-          borderRadius: 10,
-          borderSkipped: false,
-          maxBarThickness: isMobileChart() ? 34 : 48
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
-        interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: false }, tooltip: tooltipOptions() },
-        scales: {
-          y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { precision: 0, color: mutedColor(), padding: isMobileChart() ? 4 : 8, maxTicksLimit: isMobileChart() ? 4 : 6 } },
-          x: { grid: { display: false }, ticks: { color: mutedColor(), maxRotation: 0, autoSkip: true, maxTicksLimit: isMobileChart() ? 4 : 8 } }
-        }
-      }
-    }));
+      reg(new Chart(document.getElementById('barChart'), {
+        type: 'line',
+        data: {
+          labels: monthly.labels,
+          datasets: [lineDS('Attendance %', monthly.att_rate, '#06B6D4',
+            'rgba(6,182,212,.28)', 'rgba(6,182,212,.02)')]
+        },
+        options: Object.assign({}, lineBase, {
+          scales: Object.assign({}, lineBase.scales, {
+            y: Object.assign({}, lineBase.scales.y, { max: 100,
+              ticks: Object.assign({}, lineBase.scales.y.ticks,
+                { callback: function(v){ return v+'%'; } })
+            })
+          })
+        })
+      }));
     }
 
-    if (!hasUsefulData(compactStudents.first) && !hasUsefulData(compactStudents.second)) {
-      showChartState('barChart2', 'Student attendance overview will appear when attendance records exist.');
+    /* ── New students monthly line ───────────────────────────────────── */
+    if (!hasAny(monthly.new_students)) {
+      noState('pieChart', 'Student enrollment trend will appear after students join.');
     } else {
-    register(new Chart(document.getElementById('barChart2'), {
-      /* Students are categories — grouped bars read better than crossing lines. */
-      type: 'bar',
-      data: {
-        labels: compactStudents.labels,
-        datasets: [
-          { label: 'Present', data: compactStudents.first,
-            backgroundColor: 'rgba(34,197,94,.7)', hoverBackgroundColor: BRAND.green,
-            borderRadius: 8, borderSkipped: false, maxBarThickness: 26 },
-          { label: 'Absent / Leave', data: compactStudents.second,
-            backgroundColor: 'rgba(239,68,68,.55)', hoverBackgroundColor: BRAND.red,
-            borderRadius: 8, borderSkipped: false, maxBarThickness: 26 }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: !isMobileChart(), position: 'top', labels: { color: textColor(), usePointStyle: true, boxWidth: 8, padding: 12 } },
-          tooltip: tooltipOptions()
+      reg(new Chart(document.getElementById('pieChart'), {
+        type: 'line',
+        data: {
+          labels: monthly.labels,
+          datasets: [lineDS('New Students', monthly.new_students, '#10B981',
+            'rgba(16,185,129,.25)', 'rgba(16,185,129,.02)')]
         },
-        scales: {
-          y: { beginAtZero: true, grid: { color: gridColor() }, ticks: { precision: 0, color: mutedColor(), padding: isMobileChart() ? 4 : 8, maxTicksLimit: isMobileChart() ? 4 : 6 } },
-          x: { grid: { display: false }, ticks: { color: mutedColor(), maxRotation: isMobileChart() ? 0 : 24, autoSkip: true, maxTicksLimit: isMobileChart() ? 4 : 8 } }
-        }
-      }
-    }));
+        options: lineBase
+      }));
     }
 
-    if (!hasUsefulData(compactCourses.values)) {
-      showChartState('pieChart2', 'Program composition will appear after students are assigned to programs.');
+    /* ── Monthly sessions line ───────────────────────────────────────── */
+    if (!hasAny(monthly.sessions)) {
+      noState('pieChart2', 'Monthly sessions trend will appear after attendance is taken.');
     } else {
-    register(new Chart(document.getElementById('pieChart2'), {
-      type: 'bar',
-      data: {
-        labels: compactCourses.labels,
-        datasets: [{
-          data: compactCourses.values,
-          backgroundColor: PALETTE.slice(0, compactCourses.labels.length),
-          borderRadius: 8,
-          borderSkipped: false,
-          barThickness: isMobileChart() ? 22 : 28
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: isMobileChart() ? 450 : 700, easing: 'easeOutQuart' },
-        plugins: {
-          legend: { display: false },
-          tooltip: tooltipOptions()
+      reg(new Chart(document.getElementById('pieChart2'), {
+        type: 'line',
+        data: {
+          labels: monthly.labels,
+          datasets: [lineDS('Sessions', monthly.sessions, '#0E3E94',
+            'rgba(14,62,148,.25)', 'rgba(14,62,148,.02)')]
         },
-        scales: {
-          x: { beginAtZero: true, grid: { color: gridColor() }, ticks: { precision: 0, color: mutedColor(), padding: 4, maxTicksLimit: isMobileChart() ? 4 : 6 } },
-          y: { grid: { display: false }, ticks: { color: textColor(), font: { size: isMobileChart() ? 11 : 12 } } }
-        }
-      }
-    }));
+        options: lineBase
+      }));
+    }
+
+    /* ── Attendance rate + sessions dual-line (wide card) ────────────── */
+    if (!hasAny(monthly.att_rate) && !hasAny(monthly.sessions)) {
+      noState('barChart2', 'Overview trend will appear after attendance is recorded.');
+    } else {
+      reg(new Chart(document.getElementById('barChart2'), {
+        type: 'line',
+        data: {
+          labels: monthly.labels,
+          datasets: [
+            lineDS('Attendance %', monthly.att_rate, '#06B6D4',
+              'rgba(6,182,212,.18)', 'rgba(6,182,212,.01)'),
+            lineDS('Sessions', monthly.sessions, '#0E3E94',
+              'rgba(14,62,148,.15)', 'rgba(14,62,148,.01)')
+          ]
+        },
+        options: Object.assign({}, lineBase, {
+          plugins: Object.assign({}, lineBase.plugins, {
+            tooltip: tooltipOpts(true),
+            legend: {
+              display: true, position: 'top',
+              labels: { color: textColor(), usePointStyle: true, pointStyle: 'circle',
+                        boxWidth: 8, padding: 14, font: { size: 11, weight: '700' } }
+            }
+          })
+        })
+      }));
     }
 
     if (root) root.classList.remove('admin-dashboard--loading');
   }
 
-  createDashboardCharts();
-  if (window.registerChartRecreation) window.registerChartRecreation(createDashboardCharts);
+  buildCharts();
+  if (window.registerChartRecreation) window.registerChartRecreation(buildCharts);
 });
 </script>
 {% endblock custom_js %}
