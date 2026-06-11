@@ -21,17 +21,17 @@
 [data-theme="bright"] .erpnext-navbar { background: #fff; }
 
 :root {
-  --primary-color: #5e64ff;
-  --secondary-color: #8d99ae;
-  --success-color: #28a745;
-  --danger-color: #dc3545;
-  --warning-color: #ffc107;
-  --info-color: #17a2b8;
-  --light-color: #f8f9fc;
-  --dark-color: #262626;
-  --border-color: #d1d8dd;
-  --text-muted: #8d99ae;
-  --sidebar-width: 240px;
+  --primary-color: #06343A;
+  --secondary-color: #5A7A7E;
+  --success-color: #22C55E;
+  --danger-color: #EF4444;
+  --warning-color: #F59E0B;
+  --info-color: #3B82F6;
+  --light-color: #F4FAFB;
+  --dark-color: #06343A;
+  --border-color: #D4E4E6;
+  --text-muted: #5A7A7E;
+  --sidebar-width: 256px;
   --navbar-height: 60px;
 }
 
