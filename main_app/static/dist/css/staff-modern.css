@@ -42,9 +42,9 @@
   position: relative;
   overflow: hidden;
   background: linear-gradient(160deg, #06102A 0%, #0D2657 52%, #0E3E94 100%);
-  border-radius: 0 0 28px 28px;
-  padding: 28px 20px 32px;
-  margin-bottom: 20px;
+  border-radius: 24px;
+  padding: 24px 20px 28px;
+  margin: 10px 12px 20px;
   color: #fff;
 }
 .sf-hero::before {
@@ -872,3 +872,30 @@
 .sf-anim   { animation: sfUp .4s ease-out both; }
 .sf-anim-2 { animation-delay: .08s; }
 .sf-anim-3 { animation-delay: .16s; }
+
+/* ════════════════════════════════════════════════════════════════════
+   MOBILE BREAKPOINTS
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 479px) {
+  .sf-hero { margin: 8px 10px 16px; border-radius: 20px; padding: 20px 16px 22px; }
+  .sf-hero-title { font-size: 22px; }
+  .sf-hero-sub { font-size: 12px; }
+  .sf-hero-action { font-size: 12px; padding: 7px 12px; }
+  .sf-kpi-grid { padding: 12px; gap: 8px; }
+  .sf-kpi-num { font-size: 20px; }
+  .sf-kpi-card { padding: 11px 10px; gap: 9px; }
+  .sf-kpi-icon { width: 36px; height: 36px; flex: 0 0 36px; font-size: 14px; }
+  /* Give all content cards some breathing room on phones */
+  .sf-tool-wrap { padding: 0 10px; }
+  .sf-card,
+  .sf-tool-card { margin-left: 0; margin-right: 0; }
+  .sf-lbl { padding-left: 2px; }
+  .sf-chart-grid { margin: 0; }
+}
+@media (max-width: 359px) {
+  .sf-hero { border-radius: 16px; margin: 6px 8px 14px; }
+  .sf-hero-title { font-size: 19px; }
+  .sf-kpi-lbl { font-size: 10px; }
+  .sf-action-btn { font-size: 12px; gap: 8px; padding: 13px 12px; }
+  .sf-tool-wrap { padding: 0 8px; }
+}

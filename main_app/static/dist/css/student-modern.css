@@ -51,7 +51,9 @@
 /* ── 2. Hero ─────────────────────────────────────────────────────── */
 .st-hero {
   background: linear-gradient(160deg, #06102A 0%, #0D2657 52%, #0E3E94 100%);
-  padding: 28px 20px 30px;
+  padding: 24px 20px 28px;
+  margin: 10px 12px 20px;
+  border-radius: 24px;
   position: relative;
   overflow: hidden;
 }
@@ -432,7 +434,8 @@ select.st-control {
 
 /* ── 16. Mobile adjustments ──────────────────────────────────────── */
 @media (max-width: 600px) {
-  .st-hero-title  { font-size: 26px; }
+  .st-hero        { margin: 8px 10px 16px; border-radius: 20px; }
+  .st-hero-title  { font-size: 24px; }
   .st-card        { margin: 0 12px 14px; }
   .st-lbl         { padding: 16px 16px 8px; }
   .st-btn-row     { padding: 4px 16px 16px; }
@@ -441,4 +444,8 @@ select.st-control {
   .st-invoice-list,
   .st-pay-list    { padding: 12px; }
   .st-field-body  { padding: 14px 14px 2px; }
+}
+@media (max-width: 359px) {
+  .st-hero        { margin: 6px 8px 14px; border-radius: 16px; padding: 18px 14px 22px; }
+  .st-hero-title  { font-size: 20px; }
 }
