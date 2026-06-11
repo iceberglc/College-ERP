@@ -69,6 +69,8 @@ class LoginCheckMiddleWare(MiddlewareMixin):
                 or request.path.startswith("/verify-reset-code")
                 or request.path.startswith("/reset-password")
                 or request.path.startswith("/password-reset-success")
+                # Flutter web SPA — handles its own JWT auth internally.
+                or request.path.startswith("/app")
             ):
                 pass
             else:
