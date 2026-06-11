@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
-from django.db import transaction
+from django.db import transaction, models
 from django.db.models import Q
 from rest_framework import generics, status
 from rest_framework.pagination import PageNumberPagination
@@ -18,6 +18,7 @@ from ..models import (
     Branch,
     Course,
     CustomUser,
+    DashboardStory,
     Enrollment,
     FeedbackStaff,
     FeedbackStudent,
@@ -37,6 +38,7 @@ from ..models import (
     VocabularyDay,
     VocabularyDayCompletion,
     VocabularyDayWord,
+    VocabularyQuizResult,
 )
 from .permissions import IsAdmin, IsAdminOrTeacher, IsStudent, IsTeacher
 from .serializers import (
@@ -63,12 +65,16 @@ from .serializers import (
     StaffFeedbackSerializer,
     StaffLeaveSerializer,
     StaffStatsSerializer,
+    StaffVocabularyDaySerializer,
+    StorySerializer,
     StudentFeedbackSerializer,
     StudentLeaveSerializer,
     StudentResultSerializer,
     SubmissionSerializer,
     SubmitAssignmentSerializer,
     UserSerializer,
+    VocabularyQuizSerializer,
+    VocabularyWordWriteSerializer,
 )
 
 
@@ -851,12 +857,33 @@ class StudentDashboardView(APIView):
             for n in notifications
         ]
 
+        # Active stories for student's groups
+        enrolled_group_ids = [e.group_id for e in enrollments]
+        from django.utils import timezone as tz
+        now = tz.now()
+        stories_qs = DashboardStory.objects.filter(
+            is_active=True
+        ).filter(
+            models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=now)
+        ).order_by("-created_at")[:20]
+        stories_out = []
+        for s in stories_qs:
+            target_ids = list(s.target_groups.values_list("id", flat=True))
+            if not target_ids or any(gid in target_ids for gid in enrolled_group_ids):
+                stories_out.append({
+                    "id": s.id,
+                    "title": s.title,
+                    "content": s.body,
+                    "author_name": s.created_by.get_full_name() if s.created_by else "",
+                })
+
         return Response({
             "attendance_percentage": att_pct,
             "total_subjects": total_subjects,
             "average_score": avg_score,
             "enrolled_groups": enrolled_count,
             "notices": notices,
+            "stories": stories_out,
         })
 
 
@@ -1671,3 +1698,440 @@ class AdminBranchListView(generics.ListAPIView):
 
     def get_queryset(self):
         return branching.get_accessible_branches(self.request.user)
+
+
+# ---------------------------------------------------------------------------
+# Vocabulary Quiz
+# ---------------------------------------------------------------------------
+
+import random as _random
+
+
+class VocabularyQuizView(APIView):
+    """Student: generate shuffled MCQ quiz for a vocabulary day."""
+    permission_classes = [IsStudent]
+
+    def get(self, request, pk):
+        from django.utils import timezone as tz
+        try:
+            student = request.user.student
+        except Student.DoesNotExist:
+            return Response({"detail": "Student profile not found."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            day = VocabularyDay.objects.prefetch_related("words").select_related("group").get(pk=pk)
+        except VocabularyDay.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not day.is_released:
+            return Response({"detail": "Not released yet."}, status=status.HTTP_403_FORBIDDEN)
+
+        enrolled = Enrollment.objects.filter(student=student, group=day.group, is_active=True).exists()
+        if day.release_scope != VocabularyDay.SCOPE_ALL and not enrolled:
+            return Response({"detail": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
+
+        all_words = list(day.words.all())
+        if len(all_words) < 2:
+            return Response({"detail": "Need at least 2 words for a quiz."}, status=status.HTTP_400_BAD_REQUEST)
+
+        questions = []
+        for w in all_words:
+            distractors = _random.sample(
+                [x for x in all_words if x.id != w.id], min(3, len(all_words) - 1)
+            )
+            choices = [{"id": w.id, "word": w.word}] + [
+                {"id": d.id, "word": d.word} for d in distractors
+            ]
+            _random.shuffle(choices)
+            questions.append({
+                "id": w.id,
+                "meaning": w.meaning,
+                "example_sentence": w.example_sentence,
+                "correct_id": w.id,
+                "choices": choices,
+            })
+        _random.shuffle(questions)
+
+        data = {
+            "day_number": day.day_number,
+            "title": day.title,
+            "questions": questions,
+        }
+        serializer = VocabularyQuizSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
+
+
+class VocabularyQuizResultView(APIView):
+    """Student: submit quiz result, auto-complete day if score >= 60%."""
+    permission_classes = [IsStudent]
+
+    def post(self, request, pk):
+        try:
+            student = request.user.student
+        except Student.DoesNotExist:
+            return Response({"detail": "Student profile not found."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            day = VocabularyDay.objects.get(pk=pk)
+        except VocabularyDay.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        correct = request.data.get("correct")
+        total = request.data.get("total")
+        if correct is None or total is None:
+            return Response({"detail": "correct and total are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            correct = int(correct)
+            total = int(total)
+        except (ValueError, TypeError):
+            return Response({"detail": "correct and total must be integers."}, status=status.HTTP_400_BAD_REQUEST)
+
+        score = round((correct / total) * 100, 1) if total else 0.0
+
+        VocabularyQuizResult.objects.create(
+            student=student,
+            day=day,
+            score=score,
+            correct=correct,
+            total=total,
+        )
+
+        if score >= 60:
+            VocabularyDayCompletion.objects.get_or_create(student=student, day=day)
+
+        best_result = VocabularyQuizResult.objects.filter(student=student, day=day).order_by("-score").first()
+        best_score = best_result.score if best_result else score
+
+        return Response({"status": "ok", "score": score, "best_score": best_score})
+
+
+# ---------------------------------------------------------------------------
+# Student Progress
+# ---------------------------------------------------------------------------
+
+
+class StudentProgressView(APIView):
+    """Student: chart data for the progress screen."""
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        import datetime
+        from django.db.models import Avg, Count
+        from django.db.models.functions import TruncDate
+        from django.utils import timezone as tz
+
+        try:
+            student = request.user.student
+        except Student.DoesNotExist:
+            return Response({"detail": "Student profile not found."}, status=status.HTTP_403_FORBIDDEN)
+
+        enrolled_group_ids = list(
+            Enrollment.objects.filter(student=student, is_active=True).values_list("group_id", flat=True)
+        )
+        today = tz.localdate()
+        days_30 = [(today - datetime.timedelta(days=i)) for i in range(29, -1, -1)]
+        date_labels_30d = [d.strftime("%b %d") for d in days_30]
+
+        # Vocab days completed per day (last 30 days)
+        completions_qs = dict(
+            VocabularyDayCompletion.objects.filter(student=student)
+            .annotate(d=TruncDate("completed_at"))
+            .values("d")
+            .annotate(cnt=Count("id"))
+            .values_list("d", "cnt")
+        )
+        activity_30d = [completions_qs.get(d, 0) for d in days_30]
+
+        # Last 20 quiz results ordered by taken_at
+        quiz_results_qs = VocabularyQuizResult.objects.filter(student=student).order_by("taken_at")[:20]
+        quiz_scores = [
+            {
+                "score": qr.score,
+                "taken_at_str": qr.taken_at.strftime("%b %d"),
+                "day_title": qr.day.title if qr.day else "",
+            }
+            for qr in quiz_results_qs
+        ]
+
+        # Exam results per enrolled group
+        results_qs = StudentResult.objects.filter(
+            student=student, group_id__in=enrolled_group_ids
+        ).select_related("group")
+        exam_results = []
+        for r in results_qs:
+            total = int(r.test) + int(r.exam)
+            score_pct = round(total / 2, 1)  # out of 100 total (50+50)
+            exam_results.append({
+                "group_name": r.group.name if r.group else "General",
+                "test_score": r.test,
+                "exam_score": r.exam,
+                "total": total,
+                "score_pct": score_pct,
+            })
+
+        # Attendance percentage
+        reports = AttendanceReport.objects.filter(student=student)
+        total_att = reports.count()
+        present_att = reports.filter(status=AttendanceReport.PRESENT).count()
+        attendance_pct = round(present_att / total_att * 100, 1) if total_att else 0.0
+
+        # Summary stats
+        completed_days = VocabularyDayCompletion.objects.filter(student=student).count()
+        quiz_count = VocabularyQuizResult.objects.filter(student=student).count()
+        avg_quiz_agg = VocabularyQuizResult.objects.filter(student=student).aggregate(avg=Avg("score"))
+        avg_quiz_score = round(avg_quiz_agg["avg"], 1) if avg_quiz_agg["avg"] is not None else 0.0
+
+        return Response({
+            "activity_30d": activity_30d,
+            "quiz_scores": quiz_scores,
+            "exam_results": exam_results,
+            "date_labels_30d": date_labels_30d,
+            "attendance_pct": attendance_pct,
+            "completed_days": completed_days,
+            "quiz_count": quiz_count,
+            "avg_quiz_score": avg_quiz_score,
+        })
+
+
+# ---------------------------------------------------------------------------
+# Stories
+# ---------------------------------------------------------------------------
+
+
+class StoryListView(APIView):
+    """GET: all authenticated users. Filters by enrolled groups for students."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from django.utils import timezone as tz
+        user = request.user
+        user_type = str(user.user_type)
+
+        now = tz.now()
+        qs = DashboardStory.objects.filter(is_active=True).filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+        ).prefetch_related("target_groups")
+
+        if user_type == "3":
+            try:
+                student = user.student
+            except Student.DoesNotExist:
+                return Response([], status=status.HTTP_200_OK)
+            enrolled_group_ids = list(
+                Enrollment.objects.filter(student=student, is_active=True).values_list("group_id", flat=True)
+            )
+            # Show stories targeted to enrolled groups OR stories with no target groups (all)
+            qs = qs.filter(
+                Q(target_groups__isnull=True) | Q(target_groups__in=enrolled_group_ids)
+            ).distinct()
+
+        qs = qs.order_by("-created_at")
+        serializer = StorySerializer(qs, many=True, context={"request": request})
+        return Response(serializer.data)
+
+
+class StoryCreateView(APIView):
+    """POST: Admin or Staff only."""
+    permission_classes = [IsAdminOrTeacher]
+
+    def post(self, request):
+        from django.utils import timezone as tz
+        user = request.user
+        user_type = str(user.user_type)
+
+        title = request.data.get("title", "").strip()
+        if not title:
+            return Response({"title": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        body = request.data.get("body", "")
+        story_type = request.data.get("story_type", DashboardStory.TYPE_ANNOUNCEMENT)
+        emoji = request.data.get("emoji", "📢")
+        bg_color = request.data.get("bg_color", "#0C1F45")
+        expires_at = request.data.get("expires_at", None)
+        target_group_ids = request.data.get("target_group_ids", [])
+
+        # Resolve created_by: for staff, store the CustomUser (admin field of Staff)
+        if user_type == "2":
+            created_by = user  # DashboardStory.created_by is a FK to CustomUser
+        else:
+            created_by = user
+
+        story = DashboardStory.objects.create(
+            title=title,
+            body=body,
+            story_type=story_type,
+            emoji=emoji,
+            bg_color=bg_color,
+            created_by=created_by,
+            expires_at=expires_at or None,
+        )
+
+        if target_group_ids:
+            groups = Group.objects.filter(id__in=target_group_ids)
+            story.target_groups.set(groups)
+
+        serializer = StorySerializer(story, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class StoryDetailView(APIView):
+    """DELETE: Admin or creator (staff)."""
+    permission_classes = [IsAdminOrTeacher]
+
+    def delete(self, request, pk):
+        try:
+            story = DashboardStory.objects.get(pk=pk)
+        except DashboardStory.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        user = request.user
+        user_type = str(user.user_type)
+
+        # Admin can delete any; staff can only delete their own
+        if user_type != "1" and story.created_by_id != user.id:
+            return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+        story.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------------------------------------------------------------------
+# Staff Vocabulary Management
+# ---------------------------------------------------------------------------
+
+
+class StaffVocabularyListView(APIView):
+    """Staff: list vocabulary days they created."""
+    permission_classes = [IsTeacher]
+
+    def get(self, request):
+        try:
+            staff = request.user.staff
+        except Staff.DoesNotExist:
+            return Response({"detail": "Staff profile not found."}, status=status.HTTP_403_FORBIDDEN)
+
+        days = VocabularyDay.objects.filter(created_by=staff).select_related("group").prefetch_related("words", "completions")
+        serializer = StaffVocabularyDaySerializer(days, many=True, context={"request": request})
+        return Response(serializer.data)
+
+
+class StaffVocabularyCreateView(APIView):
+    """Staff: create a new vocabulary day."""
+    permission_classes = [IsTeacher]
+
+    def post(self, request):
+        try:
+            staff = request.user.staff
+        except Staff.DoesNotExist:
+            return Response({"detail": "Staff profile not found."}, status=status.HTTP_403_FORBIDDEN)
+
+        group_id = request.data.get("group")
+        if not group_id:
+            return Response({"detail": "group is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            group = Group.objects.get(pk=group_id)
+        except Group.DoesNotExist:
+            return Response({"detail": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Staff can only create vocab for groups assigned to them
+        if group.teacher_id != staff.id:
+            return Response(
+                {"detail": "You can only create vocabulary for groups assigned to you."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = StaffVocabularyDaySerializer(data=request.data, context={"request": request})
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        day = serializer.save(created_by=staff, group=group)
+        return Response(
+            StaffVocabularyDaySerializer(day, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class StaffVocabularyDetailView(APIView):
+    """Staff: GET/PATCH/DELETE a vocabulary day they own."""
+    permission_classes = [IsTeacher]
+
+    def _get_day(self, request, pk):
+        try:
+            staff = request.user.staff
+        except Staff.DoesNotExist:
+            return None, Response({"detail": "Staff profile not found."}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            day = VocabularyDay.objects.prefetch_related("words", "completions").select_related("group").get(pk=pk)
+        except VocabularyDay.DoesNotExist:
+            return None, Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        if day.created_by_id != staff.id:
+            return None, Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+        return day, None
+
+    def get(self, request, pk):
+        day, err = self._get_day(request, pk)
+        if err:
+            return err
+        serializer = StaffVocabularyDaySerializer(day, context={"request": request})
+        return Response(serializer.data)
+
+    def patch(self, request, pk):
+        day, err = self._get_day(request, pk)
+        if err:
+            return err
+        serializer = StaffVocabularyDaySerializer(day, data=request.data, partial=True, context={"request": request})
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        day, err = self._get_day(request, pk)
+        if err:
+            return err
+        day.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class StaffVocabularyWordView(APIView):
+    """Staff: add or remove words from a vocabulary day they own."""
+    permission_classes = [IsTeacher]
+
+    def _get_day(self, request, pk):
+        try:
+            staff = request.user.staff
+        except Staff.DoesNotExist:
+            return None, Response({"detail": "Staff profile not found."}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            day = VocabularyDay.objects.get(pk=pk)
+        except VocabularyDay.DoesNotExist:
+            return None, Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        if day.created_by_id != staff.id:
+            return None, Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+        return day, None
+
+    def post(self, request, pk):
+        day, err = self._get_day(request, pk)
+        if err:
+            return err
+        serializer = VocabularyWordWriteSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        word = serializer.save(day=day)
+        return Response(
+            VocabularyWordWriteSerializer(word).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def delete(self, request, pk, word_pk):
+        day, err = self._get_day(request, pk)
+        if err:
+            return err
+        try:
+            word = VocabularyDayWord.objects.get(pk=word_pk, day=day)
+        except VocabularyDayWord.DoesNotExist:
+            return Response({"detail": "Word not found."}, status=status.HTTP_404_NOT_FOUND)
+        word.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

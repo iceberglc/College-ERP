@@ -80,6 +80,23 @@ urlpatterns = [
     path("vocabulary/", views.VocabularyDayListView.as_view(), name="api_vocabulary"),
     path("vocabulary/<int:pk>/", views.VocabularyDayDetailView.as_view(), name="api_vocabulary_detail"),
     path("vocabulary/<int:pk>/complete/", views.VocabularyDayCompleteView.as_view(), name="api_vocabulary_complete"),
+    path("vocabulary/<int:pk>/quiz/", views.VocabularyQuizView.as_view(), name="api_vocabulary_quiz"),
+    path("vocabulary/<int:pk>/quiz-result/", views.VocabularyQuizResultView.as_view(), name="api_vocabulary_quiz_result"),
+
+    # ── Student Progress ──────────────────────────────────────────────────────
+    path("student/progress/", views.StudentProgressView.as_view(), name="api_student_progress"),
+
+    # ── Stories ───────────────────────────────────────────────────────────────
+    path("stories/", views.StoryListView.as_view(), name="api_stories"),
+    path("stories/create/", views.StoryCreateView.as_view(), name="api_story_create"),
+    path("stories/<int:pk>/", views.StoryDetailView.as_view(), name="api_story_detail"),
+
+    # ── Staff Vocabulary Management ───────────────────────────────────────────
+    path("staff/vocabulary/", views.StaffVocabularyListView.as_view(), name="api_staff_vocabulary"),
+    path("staff/vocabulary/create/", views.StaffVocabularyCreateView.as_view(), name="api_staff_vocabulary_create"),
+    path("staff/vocabulary/<int:pk>/", views.StaffVocabularyDetailView.as_view(), name="api_staff_vocabulary_detail"),
+    path("staff/vocabulary/<int:pk>/words/", views.StaffVocabularyWordView.as_view(), name="api_staff_vocabulary_words"),
+    path("staff/vocabulary/<int:pk>/words/<int:word_pk>/", views.StaffVocabularyWordView.as_view(), name="api_staff_vocabulary_word_delete"),
 
     # ── Leaderboard ───────────────────────────────────────────────────────────
     path("leaderboard/", views.LeaderboardView.as_view(), name="api_leaderboard"),
