@@ -448,6 +448,20 @@ SIMPLE_JWT = {
 }
 
 # ---------------------------------------------------------------------------
+# CSRF trusted origins (Django 4.0+)
+# ---------------------------------------------------------------------------
+# Required so Django's CSRF middleware accepts POST requests that arrive via
+# DigitalOcean's HTTPS load-balancer. Without this, the Origin header
+# (https://app.iceberglc.com) can mismatch the Host header Django sees
+# internally, producing 403 on every form submission.
+# Set CSRF_TRUSTED_ORIGINS=https://app.iceberglc.com,https://iceberglc.com
+_csrf_trusted_env = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
+if _csrf_trusted_env:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_trusted_env.split(",") if o.strip()]
+elif DEBUG:
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000"]
+
+# ---------------------------------------------------------------------------
 # CORS — allow Flutter apps on mobile and web clients
 # ---------------------------------------------------------------------------
 
