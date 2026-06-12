@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, admin_views
 
 urlpatterns = [
     # ── Auth ─────────────────────────────────────────────────────────────────
@@ -100,4 +100,45 @@ urlpatterns = [
 
     # ── Leaderboard ───────────────────────────────────────────────────────────
     path("leaderboard/", views.LeaderboardView.as_view(), name="api_leaderboard"),
+
+    # ── Admin: branch/course/session/subject management ───────────────────────
+    path("admin/branches-manage/", admin_views.BranchListView.as_view(), name="api_admin_branches_manage"),
+    path("admin/branches-manage/<int:pk>/", admin_views.BranchDetailView.as_view(), name="api_admin_branch_detail"),
+    path("admin/courses/", admin_views.CourseListView.as_view(), name="api_admin_courses"),
+    path("admin/courses/<int:pk>/", admin_views.CourseDetailView.as_view(), name="api_admin_course_detail"),
+    path("admin/sessions/", admin_views.SessionListView.as_view(), name="api_admin_sessions"),
+    path("admin/sessions/<int:pk>/", admin_views.SessionDetailView.as_view(), name="api_admin_session_detail"),
+    path("admin/subjects/", admin_views.SubjectListView.as_view(), name="api_admin_subjects"),
+    path("admin/subjects/<int:pk>/", admin_views.SubjectDetailView.as_view(), name="api_admin_subject_detail"),
+
+    # ── Admin: group CRUD + detail (with enrolled students) ──────────────────
+    path("admin/groups-manage/", admin_views.AdminGroupListView.as_view(), name="api_admin_groups_manage"),
+    path("admin/groups-manage/<int:pk>/", admin_views.AdminGroupDetailView.as_view(), name="api_admin_group_manage_detail"),
+    # Legacy detail endpoint (read-only, from admin_views.GroupDetailView):
+    path("admin/groups/<int:pk>/", admin_views.GroupDetailView.as_view(), name="api_admin_group_detail"),
+
+    # ── Admin: enrollments ────────────────────────────────────────────────────
+    path("admin/enrollments/", admin_views.EnrollmentView.as_view(), name="api_admin_enrollments"),
+
+    # ── Admin: leave requests ─────────────────────────────────────────────────
+    path("admin/leave-requests/", admin_views.AdminLeaveListView.as_view(), name="api_admin_leave_requests"),
+    path("admin/leave-requests/<int:pk>/", admin_views.AdminLeaveDetailView.as_view(), name="api_admin_leave_detail"),
+
+    # ── Admin: attendance report ──────────────────────────────────────────────
+    path("admin/attendance-report/", admin_views.AdminAttendanceView.as_view(), name="api_admin_attendance_report"),
+
+    # ── Admin: stories ────────────────────────────────────────────────────────
+    path("admin/stories/", admin_views.AdminStoriesListView.as_view(), name="api_admin_stories"),
+    path("admin/stories/<int:pk>/", admin_views.AdminStoriesDetailView.as_view(), name="api_admin_story_detail"),
+
+    # ── Admin: notifications ──────────────────────────────────────────────────
+    path("admin/send-notification/", admin_views.AdminSendNotificationView.as_view(), name="api_admin_send_notification"),
+
+    # ── Admin: invoices ───────────────────────────────────────────────────────
+    path("admin/invoices-manage/", admin_views.AdminInvoiceListView.as_view(), name="api_admin_invoices_manage"),
+    path("admin/invoices-manage/<int:pk>/pay/", admin_views.AdminRecordPaymentView.as_view(), name="api_admin_invoice_pay"),
+
+    # ── Admin: admin user management (superadmin only) ────────────────────────
+    path("admin/admins/", admin_views.AdminAdminListView.as_view(), name="api_admin_admins"),
+    path("admin/admins/<int:pk>/", admin_views.AdminAdminDetailView.as_view(), name="api_admin_admin_detail"),
 ]

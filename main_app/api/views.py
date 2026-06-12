@@ -1445,6 +1445,14 @@ class AdminStudentDetailView(APIView):
         serializer.save()
         return Response(serializer.data)
 
+    def delete(self, request, pk):
+        student, err = self._get_student(request, pk)
+        if err:
+            return err
+        user = student.admin
+        user.delete()  # deletes CustomUser; Student is deleted via CASCADE
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 # ---------------------------------------------------------------------------
 # Admin: Staff management
@@ -1573,6 +1581,14 @@ class AdminStaffDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
         return Response(serializer.data)
+
+    def delete(self, request, pk):
+        staff, err = self._get_staff(request, pk)
+        if err:
+            return err
+        user = staff.admin
+        user.delete()  # deletes CustomUser; Staff is deleted via CASCADE
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # ---------------------------------------------------------------------------
