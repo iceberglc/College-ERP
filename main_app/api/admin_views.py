@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 
 from .. import branching
 from ..models import (
+    Admin,
     Attendance,
     AttendanceReport,
     Branch,
@@ -1440,9 +1441,11 @@ class AdminAdminListView(APIView):
             )
 
         data = []
-        for u in qs:
-            branch_ids = list(u.branches.values_list("id", flat=True))
-            branch_names = list(u.branches.values_list("name", flat=True))
+        for u in qs.select_related("admin").prefetch_related("admin__branches"):
+            # Branch assignment and the superadmin flag live on the Admin
+            # profile row, not on CustomUser.
+            profile = getattr(u, "admin", None)
+            profile_branches = list(profile.branches.all()) if profile else []
             data.append({
                 "id": u.id,
                 "email": u.email,
@@ -1450,11 +1453,11 @@ class AdminAdminListView(APIView):
                 "last_name": u.last_name,
                 "full_name": f"{u.first_name} {u.last_name}".strip(),
                 "phone": getattr(u, "phone", ""),
-                "is_super_admin": u.is_super_admin,
+                "is_super_admin": bool(profile and profile.is_super_admin),
                 "is_active": u.is_active,
                 "date_joined": str(u.date_joined.date()),
-                "branch_ids": branch_ids,
-                "branch_names": branch_names,
+                "branch_ids": [b.id for b in profile_branches],
+                "branch_names": [b.name for b in profile_branches],
             })
         return Response(data)
 
@@ -1488,15 +1491,19 @@ class AdminAdminListView(APIView):
                 first_name=first_name,
                 last_name=last_name,
                 user_type="1",
-                is_super_admin=False,
             )
             if hasattr(user, "phone"):
                 user.phone = phone
                 user.save(update_fields=["phone"])
 
+            # The post_save signal creates the Admin profile with
+            # is_super_admin defaulting to True — API-created admins must
+            # always be branch admins.
+            profile, _ = Admin.objects.get_or_create(admin=user)
+            profile.is_super_admin = False
+            profile.save(update_fields=["is_super_admin"])
             if branch_ids:
-                branches = Branch.objects.filter(pk__in=branch_ids)
-                user.branches.set(branches)
+                profile.branches.set(Branch.objects.filter(pk__in=branch_ids))
 
         return Response(
             {
@@ -1556,8 +1563,10 @@ class AdminAdminDetailView(APIView):
         target.save()
 
         if "branch_ids" in d:
-            branches = Branch.objects.filter(pk__in=(d["branch_ids"] or []))
-            target.branches.set(branches)
+            profile, _ = Admin.objects.get_or_create(admin=target)
+            profile.branches.set(
+                Branch.objects.filter(pk__in=(d["branch_ids"] or []))
+            )
 
         return Response({"id": target.id, "email": target.email})
 
@@ -1571,7 +1580,8 @@ class AdminAdminDetailView(APIView):
                 {"detail": "You cannot delete your own account."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if target.is_super_admin:
+        target_profile = getattr(target, "admin", None)
+        if target_profile and target_profile.is_super_admin:
             return Response(
                 {"detail": "Super-admin accounts cannot be deleted via API."},
                 status=status.HTTP_403_FORBIDDEN,

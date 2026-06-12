@@ -129,7 +129,9 @@ class LoginView(APIView):
             {
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
-                "user": UserSerializer(user, context={"request": request}).data,
+                # MeSerializer includes role_profile (is_super_admin,
+                # branch_ids…) which clients need for role-based routing.
+                "user": MeSerializer(user, context={"request": request}).data,
             }
         )
 
@@ -1612,7 +1614,7 @@ class VocabularyDayListView(generics.ListAPIView):
             student = user.student
         except Exception:
             return VocabularyDay.objects.none()
-        enrolled_groups = Group.objects.filter(enrollments__student=student)
+        enrolled_groups = Group.objects.filter(enrollment__student=student, enrollment__is_active=True)
         return (
             VocabularyDay.objects
             .filter(group__in=enrolled_groups, release_at__lte=tz.now())
@@ -1639,7 +1641,7 @@ class VocabularyDayDetailView(APIView):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         if not day.is_released:
             return Response({"detail": "Not released yet."}, status=status.HTTP_403_FORBIDDEN)
-        enrolled = Group.objects.filter(enrollments__student=student, pk=day.group_id).exists()
+        enrolled = Group.objects.filter(enrollment__student=student, enrollment__is_active=True, pk=day.group_id).exists()
         if not enrolled:
             return Response({"detail": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
         return Response(VocabularyDaySerializer(day, context={"request": request}).data)
@@ -1658,7 +1660,7 @@ class VocabularyDayCompleteView(APIView):
             day = VocabularyDay.objects.get(pk=pk)
         except VocabularyDay.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-        enrolled = Group.objects.filter(enrollments__student=student, pk=day.group_id).exists()
+        enrolled = Group.objects.filter(enrollment__student=student, enrollment__is_active=True, pk=day.group_id).exists()
         if not enrolled:
             return Response({"detail": "Access denied."}, status=status.HTTP_403_FORBIDDEN)
         VocabularyDayCompletion.objects.get_or_create(student=student, day=day)
@@ -2142,3 +2144,125 @@ class StaffVocabularyWordView(APIView):
             return Response({"detail": "Word not found."}, status=status.HTTP_404_NOT_FOUND)
         word.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------------------------------------------------------------------
+# Group chat (mirrors web messaging_views; scoping via messaging helpers)
+# ---------------------------------------------------------------------------
+
+
+class MessageThreadListView(APIView):
+    """List chat threads (one per accessible group) for any role."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from .. import messaging
+        from ..models import ChatMessage
+
+        threads = []
+        for group in messaging.accessible_groups_for_user(request.user):
+            thread = messaging.ensure_thread_for_group(group)
+            last = (
+                ChatMessage.objects.filter(thread=thread)
+                .select_related("sender")
+                .order_by("-created_at")
+                .first()
+            )
+            threads.append({
+                "id": group.id,
+                "group_id": group.id,
+                "group_name": group.name,
+                "last_message": (last.body[:120] if last else ""),
+                "last_message_time": (last.created_at.isoformat() if last else None),
+                "unread_count": messaging.unread_count_for_thread(request.user, thread),
+            })
+        threads.sort(key=lambda t: t["last_message_time"] or "", reverse=True)
+        return Response({"threads": threads})
+
+
+class MessageThreadDetailView(APIView):
+    """Read or post messages in a group's chat thread."""
+    permission_classes = [IsAuthenticated]
+
+    def _get_thread(self, request, group_id):
+        from .. import messaging
+        try:
+            group = Group.objects.get(pk=group_id)
+        except Group.DoesNotExist:
+            return None, Response({"detail": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
+        if not messaging.can_access_group(request.user, group):
+            return None, Response({"detail": "Not allowed."}, status=status.HTTP_403_FORBIDDEN)
+        return messaging.ensure_thread_for_group(group), None
+
+    def get(self, request, group_id):
+        from django.utils import timezone as tz
+        from ..models import ChatReadState
+
+        thread, err = self._get_thread(request, group_id)
+        if err:
+            return err
+        messages = [
+            {
+                "id": m.id,
+                "message": m.body,
+                "sender_name": m.sender.get_full_name() or m.sender.email,
+                "is_mine": m.sender_id == request.user.id,
+                "created_at": m.created_at.isoformat(),
+            }
+            for m in thread.messages.select_related("sender").order_by("created_at")[:500]
+        ]
+        ChatReadState.objects.update_or_create(
+            thread=thread, user=request.user,
+            defaults={"last_read_at": tz.now()},
+        )
+        return Response({"messages": messages})
+
+    def post(self, request, group_id):
+        from ..models import ChatMessage
+
+        thread, err = self._get_thread(request, group_id)
+        if err:
+            return err
+        body = str(request.data.get("message") or request.data.get("body") or "").strip()
+        if not body:
+            return Response({"detail": "Message is required."}, status=status.HTTP_400_BAD_REQUEST)
+        msg = ChatMessage.objects.create(thread=thread, sender=request.user, body=body[:4000])
+        return Response(
+            {
+                "id": msg.id,
+                "message": msg.body,
+                "sender_name": request.user.get_full_name() or request.user.email,
+                "is_mine": True,
+                "created_at": msg.created_at.isoformat(),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Library books (read-only catalogue; loans are managed by staff on the web)
+# ---------------------------------------------------------------------------
+
+
+class BookListView(APIView):
+    """Catalogue of library books with availability."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from ..models import Book, Loan
+
+        on_loan = set(
+            Loan.objects.filter(returned_on__isnull=True).values_list("book_id", flat=True)
+        )
+        books = [
+            {
+                "id": b.id,
+                "title": b.name,
+                "author": b.author,
+                "category": b.category,
+                "isbn": b.isbn,
+                "is_available": b.id not in on_loan,
+            }
+            for b in Book.objects.all().order_by("name")
+        ]
+        return Response({"books": books})

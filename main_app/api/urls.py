@@ -101,6 +101,11 @@ urlpatterns = [
     # ── Leaderboard ───────────────────────────────────────────────────────────
     path("leaderboard/", views.LeaderboardView.as_view(), name="api_leaderboard"),
 
+    # ── Group chat & library ──────────────────────────────────────────────────
+    path("messages/", views.MessageThreadListView.as_view(), name="api_messages"),
+    path("messages/<int:group_id>/", views.MessageThreadDetailView.as_view(), name="api_message_thread"),
+    path("books/", views.BookListView.as_view(), name="api_books"),
+
     # ── Admin: branch/course/session/subject management ───────────────────────
     path("admin/branches-manage/", admin_views.BranchListView.as_view(), name="api_admin_branches_manage"),
     path("admin/branches-manage/<int:pk>/", admin_views.BranchDetailView.as_view(), name="api_admin_branch_detail"),
