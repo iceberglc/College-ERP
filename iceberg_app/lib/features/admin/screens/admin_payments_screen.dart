@@ -29,7 +29,8 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
       final res = await ApiClient.instance.dio.get('/admin/invoices-manage/');
       setState(() {
         _invoices = List<Map<String, dynamic>>.from(
-            res.data is List ? res.data : (res.data['results'] ?? res.data));
+          res.data is List ? res.data : (res.data['results'] ?? res.data),
+        );
         _loading = false;
       });
     } catch (e) {
@@ -53,23 +54,30 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: IceColors.surface,
-        title: const Text('Record Payment',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Record Payment',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
         content: const Text(
-            'Mark this invoice as paid?',
-            style: TextStyle(color: IceColors.muted)),
+          'Mark this invoice as paid?',
+          style: TextStyle(color: IceColors.muted),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel',
-                  style: TextStyle(color: IceColors.muted))),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: IceColors.muted),
+            ),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: IceColors.success,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Confirm'),
           ),
@@ -80,8 +88,9 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
     if (confirmed == true) {
       try {
         await ApiClient.instance.dio.patch(
-            '/admin/invoices-manage/${invoice['id']}/',
-            data: {'status': 'paid'});
+          '/admin/invoices-manage/${invoice['id']}/',
+          data: {'status': 'paid'},
+        );
         _load();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -94,7 +103,8 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Failed to record payment')));
+            const SnackBar(content: Text('Failed to record payment')),
+          );
         }
       }
     }
@@ -111,9 +121,10 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         margin: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(ctx).bottom + 16,
-            left: 16,
-            right: 16),
+          bottom: MediaQuery.viewInsetsOf(ctx).bottom + 16,
+          left: 16,
+          right: 16,
+        ),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: IceColors.surface,
@@ -129,21 +140,28 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                    color: IceColors.border,
-                    borderRadius: BorderRadius.circular(2)),
+                  color: IceColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Add Invoice',
-                style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: IceColors.text)),
+            const Text(
+              'Add Invoice',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: IceColors.text,
+              ),
+            ),
             const SizedBox(height: 16),
             _inputField(studentCtrl, 'Student (ID or name)'),
             const SizedBox(height: 12),
-            _inputField(amountCtrl, 'Amount',
-                type: TextInputType.numberWithOptions(decimal: true)),
+            _inputField(
+              amountCtrl,
+              'Amount',
+              type: TextInputType.numberWithOptions(decimal: true),
+            ),
             const SizedBox(height: 12),
             _inputField(dueDateCtrl, 'Due Date (YYYY-MM-DD)'),
             const SizedBox(height: 16),
@@ -152,12 +170,13 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
                 if (amountCtrl.text.trim().isEmpty) return;
                 try {
                   await ApiClient.instance.dio.post(
-                      '/admin/invoices-manage/',
-                      data: {
-                        'student': studentCtrl.text.trim(),
-                        'amount': amountCtrl.text.trim(),
-                        'due_date': dueDateCtrl.text.trim(),
-                      });
+                    '/admin/invoices-manage/',
+                    data: {
+                      'student': studentCtrl.text.trim(),
+                      'amount': amountCtrl.text.trim(),
+                      'due_date': dueDateCtrl.text.trim(),
+                    },
+                  );
                   if (ctx.mounted) Navigator.pop(ctx);
                   _load();
                 } catch (_) {}
@@ -167,10 +186,13 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
                 foregroundColor: IceColors.navy,
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Save',
-                  style: TextStyle(fontWeight: FontWeight.w700)),
+              child: const Text(
+                'Save',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
             const SizedBox(height: 8),
           ],
@@ -179,8 +201,11 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
     );
   }
 
-  Widget _inputField(TextEditingController ctrl, String label,
-      {TextInputType type = TextInputType.text}) {
+  Widget _inputField(
+    TextEditingController ctrl,
+    String label, {
+    TextInputType type = TextInputType.text,
+  }) {
     return TextField(
       controller: ctrl,
       keyboardType: type,
@@ -189,15 +214,17 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
         filled: true,
         fillColor: IceColors.surface2,
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: IceColors.border)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: IceColors.border),
+        ),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: IceColors.border)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: IceColors.border),
+        ),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: IceColors.navyDeep, width: 1.5)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: IceColors.navyDeep, width: 1.5),
+        ),
       ),
     );
   }
@@ -225,20 +252,26 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
                     border: Border.all(color: IceColors.border),
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(Icons.receipt_long_rounded,
-                      color: IceColors.navyDeep, size: 22),
+                  child: const Icon(
+                    Icons.receipt_long_rounded,
+                    color: IceColors.navyDeep,
+                    size: 22,
+                  ),
                 ),
                 actions: [
                   ElevatedButton.icon(
                     onPressed: _addInvoice,
                     icon: const Icon(Icons.add_rounded, size: 16),
-                    label: const Text('Add Invoice',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
+                    label: const Text(
+                      'Add Invoice',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: IceColors.lime,
                       foregroundColor: IceColors.navy,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -249,41 +282,43 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: Row(
-                  children:
-                      ['All', 'Paid', 'Unpaid'].map((f) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: _FilterChip(
-                          label: f,
-                          selected: _filter == f,
-                          onTap: () => setState(() => _filter = f),
+                  children: ['All', 'Paid', 'Unpaid']
+                      .map(
+                        (f) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _FilterChip(
+                            label: f,
+                            selected: _filter == f,
+                            onTap: () => setState(() => _filter = f),
+                          ),
                         ),
-                      )).toList(),
+                      )
+                      .toList(),
                 ),
               ),
             ),
             if (_loading)
               const SliverToBoxAdapter(
-                  child: Center(
-                      child: Padding(
-                          padding: EdgeInsets.all(40),
-                          child: CircularProgressIndicator(
-                              color: IceColors.navyDeep))))
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: CircularProgressIndicator(color: IceColors.navyDeep),
+                  ),
+                ),
+              )
             else if (_filtered.isEmpty)
               SliverToBoxAdapter(child: _buildEmpty())
             else
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (_, i) {
-                    final list = _filtered;
-                    if (i == list.length) return const SizedBox(height: 80);
-                    return _InvoiceCard(
-                      invoice: list[i],
-                      index: i,
-                      onRecordPayment: () => _recordPayment(list[i]),
-                    );
-                  },
-                  childCount: _filtered.length + 1,
-                ),
+                delegate: SliverChildBuilderDelegate((_, i) {
+                  final list = _filtered;
+                  if (i == list.length) return const SizedBox(height: 80);
+                  return _InvoiceCard(
+                    invoice: list[i],
+                    index: i,
+                    onRecordPayment: () => _recordPayment(list[i]),
+                  );
+                }, childCount: _filtered.length + 1),
               ),
           ],
         ),
@@ -299,8 +334,10 @@ class _AdminPaymentsScreenState extends ConsumerState<AdminPaymentsScreen> {
           children: [
             Icon(Icons.receipt_outlined, size: 48, color: IceColors.muted),
             SizedBox(height: 12),
-            Text('No invoices yet',
-                style: TextStyle(color: IceColors.muted, fontSize: 15)),
+            Text(
+              'No invoices yet',
+              style: TextStyle(color: IceColors.muted, fontSize: 15),
+            ),
           ],
         ),
       ),
@@ -312,37 +349,45 @@ class _FilterChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _FilterChip(
-      {required this.label, required this.selected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-          decoration: BoxDecoration(
-            color: selected ? IceColors.navyDeep : IceColors.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-                color: selected ? IceColors.navyDeep : IceColors.border),
-          ),
-          child: Text(label,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: selected ? Colors.white : IceColors.muted)),
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: selected ? IceColors.navyDeep : IceColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: selected ? IceColors.navyDeep : IceColors.border,
         ),
-      );
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: selected ? Colors.white : IceColors.muted,
+        ),
+      ),
+    ),
+  );
 }
 
 class _InvoiceCard extends StatelessWidget {
   final Map<String, dynamic> invoice;
   final int index;
   final VoidCallback onRecordPayment;
-  const _InvoiceCard(
-      {required this.invoice,
-      required this.index,
-      required this.onRecordPayment});
+  const _InvoiceCard({
+    required this.invoice,
+    required this.index,
+    required this.onRecordPayment,
+  });
 
   Color get _statusColor {
     final s = (invoice['status'] ?? invoice['payment_status'] ?? '')
@@ -371,7 +416,8 @@ class _InvoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final studentName = invoice['student_name'] ??
+    final studentName =
+        invoice['student_name'] ??
         invoice['student']?['name'] ??
         invoice['student']?.toString() ??
         'Unknown';
@@ -379,73 +425,98 @@ class _InvoiceCard extends StatelessWidget {
     final dueDate = invoice['due_date']?.toString() ?? '';
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: IceColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IceColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(studentName.toString(),
-                        style: const TextStyle(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: IceColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: IceColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          studentName.toString(),
+                          style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
-                            color: IceColors.text)),
-                    if (dueDate.isNotEmpty)
-                      Text('Due $dueDate',
-                          style: const TextStyle(
-                              fontSize: 12, color: IceColors.muted)),
-                  ]),
-            ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: _statusColor.withAlpha(20),
-                borderRadius: BorderRadius.circular(20),
+                            color: IceColors.text,
+                          ),
+                        ),
+                        if (dueDate.isNotEmpty)
+                          Text(
+                            'Due $dueDate',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: IceColors.muted,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _statusColor.withAlpha(20),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _statusLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: _statusColor,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: Text(_statusLabel,
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: _statusColor)),
-            ),
-          ]),
-          const SizedBox(height: 10),
-          Row(children: [
-            Text('\$$amount',
-                style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: IceColors.text)),
-            const Spacer(),
-            if (_isUnpaid)
-              ElevatedButton(
-                onPressed: onRecordPayment,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: IceColors.success,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 8),
-                  textStyle: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w700),
-                ),
-                child: const Text('Record Payment'),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Text(
+                    '\$$amount',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: IceColors.text,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_isUnpaid)
+                    ElevatedButton(
+                      onPressed: onRecordPayment,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: IceColors.success,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      child: const Text('Record Payment'),
+                    ),
+                ],
               ),
-          ]),
-        ],
-      ),
-    )
+            ],
+          ),
+        )
         .animate(delay: Duration(milliseconds: 60 + index * 30))
         .slideX(begin: 0.05, duration: 300.ms, curve: Curves.easeOut)
         .fadeIn(duration: 250.ms);

@@ -3,39 +3,39 @@ import 'package:flutter/material.dart';
 // ─── ICEBERG Design Tokens ──────────────────────────────────────────────────
 class IceColors {
   // Primary teal scale
-  static const navy     = Color(0xFF06343A);   // darkest teal
-  static const navyMid  = Color(0xFF073B42);   // mid teal
-  static const navyDeep = Color(0xFF0E6873);   // iceberg teal
+  static const navy = Color(0xFF06343A); // darkest teal
+  static const navyMid = Color(0xFF073B42); // mid teal
+  static const navyDeep = Color(0xFF0E6873); // iceberg teal
   // Accent — lime highlight (use on dark backgrounds only; requires dark text)
-  static const lime     = Color(0xFFDFFF2F);
-  static const limeAlt  = Color(0xFFC7FF3D);
+  static const lime = Color(0xFFDFFF2F);
+  static const limeAlt = Color(0xFFC7FF3D);
   // Legacy alias so existing `IceColors.cyan` refs keep compiling
-  static const cyan     = Color(0xFF0E6873);   // = navyDeep
+  static const cyan = Color(0xFF0E6873); // = navyDeep
   static const cyanGlow = Color(0x290E6873);
-  static const bg       = Color(0xFFFAFAFA);
-  static const surface  = Color(0xFFFFFFFF);
+  static const bg = Color(0xFFFAFAFA);
+  static const surface = Color(0xFFFFFFFF);
   static const surface2 = Color(0xFFF4FAFB);
-  static const border   = Color(0xFFDCEAEC);
-  static const text     = Color(0xFF06343A);
-  static const muted    = Color(0xFF6B7F83);
-  static const success  = Color(0xFF38A169);
-  static const warning  = Color(0xFFE5A936);
-  static const danger   = Color(0xFFE56B6F);
-  static const info     = Color(0xFF0284C7);
+  static const border = Color(0xFFDCEAEC);
+  static const text = Color(0xFF06343A);
+  static const muted = Color(0xFF6B7F83);
+  static const success = Color(0xFF38A169);
+  static const warning = Color(0xFFE5A936);
+  static const danger = Color(0xFFE56B6F);
+  static const info = Color(0xFF0284C7);
 
   // Dark mode overrides
-  static const darkBg       = Color(0xFF040F10);
-  static const darkSurface  = Color(0xFF071518);
-  static const darkBorder   = Color(0xFF0F2F33);
-  static const darkText     = Color(0xFFDCEAEC);
-  static const darkMuted    = Color(0xFF6B7F83);
+  static const darkBg = Color(0xFF040F10);
+  static const darkSurface = Color(0xFF071518);
+  static const darkBorder = Color(0xFF0F2F33);
+  static const darkText = Color(0xFFDCEAEC);
+  static const darkMuted = Color(0xFF6B7F83);
 }
 
 class IceTheme {
   // Shared border-radius constants
-  static const r    = 24.0;
-  static const rSm  = 14.0;
-  static const rLg  = 32.0;
+  static const r = 24.0;
+  static const rSm = 14.0;
+  static const rLg = 32.0;
 
   static ThemeData light() => ThemeData(
     useMaterial3: true,
@@ -51,20 +51,30 @@ class IceTheme {
     fontFamily: 'Inter',
     textTheme: const TextTheme(
       headlineLarge: TextStyle(
-        fontSize: 26, fontWeight: FontWeight.w900,
-        color: IceColors.text, letterSpacing: -0.5,
+        fontSize: 26,
+        fontWeight: FontWeight.w900,
+        color: IceColors.text,
+        letterSpacing: -0.5,
       ),
       headlineMedium: TextStyle(
-        fontSize: 20, fontWeight: FontWeight.w800, color: IceColors.text,
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
+        color: IceColors.text,
       ),
       titleMedium: TextStyle(
-        fontSize: 15, fontWeight: FontWeight.w700, color: IceColors.text,
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+        color: IceColors.text,
       ),
       bodyMedium: TextStyle(
-        fontSize: 14, fontWeight: FontWeight.w500, color: IceColors.text,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: IceColors.text,
       ),
       bodySmall: TextStyle(
-        fontSize: 12, fontWeight: FontWeight.w500, color: IceColors.muted,
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: IceColors.muted,
       ),
     ),
     appBarTheme: AppBarTheme(
@@ -73,7 +83,9 @@ class IceTheme {
       surfaceTintColor: Colors.transparent,
       titleTextStyle: const TextStyle(
         fontFamily: 'Inter',
-        fontSize: 17, fontWeight: FontWeight.w800, color: IceColors.text,
+        fontSize: 17,
+        fontWeight: FontWeight.w800,
+        color: IceColors.text,
       ),
       iconTheme: const IconThemeData(color: IceColors.text),
     ),
@@ -97,8 +109,16 @@ class IceTheme {
         borderSide: const BorderSide(color: IceColors.danger, width: 1.5),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      labelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: IceColors.muted),
-      hintStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: IceColors.muted),
+      labelStyle: const TextStyle(
+        fontFamily: 'Inter',
+        fontSize: 14,
+        color: IceColors.muted,
+      ),
+      hintStyle: const TextStyle(
+        fontFamily: 'Inter',
+        fontSize: 14,
+        color: IceColors.muted,
+      ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -106,7 +126,11 @@ class IceTheme {
         foregroundColor: Colors.white,
         minimumSize: const Size(double.infinity, 52),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w800),
+        textStyle: const TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 15,
+          fontWeight: FontWeight.w800,
+        ),
         elevation: 0,
       ),
     ),

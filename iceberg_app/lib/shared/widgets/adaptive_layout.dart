@@ -43,10 +43,7 @@ class AdaptiveLayout extends StatelessWidget {
         sections: sections,
       );
     }
-    return _MobileLayout(
-      navigationShell: navigationShell,
-      items: items,
-    );
+    return _MobileLayout(navigationShell: navigationShell, items: items);
   }
 }
 
@@ -55,10 +52,7 @@ class _MobileLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
   final List<IceNavItem> items;
 
-  const _MobileLayout({
-    required this.navigationShell,
-    required this.items,
-  });
+  const _MobileLayout({required this.navigationShell, required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -90,9 +84,7 @@ class _FloatingBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-      ),
+      decoration: const BoxDecoration(color: Colors.transparent),
       child: SafeArea(
         top: false,
         child: Padding(
@@ -119,7 +111,9 @@ class _FloatingBottomNav extends StatelessWidget {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      vertical: 10, horizontal: 8),
+                    vertical: 10,
+                    horizontal: 8,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: List.generate(items.length, (i) {
@@ -161,12 +155,9 @@ class _MobileNavItem extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected
-              ? IceColors.lime.withAlpha(30)
-              : Colors.transparent,
+          color: selected ? IceColors.lime.withAlpha(30) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
@@ -197,10 +188,8 @@ class _MobileNavItem extends StatelessWidget {
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
                 fontSize: 9,
-                fontWeight:
-                    selected ? FontWeight.w700 : FontWeight.w500,
-                color:
-                    selected ? IceColors.lime : Colors.white.withAlpha(120),
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? IceColors.lime : Colors.white.withAlpha(120),
               ),
               child: Text(
                 item.label,
@@ -222,10 +211,7 @@ class _DesktopLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
   final List<SidebarSection> sections;
 
-  const _DesktopLayout({
-    required this.navigationShell,
-    required this.sections,
-  });
+  const _DesktopLayout({required this.navigationShell, required this.sections});
 
   @override
   Widget build(BuildContext context) {

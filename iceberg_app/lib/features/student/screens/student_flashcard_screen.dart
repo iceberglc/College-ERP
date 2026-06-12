@@ -34,9 +34,10 @@ class _State extends State<StudentFlashcardScreen>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    _flipAnim = Tween<double>(begin: 0, end: math.pi).animate(
-      CurvedAnimation(parent: _flipCtrl, curve: Curves.easeInOut),
-    );
+    _flipAnim = Tween<double>(
+      begin: 0,
+      end: math.pi,
+    ).animate(CurvedAnimation(parent: _flipCtrl, curve: Curves.easeInOut));
     _fetch();
   }
 
@@ -47,9 +48,14 @@ class _State extends State<StudentFlashcardScreen>
   }
 
   Future<void> _fetch() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      final res = await ApiClient.instance.dio.get('/vocabulary/${widget.vocabId}/');
+      final res = await ApiClient.instance.dio.get(
+        '/vocabulary/${widget.vocabId}/',
+      );
       final data = res.data as Map<String, dynamic>;
       final words = (data['words'] as List?) ?? [];
       setState(() {
@@ -58,7 +64,10 @@ class _State extends State<StudentFlashcardScreen>
         _loading = false;
       });
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
@@ -105,35 +114,40 @@ class _State extends State<StudentFlashcardScreen>
         title: Text(
           _dayData?['title']?.toString() ?? 'Flashcards',
           style: const TextStyle(
-              color: IceColors.text, fontWeight: FontWeight.w800, fontSize: 16),
+            color: IceColors.text,
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+          ),
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: IceColors.navyDeep))
+          ? const Center(
+              child: CircularProgressIndicator(color: IceColors.navyDeep),
+            )
           : _error != null
-              ? _ErrorView(error: _error!, onRetry: _fetch)
-              : _words.isEmpty
-                  ? const _EmptyView()
-                  : _allDone
-                      ? _CelebrationView(
-                          vocabId: widget.vocabId,
-                          dayData: _dayData,
-                          onRestart: () => setState(() {
-                            _allDone = false;
-                            _currentIndex = 0;
-                            _isFront = true;
-                            _flipCtrl.reset();
-                          }),
-                        )
-                      : _FlashcardView(
-                          words: _words,
-                          currentIndex: _currentIndex,
-                          flipAnim: _flipAnim,
-                          isFront: _isFront,
-                          onFlip: _flip,
-                          onPrev: _currentIndex > 0 ? _prev : null,
-                          onNext: _next,
-                        ),
+          ? _ErrorView(error: _error!, onRetry: _fetch)
+          : _words.isEmpty
+          ? const _EmptyView()
+          : _allDone
+          ? _CelebrationView(
+              vocabId: widget.vocabId,
+              dayData: _dayData,
+              onRestart: () => setState(() {
+                _allDone = false;
+                _currentIndex = 0;
+                _isFront = true;
+                _flipCtrl.reset();
+              }),
+            )
+          : _FlashcardView(
+              words: _words,
+              currentIndex: _currentIndex,
+              flipAnim: _flipAnim,
+              isFront: _isFront,
+              onFlip: _flip,
+              onPrev: _currentIndex > 0 ? _prev : null,
+              onNext: _next,
+            ),
     );
   }
 }
@@ -175,13 +189,18 @@ class _FlashcardView extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${currentIndex + 1} / $total',
-                      style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: IceColors.navyDeep)),
-                  const Text('Tap card to flip',
-                      style: TextStyle(fontSize: 12, color: IceColors.muted)),
+                  Text(
+                    '${currentIndex + 1} / $total',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: IceColors.navyDeep,
+                    ),
+                  ),
+                  const Text(
+                    'Tap card to flip',
+                    style: TextStyle(fontSize: 12, color: IceColors.muted),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -190,8 +209,9 @@ class _FlashcardView extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: progress,
                   backgroundColor: IceColors.border,
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(IceColors.navyDeep),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    IceColors.navyDeep,
+                  ),
                   minHeight: 6,
                 ),
               ),
@@ -218,10 +238,7 @@ class _FlashcardView extends StatelessWidget {
                         ..rotateY(angle),
                       alignment: Alignment.center,
                       child: showFront
-                          ? _CardFace(
-                              word: word,
-                              isFront: true,
-                            )
+                          ? _CardFace(word: word, isFront: true)
                           : Transform(
                               transform: Matrix4.identity()..rotateY(math.pi),
                               alignment: Alignment.center,
@@ -249,12 +266,14 @@ class _FlashcardView extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: IceColors.navyDeep,
                       side: BorderSide(
-                          color: onPrev != null
-                              ? IceColors.navyDeep
-                              : IceColors.border),
+                        color: onPrev != null
+                            ? IceColors.navyDeep
+                            : IceColors.border,
+                      ),
                       minimumSize: const Size(0, 52),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
                 ),
@@ -262,15 +281,16 @@ class _FlashcardView extends StatelessWidget {
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: onNext,
-                    label: Text(currentIndex + 1 >= words.length
-                        ? 'Finish'
-                        : 'Next'),
+                    label: Text(
+                      currentIndex + 1 >= words.length ? 'Finish' : 'Next',
+                    ),
                     icon: const Icon(Icons.arrow_forward_rounded, size: 18),
                     style: FilledButton.styleFrom(
                       backgroundColor: IceColors.navyDeep,
                       minimumSize: const Size(0, 52),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
                 ),
@@ -304,7 +324,9 @@ class _CardFace extends StatelessWidget {
       decoration: BoxDecoration(
         color: isFront ? IceColors.navy : IceColors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: isFront ? null : Border.all(color: IceColors.border, width: 1.5),
+        border: isFront
+            ? null
+            : Border.all(color: IceColors.border, width: 1.5),
         boxShadow: [
           BoxShadow(
             color: IceColors.navy.withAlpha(isFront ? 60 : 20),
@@ -452,9 +474,7 @@ class _CelebrationView extends StatelessWidget {
               child: const Center(
                 child: Text('🎉', style: TextStyle(fontSize: 44)),
               ),
-            )
-                .animate()
-                .scale(duration: 500.ms, curve: Curves.elasticOut),
+            ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
             const SizedBox(height: 24),
             const Text(
               'All cards reviewed!',
@@ -488,9 +508,12 @@ class _CelebrationView extends StatelessWidget {
                   backgroundColor: IceColors.navyDeep,
                   minimumSize: const Size(double.infinity, 52),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   textStyle: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w700),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
@@ -506,7 +529,8 @@ class _CelebrationView extends StatelessWidget {
                   side: const BorderSide(color: IceColors.navyDeep),
                   minimumSize: const Size(double.infinity, 52),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ).animate().fadeIn(delay: 500.ms),
@@ -522,26 +546,31 @@ class _EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(40),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.style_outlined, size: 48, color: IceColors.muted),
-              SizedBox(height: 16),
-              Text('No words to review',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: IceColors.muted)),
-              SizedBox(height: 8),
-              Text('This lesson has no words yet.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: IceColors.muted)),
-            ],
+    child: Padding(
+      padding: EdgeInsets.all(40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.style_outlined, size: 48, color: IceColors.muted),
+          SizedBox(height: 16),
+          Text(
+            'No words to review',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: IceColors.muted,
+            ),
           ),
-        ),
-      );
+          SizedBox(height: 8),
+          Text(
+            'This lesson has no words yet.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: IceColors.muted),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _ErrorView extends StatelessWidget {
@@ -551,31 +580,35 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline_rounded,
-                  size: 48, color: IceColors.muted),
-              const SizedBox(height: 16),
-              const Text('Failed to load',
-                  style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Text(error,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 13, color: IceColors.muted)),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: onRetry,
-                style: FilledButton.styleFrom(
-                    backgroundColor: IceColors.navyDeep),
-                child: const Text('Retry'),
-              ),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 48,
+            color: IceColors.muted,
           ),
-        ),
-      );
+          const SizedBox(height: 16),
+          const Text(
+            'Failed to load',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            error,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, color: IceColors.muted),
+          ),
+          const SizedBox(height: 24),
+          FilledButton(
+            onPressed: onRetry,
+            style: FilledButton.styleFrom(backgroundColor: IceColors.navyDeep),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    ),
+  );
 }

@@ -51,8 +51,7 @@ class IceNavBar extends StatelessWidget {
                   duration: const Duration(milliseconds: 200),
                   style: TextStyle(
                     fontSize: 9,
-                    fontWeight:
-                        selected ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     color: selected ? IceColors.navyDeep : IceColors.muted,
                   ),
                   child: Text(
@@ -97,9 +96,7 @@ class IceNavBar extends StatelessWidget {
           child: useScroll
               ? SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: List.generate(items.length, buildItem),
-                  ),
+                  child: Row(children: List.generate(items.length, buildItem)),
                 )
               : Row(
                   children: List.generate(

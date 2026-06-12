@@ -13,8 +13,7 @@ class AdminAddStudentScreen extends ConsumerStatefulWidget {
       _AdminAddStudentScreenState();
 }
 
-class _AdminAddStudentScreenState
-    extends ConsumerState<AdminAddStudentScreen> {
+class _AdminAddStudentScreenState extends ConsumerState<AdminAddStudentScreen> {
   final _form = GlobalKey<FormState>();
   final _firstName = TextEditingController();
   final _lastName = TextEditingController();
@@ -41,19 +40,26 @@ class _AdminAddStudentScreenState
 
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
-    setState(() { _loading = true; _error = null; _success = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+      _success = null;
+    });
     try {
-      final res = await ApiClient.instance.dio.post('/admin/students/', data: {
-        'first_name': _firstName.text.trim(),
-        'last_name': _lastName.text.trim(),
-        'password': _password.text,
-        'phone': _phone.text.trim(),
-        'address': _address.text.trim(),
-        'gender': _gender,
-        if (_dob != null) 'date_of_birth': _dob,
-        if (_courseId != null) 'course': _courseId,
-        if (_branchId != null) 'branch': _branchId,
-      });
+      final res = await ApiClient.instance.dio.post(
+        '/admin/students/',
+        data: {
+          'first_name': _firstName.text.trim(),
+          'last_name': _lastName.text.trim(),
+          'password': _password.text,
+          'phone': _phone.text.trim(),
+          'address': _address.text.trim(),
+          'gender': _gender,
+          if (_dob != null) 'date_of_birth': _dob,
+          if (_courseId != null) 'course': _courseId,
+          if (_branchId != null) 'branch': _branchId,
+        },
+      );
       final loginId = (res.data as Map)['login_id'] ?? '';
       ref.invalidate(adminStudentsProvider);
       setState(() {
@@ -61,10 +67,16 @@ class _AdminAddStudentScreenState
         _loading = false;
       });
       _form.currentState!.reset();
-      _firstName.clear(); _lastName.clear();
-      _password.clear(); _phone.clear(); _address.clear();
+      _firstName.clear();
+      _lastName.clear();
+      _password.clear();
+      _phone.clear();
+      _address.clear();
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
@@ -88,131 +100,165 @@ class _AdminAddStudentScreenState
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
               child: Form(
                 key: _form,
-                child: Column(children: [
-                  if (_success != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: IceColors.success.withAlpha(20),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: IceColors.success.withAlpha(60)),
-                      ),
-                      child: Row(children: [
-                        const Icon(Icons.check_circle_rounded,
-                            color: IceColors.success, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(_success!,
-                              style: const TextStyle(
-                                  color: IceColors.success,
-                                  fontWeight: FontWeight.w600)),
+                child: Column(
+                  children: [
+                    if (_success != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: IceColors.success.withAlpha(20),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: IceColors.success.withAlpha(60),
+                          ),
                         ),
-                      ]),
-                    ),
-                  if (_error != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: IceColors.danger.withAlpha(20),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: IceColors.danger.withAlpha(60)),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              color: IceColors.success,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _success!,
+                                style: const TextStyle(
+                                  color: IceColors.success,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Text(_error!,
-                          style: const TextStyle(color: IceColors.danger)),
+                    if (_error != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: IceColors.danger.withAlpha(20),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: IceColors.danger.withAlpha(60),
+                          ),
+                        ),
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(color: IceColors.danger),
+                        ),
+                      ),
+                    _field(_firstName, 'First Name', required: true),
+                    _field(_lastName, 'Last Name'),
+                    _field(
+                      _password,
+                      'Password',
+                      required: true,
+                      obscure: true,
                     ),
-                  _field(_firstName, 'First Name', required: true),
-                  _field(_lastName, 'Last Name'),
-                  _field(_password, 'Password', required: true, obscure: true),
-                  _field(_phone, 'Phone'),
-                  _field(_address, 'Address', maxLines: 2),
-                  _dropdownField('Gender', _gender, {'M': 'Male', 'F': 'Female'},
-                      (v) => setState(() => _gender = v!)),
-                  const SizedBox(height: 12),
-                  InkWell(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime(2005),
-                        firstDate: DateTime(1980),
-                        lastDate: DateTime.now(),
-                      );
-                      if (picked != null) {
-                        setState(() => _dob =
-                            '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: _decoration('Date of Birth'),
-                      child: Text(
-                        _dob ?? 'Select date (optional)',
-                        style: TextStyle(
+                    _field(_phone, 'Phone'),
+                    _field(_address, 'Address', maxLines: 2),
+                    _dropdownField('Gender', _gender, {
+                      'M': 'Male',
+                      'F': 'Female',
+                    }, (v) => setState(() => _gender = v!)),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime(2005),
+                          firstDate: DateTime(1980),
+                          lastDate: DateTime.now(),
+                        );
+                        if (picked != null) {
+                          setState(
+                            () => _dob =
+                                '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}',
+                          );
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: _decoration('Date of Birth'),
+                        child: Text(
+                          _dob ?? 'Select date (optional)',
+                          style: TextStyle(
                             color: _dob != null
                                 ? IceColors.text
-                                : IceColors.muted),
+                                : IceColors.muted,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  courses.when(
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
-                    data: (list) => DropdownButtonFormField<int>(
-                      value: _courseId,
-                      decoration: _decoration('Course'),
-                      hint: const Text('Select course'),
-                      items: list.map((c) {
-                        final m = c as Map;
-                        return DropdownMenuItem<int>(
-                          value: m['id'] as int,
-                          child: Text(m['name']?.toString() ?? ''),
-                        );
-                      }).toList(),
-                      onChanged: (v) => setState(() => _courseId = v),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  branches.when(
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
-                    data: (list) => DropdownButtonFormField<int>(
-                      value: _branchId,
-                      decoration: _decoration('Branch'),
-                      hint: const Text('Select branch'),
-                      items: list.map((b) {
-                        final m = b as Map;
-                        return DropdownMenuItem<int>(
-                          value: m['id'] as int,
-                          child: Text(m['name']?.toString() ?? ''),
-                        );
-                      }).toList(),
-                      onChanged: (v) => setState(() => _branchId = v),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _loading ? null : _submit,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: IceColors.navyDeep,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                    const SizedBox(height: 12),
+                    courses.when(
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                      data: (list) => DropdownButtonFormField<int>(
+                        initialValue: _courseId,
+                        decoration: _decoration('Course'),
+                        hint: const Text('Select course'),
+                        items: list.map((c) {
+                          final m = c as Map;
+                          return DropdownMenuItem<int>(
+                            value: m['id'] as int,
+                            child: Text(m['name']?.toString() ?? ''),
+                          );
+                        }).toList(),
+                        onChanged: (v) => setState(() => _courseId = v),
                       ),
-                      child: _loading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
-                          : const Text('Create Student',
-                              style: TextStyle(
-                                  fontSize: 15, fontWeight: FontWeight.w700)),
                     ),
-                  ),
-                ]),
+                    const SizedBox(height: 12),
+                    branches.when(
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                      data: (list) => DropdownButtonFormField<int>(
+                        initialValue: _branchId,
+                        decoration: _decoration('Branch'),
+                        hint: const Text('Select branch'),
+                        items: list.map((b) {
+                          final m = b as Map;
+                          return DropdownMenuItem<int>(
+                            value: m['id'] as int,
+                            child: Text(m['name']?.toString() ?? ''),
+                          );
+                        }).toList(),
+                        onChanged: (v) => setState(() => _branchId = v),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _loading ? null : _submit,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: IceColors.navyDeep,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: _loading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Create Student',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -236,22 +282,26 @@ class _AdminAddStudentScreenState
         maxLines: maxLines,
         decoration: _decoration(label),
         validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? '$label is required' : null
+            ? (v) =>
+                  (v == null || v.trim().isEmpty) ? '$label is required' : null
             : null,
       ),
     );
   }
 
-  Widget _dropdownField(String label, String value, Map<String, String> options,
-      void Function(String?) onChanged) {
+  Widget _dropdownField(
+    String label,
+    String value,
+    Map<String, String> options,
+    void Function(String?) onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         decoration: _decoration(label),
         items: options.entries
-            .map((e) =>
-                DropdownMenuItem(value: e.key, child: Text(e.value)))
+            .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
             .toList(),
         onChanged: onChanged,
       ),
@@ -259,16 +309,16 @@ class _AdminAddStudentScreenState
   }
 
   InputDecoration _decoration(String label) => InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: IceColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: IceColors.border),
-        ),
-      );
+    labelText: label,
+    filled: true,
+    fillColor: Colors.white,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: IceColors.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: IceColors.border),
+    ),
+  );
 }

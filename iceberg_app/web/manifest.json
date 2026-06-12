@@ -1,12 +1,12 @@
 {
-    "name": "iceberg_app",
-    "short_name": "iceberg_app",
+    "name": "ICEBERG Study Center ERP",
+    "short_name": "ICEBERG ERP",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#06343A",
     "theme_color": "#06343A",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "description": "Flutter web app for ICEBERG students, staff, admins, and superadmins.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

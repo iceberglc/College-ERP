@@ -32,16 +32,17 @@ class StaffClassesScreen extends ConsumerWidget {
                 child: Center(
                   child: Padding(
                     padding: EdgeInsets.all(40),
-                    child:
-                        CircularProgressIndicator(color: IceColors.navyDeep),
+                    child: CircularProgressIndicator(color: IceColors.navyDeep),
                   ),
                 ),
               ),
               error: (e, _) => SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Text('Error: $e',
-                      style: const TextStyle(color: IceColors.danger)),
+                  child: Text(
+                    'Error: $e',
+                    style: const TextStyle(color: IceColors.danger),
+                  ),
                 ),
               ),
               data: (list) {
@@ -50,8 +51,7 @@ class StaffClassesScreen extends ConsumerWidget {
                 }
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, i) =>
-                        _GroupCard(group: list[i] as Map, index: i),
+                    (context, i) => _GroupCard(group: list[i] as Map, index: i),
                     childCount: list.length,
                   ),
                 );
@@ -75,84 +75,95 @@ class _GroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = group['name']?.toString() ?? 'Group';
-    final courseName = group['course_name']?.toString() ??
-        group['course']?.toString() ?? '';
-    final studentCount =
-        group['student_count'] ?? group['students_count'] ?? 0;
+    final courseName =
+        group['course_name']?.toString() ?? group['course']?.toString() ?? '';
+    final studentCount = group['student_count'] ?? group['students_count'] ?? 0;
 
     return GestureDetector(
-      onTap: () => _showStudentsSheet(context, group),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: IceColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: IceColors.border),
-        ),
-        child: Row(
-          children: [
-            // Color circle
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: IceColors.navyDeep.withAlpha(15),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : 'G',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: IceColors.navyDeep,
+          onTap: () => _showStudentsSheet(context, group),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: IceColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: IceColors.border),
+            ),
+            child: Row(
+              children: [
+                // Color circle
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: IceColors.navyDeep.withAlpha(15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : 'G',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: IceColors.navyDeep,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: IceColors.text,
-                      )),
-                  if (courseName.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Text(courseName,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: IceColors.muted,
-                        )),
-                  ],
-                  const SizedBox(height: 6),
-                  Row(
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.people_rounded,
-                          size: 14, color: IceColors.navyDeep),
-                      const SizedBox(width: 4),
-                      Text('$studentCount students',
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: IceColors.text,
+                        ),
+                      ),
+                      if (courseName.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          courseName,
                           style: const TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            color: IceColors.muted,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.people_rounded,
+                            size: 14,
                             color: IceColors.navyDeep,
-                          )),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$studentCount students',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: IceColors.navyDeep,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: IceColors.muted,
+                  size: 20,
+                ),
+              ],
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: IceColors.muted, size: 20),
-          ],
-        ),
-      ),
-    )
+          ),
+        )
         .animate(delay: Duration(milliseconds: 40 * index))
         .fadeIn(duration: 250.ms)
         .slideX(begin: 0.05, duration: 250.ms);
@@ -190,20 +201,32 @@ class _StudentsBottomSheetState extends State<_StudentsBottomSheet> {
   }
 
   Future<void> _fetch() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final id = widget.group['id'];
       final res = await ApiClient.instance.dio.get('/groups/$id/');
       final data = res.data;
       List<dynamic> list = [];
       if (data is Map) {
-        list = (data['students'] as List?) ?? [];
+        list =
+            (data['enrolled_students'] as List?) ??
+            (data['students'] as List?) ??
+            [];
       } else if (data is List) {
         list = data;
       }
-      setState(() { _students = list; _loading = false; });
+      setState(() {
+        _students = list;
+        _loading = false;
+      });
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
@@ -245,18 +268,22 @@ class _StudentsBottomSheetState extends State<_StudentsBottomSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(groupName,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: IceColors.text,
-                            )),
+                        Text(
+                          groupName,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: IceColors.text,
+                          ),
+                        ),
                         Text(
                           _loading
                               ? 'Loading...'
                               : '${_students.length} students',
                           style: const TextStyle(
-                              fontSize: 12, color: IceColors.muted),
+                            fontSize: 12,
+                            color: IceColors.muted,
+                          ),
                         ),
                       ],
                     ),
@@ -276,91 +303,91 @@ class _StudentsBottomSheetState extends State<_StudentsBottomSheet> {
               child: _loading
                   ? const Center(
                       child: CircularProgressIndicator(
-                          color: IceColors.navyDeep))
+                        color: IceColors.navyDeep,
+                      ),
+                    )
                   : _error != null
-                      ? Center(
-                          child: Text('Error: $_error',
-                              style: const TextStyle(
-                                  color: IceColors.danger)))
-                      : _students.isEmpty
-                          ? const Center(
-                              child: Text('No students in this group.',
-                                  style: TextStyle(color: IceColors.muted)))
-                          : ListView.separated(
-                              controller: scrollController,
-                              padding: EdgeInsets.fromLTRB(
-                                  16, 8, 16, 16 + bottomPad),
-                              itemCount: _students.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 6),
-                              itemBuilder: (_, i) {
-                                final s = _students[i] as Map;
-                                final firstName =
-                                    s['first_name']?.toString() ?? '';
-                                final lastName =
-                                    s['last_name']?.toString() ?? '';
-                                final name =
-                                    '$firstName $lastName'.trim();
-                                final loginId =
-                                    s['login_id']?.toString() ?? '';
+                  ? Center(
+                      child: Text(
+                        'Error: $_error',
+                        style: const TextStyle(color: IceColors.danger),
+                      ),
+                    )
+                  : _students.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No students in this group.',
+                        style: TextStyle(color: IceColors.muted),
+                      ),
+                    )
+                  : ListView.separated(
+                      controller: scrollController,
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + bottomPad),
+                      itemCount: _students.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      itemBuilder: (_, i) {
+                        final s = _students[i] as Map;
+                        final firstName = s['first_name']?.toString() ?? '';
+                        final lastName = s['last_name']?.toString() ?? '';
+                        final name = '$firstName $lastName'.trim();
+                        final subtitle =
+                            s['email']?.toString() ??
+                            s['phone']?.toString() ??
+                            s['login_id']?.toString() ??
+                            '';
 
-                                return Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: IceColors.surface2,
-                                    borderRadius:
-                                        BorderRadius.circular(12),
-                                    border: Border.all(
-                                        color: IceColors.border),
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: IceColors.surface2,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: IceColors.border),
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: IceColors.navyDeep.withAlpha(
+                                  12,
+                                ),
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    color: IceColors.navyDeep,
                                   ),
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 18,
-                                        backgroundColor: IceColors
-                                            .navyDeep
-                                            .withAlpha(12),
-                                        child: Text(
-                                          name.isNotEmpty
-                                              ? name[0].toUpperCase()
-                                              : '?',
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w800,
-                                            color: IceColors.navyDeep,
-                                          ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      name.isNotEmpty ? name : 'Student',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: IceColors.text,
+                                      ),
+                                    ),
+                                    if (subtitle.isNotEmpty)
+                                      Text(
+                                        subtitle,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: IceColors.muted,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                                name.isNotEmpty
-                                                    ? name
-                                                    : loginId,
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight:
-                                                      FontWeight.w600,
-                                                  color: IceColors.text,
-                                                )),
-                                            if (loginId.isNotEmpty)
-                                              Text(loginId,
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: IceColors.muted,
-                                                  )),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -374,26 +401,27 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.class_outlined, size: 48, color: IceColors.muted),
-            SizedBox(height: 16),
-            Text(
-              'No classes assigned',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: IceColors.muted),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'You have not been assigned to any groups yet.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: IceColors.muted),
-            ),
-          ],
+    padding: EdgeInsets.all(40),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.class_outlined, size: 48, color: IceColors.muted),
+        SizedBox(height: 16),
+        Text(
+          'No classes assigned',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: IceColors.muted,
+          ),
         ),
-      );
+        SizedBox(height: 8),
+        Text(
+          'You have not been assigned to any groups yet.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: IceColors.muted),
+        ),
+      ],
+    ),
+  );
 }

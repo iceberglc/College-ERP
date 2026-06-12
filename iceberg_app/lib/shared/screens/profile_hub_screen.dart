@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_state.dart';
 import '../../core/theme/app_theme.dart';
@@ -17,6 +19,7 @@ class _State extends ConsumerState<ProfileHubScreen> {
   late TextEditingController _firstNameCtrl;
   late TextEditingController _lastNameCtrl;
   bool _savingProfile = false;
+  bool _uploadingAvatar = false;
 
   @override
   void initState() {
@@ -36,26 +39,86 @@ class _State extends ConsumerState<ProfileHubScreen> {
   Future<void> _saveProfile() async {
     setState(() => _savingProfile = true);
     try {
-      await ApiClient.instance.dio.patch('/me/', data: {
-        'first_name': _firstNameCtrl.text.trim(),
-        'last_name': _lastNameCtrl.text.trim(),
-      });
+      final res = await ApiClient.instance.dio.patch(
+        '/me/',
+        data: {
+          'first_name': _firstNameCtrl.text.trim(),
+          'last_name': _lastNameCtrl.text.trim(),
+        },
+      );
+      ref
+          .read(authProvider.notifier)
+          .updateUser(
+            IceUser.fromJson(Map<String, dynamic>.from(res.data as Map)),
+          );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Profile updated!'),
-          backgroundColor: IceColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Profile updated!'),
+            backgroundColor: IceColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _savingProfile = false);
+    }
+  }
+
+  Future<void> _pickProfileImage() async {
+    if (_uploadingAvatar) return;
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1200,
+      );
+      if (picked == null) return;
+
+      setState(() => _uploadingAvatar = true);
+      final bytes = await picked.readAsBytes();
+      final form = FormData.fromMap({
+        'profile_pic': MultipartFile.fromBytes(bytes, filename: picked.name),
+      });
+      final res = await ApiClient.instance.dio.patch(
+        '/me/',
+        data: form,
+        options: Options(contentType: 'multipart/form-data'),
+      );
+      ref
+          .read(authProvider.notifier)
+          .updateUser(
+            IceUser.fromJson(Map<String, dynamic>.from(res.data as Map)),
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Profile image updated!'),
+            backgroundColor: IceColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Image upload failed: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
     }
   }
 
@@ -73,10 +136,14 @@ class _State extends ConsumerState<ProfileHubScreen> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Log out?',
-            style: TextStyle(fontWeight: FontWeight.w800)),
-        content: const Text('You will be signed out of your account.',
-            style: TextStyle(color: IceColors.muted)),
+        title: const Text(
+          'Log out?',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        content: const Text(
+          'You will be signed out of your account.',
+          style: TextStyle(color: IceColors.muted),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -101,7 +168,8 @@ class _State extends ConsumerState<ProfileHubScreen> {
     if (user == null) {
       return const Scaffold(
         body: Center(
-            child: CircularProgressIndicator(color: IceColors.navyDeep)),
+          child: CircularProgressIndicator(color: IceColors.navyDeep),
+        ),
       );
     }
 
@@ -109,8 +177,8 @@ class _State extends ConsumerState<ProfileHubScreen> {
     final roleLabel = user.isAdmin
         ? 'Administrator'
         : user.isStaff
-            ? 'Staff'
-            : 'Student';
+        ? 'Staff'
+        : 'Student';
     final topPad = MediaQuery.paddingOf(context).top;
 
     return Scaffold(
@@ -125,22 +193,15 @@ class _State extends ConsumerState<ProfileHubScreen> {
               padding: EdgeInsets.fromLTRB(24, topPad + 32, 24, 32),
               decoration: const BoxDecoration(
                 gradient: kHeroGradient,
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(32)),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(32),
+                ),
               ),
               child: Column(
                 children: [
                   // Avatar
                   GestureDetector(
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
-                            'Image upload coming soon'),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
+                    onTap: _pickProfileImage,
                     child: Stack(
                       children: [
                         Container(
@@ -150,32 +211,38 @@ class _State extends ConsumerState<ProfileHubScreen> {
                             shape: BoxShape.circle,
                             color: IceColors.lime,
                             border: Border.all(
-                                color: Colors.white.withAlpha(60),
-                                width: 3),
+                              color: Colors.white.withAlpha(60),
+                              width: 3,
+                            ),
                           ),
-                          child: user.profilePicUrl != null &&
+                          child:
+                              user.profilePicUrl != null &&
                                   user.profilePicUrl!.isNotEmpty
                               ? ClipOval(
                                   child: Image.network(
                                     user.profilePicUrl!,
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) => Center(
-                                      child: Text(initials,
-                                          style: const TextStyle(
-                                            fontSize: 28,
-                                            fontWeight: FontWeight.w900,
-                                            color: IceColors.navy,
-                                          )),
+                                      child: Text(
+                                        initials,
+                                        style: const TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.w900,
+                                          color: IceColors.navy,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 )
                               : Center(
-                                  child: Text(initials,
-                                      style: const TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w900,
-                                        color: IceColors.navy,
-                                      )),
+                                  child: Text(
+                                    initials,
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w900,
+                                      color: IceColors.navy,
+                                    ),
+                                  ),
                                 ),
                         ),
                         Positioned(
@@ -188,16 +255,39 @@ class _State extends ConsumerState<ProfileHubScreen> {
                               color: IceColors.lime,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                  color: IceColors.navy, width: 2),
+                                color: IceColors.navy,
+                                width: 2,
+                              ),
                             ),
-                            child: const Icon(Icons.camera_alt_rounded,
-                                size: 12, color: IceColors.navy),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              size: 12,
+                              color: IceColors.navy,
+                            ),
                           ),
                         ),
+                        if (_uploadingAvatar)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withAlpha(80),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
-                  ).animate().scale(
-                      duration: 400.ms, curve: Curves.elasticOut),
+                  ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
                   const SizedBox(height: 14),
                   Text(
                     user.fullName.isEmpty ? user.loginId : user.fullName,
@@ -210,7 +300,9 @@ class _State extends ConsumerState<ProfileHubScreen> {
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 4),
+                      horizontal: 14,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: IceColors.lime,
                       borderRadius: BorderRadius.circular(20),
@@ -236,15 +328,9 @@ class _State extends ConsumerState<ProfileHubScreen> {
               icon: Icons.person_outline_rounded,
               child: Column(
                 children: [
-                  _EditField(
-                    label: 'First Name',
-                    controller: _firstNameCtrl,
-                  ),
+                  _EditField(label: 'First Name', controller: _firstNameCtrl),
                   const SizedBox(height: 10),
-                  _EditField(
-                    label: 'Last Name',
-                    controller: _lastNameCtrl,
-                  ),
+                  _EditField(label: 'Last Name', controller: _lastNameCtrl),
                   const SizedBox(height: 10),
                   _ReadOnlyField(label: 'Email', value: user.email),
                   const SizedBox(height: 10),
@@ -258,16 +344,22 @@ class _State extends ConsumerState<ProfileHubScreen> {
                         backgroundColor: IceColors.navyDeep,
                         minimumSize: const Size(double.infinity, 46),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: _savingProfile
                           ? const SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
-                          : const Text('Save Changes',
-                              style: TextStyle(fontWeight: FontWeight.w700)),
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Save Changes',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
                     ),
                   ),
                 ],
@@ -291,7 +383,8 @@ class _State extends ConsumerState<ProfileHubScreen> {
                     side: const BorderSide(color: IceColors.navyDeep),
                     minimumSize: const Size(double.infinity, 46),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -316,8 +409,7 @@ class _State extends ConsumerState<ProfileHubScreen> {
                 children: [
                   _InfoRow(label: 'Version', value: '1.0.0'),
                   const SizedBox(height: 8),
-                  _InfoRow(
-                      label: 'Contact', value: 'support@iceberglc.com'),
+                  _InfoRow(label: 'Contact', value: 'support@iceberglc.com'),
                   const SizedBox(height: 8),
                   _InfoRow(label: 'Website', value: 'iceberglc.com'),
                 ],
@@ -340,9 +432,12 @@ class _State extends ConsumerState<ProfileHubScreen> {
                     side: const BorderSide(color: IceColors.danger),
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     textStyle: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -356,8 +451,7 @@ class _State extends ConsumerState<ProfileHubScreen> {
   }
 
   String _getInitials(String name) {
-    final parts =
-        name.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    final parts = name.trim().split(' ').where((p) => p.isNotEmpty).toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
@@ -378,33 +472,37 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: IceColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: IceColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: IceColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: IceColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(children: [
-                Icon(icon, size: 16, color: IceColors.navyDeep),
-                const SizedBox(width: 8),
-                Text(title,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: IceColors.navyDeep,
-                    )),
-              ]),
-              const SizedBox(height: 14),
-              child,
+              Icon(icon, size: 16, color: IceColors.navyDeep),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: IceColors.navyDeep,
+                ),
+              ),
             ],
           ),
-        ),
-      );
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    ),
+  );
 }
 
 // ─── Edit Field ───────────────────────────────────────────────────────────────
@@ -416,11 +514,9 @@ class _EditField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-        ),
-      );
+    controller: controller,
+    decoration: InputDecoration(labelText: label),
+  );
 }
 
 // ─── Read Only Field ──────────────────────────────────────────────────────────
@@ -432,33 +528,38 @@ class _ReadOnlyField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        decoration: BoxDecoration(
-          color: IceColors.surface2,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: IceColors.border, width: 1.5),
-        ),
-        child: Row(children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 11, color: IceColors.muted)),
-                const SizedBox(height: 2),
-                Text(value,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: IceColors.text,
-                    )),
-              ],
-            ),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    decoration: BoxDecoration(
+      color: IceColors.surface2,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: IceColors.border, width: 1.5),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 11, color: IceColors.muted),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: IceColors.text,
+                ),
+              ),
+            ],
           ),
-          const Icon(Icons.lock_rounded, size: 14, color: IceColors.border),
-        ]),
-      );
+        ),
+        const Icon(Icons.lock_rounded, size: 14, color: IceColors.border),
+      ],
+    ),
+  );
 }
 
 // ─── Info Row ─────────────────────────────────────────────────────────────────
@@ -470,21 +571,19 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: [
-          Text(label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: IceColors.muted,
-              )),
-          const Spacer(),
-          Text(value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: IceColors.text,
-              )),
-        ],
-      );
+    children: [
+      Text(label, style: const TextStyle(fontSize: 13, color: IceColors.muted)),
+      const Spacer(),
+      Text(
+        value,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: IceColors.text,
+        ),
+      ),
+    ],
+  );
 }
 
 // ─── Theme Selector ───────────────────────────────────────────────────────────
@@ -518,9 +617,7 @@ class _ThemeSelectorState extends State<_ThemeSelector> {
               margin: EdgeInsets.only(right: i < 2 ? 8 : 0),
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? IceColors.navyDeep
-                    : IceColors.surface2,
+                color: isSelected ? IceColors.navyDeep : IceColors.surface2,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelected ? IceColors.navyDeep : IceColors.border,
@@ -528,18 +625,20 @@ class _ThemeSelectorState extends State<_ThemeSelector> {
               ),
               child: Column(
                 children: [
-                  Icon(icons[i],
-                      size: 20,
-                      color:
-                          isSelected ? Colors.white : IceColors.muted),
+                  Icon(
+                    icons[i],
+                    size: 20,
+                    color: isSelected ? Colors.white : IceColors.muted,
+                  ),
                   const SizedBox(height: 4),
-                  Text(options[i],
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color:
-                            isSelected ? Colors.white : IceColors.muted,
-                      )),
+                  Text(
+                    options[i],
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected ? Colors.white : IceColors.muted,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -581,26 +680,32 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      await ApiClient.instance.dio.post('/me/change-password/', data: {
-        'old_password': _oldCtrl.text,
-        'new_password': _newCtrl.text,
-        'confirm_password': _confirmCtrl.text,
-      });
+      await ApiClient.instance.dio.post(
+        '/me/change-password/',
+        data: {
+          'old_password': _oldCtrl.text,
+          'new_password': _newCtrl.text,
+          'confirm_password': _confirmCtrl.text,
+        },
+      );
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Password changed successfully!'),
-          backgroundColor: IceColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Password changed successfully!'),
+            backgroundColor: IceColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -609,7 +714,8 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPad = MediaQuery.viewInsetsOf(context).bottom +
+    final bottomPad =
+        MediaQuery.viewInsetsOf(context).bottom +
         MediaQuery.paddingOf(context).bottom;
 
     return Container(
@@ -634,12 +740,14 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
               ),
             ),
           ),
-          const Text('Change Password',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: IceColors.text,
-              )),
+          const Text(
+            'Change Password',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: IceColors.text,
+            ),
+          ),
           const SizedBox(height: 20),
           Form(
             key: _formKey,
@@ -650,9 +758,8 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                   label: 'Current Password',
                   show: _showOld,
                   onToggle: () => setState(() => _showOld = !_showOld),
-                  validator: (v) => (v == null || v.isEmpty)
-                      ? 'Required'
-                      : null,
+                  validator: (v) =>
+                      (v == null || v.isEmpty) ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
                 _PasswordField(
@@ -671,8 +778,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                   controller: _confirmCtrl,
                   label: 'Confirm New Password',
                   show: _showConfirm,
-                  onToggle: () =>
-                      setState(() => _showConfirm = !_showConfirm),
+                  onToggle: () => setState(() => _showConfirm = !_showConfirm),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Required';
                     if (v != _newCtrl.text) return 'Passwords do not match';
@@ -688,18 +794,25 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                       backgroundColor: IceColors.navyDeep,
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: _saving
                         ? const SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2.5, color: Colors.white))
-                        : const Text('Update Password',
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Update Password',
                             style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700)),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -728,19 +841,19 @@ class _PasswordField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextFormField(
-        controller: controller,
-        obscureText: !show,
-        validator: validator,
-        decoration: InputDecoration(
-          labelText: label,
-          suffixIcon: IconButton(
-            onPressed: onToggle,
-            icon: Icon(
-              show ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-              size: 18,
-              color: IceColors.muted,
-            ),
-          ),
+    controller: controller,
+    obscureText: !show,
+    validator: validator,
+    decoration: InputDecoration(
+      labelText: label,
+      suffixIcon: IconButton(
+        onPressed: onToggle,
+        icon: Icon(
+          show ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+          size: 18,
+          color: IceColors.muted,
         ),
-      );
+      ),
+    ),
+  );
 }

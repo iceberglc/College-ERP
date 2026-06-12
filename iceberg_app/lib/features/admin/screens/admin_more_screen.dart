@@ -6,21 +6,78 @@ class AdminMoreScreen extends StatelessWidget {
   const AdminMoreScreen({super.key});
 
   static const _tiles = [
-    _MoreTile(icon: Icons.people_rounded,        label: 'Students',     path: '/admin/students'),
-    _MoreTile(icon: Icons.badge_rounded,          label: 'Staff',        path: '/admin/staff'),
-    _MoreTile(icon: Icons.group_work_rounded,     label: 'Groups',       path: '/admin/groups'),
-    _MoreTile(icon: Icons.menu_book_rounded,      label: 'Courses',      path: '/admin/courses'),
-    _MoreTile(icon: Icons.account_tree_rounded,   label: 'Branches',     path: '/admin/branches'),
-    _MoreTile(icon: Icons.calendar_month_rounded, label: 'Sessions',     path: '/admin/sessions'),
-    _MoreTile(icon: Icons.subject_rounded,        label: 'Subjects',     path: '/admin/subjects'),
-    _MoreTile(icon: Icons.payment_rounded,        label: 'Payments',     path: '/admin/payments'),
-    _MoreTile(icon: Icons.contacts_rounded,       label: 'Leads',        path: '/admin/leads'),
-    _MoreTile(icon: Icons.fact_check_rounded,     label: 'Attendance',   path: '/admin/attendance'),
-    _MoreTile(icon: Icons.beach_access_rounded,   label: 'Leave',        path: '/admin/leave'),
-    _MoreTile(icon: Icons.notifications_rounded,  label: 'Notifications',path: '/admin/notify'),
-    _MoreTile(icon: Icons.auto_stories_rounded,   label: 'Stories',      path: '/admin/stories'),
-    _MoreTile(icon: Icons.person_rounded,         label: 'Profile',      path: '/admin/profile'),
-    _MoreTile(icon: Icons.logout_rounded,         label: 'Logout',       path: '/login', isLogout: true),
+    _MoreTile(
+      icon: Icons.people_rounded,
+      label: 'Students',
+      path: '/admin/students',
+    ),
+    _MoreTile(icon: Icons.badge_rounded, label: 'Staff', path: '/admin/staff'),
+    _MoreTile(
+      icon: Icons.group_work_rounded,
+      label: 'Groups',
+      path: '/admin/groups',
+    ),
+    _MoreTile(
+      icon: Icons.menu_book_rounded,
+      label: 'Courses',
+      path: '/admin/courses',
+    ),
+    _MoreTile(
+      icon: Icons.account_tree_rounded,
+      label: 'Branches',
+      path: '/admin/branches',
+    ),
+    _MoreTile(
+      icon: Icons.calendar_month_rounded,
+      label: 'Sessions',
+      path: '/admin/sessions',
+    ),
+    _MoreTile(
+      icon: Icons.subject_rounded,
+      label: 'Subjects',
+      path: '/admin/subjects',
+    ),
+    _MoreTile(
+      icon: Icons.payment_rounded,
+      label: 'Payments',
+      path: '/admin/payments',
+    ),
+    _MoreTile(
+      icon: Icons.contacts_rounded,
+      label: 'Leads',
+      path: '/admin/leads',
+    ),
+    _MoreTile(
+      icon: Icons.fact_check_rounded,
+      label: 'Attendance',
+      path: '/admin/attendance',
+    ),
+    _MoreTile(
+      icon: Icons.beach_access_rounded,
+      label: 'Leave',
+      path: '/admin/leave',
+    ),
+    _MoreTile(
+      icon: Icons.notifications_rounded,
+      label: 'Notifications',
+      path: '/admin/notify',
+    ),
+    _MoreTile(
+      icon: Icons.auto_stories_rounded,
+      label: 'Stories',
+      path: '/admin/stories',
+    ),
+    _MoreTile(
+      icon: Icons.person_rounded,
+      label: 'Profile',
+      path: '/admin/profile',
+    ),
+    _MoreTile(
+      icon: Icons.logout_rounded,
+      label: 'Logout',
+      path: '/login',
+      isLogout: true,
+    ),
   ];
 
   @override
@@ -72,10 +129,10 @@ class _MoreTileWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor =
-        tile.isLogout ? IceColors.danger : IceColors.navyDeep;
-    final bgColor =
-        tile.isLogout ? IceColors.danger.withAlpha(20) : IceColors.surface2;
+    final iconColor = tile.isLogout ? IceColors.danger : IceColors.navyDeep;
+    final bgColor = tile.isLogout
+        ? IceColors.danger.withAlpha(20)
+        : IceColors.surface2;
 
     return Material(
       color: IceColors.surface,

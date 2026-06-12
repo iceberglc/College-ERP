@@ -6,15 +6,52 @@ class StaffMoreScreen extends StatelessWidget {
   const StaffMoreScreen({super.key});
 
   static const _tiles = [
-    _MoreTile(icon: Icons.grade_rounded,           label: 'Results',      path: '/staff/results'),
-    _MoreTile(icon: Icons.assignment_rounded,       label: 'Assignments',  path: '/staff/assignments'),
-    _MoreTile(icon: Icons.menu_book_rounded,        label: 'Vocabulary',   path: '/staff/vocabulary'),
-    _MoreTile(icon: Icons.beach_access_rounded,     label: 'Leave',        path: '/staff/leave'),
-    _MoreTile(icon: Icons.rate_review_rounded,      label: 'Feedback',     path: '/staff/feedback'),
-    _MoreTile(icon: Icons.payment_rounded,          label: 'Payments',     path: '/staff/payments'),
-    _MoreTile(icon: Icons.notifications_rounded,    label: 'Notifications',path: '/staff/notifications'),
-    _MoreTile(icon: Icons.person_rounded,           label: 'Profile',      path: '/staff/profile'),
-    _MoreTile(icon: Icons.logout_rounded,           label: 'Logout',       path: '/login', isLogout: true),
+    _MoreTile(
+      icon: Icons.grade_rounded,
+      label: 'Results',
+      path: '/staff/results',
+    ),
+    _MoreTile(
+      icon: Icons.assignment_rounded,
+      label: 'Assignments',
+      path: '/staff/assignments',
+    ),
+    _MoreTile(
+      icon: Icons.menu_book_rounded,
+      label: 'Vocabulary',
+      path: '/staff/vocabulary',
+    ),
+    _MoreTile(
+      icon: Icons.beach_access_rounded,
+      label: 'Leave',
+      path: '/staff/leave',
+    ),
+    _MoreTile(
+      icon: Icons.rate_review_rounded,
+      label: 'Feedback',
+      path: '/staff/feedback',
+    ),
+    _MoreTile(
+      icon: Icons.payment_rounded,
+      label: 'Payments',
+      path: '/staff/payments',
+    ),
+    _MoreTile(
+      icon: Icons.notifications_rounded,
+      label: 'Notifications',
+      path: '/staff/notifications',
+    ),
+    _MoreTile(
+      icon: Icons.person_rounded,
+      label: 'Profile',
+      path: '/staff/profile',
+    ),
+    _MoreTile(
+      icon: Icons.logout_rounded,
+      label: 'Logout',
+      path: '/login',
+      isLogout: true,
+    ),
   ];
 
   @override
@@ -66,10 +103,10 @@ class _MoreTileWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor =
-        tile.isLogout ? IceColors.danger : IceColors.navyDeep;
-    final bgColor =
-        tile.isLogout ? IceColors.danger.withAlpha(20) : IceColors.surface2;
+    final iconColor = tile.isLogout ? IceColors.danger : IceColors.navyDeep;
+    final bgColor = tile.isLogout
+        ? IceColors.danger.withAlpha(20)
+        : IceColors.surface2;
 
     return Material(
       color: IceColors.surface,

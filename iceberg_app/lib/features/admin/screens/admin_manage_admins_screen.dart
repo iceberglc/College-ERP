@@ -54,10 +54,15 @@ class _AdminManageAdminsScreenState
                   onChanged: (v) => setState(() => _query = v.toLowerCase()),
                   decoration: const InputDecoration(
                     hintText: 'Search by name or email…',
-                    prefixIcon: Icon(Icons.search_rounded,
-                        color: IceColors.muted, size: 20),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: IceColors.muted,
+                      size: 20,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ),
@@ -67,20 +72,23 @@ class _AdminManageAdminsScreenState
               error: (e, _) => SliverToBoxAdapter(
                 child: e.toString().contains('403')
                     ? const _ForbiddenState()
-                    : const _ErrorCard('Could not load admin accounts. '
-                        'Pull down to retry.'),
+                    : const _ErrorCard(
+                        'Could not load admin accounts. '
+                        'Pull down to retry.',
+                      ),
               ),
               data: (list) {
                 final all = list.cast<Map<String, dynamic>>();
                 final filtered = _query.isEmpty
                     ? all
                     : all.where((a) {
-                        final name =
-                            (a['full_name'] ?? '').toString().toLowerCase();
-                        final email =
-                            (a['email'] ?? '').toString().toLowerCase();
-                        return name.contains(_query) ||
-                            email.contains(_query);
+                        final name = (a['full_name'] ?? '')
+                            .toString()
+                            .toLowerCase();
+                        final email = (a['email'] ?? '')
+                            .toString()
+                            .toLowerCase();
+                        return name.contains(_query) || email.contains(_query);
                       }).toList();
 
                 if (filtered.isEmpty) {
@@ -126,8 +134,11 @@ class _AdminTile extends ConsumerStatefulWidget {
   final Map<String, dynamic> item;
   final int index;
   final VoidCallback onUpdated;
-  const _AdminTile(
-      {required this.item, required this.index, required this.onUpdated});
+  const _AdminTile({
+    required this.item,
+    required this.index,
+    required this.onUpdated,
+  });
 
   @override
   ConsumerState<_AdminTile> createState() => _AdminTileState();
@@ -142,11 +153,13 @@ class _AdminTileState extends ConsumerState<_AdminTile> {
     final isSuperAdmin = widget.item['is_super_admin'] == true;
 
     if (isSuperAdmin) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Super-admin accounts cannot be deleted.'),
-        backgroundColor: IceColors.danger,
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Super-admin accounts cannot be deleted.'),
+          backgroundColor: IceColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
 
@@ -154,13 +167,16 @@ class _AdminTileState extends ConsumerState<_AdminTile> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete Admin?',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Delete Admin?',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
         content: Text('Delete "$name"? This cannot be undone.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: IceColors.danger),
             onPressed: () => Navigator.pop(context, true),
@@ -176,18 +192,21 @@ class _AdminTileState extends ConsumerState<_AdminTile> {
       widget.onUpdated();
     } catch (e) {
       if (mounted) setState(() => _deleting = false);
-      messenger.showSnackBar(SnackBar(
-        content: Text('Failed: $e'),
-        backgroundColor: IceColors.danger,
-        behavior: SnackBarBehavior.floating,
-      ));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed: $e'),
+          backgroundColor: IceColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    final name = item['full_name']?.toString() ?? item['email']?.toString() ?? '—';
+    final name =
+        item['full_name']?.toString() ?? item['email']?.toString() ?? '—';
     final email = item['email']?.toString() ?? '';
     final isSuperAdmin = item['is_super_admin'] == true;
     final isActive = item['is_active'] != false;
@@ -196,108 +215,140 @@ class _AdminTileState extends ConsumerState<_AdminTile> {
     final id = item['id']?.toString() ?? '';
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: IceColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: IceColors.navyDeep.withAlpha(6),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: isSuperAdmin
-                    ? IceColors.lime.withAlpha(220)
-                    : IceColors.navyDeep.withAlpha(20),
-                child: Text(initial,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                        color: isSuperAdmin
-                            ? IceColors.navyDeep
-                            : IceColors.navyDeep)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: IceColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: IceColors.navyDeep.withAlpha(6),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Row(children: [
-                    Expanded(
-                      child: Text(name,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                              color: IceColors.text)),
+            ],
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: isSuperAdmin
+                          ? IceColors.lime.withAlpha(220)
+                          : IceColors.navyDeep.withAlpha(20),
+                      child: Text(
+                        initial,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          color: isSuperAdmin
+                              ? IceColors.navyDeep
+                              : IceColors.navyDeep,
+                        ),
+                      ),
                     ),
-                    if (isSuperAdmin)
-                      _Tag('Super Admin', IceColors.navyDeep)
-                    else if (!isActive)
-                      _Tag('Inactive', IceColors.muted),
-                  ]),
-                  const SizedBox(height: 2),
-                  Text(email,
-                      style: const TextStyle(
-                          fontSize: 12, color: IceColors.muted)),
-                  if (branches.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(branches.join(', '),
-                        style: const TextStyle(
-                            fontSize: 11, color: IceColors.muted),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    color: IceColors.text,
+                                  ),
+                                ),
+                              ),
+                              if (isSuperAdmin)
+                                _Tag('Super Admin', IceColors.navyDeep)
+                              else if (!isActive)
+                                _Tag('Inactive', IceColors.muted),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            email,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: IceColors.muted,
+                            ),
+                          ),
+                          if (branches.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              branches.join(', '),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: IceColors.muted,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
-                ]),
-              ),
-            ]),
-          ),
-          if (!isSuperAdmin && id.isNotEmpty) ...[
-            const Divider(height: 1, color: IceColors.border),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-              child: Row(children: [
-                TextButton.icon(
-                  onPressed: () => _openEditSheet(context, item),
-                  icon: const Icon(Icons.edit_rounded, size: 14),
-                  label: const Text('Edit'),
-                  style: TextButton.styleFrom(
-                      foregroundColor: IceColors.navyDeep,
-                      textStyle: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
-                const Spacer(),
-                if (_deleting)
-                  const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: IceColors.danger))
-                else
-                  IconButton(
-                    onPressed: () => _delete(context),
-                    icon: const Icon(Icons.delete_outline_rounded,
-                        size: 18, color: IceColors.danger),
-                    tooltip: 'Delete admin',
-                    constraints:
-                        const BoxConstraints(minWidth: 32, minHeight: 32),
-                    padding: EdgeInsets.zero,
+              ),
+              if (!isSuperAdmin && id.isNotEmpty) ...[
+                const Divider(height: 1, color: IceColors.border),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                  child: Row(
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => _openEditSheet(context, item),
+                        icon: const Icon(Icons.edit_rounded, size: 14),
+                        label: const Text('Edit'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: IceColors.navyDeep,
+                          textStyle: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      if (_deleting)
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: IceColors.danger,
+                          ),
+                        )
+                      else
+                        IconButton(
+                          onPressed: () => _delete(context),
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18,
+                            color: IceColors.danger,
+                          ),
+                          tooltip: 'Delete admin',
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                    ],
                   ),
-              ]),
-            ),
-          ],
-        ],
-      ),
-    )
+                ),
+              ],
+            ],
+          ),
+        )
         .animate(delay: Duration(milliseconds: 50 + widget.index * 40))
         .slideY(begin: 0.1, duration: 300.ms, curve: Curves.easeOut)
         .fadeIn(duration: 250.ms);
@@ -326,17 +377,16 @@ class _Tag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: color.withAlpha(18),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: color)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: color.withAlpha(18),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -376,8 +426,7 @@ class _AdminFormSheetState extends ConsumerState<_AdminFormSheet> {
     _phone = TextEditingController(text: e?['phone'] ?? '');
     _password = TextEditingController();
     _isActive = e?['is_active'] != false;
-    _selectedBranchIds =
-        (e?['branch_ids'] as List?)?.cast<int>() ?? [];
+    _selectedBranchIds = (e?['branch_ids'] as List?)?.cast<int>() ?? [];
   }
 
   @override
@@ -392,7 +441,10 @@ class _AdminFormSheetState extends ConsumerState<_AdminFormSheet> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
 
     try {
       final id = widget.existing?['id'];
@@ -413,7 +465,12 @@ class _AdminFormSheetState extends ConsumerState<_AdminFormSheet> {
       }
       widget.onSaved();
     } catch (e) {
-      if (mounted) setState(() { _saving = false; _error = '$e'; });
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = '$e';
+        });
+      }
     }
   }
 
@@ -435,25 +492,33 @@ class _AdminFormSheetState extends ConsumerState<_AdminFormSheet> {
             const _SheetHandle(),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-              child: Row(children: [
-                Text(_isEdit ? 'Edit Admin' : 'Add Admin',
+              child: Row(
+                children: [
+                  Text(
+                    _isEdit ? 'Edit Admin' : 'Add Admin',
                     style: const TextStyle(
-                        fontWeight: FontWeight.w800, fontSize: 17)),
-                const Spacer(),
-                IconButton(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded)),
-              ]),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
             ),
             const Divider(),
             Expanded(
               child: SingleChildScrollView(
                 controller: ctrl,
                 padding: EdgeInsets.fromLTRB(
-                    20,
-                    12,
-                    20,
-                    MediaQuery.of(context).viewInsets.bottom + 24),
+                  20,
+                  12,
+                  20,
+                  MediaQuery.of(context).viewInsets.bottom + 24,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -467,9 +532,13 @@ class _AdminFormSheetState extends ConsumerState<_AdminFormSheet> {
                             color: IceColors.danger.withAlpha(15),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Text(_error!,
-                              style: const TextStyle(
-                                  color: IceColors.danger, fontSize: 13)),
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(
+                              color: IceColors.danger,
+                              fontSize: 13,
+                            ),
+                          ),
                         ),
 
                       _Field(label: 'First Name', controller: _firstName),
@@ -477,19 +546,23 @@ class _AdminFormSheetState extends ConsumerState<_AdminFormSheet> {
                       _Field(label: 'Last Name', controller: _lastName),
                       const SizedBox(height: 12),
                       _Field(
-                          label: 'Email',
-                          controller: _email,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'Email is required';
-                            }
-                            if (!v.contains('@')) return 'Invalid email';
-                            return null;
-                          }),
+                        label: 'Email',
+                        controller: _email,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Email is required';
+                          }
+                          if (!v.contains('@')) return 'Invalid email';
+                          return null;
+                        },
+                      ),
                       const SizedBox(height: 12),
-                      _Field(label: 'Phone', controller: _phone,
-                          keyboardType: TextInputType.phone),
+                      _Field(
+                        label: 'Phone',
+                        controller: _phone,
+                        keyboardType: TextInputType.phone,
+                      ),
                       const SizedBox(height: 12),
                       _Field(
                         label: _isEdit
@@ -512,41 +585,53 @@ class _AdminFormSheetState extends ConsumerState<_AdminFormSheet> {
                       SwitchListTile(
                         value: _isActive,
                         onChanged: (v) => setState(() => _isActive = v),
-                        title: const Text('Active',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 14)),
-                        subtitle: const Text('Inactive admins cannot log in',
-                            style: TextStyle(fontSize: 12)),
-                        activeColor: IceColors.navyDeep,
+                        title: const Text(
+                          'Active',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          'Inactive admins cannot log in',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        activeThumbColor: IceColors.navyDeep,
                         contentPadding: EdgeInsets.zero,
                       ),
                       const SizedBox(height: 16),
 
                       // Branch picker
-                      const Text('Branches',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700, fontSize: 14)),
+                      const Text(
+                        'Branches',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      const Text('Leave empty for super-admin (all branches)',
-                          style: TextStyle(
-                              fontSize: 11, color: IceColors.muted)),
+                      const Text(
+                        'Leave empty for super-admin (all branches)',
+                        style: TextStyle(fontSize: 11, color: IceColors.muted),
+                      ),
                       const SizedBox(height: 8),
                       branchesAsync.when(
-                        loading: () =>
-                            const LinearProgressIndicator(),
-                        error: (e, _) => Text('$e',
-                            style: const TextStyle(
-                                color: IceColors.danger, fontSize: 12)),
+                        loading: () => const LinearProgressIndicator(),
+                        error: (e, _) => Text(
+                          '$e',
+                          style: const TextStyle(
+                            color: IceColors.danger,
+                            fontSize: 12,
+                          ),
+                        ),
                         data: (branches) {
-                          final bList =
-                              branches.cast<Map<String, dynamic>>();
+                          final bList = branches.cast<Map<String, dynamic>>();
                           return Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: bList.map((b) {
                               final bid = b['id'] as int;
-                              final selected =
-                                  _selectedBranchIds.contains(bid);
+                              final selected = _selectedBranchIds.contains(bid);
                               return FilterChip(
                                 label: Text(b['name']?.toString() ?? ''),
                                 selected: selected,
@@ -559,21 +644,22 @@ class _AdminFormSheetState extends ConsumerState<_AdminFormSheet> {
                                     }
                                   });
                                 },
-                                selectedColor:
-                                    IceColors.navyDeep.withAlpha(25),
+                                selectedColor: IceColors.navyDeep.withAlpha(25),
                                 checkmarkColor: IceColors.navyDeep,
                                 labelStyle: TextStyle(
-                                    fontSize: 12,
-                                    color: selected
-                                        ? IceColors.navyDeep
-                                        : IceColors.muted,
-                                    fontWeight: selected
-                                        ? FontWeight.w700
-                                        : FontWeight.w500),
+                                  fontSize: 12,
+                                  color: selected
+                                      ? IceColors.navyDeep
+                                      : IceColors.muted,
+                                  fontWeight: selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                ),
                                 side: BorderSide(
-                                    color: selected
-                                        ? IceColors.navyDeep.withAlpha(80)
-                                        : IceColors.border),
+                                  color: selected
+                                      ? IceColors.navyDeep.withAlpha(80)
+                                      : IceColors.border,
+                                ),
                               );
                             }).toList(),
                           );
@@ -588,22 +674,27 @@ class _AdminFormSheetState extends ConsumerState<_AdminFormSheet> {
                           style: FilledButton.styleFrom(
                             backgroundColor: IceColors.navyDeep,
                             foregroundColor: Colors.white,
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14)),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                           child: _saving
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white))
-                              : Text(_isEdit ? 'Save Changes' : 'Create Admin',
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  _isEdit ? 'Save Changes' : 'Create Admin',
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 15)),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
@@ -639,54 +730,57 @@ class _Field extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        validator: validator,
-        decoration: InputDecoration(
-          labelText: label,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        ),
-      );
+    controller: controller,
+    keyboardType: keyboardType,
+    obscureText: obscureText,
+    validator: validator,
+    decoration: InputDecoration(
+      labelText: label,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    ),
+  );
 }
 
 class _SheetHandle extends StatelessWidget {
   const _SheetHandle();
   @override
   Widget build(BuildContext context) => Center(
-        child: Container(
-          margin: const EdgeInsets.only(top: 12, bottom: 4),
-          width: 36,
-          height: 4,
-          decoration: BoxDecoration(
-            color: IceColors.border,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-      );
+    child: Container(
+      margin: const EdgeInsets.only(top: 12, bottom: 4),
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: IceColors.border,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    ),
+  );
 }
 
 class _Skeleton extends StatelessWidget {
   const _Skeleton();
   @override
   Widget build(BuildContext context) => Shimmer.fromColors(
-        baseColor: Colors.grey[200]!,
-        highlightColor: Colors.grey[50]!,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(children: [
-            for (int i = 0; i < 4; i++) ...[
-              Container(
-                  height: 80,
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18))),
-              const SizedBox(height: 10),
-            ],
-          ]),
-        ),
-      );
+    baseColor: Colors.grey[200]!,
+    highlightColor: Colors.grey[50]!,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          for (int i = 0; i < 4; i++) ...[
+            Container(
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 class _EmptyState extends StatelessWidget {
@@ -694,18 +788,26 @@ class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.searching});
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(children: [
-          Icon(Icons.admin_panel_settings_outlined,
-              size: 56, color: IceColors.muted.withAlpha(100)),
-          const SizedBox(height: 16),
-          Text(searching ? 'No admins match' : 'No admins yet',
-              style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: IceColors.muted)),
-        ]),
-      );
+    padding: const EdgeInsets.all(40),
+    child: Column(
+      children: [
+        Icon(
+          Icons.admin_panel_settings_outlined,
+          size: 56,
+          color: IceColors.muted.withAlpha(100),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          searching ? 'No admins match' : 'No admins yet',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: IceColors.muted,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _ErrorCard extends StatelessWidget {
@@ -713,33 +815,35 @@ class _ErrorCard extends StatelessWidget {
   const _ErrorCard(this.message);
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(message,
-            style: const TextStyle(color: IceColors.danger)),
-      );
+    padding: const EdgeInsets.all(24),
+    child: Text(message, style: const TextStyle(color: IceColors.danger)),
+  );
 }
 
 class _ForbiddenState extends StatelessWidget {
   const _ForbiddenState();
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.all(48),
-        child: Column(
-          children: [
-            Icon(Icons.lock_outline_rounded, size: 48, color: IceColors.muted),
-            SizedBox(height: 14),
-            Text('Super-admin only',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: IceColors.text)),
-            SizedBox(height: 6),
-            Text(
-              'Admin accounts can only be managed\nby the super-admin.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: IceColors.muted),
-            ),
-          ],
+    padding: EdgeInsets.all(48),
+    child: Column(
+      children: [
+        Icon(Icons.lock_outline_rounded, size: 48, color: IceColors.muted),
+        SizedBox(height: 14),
+        Text(
+          'Super-admin only',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: IceColors.text,
+          ),
         ),
-      );
+        SizedBox(height: 6),
+        Text(
+          'Admin accounts can only be managed\nby the super-admin.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: IceColors.muted),
+        ),
+      ],
+    ),
+  );
 }

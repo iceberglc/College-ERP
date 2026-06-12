@@ -20,7 +20,10 @@ class StaffVocabularyScreen extends ConsumerWidget {
         backgroundColor: IceColors.navyDeep,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('New Day', style: TextStyle(fontWeight: FontWeight.w700)),
+        label: const Text(
+          'New Day',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(staffVocabularyProvider.future),
@@ -35,13 +38,14 @@ class StaffVocabularyScreen extends ConsumerWidget {
               ),
             ),
             async.when(
-              loading: () =>
-                  const SliverToBoxAdapter(child: _VocabSkeleton()),
+              loading: () => const SliverToBoxAdapter(child: _VocabSkeleton()),
               error: (e, _) => SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Text('Error: $e',
-                      style: const TextStyle(color: IceColors.danger)),
+                  child: Text(
+                    'Error: $e',
+                    style: const TextStyle(color: IceColors.danger),
+                  ),
                 ),
               ),
               data: (list) {
@@ -49,26 +53,28 @@ class StaffVocabularyScreen extends ConsumerWidget {
                   return SliverToBoxAdapter(child: _Empty());
                 }
                 return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) {
-                      if (i == list.length) return const SizedBox(height: 100);
-                      final item = list[i] as Map;
-                      return _VocabDayCard(
-                        item: item,
-                        index: i,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => StaffVocabularyDayDetailScreen(
-                              dayId: item['id'] as int,
-                              dayTitle: item['title']?.toString() ?? 'Day ${item['day_number']}',
+                  delegate: SliverChildBuilderDelegate((context, i) {
+                    if (i == list.length) return const SizedBox(height: 100);
+                    final item = list[i] as Map;
+                    return _VocabDayCard(
+                      item: item,
+                      index: i,
+                      onTap: () => Navigator.of(context)
+                          .push(
+                            MaterialPageRoute(
+                              builder: (_) => StaffVocabularyDayDetailScreen(
+                                dayId: item['id'] as int,
+                                dayTitle:
+                                    item['title']?.toString() ??
+                                    'Day ${item['day_number']}',
+                              ),
                             ),
-                          ),
-                        ).then((_) => ref.invalidate(staffVocabularyProvider)),
-                        onDelete: () => _deleteDay(context, ref, item['id'] as int),
-                      );
-                    },
-                    childCount: list.length + 1,
-                  ),
+                          )
+                          .then((_) => ref.invalidate(staffVocabularyProvider)),
+                      onDelete: () =>
+                          _deleteDay(context, ref, item['id'] as int),
+                    );
+                  }, childCount: list.length + 1),
                 );
               },
             ),
@@ -94,11 +100,14 @@ class StaffVocabularyScreen extends ConsumerWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Delete Day'),
-        content: const Text('Are you sure you want to delete this vocabulary day?'),
+        content: const Text(
+          'Are you sure you want to delete this vocabulary day?',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: IceColors.danger),
@@ -113,8 +122,9 @@ class StaffVocabularyScreen extends ConsumerWidget {
         ref.invalidate(staffVocabularyProvider);
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
@@ -142,76 +152,96 @@ class _VocabDayCard extends StatelessWidget {
     final groupName = item['group_name']?.toString() ?? '';
 
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isReleased ? IceColors.success.withAlpha(80) : IceColors.border,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
+          onTap: onTap,
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
                 color: isReleased
-                    ? IceColors.success.withAlpha(20)
-                    : IceColors.navyDeep.withAlpha(18),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: isReleased
-                    ? const Icon(Icons.check_circle_rounded,
-                        color: IceColors.success, size: 22)
-                    : Text('D$dayNumber',
-                        style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: IceColors.navyDeep)),
+                    ? IceColors.success.withAlpha(80)
+                    : IceColors.border,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title.isNotEmpty ? title : 'Day $dayNumber',
-                      style: const TextStyle(
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: isReleased
+                        ? IceColors.success.withAlpha(20)
+                        : IceColors.navyDeep.withAlpha(18),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: isReleased
+                        ? const Icon(
+                            Icons.check_circle_rounded,
+                            color: IceColors.success,
+                            size: 22,
+                          )
+                        : Text(
+                            'D$dayNumber',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: IceColors.navyDeep,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title.isNotEmpty ? title : 'Day $dayNumber',
+                        style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
-                          color: IceColors.text)),
-                  Text(
-                    '$groupName · $wordCount word${wordCount != 1 ? 's' : ''} · ${isReleased ? 'Released' : 'Draft'}',
-                    style: const TextStyle(fontSize: 11, color: IceColors.muted),
+                          color: IceColors.text,
+                        ),
+                      ),
+                      Text(
+                        '$groupName · $wordCount word${wordCount != 1 ? 's' : ''} · ${isReleased ? 'Released' : 'Draft'}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: IceColors.muted,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.chevron_right_rounded,
-                    color: IceColors.muted, size: 20),
-                const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: onDelete,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    child: const Icon(Icons.delete_outline_rounded,
-                        color: IceColors.danger, size: 18),
-                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: IceColors.muted,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: onDelete,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: IceColors.danger,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-    )
+          ),
+        )
         .animate(delay: Duration(milliseconds: 40 * index))
         .fadeIn(duration: 280.ms)
         .slideY(begin: 0.06, duration: 280.ms);
@@ -243,23 +273,28 @@ class _CreateDaySheetState extends ConsumerState<_CreateDaySheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedGroupId == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Please select a group')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a group')));
       return;
     }
     setState(() => _loading = true);
     try {
-      await ApiClient.instance.dio.post('/staff/vocabulary/create/', data: {
-        'title': _titleCtrl.text.trim(),
-        'group_id': _selectedGroupId,
-        'is_released': _isReleased,
-      });
+      await ApiClient.instance.dio.post(
+        '/staff/vocabulary/create/',
+        data: {
+          'title': _titleCtrl.text.trim(),
+          'group_id': _selectedGroupId,
+          'is_released': _isReleased,
+        },
+      );
       widget.ref.invalidate(staffVocabularyProvider);
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -270,7 +305,11 @@ class _CreateDaySheetState extends ConsumerState<_CreateDaySheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-          16, 16, 16, MediaQuery.viewInsetsOf(context).bottom + 24),
+        16,
+        16,
+        16,
+        MediaQuery.viewInsetsOf(context).bottom + 24,
+      ),
       child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -283,11 +322,14 @@ class _CreateDaySheetState extends ConsumerState<_CreateDaySheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('New Vocabulary Day',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: IceColors.text)),
+              const Text(
+                'New Vocabulary Day',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: IceColors.text,
+                ),
+              ),
               const SizedBox(height: 20),
               TextFormField(
                 controller: _titleCtrl,
@@ -299,7 +341,7 @@ class _CreateDaySheetState extends ConsumerState<_CreateDaySheet> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
-                value: _selectedGroupId,
+                initialValue: _selectedGroupId,
                 decoration: const InputDecoration(
                   labelText: 'Group *',
                   border: OutlineInputBorder(),
@@ -318,11 +360,15 @@ class _CreateDaySheetState extends ConsumerState<_CreateDaySheet> {
               SwitchListTile(
                 value: _isReleased,
                 onChanged: (v) => setState(() => _isReleased = v),
-                title: const Text('Release to students',
-                    style: TextStyle(fontSize: 14)),
-                subtitle: const Text('Students can see this day immediately',
-                    style: TextStyle(fontSize: 12, color: IceColors.muted)),
-                activeColor: IceColors.navyDeep,
+                title: const Text(
+                  'Release to students',
+                  style: TextStyle(fontSize: 14),
+                ),
+                subtitle: const Text(
+                  'Students can see this day immediately',
+                  style: TextStyle(fontSize: 12, color: IceColors.muted),
+                ),
+                activeThumbColor: IceColors.navyDeep,
                 contentPadding: EdgeInsets.zero,
               ),
               const SizedBox(height: 20),
@@ -334,17 +380,25 @@ class _CreateDaySheetState extends ConsumerState<_CreateDaySheet> {
                     backgroundColor: IceColors.navyDeep,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: _loading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : const Text('Create',
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Create',
                           style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w700)),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -385,13 +439,15 @@ class _StaffVocabularyDayDetailScreenState
 
   Future<void> _deleteWord(int wordId) async {
     try {
-      await ApiClient.instance.dio
-          .delete('/staff/vocabulary/${widget.dayId}/words/$wordId/');
+      await ApiClient.instance.dio.delete(
+        '/staff/vocabulary/${widget.dayId}/words/$wordId/',
+      );
       ref.invalidate(staffVocabDetailProvider(widget.dayId));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -406,8 +462,9 @@ class _StaffVocabularyDayDetailScreenState
       ref.invalidate(staffVocabularyProvider);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -421,25 +478,33 @@ class _StaffVocabularyDayDetailScreenState
       appBar: AppBar(
         backgroundColor: IceColors.navyDeep,
         foregroundColor: Colors.white,
-        title: Text(widget.dayTitle,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+        title: Text(
+          widget.dayTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+        ),
         elevation: 0,
         shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(16))),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddWordSheet,
         backgroundColor: IceColors.navyDeep,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('Add Word',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        label: const Text(
+          'Add Word',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-            child: Text('Error: $e',
-                style: const TextStyle(color: IceColors.danger))),
+          child: Text(
+            'Error: $e',
+            style: const TextStyle(color: IceColors.danger),
+          ),
+        ),
         data: (day) {
           final isReleased = day['is_released'] == true;
           final words = (day['words'] as List?) ?? [];
@@ -493,13 +558,16 @@ class _StaffVocabularyDayDetailScreenState
                                         ? 'Released to students'
                                         : 'Draft — not visible',
                                     style: const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 14),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                   Text(
                                     '${words.length} word${words.length != 1 ? 's' : ''}',
                                     style: const TextStyle(
-                                        fontSize: 12, color: IceColors.muted),
+                                      fontSize: 12,
+                                      color: IceColors.muted,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -507,7 +575,7 @@ class _StaffVocabularyDayDetailScreenState
                             Switch(
                               value: isReleased,
                               onChanged: (_) => _toggleRelease(isReleased),
-                              activeColor: IceColors.navyDeep,
+                              activeThumbColor: IceColors.navyDeep,
                             ),
                           ],
                         ),
@@ -522,9 +590,13 @@ class _StaffVocabularyDayDetailScreenState
                             border: Border.all(color: IceColors.border),
                           ),
                           child: const Center(
-                            child: Text('No words yet. Tap + to add.',
-                                style: TextStyle(
-                                    color: IceColors.muted, fontSize: 13)),
+                            child: Text(
+                              'No words yet. Tap + to add.',
+                              style: TextStyle(
+                                color: IceColors.muted,
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
                         )
                       else
@@ -562,83 +634,100 @@ class _WordCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: IceColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: IceColors.navyDeep.withAlpha(15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            alignment: Alignment.center,
-            child: Text('${index + 1}',
-                style: const TextStyle(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: IceColors.border),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: IceColors.navyDeep.withAlpha(15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '${index + 1}',
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: IceColors.navyDeep)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+                    color: IceColors.navyDeep,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(word['word']?.toString() ?? '',
-                        style: const TextStyle(
+                    Row(
+                      children: [
+                        Text(
+                          word['word']?.toString() ?? '',
+                          style: const TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 14,
-                            color: IceColors.navyDeep)),
-                    if ((word['pronunciation_note'] ?? '').toString().isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        word['pronunciation_note'].toString(),
-                        style: const TextStyle(
-                            fontSize: 11,
-                            color: IceColors.muted,
-                            fontStyle: FontStyle.italic),
+                            color: IceColors.navyDeep,
+                          ),
+                        ),
+                        if ((word['pronunciation_note'] ?? '')
+                            .toString()
+                            .isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            word['pronunciation_note'].toString(),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: IceColors.muted,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      word['meaning']?.toString() ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: IceColors.text,
                       ),
-                    ],
+                    ),
+                    if ((word['example_sentence'] ?? '').toString().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '"${word['example_sentence']}"',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: IceColors.muted,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(word['meaning']?.toString() ?? '',
-                    style: const TextStyle(
-                        fontSize: 13, color: IceColors.text)),
-                if ((word['example_sentence'] ?? '').toString().isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(
-                      '"${word['example_sentence']}"',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: IceColors.muted,
-                          fontStyle: FontStyle.italic),
-                    ),
+              ),
+              GestureDetector(
+                onTap: onDelete,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: IceColors.danger,
+                    size: 18,
                   ),
-              ],
-            ),
+                ),
+              ),
+            ],
           ),
-          GestureDetector(
-            onTap: onDelete,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: const Icon(Icons.delete_outline_rounded,
-                  color: IceColors.danger, size: 18),
-            ),
-          ),
-        ],
-      ),
-    )
+        )
         .animate(delay: Duration(milliseconds: 40 * index))
         .fadeIn(duration: 250.ms)
         .slideY(begin: 0.05, duration: 250.ms);
@@ -690,8 +779,9 @@ class _AddWordSheetState extends State<_AddWordSheet> {
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -702,7 +792,11 @@ class _AddWordSheetState extends State<_AddWordSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-          0, 0, 0, MediaQuery.viewInsetsOf(context).bottom),
+        0,
+        0,
+        0,
+        MediaQuery.viewInsetsOf(context).bottom,
+      ),
       child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -716,16 +810,21 @@ class _AddWordSheetState extends State<_AddWordSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Add Word',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: IceColors.text)),
+                const Text(
+                  'Add Word',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: IceColors.text,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _wordCtrl,
                   decoration: const InputDecoration(
-                      labelText: 'Word *', border: OutlineInputBorder()),
+                    labelText: 'Word *',
+                    border: OutlineInputBorder(),
+                  ),
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Required' : null,
                 ),
@@ -733,7 +832,9 @@ class _AddWordSheetState extends State<_AddWordSheet> {
                 TextFormField(
                   controller: _meaningCtrl,
                   decoration: const InputDecoration(
-                      labelText: 'Meaning *', border: OutlineInputBorder()),
+                    labelText: 'Meaning *',
+                    border: OutlineInputBorder(),
+                  ),
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Required' : null,
                   maxLines: 2,
@@ -742,15 +843,17 @@ class _AddWordSheetState extends State<_AddWordSheet> {
                 TextFormField(
                   controller: _pronCtrl,
                   decoration: const InputDecoration(
-                      labelText: 'Pronunciation note (optional)',
-                      border: OutlineInputBorder()),
+                    labelText: 'Pronunciation note (optional)',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _exampleCtrl,
                   decoration: const InputDecoration(
-                      labelText: 'Example sentence (optional)',
-                      border: OutlineInputBorder()),
+                    labelText: 'Example sentence (optional)',
+                    border: OutlineInputBorder(),
+                  ),
                   maxLines: 2,
                 ),
                 const SizedBox(height: 20),
@@ -762,17 +865,25 @@ class _AddWordSheetState extends State<_AddWordSheet> {
                       backgroundColor: IceColors.navyDeep,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: _loading
                         ? const SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
-                        : const Text('Add Word',
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Add Word',
                             style: TextStyle(
-                                fontSize: 15, fontWeight: FontWeight.w700)),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -788,42 +899,51 @@ class _VocabSkeleton extends StatelessWidget {
   const _VocabSkeleton();
   @override
   Widget build(BuildContext context) => Shimmer.fromColors(
-        baseColor: Colors.grey[200]!,
-        highlightColor: Colors.grey[50]!,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(children: [
-            for (int i = 0; i < 5; i++) ...[
-              Container(
-                  height: 68,
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16))),
-              const SizedBox(height: 10),
-            ],
-          ]),
-        ),
-      );
+    baseColor: Colors.grey[200]!,
+    highlightColor: Colors.grey[50]!,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          for (int i = 0; i < 5; i++) ...[
+            Container(
+              height: 68,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.all(40),
-        child: Column(children: [
-          Icon(Icons.menu_book_outlined, size: 56, color: IceColors.muted),
-          SizedBox(height: 16),
-          Text('No vocabulary days yet',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: IceColors.muted)),
-          SizedBox(height: 8),
-          Text(
-            'Tap the + button to create a new vocabulary day.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: IceColors.muted),
+    padding: EdgeInsets.all(40),
+    child: Column(
+      children: [
+        Icon(Icons.menu_book_outlined, size: 56, color: IceColors.muted),
+        SizedBox(height: 16),
+        Text(
+          'No vocabulary days yet',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: IceColors.muted,
           ),
-        ]),
-      );
+        ),
+        SizedBox(height: 8),
+        Text(
+          'Tap the + button to create a new vocabulary day.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: IceColors.muted),
+        ),
+      ],
+    ),
+  );
 }

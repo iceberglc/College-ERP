@@ -15,37 +15,44 @@ class ApiClient {
   late final Dio dio = _buildDio();
 
   Dio _buildDio() {
-    final d = Dio(BaseOptions(
-      baseUrl: kBaseUrl,
-      connectTimeout: const Duration(seconds: 12),
-      receiveTimeout: const Duration(seconds: 20),
-      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-    ));
+    final d = Dio(
+      BaseOptions(
+        baseUrl: kBaseUrl,
+        connectTimeout: const Duration(seconds: 12),
+        receiveTimeout: const Duration(seconds: 20),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ),
+    );
 
-    d.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'access_token');
-        if (token != null) options.headers['Authorization'] = 'Bearer $token';
-        handler.next(options);
-      },
-      onError: (error, handler) async {
-        // 401 → try refresh
-        if (error.response?.statusCode == 401) {
-          final refreshed = await _tryRefresh();
-          if (refreshed) {
-            // Retry original request with new token
-            final opts = error.requestOptions;
-            final token = await _storage.read(key: 'access_token');
-            opts.headers['Authorization'] = 'Bearer $token';
-            try {
-              final res = await dio.fetch(opts);
-              return handler.resolve(res);
-            } catch (_) {}
+    d.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await _storage.read(key: 'access_token');
+          if (token != null) options.headers['Authorization'] = 'Bearer $token';
+          handler.next(options);
+        },
+        onError: (error, handler) async {
+          // 401 → try refresh
+          if (error.response?.statusCode == 401) {
+            final refreshed = await _tryRefresh();
+            if (refreshed) {
+              // Retry original request with new token
+              final opts = error.requestOptions;
+              final token = await _storage.read(key: 'access_token');
+              opts.headers['Authorization'] = 'Bearer $token';
+              try {
+                final res = await dio.fetch(opts);
+                return handler.resolve(res);
+              } catch (_) {}
+            }
           }
-        }
-        handler.next(error);
-      },
-    ));
+          handler.next(error);
+        },
+      ),
+    );
 
     return d;
   }

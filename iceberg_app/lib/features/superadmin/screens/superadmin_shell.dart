@@ -32,8 +32,8 @@ class SuperadminShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AdaptiveLayout(
-        navigationShell: navigationShell,
-        items: _items,
-        sections: superadminSidebarSections,
-      );
+    navigationShell: navigationShell,
+    items: _items,
+    sections: superadminSidebarSections,
+  );
 }

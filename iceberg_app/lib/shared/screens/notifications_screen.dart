@@ -17,8 +17,7 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 class _State extends ConsumerState<NotificationsScreen> {
   Future<void> _markAllRead() async {
     try {
-      await ApiClient.instance.dio
-          .post('/notifications/mark-all-read/');
+      await ApiClient.instance.dio.post('/notifications/mark-all-read/');
       ref.invalidate(notificationsProvider);
     } on DioException catch (_) {}
   }
@@ -56,26 +55,22 @@ class _State extends ConsumerState<NotificationsScreen> {
             ),
             async.when(
               loading: () => const SliverToBoxAdapter(child: _Skeleton()),
-              error: (e, _) =>
-                  SliverToBoxAdapter(child: _ErrorCard('$e')),
+              error: (e, _) => SliverToBoxAdapter(child: _ErrorCard('$e')),
               data: (list) => list.isEmpty
                   ? SliverToBoxAdapter(child: _Empty())
                   : SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (_, i) {
-                          final n = list[i] as Map<String, dynamic>;
-                          return _NotifCard(
-                            item: n,
-                            index: i,
-                            onTap: () {
-                              if (n['is_read'] != true) {
-                                _markRead(n['id'] as int);
-                              }
-                            },
-                          );
-                        },
-                        childCount: list.length,
-                      ),
+                      delegate: SliverChildBuilderDelegate((_, i) {
+                        final n = list[i] as Map<String, dynamic>;
+                        return _NotifCard(
+                          item: n,
+                          index: i,
+                          onTap: () {
+                            if (n['is_read'] != true) {
+                              _markRead(n['id'] as int);
+                            }
+                          },
+                        );
+                      }, childCount: list.length),
                     ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -90,8 +85,11 @@ class _NotifCard extends StatelessWidget {
   final Map<String, dynamic> item;
   final int index;
   final VoidCallback onTap;
-  const _NotifCard(
-      {required this.item, required this.index, required this.onTap});
+  const _NotifCard({
+    required this.item,
+    required this.index,
+    required this.onTap,
+  });
 
   Color _categoryColor(String? cat) {
     switch (cat) {
@@ -130,85 +128,92 @@ class _NotifCard extends StatelessWidget {
     final color = _categoryColor(cat);
 
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isRead ? Colors.white : color.withAlpha(10),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isRead ? IceColors.border : color.withAlpha(60),
-            width: isRead ? 1 : 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withAlpha(isRead ? 0 : 12),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: color.withAlpha(20),
-                borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isRead ? Colors.white : color.withAlpha(10),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isRead ? IceColors.border : color.withAlpha(60),
+                width: isRead ? 1 : 1.5,
               ),
-              child: Icon(_categoryIcon(cat), color: color, size: 20),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withAlpha(isRead ? 0 : 12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (cat != null)
-                    Text(cat,
-                        style: TextStyle(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(20),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(_categoryIcon(cat), color: color, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (cat != null)
+                        Text(
+                          cat,
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: color,
-                            letterSpacing: 0.8)),
-                  const SizedBox(height: 2),
-                  Text(
-                    item['message']?.toString() ?? '',
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: IceColors.text,
-                        fontWeight:
-                            isRead ? FontWeight.w500 : FontWeight.w600,
-                        height: 1.4),
-                  ),
-                  if (item['created_at'] != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        _fmt(item['created_at'].toString()),
-                        style: const TextStyle(
-                            fontSize: 11, color: IceColors.muted),
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item['message']?.toString() ?? '',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: IceColors.text,
+                          fontWeight: isRead
+                              ? FontWeight.w500
+                              : FontWeight.w600,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-            if (!isRead)
-              Container(
-                width: 8,
-                height: 8,
-                margin: const EdgeInsets.only(top: 4),
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
+                      if (item['created_at'] != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            _fmt(item['created_at'].toString()),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: IceColors.muted,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-          ],
-        ),
-      ),
-    )
+                if (!isRead)
+                  Container(
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.only(top: 4),
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        )
         .animate(delay: Duration(milliseconds: 60 + index * 50))
         .slideX(begin: 0.1, duration: 320.ms, curve: Curves.easeOut)
         .fadeIn(duration: 280.ms);
@@ -234,42 +239,56 @@ class _Skeleton extends StatelessWidget {
   const _Skeleton();
   @override
   Widget build(BuildContext context) => Shimmer.fromColors(
-        baseColor: Colors.grey[200]!,
-        highlightColor: Colors.grey[50]!,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(children: [
-            for (int i = 0; i < 6; i++) ...[
-              Container(
-                  height: 76,
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18))),
-              const SizedBox(height: 10),
-            ],
-          ]),
-        ),
-      );
+    baseColor: Colors.grey[200]!,
+    highlightColor: Colors.grey[50]!,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          for (int i = 0; i < 6; i++) ...[
+            Container(
+              height: 76,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(children: [
-          Icon(Icons.notifications_none_rounded,
-              size: 56, color: IceColors.muted.withAlpha(100)),
-          const SizedBox(height: 16),
-          const Text('All clear',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: IceColors.muted)),
-          const SizedBox(height: 8),
-          const Text('No notifications yet.',
-              style: TextStyle(fontSize: 13, color: IceColors.muted)),
-        ]),
-      );
+    padding: const EdgeInsets.all(40),
+    child: Column(
+      children: [
+        Icon(
+          Icons.notifications_none_rounded,
+          size: 56,
+          color: IceColors.muted.withAlpha(100),
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'All clear',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: IceColors.muted,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'No notifications yet.',
+          style: TextStyle(fontSize: 13, color: IceColors.muted),
+        ),
+      ],
+    ),
+  );
 }
 
 class _ErrorCard extends StatelessWidget {
@@ -277,8 +296,10 @@ class _ErrorCard extends StatelessWidget {
   const _ErrorCard(this.message);
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text('Error: $message',
-            style: const TextStyle(color: IceColors.danger)),
-      );
+    padding: const EdgeInsets.all(24),
+    child: Text(
+      'Error: $message',
+      style: const TextStyle(color: IceColors.danger),
+    ),
+  );
 }

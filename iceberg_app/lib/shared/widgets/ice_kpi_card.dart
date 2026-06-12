@@ -37,7 +37,10 @@ class IceKpiCard extends StatelessWidget {
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Icon(icon, color: fg, size: 18),
             ),
             const SizedBox(width: 10),
@@ -45,11 +48,21 @@ class IceKpiCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(value,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-                  Text(label,
-                      style: const TextStyle(
-                          fontSize: 11, fontWeight: FontWeight.w500, color: IceColors.muted)),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: IceColors.muted,
+                    ),
+                  ),
                 ],
               ),
             ),

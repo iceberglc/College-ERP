@@ -59,7 +59,11 @@ class _StudentVocabularyQuizScreenState
     try {
       await ApiClient.instance.dio.post(
         '/vocabulary/${widget.dayId}/quiz-result/',
-        data: {'score': pct, 'total_questions': total, 'correct_answers': _score},
+        data: {
+          'score': pct,
+          'total_questions': total,
+          'correct_answers': _score,
+        },
       );
     } catch (_) {}
     ref.invalidate(vocabularyProvider);
@@ -80,17 +84,23 @@ class _StudentVocabularyQuizScreenState
       appBar: AppBar(
         backgroundColor: IceColors.navyDeep,
         foregroundColor: Colors.white,
-        title: Text(widget.dayTitle,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+        title: Text(
+          widget.dayTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+        ),
         elevation: 0,
         shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(16))),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+        ),
       ),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-            child: Text('Error: $e',
-                style: const TextStyle(color: IceColors.danger))),
+          child: Text(
+            'Error: $e',
+            style: const TextStyle(color: IceColors.danger),
+          ),
+        ),
         data: (questions) {
           if (_questions.isEmpty && questions.isNotEmpty) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -169,16 +179,22 @@ class _QuizBody extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Question ${currentIndex + 1} of ${questions.length}',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: IceColors.muted)),
-                  Text('${((currentIndex / questions.length) * 100).round()}%',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: IceColors.navyDeep)),
+                  Text(
+                    'Question ${currentIndex + 1} of ${questions.length}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: IceColors.muted,
+                    ),
+                  ),
+                  Text(
+                    '${((currentIndex / questions.length) * 100).round()}%',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: IceColors.navyDeep,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -187,8 +203,9 @@ class _QuizBody extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: currentIndex / questions.length,
                   backgroundColor: IceColors.border,
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(IceColors.navyDeep),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    IceColors.navyDeep,
+                  ),
                   minHeight: 6,
                 ),
               ),
@@ -204,41 +221,50 @@ class _QuizBody extends StatelessWidget {
               children: [
                 // Question card
                 Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [IceColors.navy, IceColors.navyDeep],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('What word means:',
-                          style: TextStyle(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [IceColors.navy, IceColors.navyDeep],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'What word means:',
+                            style: TextStyle(
                               color: Colors.white70,
                               fontSize: 12,
-                              fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 8),
-                      Text(meaning,
-                          style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            meaning,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 18,
-                              fontWeight: FontWeight.w800)),
-                      if (example.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text('"$example"',
-                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (example.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              '"$example"',
+                              style: const TextStyle(
                                 color: Colors.white60,
                                 fontSize: 13,
-                                fontStyle: FontStyle.italic)),
-                      ],
-                    ],
-                  ),
-                )
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    )
                     .animate()
                     .fadeIn(duration: 300.ms)
                     .slideY(begin: 0.1, duration: 300.ms),
@@ -273,48 +299,52 @@ class _QuizBody extends StatelessWidget {
                   }
 
                   return GestureDetector(
-                    onTap: () => onSelect(choice),
-                    child: AnimatedContainer(
-                      duration: 250.ms,
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: borderColor, width: 1.5),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: borderColor.withAlpha(20),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              ['A', 'B', 'C', 'D'][e.key % 4],
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: borderColor),
-                            ),
+                        onTap: () => onSelect(choice),
+                        child: AnimatedContainer(
+                          duration: 250.ms,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: bgColor,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: borderColor, width: 1.5),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(choice,
-                                style: TextStyle(
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: borderColor.withAlpha(20),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  ['A', 'B', 'C', 'D'][e.key % 4],
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: borderColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  choice,
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: textColor)),
+                                    color: textColor,
+                                  ),
+                                ),
+                              ),
+                              if (trailingIcon != null)
+                                Icon(trailingIcon, color: textColor, size: 20),
+                            ],
                           ),
-                          if (trailingIcon != null)
-                            Icon(trailingIcon, color: textColor, size: 20),
-                        ],
-                      ),
-                    ),
-                  )
+                        ),
+                      )
                       .animate(delay: Duration(milliseconds: 50 * e.key))
                       .fadeIn(duration: 250.ms)
                       .slideX(begin: 0.05, duration: 250.ms);
@@ -329,33 +359,45 @@ class _QuizBody extends StatelessWidget {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: submitting ? null : onNext,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: IceColors.navyDeep,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: submitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : Text(
-                          currentIndex + 1 < questions.length
-                              ? 'Next Question'
-                              : 'See Results',
-                          style: const TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w700)),
-                ),
-              )
-                  .animate()
-                  .slideY(begin: 0.3, duration: 300.ms, curve: Curves.easeOut)
-                  .fadeIn(duration: 250.ms),
+              child:
+                  SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: submitting ? null : onNext,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: IceColors.navyDeep,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: submitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  currentIndex + 1 < questions.length
+                                      ? 'Next Question'
+                                      : 'See Results',
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                        ),
+                      )
+                      .animate()
+                      .slideY(
+                        begin: 0.3,
+                        duration: 300.ms,
+                        curve: Curves.easeOut,
+                      )
+                      .fadeIn(duration: 250.ms),
             ),
           ),
       ],
@@ -394,28 +436,30 @@ class _ResultView extends StatelessWidget {
                     ? IceColors.success.withAlpha(20)
                     : IceColors.warning.withAlpha(20),
                 border: Border.all(
-                    color: passed ? IceColors.success : IceColors.warning,
-                    width: 3),
+                  color: passed ? IceColors.success : IceColors.warning,
+                  width: 3,
+                ),
               ),
               child: Icon(
                 passed ? Icons.emoji_events_rounded : Icons.school_rounded,
                 size: 48,
                 color: passed ? IceColors.success : IceColors.warning,
               ),
-            )
-                .animate()
-                .scale(duration: 500.ms, curve: Curves.elasticOut),
+            ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
             const SizedBox(height: 24),
-            Text('$pct%',
-                style: TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.w900,
-                    color: passed ? IceColors.success : IceColors.warning))
-                .animate()
-                .fadeIn(delay: 200.ms, duration: 400.ms),
+            Text(
+              '$pct%',
+              style: TextStyle(
+                fontSize: 56,
+                fontWeight: FontWeight.w900,
+                color: passed ? IceColors.success : IceColors.warning,
+              ),
+            ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
             const SizedBox(height: 8),
-            Text('$score of $total correct',
-                style: const TextStyle(fontSize: 16, color: IceColors.muted)),
+            Text(
+              '$score of $total correct',
+              style: const TextStyle(fontSize: 16, color: IceColors.muted),
+            ),
             const SizedBox(height: 12),
             Text(
               passed
@@ -423,8 +467,9 @@ class _ResultView extends StatelessWidget {
                   : 'Keep practicing! You need 60% to complete.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 14,
-                  color: passed ? IceColors.success : IceColors.text),
+                fontSize: 14,
+                color: passed ? IceColors.success : IceColors.text,
+              ),
             ),
             const SizedBox(height: 36),
             SizedBox(
@@ -435,11 +480,13 @@ class _ResultView extends StatelessWidget {
                   backgroundColor: IceColors.navyDeep,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                child: const Text('Back to Vocabulary',
-                    style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                child: const Text(
+                  'Back to Vocabulary',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -453,11 +500,13 @@ class _ResultView extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     side: const BorderSide(color: IceColors.navyDeep),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                  child: const Text('Retry Quiz',
-                      style: TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w600)),
+                  child: const Text(
+                    'Retry Quiz',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
           ],
@@ -473,25 +522,29 @@ class _NoQuestionsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(40),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.quiz_outlined, size: 56, color: IceColors.muted),
-              const SizedBox(height: 16),
-              const Text('No quiz available',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: IceColors.muted)),
-              const SizedBox(height: 8),
-              Text('This vocabulary day has no quiz questions yet.',
-                  textAlign: TextAlign.center,
-                  style:
-                      const TextStyle(fontSize: 13, color: IceColors.muted)),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.quiz_outlined, size: 56, color: IceColors.muted),
+          const SizedBox(height: 16),
+          const Text(
+            'No quiz available',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: IceColors.muted,
+            ),
           ),
-        ),
-      );
+          const SizedBox(height: 8),
+          Text(
+            'This vocabulary day has no quiz questions yet.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, color: IceColors.muted),
+          ),
+        ],
+      ),
+    ),
+  );
 }

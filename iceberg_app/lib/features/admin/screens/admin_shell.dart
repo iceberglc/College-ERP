@@ -32,8 +32,8 @@ class AdminShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AdaptiveLayout(
-        navigationShell: navigationShell,
-        items: _items,
-        sections: adminSidebarSections,
-      );
+    navigationShell: navigationShell,
+    items: _items,
+    sections: adminSidebarSections,
+  );
 }

@@ -27,13 +27,23 @@ class _AdminGroupDetailScreenState
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      final res = await ApiClient.instance.dio
-          .get('/admin/groups-manage/${widget.groupId}/');
-      setState(() { _group = Map<String, dynamic>.from(res.data); _loading = false; });
+      final res = await ApiClient.instance.dio.get(
+        '/admin/groups-manage/${widget.groupId}/',
+      );
+      setState(() {
+        _group = Map<String, dynamic>.from(res.data);
+        _loading = false;
+      });
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
@@ -41,13 +51,16 @@ class _AdminGroupDetailScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Remove Student?',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Remove Student?',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
         content: Text('Remove $name from this group?'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: IceColors.danger),
             onPressed: () => Navigator.pop(context, true),
@@ -59,17 +72,20 @@ class _AdminGroupDetailScreenState
     if (confirmed != true || !mounted) return;
     try {
       await ApiClient.instance.dio.delete(
-          '/admin/enrollments/',
-          data: {'enrollment_id': enrollmentId});
+        '/admin/enrollments/',
+        data: {'enrollment_id': enrollmentId},
+      );
       ref.invalidate(adminGroupsManageProvider);
       _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed: $e'),
-          backgroundColor: IceColors.danger,
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed: $e'),
+            backgroundColor: IceColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -80,45 +96,55 @@ class _AdminGroupDetailScreenState
       return const Scaffold(
         backgroundColor: IceColors.bg,
         body: Center(
-            child: CircularProgressIndicator(color: IceColors.navyDeep)),
+          child: CircularProgressIndicator(color: IceColors.navyDeep),
+        ),
       );
     }
     if (_error != null) {
       return Scaffold(
         backgroundColor: IceColors.bg,
         body: Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.error_outline_rounded,
-                size: 48, color: IceColors.danger),
-            const SizedBox(height: 16),
-            Text(_error!,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: IceColors.danger,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _error!,
                 style: const TextStyle(color: IceColors.muted),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _load,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _load,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
                   backgroundColor: IceColors.navyDeep,
-                  foregroundColor: Colors.white),
-            ),
-          ]),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    final g       = _group!;
-    final name    = g['name']?.toString() ?? '—';
-    final course  = g['course_name']?.toString() ?? '';
+    final g = _group!;
+    final name = g['name']?.toString() ?? '—';
+    final course = g['course_name']?.toString() ?? '';
     final teacher = g['teacher_name']?.toString() ?? 'Unassigned';
-    final branch  = g['branch_name']?.toString() ?? '';
-    final schedule= g['schedule']?.toString() ?? '';
-    final room    = g['room']?.toString() ?? '';
-    final capacity= g['capacity'] ?? 0;
-    final fee     = g['monthly_fee']?.toString() ?? '';
-    final students= (g['students'] as List?) ?? [];
-    final enrolled= students.length;
+    final branch = g['branch_name']?.toString() ?? '';
+    final schedule = g['schedule']?.toString() ?? '';
+    final room = g['room']?.toString() ?? '';
+    final capacity = g['capacity'] ?? 0;
+    final fee = g['monthly_fee']?.toString() ?? '';
+    final students = (g['students'] as List?) ?? [];
+    final enrolled = students.length;
 
     return Scaffold(
       backgroundColor: IceColors.bg,
@@ -151,11 +177,17 @@ class _AdminGroupDetailScreenState
                       _InfoRow(Icons.schedule_rounded, 'Schedule', schedule),
                     if (room.isNotEmpty)
                       _InfoRow(Icons.room_rounded, 'Room', room),
-                    _InfoRow(Icons.people_rounded, 'Capacity',
-                        '$enrolled / $capacity enrolled'),
+                    _InfoRow(
+                      Icons.people_rounded,
+                      'Capacity',
+                      '$enrolled / $capacity enrolled',
+                    ),
                     if (fee.isNotEmpty)
-                      _InfoRow(Icons.payments_rounded, 'Monthly fee',
-                          "$fee so'm"),
+                      _InfoRow(
+                        Icons.payments_rounded,
+                        'Monthly fee',
+                        "$fee so'm",
+                      ),
                   ],
                 ),
               ),
@@ -168,13 +200,20 @@ class _AdminGroupDetailScreenState
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Enrolled Students ($enrolled)',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w800, fontSize: 15)),
+                  Text(
+                    'Enrolled Students ($enrolled)',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
+                  ),
                   IconButton(
                     onPressed: _load,
-                    icon: const Icon(Icons.refresh_rounded,
-                        color: IceColors.muted, size: 20),
+                    icon: const Icon(
+                      Icons.refresh_rounded,
+                      color: IceColors.muted,
+                      size: 20,
+                    ),
                   ),
                 ],
               ),
@@ -185,88 +224,106 @@ class _AdminGroupDetailScreenState
               child: Padding(
                 padding: EdgeInsets.all(32),
                 child: Center(
-                  child: Text('No students enrolled yet.',
-                      style: TextStyle(color: IceColors.muted)),
+                  child: Text(
+                    'No students enrolled yet.',
+                    style: TextStyle(color: IceColors.muted),
+                  ),
                 ),
               ),
             )
           else
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (_, i) {
-                  if (i == students.length) return const SizedBox(height: 80);
-                  final s    = students[i] as Map;
-                  final sName= '${s['first_name'] ?? ''} ${s['last_name'] ?? ''}'.trim();
-                  final lid  = s['login_id']?.toString() ?? '';
-                  final status= s['status']?.toString() ?? '';
-                  final eid  = s['enrollment_id'] as int?;
-                  return Container(
-                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: IceColors.border),
-                    ),
-                    child: Row(children: [
+              delegate: SliverChildBuilderDelegate((_, i) {
+                if (i == students.length) return const SizedBox(height: 80);
+                final s = students[i] as Map;
+                final sName = '${s['first_name'] ?? ''} ${s['last_name'] ?? ''}'
+                    .trim();
+                final lid = s['login_id']?.toString() ?? '';
+                final status = s['status']?.toString() ?? '';
+                final eid = s['enrollment_id'] as int?;
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: IceColors.border),
+                  ),
+                  child: Row(
+                    children: [
                       CircleAvatar(
                         radius: 18,
                         backgroundColor: IceColors.navyDeep.withAlpha(15),
                         child: Text(
                           sName.isNotEmpty ? sName[0].toUpperCase() : '?',
                           style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: IceColors.navyDeep,
-                              fontSize: 13),
+                            fontWeight: FontWeight.w800,
+                            color: IceColors.navyDeep,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          Text(sName.isEmpty ? lid : sName,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              sName.isEmpty ? lid : sName,
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13)),
-                          Text(lid,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              lid,
                               style: const TextStyle(
-                                  fontSize: 11, color: IceColors.muted)),
-                        ]),
+                                fontSize: 11,
+                                color: IceColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       if (status.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
-                            color: (status == 'active'
-                                    ? IceColors.success
-                                    : IceColors.muted)
-                                .withAlpha(15),
+                            color:
+                                (status == 'active'
+                                        ? IceColors.success
+                                        : IceColors.muted)
+                                    .withAlpha(15),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             status,
                             style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: status == 'active'
-                                    ? IceColors.success
-                                    : IceColors.muted),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: status == 'active'
+                                  ? IceColors.success
+                                  : IceColors.muted,
+                            ),
                           ),
                         ),
                       if (eid != null)
                         IconButton(
                           onPressed: () => _removeStudent(eid, sName),
-                          icon: const Icon(Icons.person_remove_rounded,
-                              size: 18, color: IceColors.danger),
+                          icon: const Icon(
+                            Icons.person_remove_rounded,
+                            size: 18,
+                            color: IceColors.danger,
+                          ),
                           tooltip: 'Remove from group',
                         ),
-                    ]),
-                  );
-                },
-                childCount: students.length + 1,
-              ),
+                    ],
+                  ),
+                );
+              }, childCount: students.length + 1),
             ),
         ],
       ),
@@ -282,21 +339,27 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Row(children: [
-          Icon(icon, size: 15, color: IceColors.navyDeep),
-          const SizedBox(width: 10),
-          Text('$label: ',
-              style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: IceColors.text)),
-          Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontSize: 13, color: IceColors.muted),
-                overflow: TextOverflow.ellipsis),
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Row(
+      children: [
+        Icon(icon, size: 15, color: IceColors.navyDeep),
+        const SizedBox(width: 10),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            color: IceColors.text,
           ),
-        ]),
-      );
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 13, color: IceColors.muted),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    ),
+  );
 }

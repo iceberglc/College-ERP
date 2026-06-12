@@ -32,8 +32,8 @@ class StaffShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AdaptiveLayout(
-        navigationShell: navigationShell,
-        items: _items,
-        sections: staffSidebarSections,
-      );
+    navigationShell: navigationShell,
+    items: _items,
+    sections: staffSidebarSections,
+  );
 }

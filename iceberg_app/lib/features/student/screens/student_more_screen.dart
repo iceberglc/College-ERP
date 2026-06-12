@@ -6,17 +6,62 @@ class StudentMoreScreen extends StatelessWidget {
   const StudentMoreScreen({super.key});
 
   static const _tiles = [
-    _MoreTile(icon: Icons.fact_check_rounded,      label: 'Attendance',   path: '/student/attendance'),
-    _MoreTile(icon: Icons.grade_rounded,           label: 'Results',      path: '/student/results'),
-    _MoreTile(icon: Icons.assignment_rounded,       label: 'Assignments',  path: '/student/assignments'),
-    _MoreTile(icon: Icons.emoji_events_rounded,    label: 'Leaderboard',  path: '/student/leaderboard'),
-    _MoreTile(icon: Icons.payment_rounded,         label: 'Payments',     path: '/student/payments'),
-    _MoreTile(icon: Icons.beach_access_rounded,    label: 'Leave',        path: '/student/leave'),
-    _MoreTile(icon: Icons.rate_review_rounded,     label: 'Feedback',     path: '/student/feedback'),
-    _MoreTile(icon: Icons.notifications_rounded,   label: 'Notifications',path: '/student/notifications'),
-    _MoreTile(icon: Icons.auto_stories_rounded,    label: 'Books',        path: '/student/books'),
-    _MoreTile(icon: Icons.person_rounded,          label: 'Profile',      path: '/student/profile'),
-    _MoreTile(icon: Icons.logout_rounded,          label: 'Logout',       path: '/login', isLogout: true),
+    _MoreTile(
+      icon: Icons.fact_check_rounded,
+      label: 'Attendance',
+      path: '/student/attendance',
+    ),
+    _MoreTile(
+      icon: Icons.grade_rounded,
+      label: 'Results',
+      path: '/student/results',
+    ),
+    _MoreTile(
+      icon: Icons.assignment_rounded,
+      label: 'Assignments',
+      path: '/student/assignments',
+    ),
+    _MoreTile(
+      icon: Icons.emoji_events_rounded,
+      label: 'Leaderboard',
+      path: '/student/leaderboard',
+    ),
+    _MoreTile(
+      icon: Icons.payment_rounded,
+      label: 'Payments',
+      path: '/student/payments',
+    ),
+    _MoreTile(
+      icon: Icons.beach_access_rounded,
+      label: 'Leave',
+      path: '/student/leave',
+    ),
+    _MoreTile(
+      icon: Icons.rate_review_rounded,
+      label: 'Feedback',
+      path: '/student/feedback',
+    ),
+    _MoreTile(
+      icon: Icons.notifications_rounded,
+      label: 'Notifications',
+      path: '/student/notifications',
+    ),
+    _MoreTile(
+      icon: Icons.auto_stories_rounded,
+      label: 'Books',
+      path: '/student/books',
+    ),
+    _MoreTile(
+      icon: Icons.person_rounded,
+      label: 'Profile',
+      path: '/student/profile',
+    ),
+    _MoreTile(
+      icon: Icons.logout_rounded,
+      label: 'Logout',
+      path: '/login',
+      isLogout: true,
+    ),
   ];
 
   @override
@@ -68,10 +113,10 @@ class _MoreTileWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor =
-        tile.isLogout ? IceColors.danger : IceColors.navyDeep;
-    final bgColor =
-        tile.isLogout ? IceColors.danger.withAlpha(20) : IceColors.surface2;
+    final iconColor = tile.isLogout ? IceColors.danger : IceColors.navyDeep;
+    final bgColor = tile.isLogout
+        ? IceColors.danger.withAlpha(20)
+        : IceColors.surface2;
 
     return Material(
       color: IceColors.surface,

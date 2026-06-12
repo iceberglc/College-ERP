@@ -17,15 +17,15 @@ class StudentLeaderboardScreen extends ConsumerStatefulWidget {
 class _StudentLeaderboardScreenState
     extends ConsumerState<StudentLeaderboardScreen> {
   int _scopeIndex = 0; // 0=Filialim, 1=Guruhim, 2=Hammasi
-  int _timeIndex  = 0; // 0=Kunlik, 1=7 kun, 2=30 kun, 3=Barchasi
+  int _timeIndex = 0; // 0=Kunlik, 1=7 kun, 2=30 kun, 3=Barchasi
 
   static const _scopeLabels = ['Filialim', 'Guruhim', 'Hammasi'];
-  static const _timeLabels  = ['Kunlik', '7 kun', '30 kun', 'Barchasi'];
+  static const _timeLabels = ['Kunlik', '7 kun', '30 kun', 'Barchasi'];
 
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(leaderboardProvider);
-    final me    = ref.watch(authProvider).user;
+    final me = ref.watch(authProvider).user;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -42,7 +42,7 @@ class _StudentLeaderboardScreenState
                 error: (_, __) => _buildHeader(context, 'Mavsim', [], me),
                 data: (season) {
                   final entries = (season['entries'] as List?) ?? [];
-                  final name    = season['name']?.toString() ?? 'Mavsim';
+                  final name = season['name']?.toString() ?? 'Mavsim';
                   return _buildHeader(context, name, entries, me);
                 },
               ),
@@ -51,8 +51,7 @@ class _StudentLeaderboardScreenState
             // ── Filter pills ──────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
-                padding:
-                    const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: Column(
                   children: [
                     _PillToggle(
@@ -74,8 +73,7 @@ class _StudentLeaderboardScreenState
 
             // ── Ranked list ───────────────────────────────────────────────
             async.when(
-              loading: () =>
-                  const SliverToBoxAdapter(child: _Skeleton()),
+              loading: () => const SliverToBoxAdapter(child: _Skeleton()),
               error: (e, _) {
                 final msg = e.toString();
                 if (msg.contains('404') || msg.contains('No active')) {
@@ -84,8 +82,10 @@ class _StudentLeaderboardScreenState
                 return SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Text('Xatolik: $e',
-                        style: const TextStyle(color: IceColors.danger)),
+                    child: Text(
+                      'Xatolik: $e',
+                      style: const TextStyle(color: IceColors.danger),
+                    ),
                   ),
                 );
               },
@@ -110,12 +110,9 @@ class _StudentLeaderboardScreenState
                     ...entries.asMap().entries.map((e) {
                       final entry = e.value as Map;
                       final myName =
-                          '${me?.firstName ?? ''} ${me?.lastName ?? ''}'
-                              .trim();
-                      final isMe =
-                          entry['student_name'] == myName;
-                      return _RankRow(
-                          entry: entry, index: e.key, isMe: isMe);
+                          '${me?.firstName ?? ''} ${me?.lastName ?? ''}'.trim();
+                      final isMe = entry['student_name'] == myName;
+                      return _RankRow(entry: entry, index: e.key, isMe: isMe);
                     }),
                     const SizedBox(height: 100),
                   ]),
@@ -134,8 +131,8 @@ class _StudentLeaderboardScreenState
     List entries,
     IceUser? me,
   ) {
-    final top     = MediaQuery.paddingOf(context).top;
-    final top3    = entries.take(3).toList();
+    final top = MediaQuery.paddingOf(context).top;
+    final top3 = entries.take(3).toList();
     final hasTop3 = top3.length >= 3;
 
     return Container(
@@ -164,7 +161,9 @@ class _StudentLeaderboardScreenState
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 7),
+                  horizontal: 14,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: IceColors.lime,
                   borderRadius: BorderRadius.circular(30),
@@ -182,10 +181,7 @@ class _StudentLeaderboardScreenState
           ),
 
           // Podium
-          if (hasTop3) ...[
-            const SizedBox(height: 28),
-            _Podium(entries: top3),
-          ],
+          if (hasTop3) ...[const SizedBox(height: 28), _Podium(entries: top3)],
         ],
       ),
     );
@@ -222,8 +218,7 @@ class _PillToggle extends StatelessWidget {
               onTap: () => onChanged(e.key),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: EdgeInsets.symmetric(
-                    vertical: small ? 8 : 10),
+                padding: EdgeInsets.symmetric(vertical: small ? 8 : 10),
                 decoration: BoxDecoration(
                   color: active ? Colors.white : Colors.transparent,
                   borderRadius: BorderRadius.circular(26),
@@ -233,7 +228,7 @@ class _PillToggle extends StatelessWidget {
                             color: Color(0x14000000),
                             blurRadius: 6,
                             offset: Offset(0, 2),
-                          )
+                          ),
                         ]
                       : null,
                 ),
@@ -266,89 +261,91 @@ class _Podium extends StatelessWidget {
     final order = entries.length >= 3
         ? [entries[1], entries[0], entries[2]]
         : entries;
-    final ranks        = [2, 1, 3];
+    final ranks = [2, 1, 3];
     final borderColors = [
-      Colors.grey[400]!,   // silver
+      Colors.grey[400]!, // silver
       const Color(0xFFFFD700), // gold
       const Color(0xFFCD7F32), // bronze
     ];
-    final sizes    = [52.0, 64.0, 52.0];
-    final offsets  = [8.0, 0.0, 8.0];
+    final sizes = [52.0, 64.0, 52.0];
+    final offsets = [8.0, 0.0, 8.0];
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(order.length, (i) {
-        final entry = order[i] as Map;
-        final name  = entry['student_name']?.toString() ?? '';
-        final score = (entry['score'] as num?)?.toStringAsFixed(1) ?? '0';
-        final inits = _initials(name);
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(order.length, (i) {
+            final entry = order[i] as Map;
+            final name = entry['student_name']?.toString() ?? '';
+            final score = (entry['score'] as num?)?.toStringAsFixed(1) ?? '0';
+            final inits = _initials(name);
 
-        return Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: EdgeInsets.only(bottom: offsets[i]),
-                child: Column(
-                  children: [
-                    Container(
-                      width: sizes[i],
-                      height: sizes[i],
-                      decoration: BoxDecoration(
-                        color: IceColors.lime,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: borderColors[i], width: 3),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        inits,
-                        style: TextStyle(
-                          color: IceColors.navy,
-                          fontSize: sizes[i] * 0.28,
-                          fontWeight: FontWeight.w900,
+            return Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(bottom: offsets[i]),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: sizes[i],
+                          height: sizes[i],
+                          decoration: BoxDecoration(
+                            color: IceColors.lime,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: borderColors[i],
+                              width: 3,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            inits,
+                            style: TextStyle(
+                              color: IceColors.navy,
+                              fontSize: sizes[i] * 0.28,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 6),
+                        Text(
+                          name.split(' ').first,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$score%',
+                          style: TextStyle(
+                            color: borderColors[i],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '#${ranks[i]}',
+                          style: TextStyle(
+                            color: borderColors[i],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      name.split(' ').first,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$score%',
-                      style: TextStyle(
-                        color: borderColors[i],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '#${ranks[i]}',
-                      style: TextStyle(
-                        color: borderColors[i],
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
-      }),
-    )
+            );
+          }),
+        )
         .animate()
         .slideY(begin: 0.15, duration: 500.ms, curve: Curves.easeOut)
         .fadeIn(duration: 400.ms);
@@ -370,104 +367,106 @@ class _RankRow extends StatelessWidget {
   final Map entry;
   final int index;
   final bool isMe;
-  const _RankRow(
-      {required this.entry, required this.index, required this.isMe});
+  const _RankRow({
+    required this.entry,
+    required this.index,
+    required this.isMe,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final rank  = entry['rank'] ?? (index + 1);
-    final name  = entry['student_name']?.toString() ?? '';
+    final rank = entry['rank'] ?? (index + 1);
+    final name = entry['student_name']?.toString() ?? '';
     final score = (entry['score'] as num?)?.toStringAsFixed(1) ?? '0';
     final inits = _initials(name);
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: isMe
-            ? IceColors.lime.withAlpha(60)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isMe
-              ? IceColors.lime
-              : const Color(0xFFEEEEEE),
-          width: isMe ? 1.5 : 1,
-        ),
-      ),
-      child: Row(children: [
-        SizedBox(
-          width: 32,
-          child: Text(
-            '$rank',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              color: rank <= 3
-                  ? IceColors.warning
-                  : IceColors.muted,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: isMe ? IceColors.lime.withAlpha(60) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isMe ? IceColors.lime : const Color(0xFFEEEEEE),
+              width: isMe ? 1.5 : 1,
             ),
           ),
-        ),
-        // Lime avatar
-        Container(
-          width: 36,
-          height: 36,
-          decoration: const BoxDecoration(
-            color: IceColors.lime,
-            shape: BoxShape.circle,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 32,
+                child: Text(
+                  '$rank',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: rank <= 3 ? IceColors.warning : IceColors.muted,
+                  ),
+                ),
+              ),
+              // Lime avatar
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: IceColors.lime,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  inits,
+                  style: const TextStyle(
+                    color: IceColors.navy,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: isMe ? IceColors.navy : IceColors.text,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (isMe) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: IceColors.navy,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: const Text(
+                    'Siz',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                '$score%',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: IceColors.navy,
+                ),
+              ),
+            ],
           ),
-          alignment: Alignment.center,
-          child: Text(
-            inits,
-            style: const TextStyle(
-              color: IceColors.navy,
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            name,
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-              color: isMe ? IceColors.navy : IceColors.text,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        if (isMe) ...[
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: IceColors.navy,
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: const Text(
-              'Siz',
-              style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-        Text(
-          '$score%',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            color: IceColors.navy,
-          ),
-        ),
-      ]),
-    )
+        )
         .animate(delay: Duration(milliseconds: 30 * index))
         .fadeIn(duration: 250.ms)
         .slideX(begin: 0.05, duration: 260.ms);
@@ -490,23 +489,26 @@ class _Skeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Shimmer.fromColors(
-        baseColor: Colors.grey[200]!,
-        highlightColor: Colors.grey[50]!,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(children: [
-            for (int i = 0; i < 7; i++) ...[
-              Container(
-                height: 56,
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16)),
+    baseColor: Colors.grey[200]!,
+    highlightColor: Colors.grey[50]!,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          for (int i = 0; i < 7; i++) ...[
+            Container(
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(height: 8),
-            ],
-          ]),
-        ),
-      );
+            ),
+            const SizedBox(height: 8),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 // ── Empty ──────────────────────────────────────────────────────────────────────
@@ -515,22 +517,26 @@ class _Empty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.all(40),
-        child: Column(children: [
-          Icon(Icons.emoji_events_outlined,
-              size: 56, color: IceColors.muted),
-          SizedBox(height: 16),
-          Text('Hozircha reyting yo\'q',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: IceColors.muted)),
-          SizedBox(height: 8),
-          Text(
-            'Faol mavsum boshlanganda reyting ko\'rinadi.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: IceColors.muted),
+    padding: EdgeInsets.all(40),
+    child: Column(
+      children: [
+        Icon(Icons.emoji_events_outlined, size: 56, color: IceColors.muted),
+        SizedBox(height: 16),
+        Text(
+          'Hozircha reyting yo\'q',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: IceColors.muted,
           ),
-        ]),
-      );
+        ),
+        SizedBox(height: 8),
+        Text(
+          'Faol mavsum boshlanganda reyting ko\'rinadi.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: IceColors.muted),
+        ),
+      ],
+    ),
+  );
 }

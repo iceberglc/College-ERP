@@ -11,7 +11,9 @@ String fmtDate(String? iso) {
 
 String fmtPercent(dynamic value) {
   if (value == null) return '—';
-  final d = (value is num) ? value.toDouble() : double.tryParse(value.toString());
+  final d = (value is num)
+      ? value.toDouble()
+      : double.tryParse(value.toString());
   if (d == null) return '—';
   return '${d.toStringAsFixed(1)}%';
 }

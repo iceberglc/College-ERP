@@ -97,6 +97,7 @@ urlpatterns = [
     path("staff/vocabulary/<int:pk>/", views.StaffVocabularyDetailView.as_view(), name="api_staff_vocabulary_detail"),
     path("staff/vocabulary/<int:pk>/words/", views.StaffVocabularyWordView.as_view(), name="api_staff_vocabulary_words"),
     path("staff/vocabulary/<int:pk>/words/<int:word_pk>/", views.StaffVocabularyWordView.as_view(), name="api_staff_vocabulary_word_delete"),
+    path("staff/payments/", views.StaffPaymentBoardView.as_view(), name="api_staff_payments"),
 
     # ── Leaderboard ───────────────────────────────────────────────────────────
     path("leaderboard/", views.LeaderboardView.as_view(), name="api_leaderboard"),

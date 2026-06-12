@@ -8,11 +8,7 @@ class StudentShell extends StatelessWidget {
   const StudentShell({super.key, required this.navigationShell});
 
   static const _items = [
-    IceNavItem(
-      icon: Icons.home_rounded,
-      label: 'Home',
-      path: '/student/home',
-    ),
+    IceNavItem(icon: Icons.home_rounded, label: 'Home', path: '/student/home'),
     IceNavItem(
       icon: Icons.menu_book_rounded,
       label: 'Learn',
@@ -32,8 +28,8 @@ class StudentShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AdaptiveLayout(
-        navigationShell: navigationShell,
-        items: _items,
-        sections: studentSidebarSections,
-      );
+    navigationShell: navigationShell,
+    items: _items,
+    sections: studentSidebarSections,
+  );
 }

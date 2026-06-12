@@ -45,12 +45,12 @@ class IceSidebar extends ConsumerWidget {
     final role = user == null
         ? ''
         : user.isSuperAdmin
-            ? 'Super Admin'
-            : user.isAdmin
-                ? 'Admin'
-                : user.isStaff
-                    ? 'Teacher'
-                    : 'Student';
+        ? 'Super Admin'
+        : user.isAdmin
+        ? 'Admin'
+        : user.isStaff
+        ? 'Teacher'
+        : 'Student';
     final initials = _initials(name);
 
     return Container(
@@ -182,8 +182,11 @@ class IceSidebar extends ConsumerWidget {
   }
 
   String _initials(String name) {
-    final parts =
-        name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) {
       return parts.first.substring(0, 1).toUpperCase();
@@ -195,13 +198,16 @@ class IceSidebar extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Sign out?',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Sign out?',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
         content: const Text('You will need to log in again.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: IceColors.navyDeep),
             onPressed: () => Navigator.pop(context, true),
@@ -251,8 +257,8 @@ class _SidebarLinkState extends State<_SidebarLink> {
             color: active
                 ? accent.withAlpha(26)
                 : _hover
-                    ? IceColors.surface2
-                    : Colors.transparent,
+                ? IceColors.surface2
+                : Colors.transparent,
             borderRadius: const BorderRadius.only(
               topRight: Radius.circular(8),
               bottomRight: Radius.circular(8),
@@ -273,8 +279,7 @@ class _SidebarLinkState extends State<_SidebarLink> {
                   size: 16,
                   color: active
                       ? accent
-                      : IceColors.muted
-                          .withAlpha(_hover ? 255 : 190),
+                      : IceColors.muted.withAlpha(_hover ? 255 : 190),
                 ),
               ),
               const SizedBox(width: 12),
@@ -304,8 +309,11 @@ class _SidebarLinkState extends State<_SidebarLink> {
 class DesktopPageShell extends StatelessWidget {
   final List<SidebarSection> sections;
   final Widget child;
-  const DesktopPageShell(
-      {super.key, required this.sections, required this.child});
+  const DesktopPageShell({
+    super.key,
+    required this.sections,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {

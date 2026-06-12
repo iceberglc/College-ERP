@@ -33,8 +33,10 @@ class StudentProgressScreen extends ConsumerWidget {
               error: (e, _) => SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Text('Error: $e',
-                      style: const TextStyle(color: IceColors.danger)),
+                  child: Text(
+                    'Error: $e',
+                    style: const TextStyle(color: IceColors.danger),
+                  ),
                 ),
               ),
               data: (d) => SliverToBoxAdapter(child: _ProgressContent(data: d)),
@@ -65,35 +67,39 @@ class _ProgressContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Summary KPI row
-          Row(children: [
-            Expanded(
+          Row(
+            children: [
+              Expanded(
                 child: _KpiTile(
-                    label: 'Attendance',
-                    value: attPct != null
-                        ? '${(attPct as num).round()}%'
-                        : '—',
-                    color: IceColors.navyDeep,
-                    icon: Icons.bar_chart_rounded,
-                    delay: 0)),
-            const SizedBox(width: 10),
-            Expanded(
+                  label: 'Attendance',
+                  value: attPct != null ? '${(attPct as num).round()}%' : '—',
+                  color: IceColors.navyDeep,
+                  icon: Icons.bar_chart_rounded,
+                  delay: 0,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
                 child: _KpiTile(
-                    label: 'Vocab Days',
-                    value: '$completedDays',
-                    color: IceColors.success,
-                    icon: Icons.menu_book_rounded,
-                    delay: 60)),
-            const SizedBox(width: 10),
-            Expanded(
+                  label: 'Vocab Days',
+                  value: '$completedDays',
+                  color: IceColors.success,
+                  icon: Icons.menu_book_rounded,
+                  delay: 60,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
                 child: _KpiTile(
-                    label: 'Avg Quiz',
-                    value: avgQuiz != null
-                        ? '${(avgQuiz as num).round()}%'
-                        : '—',
-                    color: IceColors.warning,
-                    icon: Icons.quiz_rounded,
-                    delay: 120)),
-          ]),
+                  label: 'Avg Quiz',
+                  value: avgQuiz != null ? '${(avgQuiz as num).round()}%' : '—',
+                  color: IceColors.warning,
+                  icon: Icons.quiz_rounded,
+                  delay: 120,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 24),
 
           // 30-day activity chart
@@ -109,7 +115,9 @@ class _ProgressContent extends StatelessWidget {
             _sectionLabel('Quiz Score Trend'),
             const SizedBox(height: 12),
             _LineChartCard(
-              spots: quizScores.asMap().entries
+              spots: quizScores
+                  .asMap()
+                  .entries
                   .map((e) => FlSpot(e.key.toDouble(), e.value.toDouble()))
                   .toList(),
               color: IceColors.warning,
@@ -156,35 +164,40 @@ class _KpiTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IceColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: color.withAlpha(20),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 16),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: IceColors.border),
           ),
-          const SizedBox(height: 8),
-          Text(value,
-              style: TextStyle(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: color.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 16),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
-                  color: color)),
-          Text(label,
-              style: const TextStyle(fontSize: 10, color: IceColors.muted)),
-        ],
-      ),
-    )
+                  color: color,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 10, color: IceColors.muted),
+              ),
+            ],
+          ),
+        )
         .animate(delay: Duration(milliseconds: delay))
         .fadeIn(duration: 280.ms)
         .scale(begin: const Offset(0.94, 0.94), duration: 280.ms);
@@ -192,12 +205,13 @@ class _KpiTile extends StatelessWidget {
 }
 
 Widget _sectionLabel(String text) => Text(
-      text,
-      style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w800,
-          color: IceColors.text),
-    );
+  text,
+  style: const TextStyle(
+    fontSize: 15,
+    fontWeight: FontWeight.w800,
+    color: IceColors.text,
+  ),
+);
 
 class _ActivityBarChart extends StatelessWidget {
   final List<num> data;
@@ -205,7 +219,10 @@ class _ActivityBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxVal = data.fold<double>(1, (m, v) => v.toDouble() > m ? v.toDouble() : m);
+    final maxVal = data.fold<double>(
+      1,
+      (m, v) => v.toDouble() > m ? v.toDouble() : m,
+    );
     return Container(
       height: 120,
       padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
@@ -220,9 +237,15 @@ class _ActivityBarChart extends StatelessWidget {
           barTouchData: BarTouchData(enabled: false),
           titlesData: FlTitlesData(
             show: true,
-            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -230,8 +253,15 @@ class _ActivityBarChart extends StatelessWidget {
                   final i = v.toInt();
                   if (i == 0 || i == data.length - 1 || i == data.length ~/ 2) {
                     return Text(
-                      i == 0 ? '30d' : i == data.length - 1 ? 'Today' : '',
-                      style: const TextStyle(fontSize: 9, color: IceColors.muted),
+                      i == 0
+                          ? '30d'
+                          : i == data.length - 1
+                          ? 'Today'
+                          : '',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: IceColors.muted,
+                      ),
                     );
                   }
                   return const SizedBox.shrink();
@@ -243,29 +273,29 @@ class _ActivityBarChart extends StatelessWidget {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
-            getDrawingHorizontalLine: (_) => FlLine(
-                color: IceColors.border.withAlpha(80), strokeWidth: 0.5),
+            getDrawingHorizontalLine: (_) =>
+                FlLine(color: IceColors.border.withAlpha(80), strokeWidth: 0.5),
           ),
           borderData: FlBorderData(show: false),
           barGroups: data.asMap().entries.map((e) {
             final val = e.value.toDouble();
-            return BarChartGroupData(x: e.key, barRods: [
-              BarChartRodData(
-                toY: val,
-                color: val > 0
-                    ? IceColors.navyDeep.withAlpha(180)
-                    : IceColors.border,
-                width: 6,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ]);
+            return BarChartGroupData(
+              x: e.key,
+              barRods: [
+                BarChartRodData(
+                  toY: val,
+                  color: val > 0
+                      ? IceColors.navyDeep.withAlpha(180)
+                      : IceColors.border,
+                  width: 6,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ],
+            );
           }).toList(),
         ),
       ),
-    )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.1, duration: 400.ms);
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, duration: 400.ms);
   }
 }
 
@@ -299,13 +329,16 @@ class _LineChartCard extends StatelessWidget {
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
               getTooltipItems: (spots) => spots
-                  .map((s) => LineTooltipItem(
-                        '${s.y.round()}%',
-                        const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12),
-                      ))
+                  .map(
+                    (s) => LineTooltipItem(
+                      '${s.y.round()}%',
+                      const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ),
@@ -314,23 +347,27 @@ class _LineChartCard extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 32,
-                getTitlesWidget: (v, _) => Text('${v.round()}',
-                    style:
-                        const TextStyle(fontSize: 9, color: IceColors.muted)),
+                getTitlesWidget: (v, _) => Text(
+                  '${v.round()}',
+                  style: const TextStyle(fontSize: 9, color: IceColors.muted),
+                ),
               ),
             ),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            bottomTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
-            getDrawingHorizontalLine: (_) => FlLine(
-                color: IceColors.border.withAlpha(80), strokeWidth: 0.5),
+            getDrawingHorizontalLine: (_) =>
+                FlLine(color: IceColors.border.withAlpha(80), strokeWidth: 0.5),
           ),
           borderData: FlBorderData(show: false),
           lineBarsData: [
@@ -343,10 +380,11 @@ class _LineChartCard extends StatelessWidget {
               dotData: FlDotData(
                 show: spots.length <= 10,
                 getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
-                    radius: 3,
-                    color: color,
-                    strokeWidth: 1.5,
-                    strokeColor: Colors.white),
+                  radius: 3,
+                  color: color,
+                  strokeWidth: 1.5,
+                  strokeColor: Colors.white,
+                ),
               ),
               belowBarData: BarAreaData(
                 show: true,
@@ -360,10 +398,7 @@ class _LineChartCard extends StatelessWidget {
           ],
         ),
       ),
-    )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.1, duration: 400.ms);
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, duration: 400.ms);
   }
 }
 
@@ -384,60 +419,69 @@ class _ExamGroupCard extends StatelessWidget {
         : scores.fold<double>(0, (s, v) => s + v.toDouble()) / scores.length;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IceColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: IceColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(groupName,
-                    style: const TextStyle(
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      groupName,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
-                        color: IceColors.text)),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: IceColors.info.withAlpha(20),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text('Avg ${avg.round()}%',
-                    style: const TextStyle(
+                        color: IceColors.text,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: IceColors.info.withAlpha(20),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Avg ${avg.round()}%',
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: IceColors.info)),
+                        color: IceColors.info,
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              if (scores.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 80,
+                  child: _LineChartCard(
+                    spots: scores
+                        .asMap()
+                        .entries
+                        .map(
+                          (e) => FlSpot(e.key.toDouble(), e.value.toDouble()),
+                        )
+                        .toList(),
+                    color: IceColors.navyDeep,
+                    maxY: 100,
+                    label: '',
+                  ),
+                ),
+              ],
             ],
           ),
-          if (scores.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 80,
-              child: _LineChartCard(
-                spots: scores
-                    .asMap()
-                    .entries
-                    .map((e) =>
-                        FlSpot(e.key.toDouble(), e.value.toDouble()))
-                    .toList(),
-                color: IceColors.navyDeep,
-                maxY: 100,
-                label: '',
-              ),
-            ),
-          ],
-        ],
-      ),
-    )
+        )
         .animate(delay: Duration(milliseconds: 100 * index))
         .fadeIn(duration: 300.ms)
         .slideY(begin: 0.08, duration: 300.ms);
@@ -448,27 +492,34 @@ class _ProgressSkeleton extends StatelessWidget {
   const _ProgressSkeleton();
   @override
   Widget build(BuildContext context) => Shimmer.fromColors(
-        baseColor: Colors.grey[200]!,
-        highlightColor: Colors.grey[50]!,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(children: [
-            Row(children: [
+    baseColor: Colors.grey[200]!,
+    highlightColor: Colors.grey[50]!,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Row(
+            children: [
               Expanded(child: _box(80)),
               const SizedBox(width: 10),
               Expanded(child: _box(80)),
               const SizedBox(width: 10),
               Expanded(child: _box(80)),
-            ]),
-            const SizedBox(height: 20),
-            _box(120),
-            const SizedBox(height: 16),
-            _box(160),
-          ]),
-        ),
-      );
+            ],
+          ),
+          const SizedBox(height: 20),
+          _box(120),
+          const SizedBox(height: 16),
+          _box(160),
+        ],
+      ),
+    ),
+  );
   Widget _box(double h) => Container(
-      height: h,
-      decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(16)));
+    height: h,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+    ),
+  );
 }

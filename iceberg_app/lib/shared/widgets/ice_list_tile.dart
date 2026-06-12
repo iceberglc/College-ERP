@@ -34,13 +34,23 @@ class IceListTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
                   if (subtitle != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Text(subtitle!,
-                          style: const TextStyle(fontSize: 12, color: IceColors.muted)),
+                      child: Text(
+                        subtitle!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: IceColors.muted,
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -59,7 +69,7 @@ class IceBadge extends StatelessWidget {
 
   const IceBadge({super.key, required this.label, required this.color});
 
-  static const pending  = IceBadge(label: 'Pending',  color: IceColors.warning);
+  static const pending = IceBadge(label: 'Pending', color: IceColors.warning);
   static const approved = IceBadge(label: 'Approved', color: IceColors.success);
   static const rejected = IceBadge(label: 'Rejected', color: IceColors.danger);
 
@@ -71,8 +81,14 @@ class IceBadge extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label,
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
     );
   }
 }

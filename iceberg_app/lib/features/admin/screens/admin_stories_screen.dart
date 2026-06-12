@@ -39,7 +39,8 @@ class _AdminStoriesScreenState extends ConsumerState<AdminStoriesScreen> {
       }
       setState(() {
         _stories = List<Map<String, dynamic>>.from(
-            data is List ? data : (data['results'] ?? data));
+          data is List ? data : (data['results'] ?? data),
+        );
         _loading = false;
       });
     } catch (e) {
@@ -53,7 +54,8 @@ class _AdminStoriesScreenState extends ConsumerState<AdminStoriesScreen> {
       final raw = res.data;
       setState(() {
         _groups = List<Map<String, dynamic>>.from(
-            raw is List ? raw : (raw['results'] ?? []));
+          raw is List ? raw : (raw['results'] ?? []),
+        );
       });
     } catch (_) {}
   }
@@ -64,22 +66,30 @@ class _AdminStoriesScreenState extends ConsumerState<AdminStoriesScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: IceColors.surface,
-        title: const Text('Delete Story',
-            style: TextStyle(fontWeight: FontWeight.w800)),
-        content: const Text('This story will be permanently removed.',
-            style: TextStyle(color: IceColors.muted)),
+        title: const Text(
+          'Delete Story',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        content: const Text(
+          'This story will be permanently removed.',
+          style: TextStyle(color: IceColors.muted),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel',
-                  style: TextStyle(color: IceColors.muted))),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: IceColors.muted),
+            ),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: IceColors.danger,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Delete'),
           ),
@@ -113,9 +123,10 @@ class _AdminStoriesScreenState extends ConsumerState<AdminStoriesScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx2, setSheetState) => Container(
           margin: EdgeInsets.only(
-              bottom: MediaQuery.viewInsetsOf(ctx).bottom + 16,
-              left: 16,
-              right: 16),
+            bottom: MediaQuery.viewInsetsOf(ctx).bottom + 16,
+            left: 16,
+            right: 16,
+          ),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: IceColors.surface,
@@ -132,16 +143,20 @@ class _AdminStoriesScreenState extends ConsumerState<AdminStoriesScreen> {
                     width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                        color: IceColors.border,
-                        borderRadius: BorderRadius.circular(2)),
+                      color: IceColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Add Story',
-                    style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: IceColors.text)),
+                const Text(
+                  'Add Story',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: IceColors.text,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 _inputDeco(titleCtrl, 'Title'),
                 const SizedBox(height: 12),
@@ -153,19 +168,22 @@ class _AdminStoriesScreenState extends ConsumerState<AdminStoriesScreen> {
                 if (_groups.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int?>(
-                    value: selectedGroupId,
+                    initialValue: selectedGroupId,
                     decoration: _fieldDecoration('Target Group (optional)'),
                     borderRadius: BorderRadius.circular(12),
                     items: [
                       const DropdownMenuItem<int?>(
-                          value: null, child: Text('All')),
-                      ..._groups.map((g) => DropdownMenuItem<int?>(
-                            value: g['id'] as int?,
-                            child: Text(g['name']?.toString() ?? ''),
-                          )),
+                        value: null,
+                        child: Text('All'),
+                      ),
+                      ..._groups.map(
+                        (g) => DropdownMenuItem<int?>(
+                          value: g['id'] as int?,
+                          child: Text(g['name']?.toString() ?? ''),
+                        ),
+                      ),
                     ],
-                    onChanged: (v) =>
-                        setSheetState(() => selectedGroupId = v),
+                    onChanged: (v) => setSheetState(() => selectedGroupId = v),
                   ),
                 ],
                 const SizedBox(height: 16),
@@ -179,11 +197,15 @@ class _AdminStoriesScreenState extends ConsumerState<AdminStoriesScreen> {
                     };
                     try {
                       try {
-                        await ApiClient.instance.dio
-                            .post('/admin/stories/', data: data);
+                        await ApiClient.instance.dio.post(
+                          '/admin/stories/',
+                          data: data,
+                        );
                       } catch (_) {
-                        await ApiClient.instance.dio
-                            .post('/stories/', data: data);
+                        await ApiClient.instance.dio.post(
+                          '/stories/',
+                          data: data,
+                        );
                       }
                       if (ctx.mounted) Navigator.pop(ctx);
                       _loadStories();
@@ -194,10 +216,13 @@ class _AdminStoriesScreenState extends ConsumerState<AdminStoriesScreen> {
                     foregroundColor: IceColors.navy,
                     minimumSize: const Size(double.infinity, 48),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text('Publish Story',
-                      style: TextStyle(fontWeight: FontWeight.w700)),
+                  child: const Text(
+                    'Publish Story',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
                 const SizedBox(height: 8),
               ],
@@ -209,25 +234,25 @@ class _AdminStoriesScreenState extends ConsumerState<AdminStoriesScreen> {
   }
 
   InputDecoration _fieldDecoration(String label) => InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: IceColors.surface2,
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: IceColors.border)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: IceColors.border)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: IceColors.navyDeep, width: 1.5)),
-      );
+    labelText: label,
+    filled: true,
+    fillColor: IceColors.surface2,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: IceColors.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: IceColors.border),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: IceColors.navyDeep, width: 1.5),
+    ),
+  );
 
-  Widget _inputDeco(TextEditingController ctrl, String label) => TextField(
-        controller: ctrl,
-        decoration: _fieldDecoration(label),
-      );
+  Widget _inputDeco(TextEditingController ctrl, String label) =>
+      TextField(controller: ctrl, decoration: _fieldDecoration(label));
 
   @override
   Widget build(BuildContext context) {
@@ -259,33 +284,35 @@ class _AdminStoriesScreenState extends ConsumerState<AdminStoriesScreen> {
                     border: Border.all(color: IceColors.border),
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(Icons.auto_stories_rounded,
-                      color: IceColors.navyDeep, size: 22),
+                  child: const Icon(
+                    Icons.auto_stories_rounded,
+                    color: IceColors.navyDeep,
+                    size: 22,
+                  ),
                 ),
               ),
             ),
             if (_loading)
               const SliverToBoxAdapter(
-                  child: Center(
-                      child: Padding(
-                          padding: EdgeInsets.all(40),
-                          child: CircularProgressIndicator(
-                              color: IceColors.navyDeep))))
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: CircularProgressIndicator(color: IceColors.navyDeep),
+                  ),
+                ),
+              )
             else if (_stories.isEmpty)
               SliverToBoxAdapter(child: _buildEmpty())
             else
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (_, i) {
-                    if (i == _stories.length) return const SizedBox(height: 100);
-                    return _StoryCard(
-                      story: _stories[i],
-                      index: i,
-                      onDelete: () => _deleteStory(_stories[i]),
-                    );
-                  },
-                  childCount: _stories.length + 1,
-                ),
+                delegate: SliverChildBuilderDelegate((_, i) {
+                  if (i == _stories.length) return const SizedBox(height: 100);
+                  return _StoryCard(
+                    story: _stories[i],
+                    index: i,
+                    onDelete: () => _deleteStory(_stories[i]),
+                  );
+                }, childCount: _stories.length + 1),
               ),
           ],
         ),
@@ -301,8 +328,10 @@ class _AdminStoriesScreenState extends ConsumerState<AdminStoriesScreen> {
           children: [
             Icon(Icons.auto_stories_outlined, size: 48, color: IceColors.muted),
             SizedBox(height: 12),
-            Text('No stories yet',
-                style: TextStyle(color: IceColors.muted, fontSize: 15)),
+            Text(
+              'No stories yet',
+              style: TextStyle(color: IceColors.muted, fontSize: 15),
+            ),
           ],
         ),
       ),
@@ -314,75 +343,97 @@ class _StoryCard extends StatelessWidget {
   final Map<String, dynamic> story;
   final int index;
   final VoidCallback onDelete;
-  const _StoryCard(
-      {required this.story, required this.index, required this.onDelete});
+  const _StoryCard({
+    required this.story,
+    required this.index,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
     final title = story['title']?.toString() ?? 'Untitled';
     final content = story['content']?.toString() ?? '';
-    final date = story['created_at']?.toString().split('T').first ??
-        story['date']?.toString() ?? '';
+    final date =
+        story['created_at']?.toString().split('T').first ??
+        story['date']?.toString() ??
+        '';
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: IceColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IceColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: IceColors.navyDeep.withAlpha(12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.article_rounded,
-                color: IceColors.navyDeep, size: 20),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: IceColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: IceColors.border),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: IceColors.navyDeep.withAlpha(12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.article_rounded,
+                  color: IceColors.navyDeep,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
-                        color: IceColors.text)),
-                if (content.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(content,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 12, color: IceColors.muted)),
-                ],
-                if (date.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(date,
-                      style: const TextStyle(
-                          fontSize: 11, color: IceColors.muted)),
-                ],
-              ],
-            ),
+                        color: IceColors.text,
+                      ),
+                    ),
+                    if (content.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        content,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: IceColors.muted,
+                        ),
+                      ),
+                    ],
+                    if (date.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        date,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: IceColors.muted,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: onDelete,
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: IceColors.danger,
+                  size: 20,
+                ),
+                tooltip: 'Delete',
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline,
-                color: IceColors.danger, size: 20),
-            tooltip: 'Delete',
-            visualDensity: VisualDensity.compact,
-          ),
-        ],
-      ),
-    )
+        )
         .animate(delay: Duration(milliseconds: 60 + index * 30))
         .slideX(begin: 0.05, duration: 300.ms, curve: Curves.easeOut)
         .fadeIn(duration: 250.ms);

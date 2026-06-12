@@ -13,8 +13,7 @@ class AdminEnrollmentScreen extends ConsumerStatefulWidget {
       _AdminEnrollmentScreenState();
 }
 
-class _AdminEnrollmentScreenState
-    extends ConsumerState<AdminEnrollmentScreen> {
+class _AdminEnrollmentScreenState extends ConsumerState<AdminEnrollmentScreen> {
   String _studentSearch = '';
   String _groupSearch = '';
 
@@ -56,12 +55,19 @@ class _AdminEnrollmentScreenState
         ref.invalidate(adminGroupsManageProvider);
       }
     } catch (e) {
-      if (mounted) setState(() { _loading = false; _errorMsg = '$e'; });
-      messenger.showSnackBar(SnackBar(
-        content: Text('Failed: $e'),
-        backgroundColor: IceColors.danger,
-        behavior: SnackBarBehavior.floating,
-      ));
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _errorMsg = '$e';
+        });
+      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed: $e'),
+          backgroundColor: IceColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -98,12 +104,12 @@ class _AdminEnrollmentScreenState
                   const SizedBox(height: 8),
                   studentsAsync.when(
                     loading: () => const LinearProgressIndicator(),
-                    error: (e, _) => Text('$e',
-                        style:
-                            const TextStyle(color: IceColors.danger)),
+                    error: (e, _) => Text(
+                      '$e',
+                      style: const TextStyle(color: IceColors.danger),
+                    ),
                     data: (list) {
-                      final students =
-                          list.cast<Map<String, dynamic>>();
+                      final students = list.cast<Map<String, dynamic>>();
                       final filtered = _studentSearch.isEmpty
                           ? students
                           : students.where((s) {
@@ -111,8 +117,9 @@ class _AdminEnrollmentScreenState
                               final name =
                                   '${s['first_name'] ?? ''} ${s['last_name'] ?? ''}'
                                       .toLowerCase();
-                              final lid =
-                                  (s['login_id'] ?? '').toString().toLowerCase();
+                              final lid = (s['login_id'] ?? '')
+                                  .toString()
+                                  .toLowerCase();
                               return name.contains(q) || lid.contains(q);
                             }).toList();
                       return _PickerCard(
@@ -123,7 +130,8 @@ class _AdminEnrollmentScreenState
                         selected: _selectedStudent == null
                             ? null
                             : () {
-                                final fn = _selectedStudent!['first_name'] ?? '';
+                                final fn =
+                                    _selectedStudent!['first_name'] ?? '';
                                 final ln = _selectedStudent!['last_name'] ?? '';
                                 final lid = _selectedStudent!['login_id'] ?? '';
                                 return '${('$fn $ln').trim()} ($lid)';
@@ -150,12 +158,12 @@ class _AdminEnrollmentScreenState
                   const SizedBox(height: 8),
                   groupsAsync.when(
                     loading: () => const LinearProgressIndicator(),
-                    error: (e, _) => Text('$e',
-                        style:
-                            const TextStyle(color: IceColors.danger)),
+                    error: (e, _) => Text(
+                      '$e',
+                      style: const TextStyle(color: IceColors.danger),
+                    ),
                     data: (list) {
-                      final groups =
-                          list.cast<Map<String, dynamic>>();
+                      final groups = list.cast<Map<String, dynamic>>();
                       final filtered = _groupSearch.isEmpty
                           ? groups
                           : groups.where((g) {
@@ -203,7 +211,8 @@ class _AdminEnrollmentScreenState
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: (_selectedStudent != null &&
+                      onPressed:
+                          (_selectedStudent != null &&
                               _selectedGroup != null &&
                               !_loading)
                           ? _enroll
@@ -213,8 +222,10 @@ class _AdminEnrollmentScreenState
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white))
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : const Icon(Icons.person_add_rounded),
                       label: const Text('Enroll Student'),
                       style: FilledButton.styleFrom(
@@ -222,9 +233,12 @@ class _AdminEnrollmentScreenState
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         textStyle: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w700),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                   ),
@@ -244,12 +258,13 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        text,
-        style: const TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 14,
-            color: IceColors.text),
-      );
+    text,
+    style: const TextStyle(
+      fontWeight: FontWeight.w800,
+      fontSize: 14,
+      color: IceColors.text,
+    ),
+  );
 }
 
 class _PickerCard extends StatelessWidget {
@@ -283,25 +298,29 @@ class _PickerCard extends StatelessWidget {
         children: [
           if (selected != null)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: IceColors.navyDeep.withAlpha(12),
                 borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16)),
+                  top: Radius.circular(16),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle_rounded,
-                      color: IceColors.navyDeep, size: 16),
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: IceColors.navyDeep,
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       selected!,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                          color: IceColors.navyDeep),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: IceColors.navyDeep,
+                      ),
                     ),
                   ),
                 ],
@@ -313,10 +332,15 @@ class _PickerCard extends StatelessWidget {
               onChanged: onSearchChanged,
               decoration: InputDecoration(
                 hintText: searchHint,
-                prefixIcon: const Icon(Icons.search_rounded,
-                    color: IceColors.muted, size: 18),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: IceColors.muted,
+                  size: 18,
+                ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 isDense: true,
               ),
             ),
@@ -327,9 +351,10 @@ class _PickerCard extends StatelessWidget {
               child: items.isEmpty
                   ? const Padding(
                       padding: EdgeInsets.all(16),
-                      child: Text('No results',
-                          style:
-                              TextStyle(color: IceColors.muted, fontSize: 13)),
+                      child: Text(
+                        'No results',
+                        style: TextStyle(color: IceColors.muted, fontSize: 13),
+                      ),
                     )
                   : ListView.separated(
                       shrinkWrap: true,
@@ -340,12 +365,17 @@ class _PickerCard extends StatelessWidget {
                         onTap: () => onSelect(items[i]),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
-                          child: Text(itemLabel(items[i]),
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                  color: IceColors.text,
-                                  fontWeight: FontWeight.w500)),
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          child: Text(
+                            itemLabel(items[i]),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: IceColors.text,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -373,11 +403,14 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Enrollment Summary',
-              style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                  color: IceColors.navyDeep)),
+          const Text(
+            'Enrollment Summary',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: IceColors.navyDeep,
+            ),
+          ),
           const SizedBox(height: 10),
           _Row(
             icon: Icons.person_rounded,
@@ -413,22 +446,27 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 14, color: IceColors.navyDeep),
-          const SizedBox(width: 8),
-          Text('$label: ',
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: IceColors.text)),
-          Expanded(
-            child: Text(value,
-                style: const TextStyle(fontSize: 12, color: IceColors.muted),
-                overflow: TextOverflow.ellipsis),
-          ),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(icon, size: 14, color: IceColors.navyDeep),
+      const SizedBox(width: 8),
+      Text(
+        '$label: ',
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: IceColors.text,
+        ),
+      ),
+      Expanded(
+        child: Text(
+          value,
+          style: const TextStyle(fontSize: 12, color: IceColors.muted),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ],
+  );
 }
 
 class _Banner extends StatelessWidget {
@@ -438,35 +476,36 @@ class _Banner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: (isError ? IceColors.danger : IceColors.success).withAlpha(18),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: (isError ? IceColors.danger : IceColors.success)
-                  .withAlpha(60)),
+    margin: const EdgeInsets.only(bottom: 16),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: (isError ? IceColors.danger : IceColors.success).withAlpha(18),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: (isError ? IceColors.danger : IceColors.success).withAlpha(60),
+      ),
+    ),
+    child: Row(
+      children: [
+        Icon(
+          isError
+              ? Icons.error_outline_rounded
+              : Icons.check_circle_outline_rounded,
+          size: 16,
+          color: isError ? IceColors.danger : IceColors.success,
         ),
-        child: Row(
-          children: [
-            Icon(
-              isError
-                  ? Icons.error_outline_rounded
-                  : Icons.check_circle_outline_rounded,
-              size: 16,
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            message,
+            style: TextStyle(
+              fontSize: 13,
               color: isError ? IceColors.danger : IceColors.success,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                    fontSize: 13,
-                    color: isError ? IceColors.danger : IceColors.success,
-                    fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }

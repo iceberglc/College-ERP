@@ -26,9 +26,7 @@ class StudentHomeScreen extends ConsumerWidget {
           physics: const BouncingScrollPhysics(),
           slivers: [
             // ── Header ───────────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: _buildHeader(context, user, initials),
-            ),
+            SliverToBoxAdapter(child: _buildHeader(context, user, initials)),
 
             // ── Content ──────────────────────────────────────────────────
             dash.when(
@@ -49,8 +47,7 @@ class StudentHomeScreen extends ConsumerWidget {
     return '$f$l'.isNotEmpty ? '$f$l' : '?';
   }
 
-  Widget _buildHeader(
-      BuildContext context, IceUser? user, String initials) {
+  Widget _buildHeader(BuildContext context, IceUser? user, String initials) {
     final top = MediaQuery.paddingOf(context).top;
     return Padding(
       padding: EdgeInsets.fromLTRB(20, top + 20, 20, 20),
@@ -70,40 +67,43 @@ class StudentHomeScreen extends ConsumerWidget {
                 ).animate().fadeIn(duration: 400.ms),
                 const SizedBox(height: 4),
                 Text(
-                  user?.firstName.isNotEmpty == true
-                      ? user!.firstName
-                      : 'Talaba',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: IceColors.navy,
-                  ),
-                )
+                      user?.firstName.isNotEmpty == true
+                          ? user!.firstName
+                          : 'Talaba',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: IceColors.navy,
+                      ),
+                    )
                     .animate(delay: 80.ms)
-                    .slideX(begin: -0.1, duration: 400.ms,
-                        curve: Curves.easeOut)
+                    .slideX(
+                      begin: -0.1,
+                      duration: 400.ms,
+                      curve: Curves.easeOut,
+                    )
                     .fadeIn(duration: 300.ms),
               ],
             ),
           ),
           // Lime avatar circle
           Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: IceColors.lime,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initials,
-              style: const TextStyle(
-                color: IceColors.navy,
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          )
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: IceColors.lime,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    color: IceColors.navy,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              )
               .animate(delay: 200.ms)
               .scale(duration: 400.ms, curve: Curves.elasticOut),
         ],
@@ -112,16 +112,15 @@ class StudentHomeScreen extends ConsumerWidget {
   }
 
   SliverList _buildContent(BuildContext context, Map<String, dynamic> data) {
-    final att     = data['attendance_percentage'];
-    final total   = data['total_subjects'] ?? 0;
-    final avg     = data['average_score'];
-    final groups  = data['enrolled_groups'] ?? '—';
+    final att = data['attendance_percentage'];
+    final total = data['total_subjects'] ?? 0;
+    final avg = data['average_score'];
+    final groups = data['enrolled_groups'] ?? '—';
     final notices = (data['notices'] as List?) ?? [];
     final stories = (data['stories'] as List?) ?? [];
 
     return SliverList(
       delegate: SliverChildListDelegate([
-
         // ── Stories ──────────────────────────────────────────────────────
         if (stories.isNotEmpty) _StoriesRow(stories: stories),
 
@@ -191,7 +190,8 @@ class StudentHomeScreen extends ConsumerWidget {
           const _SectionHeader(title: 'Bildirishnomalar', actionLabel: ''),
           const SizedBox(height: 8),
           ...notices.asMap().entries.map(
-              (e) => _NoticeCard(notice: e.value, index: e.key)),
+            (e) => _NoticeCard(notice: e.value, index: e.key),
+          ),
         ],
 
         const SizedBox(height: 100),
@@ -205,8 +205,8 @@ class StudentHomeScreen extends ConsumerWidget {
     return d >= 75
         ? IceColors.success
         : d >= 60
-            ? IceColors.warning
-            : IceColors.danger;
+        ? IceColors.warning
+        : IceColors.danger;
   }
 }
 
@@ -264,45 +264,45 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFEEEEEE), width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: color.withAlpha(22),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 18),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFEEEEEE), width: 1.5),
           ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: color,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: color.withAlpha(22),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: IceColors.muted,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: IceColors.muted,
-            ),
-          ),
-        ],
-      ),
-    )
+        )
         .animate(delay: Duration(milliseconds: 300 + delay))
         .slideY(begin: 0.15, duration: 400.ms, curve: Curves.easeOut)
         .fadeIn(duration: 350.ms);
@@ -318,50 +318,57 @@ class _NoticeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFEEEEEE), width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: IceColors.info.withAlpha(20),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.campaign_outlined,
-                color: IceColors.info, size: 18),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFEEEEEE), width: 1.5),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  notice['title']?.toString() ?? '',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w700, fontSize: 14,
-                      color: IceColors.navy),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: IceColors.info.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                if (notice['message'] != null)
-                  Text(
-                    notice['message'].toString(),
-                    style: const TextStyle(
-                        fontSize: 12, color: IceColors.muted),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
+                child: const Icon(
+                  Icons.campaign_outlined,
+                  color: IceColors.info,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      notice['title']?.toString() ?? '',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: IceColors.navy,
+                      ),
+                    ),
+                    if (notice['message'] != null)
+                      Text(
+                        notice['message'].toString(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: IceColors.muted,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    )
+        )
         .animate(delay: Duration(milliseconds: 400 + index * 80))
         .slideX(begin: 0.08, duration: 350.ms, curve: Curves.easeOut)
         .fadeIn(duration: 300.ms);
@@ -390,43 +397,45 @@ class _StoriesRow extends StatelessWidget {
               final s = stories[i] as Map;
               return GestureDetector(
                 onTap: () => _showStory(context, s),
-                child: Container(
-                  width: 68,
-                  margin: const EdgeInsets.only(right: 12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: const BoxDecoration(
-                          color: IceColors.lime,
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(Icons.campaign_rounded,
-                            color: IceColors.navy, size: 24),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        s['title']?.toString() ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: IceColors.navy,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-                    .animate(delay: Duration(milliseconds: 50 * i))
-                    .fadeIn(duration: 250.ms)
-                    .scale(
-                        begin: const Offset(0.9, 0.9),
-                        duration: 250.ms),
+                child:
+                    Container(
+                          width: 68,
+                          margin: const EdgeInsets.only(right: 12),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: const BoxDecoration(
+                                  color: IceColors.lime,
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.campaign_rounded,
+                                  color: IceColors.navy,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                s['title']?.toString() ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: IceColors.navy,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        .animate(delay: Duration(milliseconds: 50 * i))
+                        .fadeIn(duration: 250.ms)
+                        .scale(begin: const Offset(0.9, 0.9), duration: 250.ms),
               );
             },
           ),
@@ -441,8 +450,7 @@ class _StoriesRow extends StatelessWidget {
       context: context,
       builder: (_) => Dialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -458,8 +466,11 @@ class _StoriesRow extends StatelessWidget {
                       color: IceColors.lime,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.campaign_rounded,
-                        color: IceColors.navy, size: 20),
+                    child: const Icon(
+                      Icons.campaign_rounded,
+                      color: IceColors.navy,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -473,8 +484,10 @@ class _StoriesRow extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: IceColors.muted),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: IceColors.muted,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -483,9 +496,10 @@ class _StoriesRow extends StatelessWidget {
               Text(
                 story['content']?.toString() ?? '',
                 style: const TextStyle(
-                    fontSize: 14,
-                    color: IceColors.navy,
-                    height: 1.5),
+                  fontSize: 14,
+                  color: IceColors.navy,
+                  height: 1.5,
+                ),
               ),
               if ((story['author_name'] ?? '').toString().isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -512,34 +526,40 @@ class _Skeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Shimmer.fromColors(
-        baseColor: Colors.grey[200]!,
-        highlightColor: Colors.grey[50]!,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(children: [
-            const SizedBox(height: 8),
-            Row(children: [
+    baseColor: Colors.grey[200]!,
+    highlightColor: Colors.grey[50]!,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          Row(
+            children: [
               Expanded(child: _box(110)),
               const SizedBox(width: 10),
               Expanded(child: _box(110)),
-            ]),
-            const SizedBox(height: 10),
-            Row(children: [
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
               Expanded(child: _box(110)),
               const SizedBox(width: 10),
               Expanded(child: _box(110)),
-            ]),
-          ]),
-        ),
-      );
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _box(double h) => Container(
-        height: h,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
-      );
+    height: h,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+    ),
+  );
 }
 
 // ── Error card ─────────────────────────────────────────────────────────────────
@@ -549,8 +569,10 @@ class _ErrorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text('Xatolik: $message',
-            style: const TextStyle(color: IceColors.danger)),
-      );
+    padding: const EdgeInsets.all(24),
+    child: Text(
+      'Xatolik: $message',
+      style: const TextStyle(color: IceColors.danger),
+    ),
+  );
 }

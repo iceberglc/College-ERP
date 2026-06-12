@@ -39,7 +39,8 @@ class _AdminNotifyScreenState extends ConsumerState<AdminNotifyScreen> {
       final raw = res.data;
       setState(() {
         _groups = List<Map<String, dynamic>>.from(
-            raw is List ? raw : (raw['results'] ?? []));
+          raw is List ? raw : (raw['results'] ?? []),
+        );
       });
     } catch (_) {}
   }
@@ -60,7 +61,10 @@ class _AdminNotifyScreenState extends ConsumerState<AdminNotifyScreen> {
         'target': _target,
         if (_selectedGroupId != null) 'group': _selectedGroupId,
       };
-      await ApiClient.instance.dio.post('/admin/send-notification/', data: data);
+      await ApiClient.instance.dio.post(
+        '/admin/send-notification/',
+        data: data,
+      );
       if (mounted) {
         _titleCtrl.clear();
         _bodyCtrl.clear();
@@ -71,16 +75,18 @@ class _AdminNotifyScreenState extends ConsumerState<AdminNotifyScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Row(children: [
-              Icon(Icons.check_circle_rounded,
-                  color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('Notification sent successfully'),
-            ]),
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('Notification sent successfully'),
+              ],
+            ),
             backgroundColor: IceColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -93,7 +99,8 @@ class _AdminNotifyScreenState extends ConsumerState<AdminNotifyScreen> {
             backgroundColor: IceColors.danger,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -120,8 +127,11 @@ class _AdminNotifyScreenState extends ConsumerState<AdminNotifyScreen> {
                   border: Border.all(color: IceColors.border),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.notifications_active_rounded,
-                    color: IceColors.navyDeep, size: 22),
+                child: const Icon(
+                  Icons.notifications_active_rounded,
+                  color: IceColors.navyDeep,
+                  size: 22,
+                ),
               ),
             ),
           ),
@@ -161,19 +171,22 @@ class _AdminNotifyScreenState extends ConsumerState<AdminNotifyScreen> {
                     _sectionLabel('GROUP (OPTIONAL)'),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<int?>(
-                      value: _selectedGroupId,
+                      initialValue: _selectedGroupId,
                       decoration: _inputDeco('Select group or leave blank'),
                       borderRadius: BorderRadius.circular(12),
                       items: [
                         const DropdownMenuItem<int?>(
-                            value: null, child: Text('No specific group')),
-                        ..._groups.map((g) => DropdownMenuItem<int?>(
-                              value: g['id'] as int?,
-                              child: Text(g['name']?.toString() ?? ''),
-                            )),
+                          value: null,
+                          child: Text('No specific group'),
+                        ),
+                        ..._groups.map(
+                          (g) => DropdownMenuItem<int?>(
+                            value: g['id'] as int?,
+                            child: Text(g['name']?.toString() ?? ''),
+                          ),
+                        ),
                       ],
-                      onChanged: (v) =>
-                          setState(() => _selectedGroupId = v),
+                      onChanged: (v) => setState(() => _selectedGroupId = v),
                     ),
                     const SizedBox(height: 20),
                   ],
@@ -188,22 +201,26 @@ class _AdminNotifyScreenState extends ConsumerState<AdminNotifyScreen> {
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: IceColors.navy))
+                                strokeWidth: 2,
+                                color: IceColors.navy,
+                              ),
+                            )
                           : const Icon(Icons.send_rounded, size: 18),
                       label: Text(
                         _sending ? 'Sending…' : 'Send Notification',
                         style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: IceColors.lime,
                         foregroundColor: IceColors.navy,
-                        disabledBackgroundColor:
-                            IceColors.lime.withAlpha(120),
+                        disabledBackgroundColor: IceColors.lime.withAlpha(120),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                   ).animate().slideY(begin: 0.1, duration: 300.ms).fadeIn(),
@@ -217,82 +234,85 @@ class _AdminNotifyScreenState extends ConsumerState<AdminNotifyScreen> {
   }
 
   Widget _sectionLabel(String text) => Text(
-        text,
-        style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: IceColors.muted,
-            letterSpacing: 1.0),
-      );
+    text,
+    style: const TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      color: IceColors.muted,
+      letterSpacing: 1.0,
+    ),
+  );
 
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
     int maxLines = 1,
-  }) =>
-      TextField(
-        controller: controller,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: IceColors.muted),
-          filled: true,
-          fillColor: IceColors.surface,
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: IceColors.border)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: IceColors.border)),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: IceColors.navyDeep, width: 1.5)),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
-      );
+  }) => TextField(
+    controller: controller,
+    maxLines: maxLines,
+    decoration: InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: IceColors.muted),
+      filled: true,
+      fillColor: IceColors.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: IceColors.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: IceColors.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: IceColors.navyDeep, width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    ),
+  );
 
   Widget _buildTargetSegment() => Row(
-        children: [
-          _TargetOption(
-            label: 'All',
-            icon: Icons.groups_rounded,
-            selected: _target == 'all',
-            onTap: () => setState(() => _target = 'all'),
-          ),
-          const SizedBox(width: 10),
-          _TargetOption(
-            label: 'Students',
-            icon: Icons.school_rounded,
-            selected: _target == 'students',
-            onTap: () => setState(() => _target = 'students'),
-          ),
-          const SizedBox(width: 10),
-          _TargetOption(
-            label: 'Staff',
-            icon: Icons.badge_rounded,
-            selected: _target == 'staff',
-            onTap: () => setState(() => _target = 'staff'),
-          ),
-        ],
-      );
+    children: [
+      _TargetOption(
+        label: 'All',
+        icon: Icons.groups_rounded,
+        selected: _target == 'all',
+        onTap: () => setState(() => _target = 'all'),
+      ),
+      const SizedBox(width: 10),
+      _TargetOption(
+        label: 'Students',
+        icon: Icons.school_rounded,
+        selected: _target == 'students',
+        onTap: () => setState(() => _target = 'students'),
+      ),
+      const SizedBox(width: 10),
+      _TargetOption(
+        label: 'Staff',
+        icon: Icons.badge_rounded,
+        selected: _target == 'staff',
+        onTap: () => setState(() => _target = 'staff'),
+      ),
+    ],
+  );
 
   InputDecoration _inputDeco(String hint) => InputDecoration(
-        hintText: hint,
-        filled: true,
-        fillColor: IceColors.surface,
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: IceColors.border)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: IceColors.border)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide:
-                const BorderSide(color: IceColors.navyDeep, width: 1.5)),
-      );
+    hintText: hint,
+    filled: true,
+    fillColor: IceColors.surface,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: IceColors.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: IceColors.border),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: IceColors.navyDeep, width: 1.5),
+    ),
+  );
 }
 
 class _TargetOption extends StatelessWidget {
@@ -300,49 +320,56 @@ class _TargetOption extends StatelessWidget {
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
-  const _TargetOption(
-      {required this.label,
-      required this.icon,
-      required this.selected,
-      required this.onTap});
+  const _TargetOption({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) => Expanded(
-        child: GestureDetector(
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: selected ? IceColors.navyDeep : IceColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                  color:
-                      selected ? IceColors.navyDeep : IceColors.border),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                          color: IceColors.navyDeep.withAlpha(40),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3))
-                    ]
-                  : null,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon,
-                    size: 20,
-                    color: selected ? Colors.white : IceColors.muted),
-                const SizedBox(height: 4),
-                Text(label,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: selected ? Colors.white : IceColors.muted)),
-              ],
-            ),
+    child: GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? IceColors.navyDeep : IceColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? IceColors.navyDeep : IceColors.border,
           ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: IceColors.navyDeep.withAlpha(40),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
-      );
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: selected ? Colors.white : IceColors.muted,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: selected ? Colors.white : IceColors.muted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }

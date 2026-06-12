@@ -24,7 +24,10 @@ class _State extends State<StudentResultFilesScreen> {
   }
 
   Future<void> _fetch() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final res = await ApiClient.instance.dio.get('/results/');
       final data = res.data;
@@ -42,9 +45,15 @@ class _State extends State<StudentResultFilesScreen> {
             m['result_type']?.toString().toLowerCase() == 'file' ||
             m['type']?.toString().toLowerCase() == 'file';
       }).toList();
-      setState(() { _files = files; _loading = false; });
+      setState(() {
+        _files = files;
+        _loading = false;
+      });
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
@@ -79,19 +88,24 @@ class _State extends State<StudentResultFilesScreen> {
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      const Icon(Icons.error_outline_rounded,
-                          size: 48, color: IceColors.muted),
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        size: 48,
+                        color: IceColors.muted,
+                      ),
                       const SizedBox(height: 16),
-                      Text('Error: $_error',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: IceColors.danger)),
+                      Text(
+                        'Error: $_error',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: IceColors.danger),
+                      ),
                       const SizedBox(height: 16),
                       OutlinedButton(
                         onPressed: _fetch,
                         style: OutlinedButton.styleFrom(
-                            foregroundColor: IceColors.navyDeep,
-                            side: const BorderSide(
-                                color: IceColors.navyDeep)),
+                          foregroundColor: IceColors.navyDeep,
+                          side: const BorderSide(color: IceColors.navyDeep),
+                        ),
                         child: const Text('Retry'),
                       ),
                     ],
@@ -124,12 +138,11 @@ class _ResultFileCard extends StatelessWidget {
   const _ResultFileCard({required this.file, required this.index});
 
   String get _title =>
-      file['title']?.toString() ??
-      file['name']?.toString() ??
-      'Result File';
+      file['title']?.toString() ?? file['name']?.toString() ?? 'Result File';
 
   String get _date {
-    final raw = file['date']?.toString() ??
+    final raw =
+        file['date']?.toString() ??
         file['created_at']?.toString() ??
         file['uploaded_at']?.toString() ??
         '';
@@ -148,54 +161,61 @@ class _ResultFileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: IceColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IceColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: IceColors.navyDeep.withAlpha(12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.insert_drive_file_rounded,
-                size: 24, color: IceColors.navyDeep),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: IceColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: IceColors.border),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: IceColors.text,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
-                if (_date.isNotEmpty) ...[
-                  const SizedBox(height: 3),
-                  Text(_date,
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: IceColors.navyDeep.withAlpha(12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.insert_drive_file_rounded,
+                  size: 24,
+                  color: IceColors.navyDeep,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _title,
                       style: const TextStyle(
-                        fontSize: 12,
-                        color: IceColors.muted,
-                      )),
-                ],
-              ],
-            ),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: IceColors.text,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (_date.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        _date,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: IceColors.muted,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              _DownloadButton(url: _url),
+            ],
           ),
-          const SizedBox(width: 12),
-          _DownloadButton(url: _url),
-        ],
-      ),
-    )
+        )
         .animate(delay: Duration(milliseconds: 40 * index))
         .fadeIn(duration: 250.ms)
         .slideX(begin: 0.05, duration: 250.ms);
@@ -222,7 +242,8 @@ class _DownloadButton extends StatelessWidget {
           backgroundColor: IceColors.success,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(12),
+          ),
           action: SnackBarAction(
             label: 'OK',
             textColor: Colors.white,
@@ -235,18 +256,17 @@ class _DownloadButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FilledButton.icon(
-        onPressed: url.isEmpty ? null : () => _open(context),
-        icon: const Icon(Icons.download_rounded, size: 16),
-        label: const Text('Download'),
-        style: FilledButton.styleFrom(
-          backgroundColor: IceColors.navyDeep,
-          minimumSize: Size.zero,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
-          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-        ),
-      );
+    onPressed: url.isEmpty ? null : () => _open(context),
+    icon: const Icon(Icons.download_rounded, size: 16),
+    label: const Text('Download'),
+    style: FilledButton.styleFrom(
+      backgroundColor: IceColors.navyDeep,
+      minimumSize: Size.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+    ),
+  );
 }
 
 class _EmptyState extends StatelessWidget {
@@ -254,26 +274,27 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.folder_outlined, size: 48, color: IceColors.muted),
-            SizedBox(height: 16),
-            Text(
-              'No result files',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: IceColors.muted),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Your downloadable results will appear here.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: IceColors.muted),
-            ),
-          ],
+    padding: EdgeInsets.all(40),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.folder_outlined, size: 48, color: IceColors.muted),
+        SizedBox(height: 16),
+        Text(
+          'No result files',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: IceColors.muted,
+          ),
         ),
-      );
+        SizedBox(height: 8),
+        Text(
+          'Your downloadable results will appear here.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: IceColors.muted),
+        ),
+      ],
+    ),
+  );
 }
