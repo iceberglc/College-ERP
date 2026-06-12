@@ -1,6 +1,8 @@
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
 
+from .models import Staff, Student
+
 
 class EmailBackend(ModelBackend):
     """Dual-mode authentication backend.
@@ -37,11 +39,28 @@ class EmailBackend(ModelBackend):
             try:
                 user = UserModel.objects.get(login_id__iexact=identifier)
             except UserModel.DoesNotExist:
-                return None
+                user = self._legacy_profile_id_user(identifier)
+                if user is None:
+                    return None
             if user.user_type == "1":
                 # Admin cannot log in with a login_id — must use email.
                 return None
 
-        if user.check_password(password) and self.user_can_authenticate(user):
+        if user and user.check_password(password) and self.user_can_authenticate(user):
             return user
+        return None
+
+    def _legacy_profile_id_user(self, identifier):
+        """Accept older STA0001/STU0001 profile IDs during migration."""
+        upper_identifier = identifier.upper()
+        if upper_identifier.startswith("STA") and upper_identifier[3:].isdigit():
+            staff = Staff.objects.select_related("admin").filter(
+                id=int(upper_identifier[3:])
+            ).first()
+            return staff.admin if staff else None
+        if upper_identifier.startswith("STU") and upper_identifier[3:].isdigit():
+            student = Student.objects.select_related("admin").filter(
+                id=int(upper_identifier[3:])
+            ).first()
+            return student.admin if student else None
         return None
