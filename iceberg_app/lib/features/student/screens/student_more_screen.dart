@@ -1,0 +1,120 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/theme/app_theme.dart';
+
+class StudentMoreScreen extends StatelessWidget {
+  const StudentMoreScreen({super.key});
+
+  static const _tiles = [
+    _MoreTile(icon: Icons.fact_check_rounded,      label: 'Attendance',   path: '/student/attendance'),
+    _MoreTile(icon: Icons.grade_rounded,           label: 'Results',      path: '/student/results'),
+    _MoreTile(icon: Icons.assignment_rounded,       label: 'Assignments',  path: '/student/assignments'),
+    _MoreTile(icon: Icons.emoji_events_rounded,    label: 'Leaderboard',  path: '/student/leaderboard'),
+    _MoreTile(icon: Icons.payment_rounded,         label: 'Payments',     path: '/student/payments'),
+    _MoreTile(icon: Icons.beach_access_rounded,    label: 'Leave',        path: '/student/leave'),
+    _MoreTile(icon: Icons.rate_review_rounded,     label: 'Feedback',     path: '/student/feedback'),
+    _MoreTile(icon: Icons.notifications_rounded,   label: 'Notifications',path: '/student/notifications'),
+    _MoreTile(icon: Icons.auto_stories_rounded,    label: 'Books',        path: '/student/books'),
+    _MoreTile(icon: Icons.person_rounded,          label: 'Profile',      path: '/student/profile'),
+    _MoreTile(icon: Icons.logout_rounded,          label: 'Logout',       path: '/login', isLogout: true),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final crossAxisCount = width >= 600 ? 3 : 2;
+
+    return Scaffold(
+      backgroundColor: IceColors.bg,
+      appBar: AppBar(
+        title: const Text('More'),
+        backgroundColor: IceColors.bg,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.05,
+          ),
+          itemCount: _tiles.length,
+          itemBuilder: (context, i) => _MoreTileWidget(_tiles[i]),
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreTile {
+  final IconData icon;
+  final String label;
+  final String path;
+  final bool isLogout;
+  const _MoreTile({
+    required this.icon,
+    required this.label,
+    required this.path,
+    this.isLogout = false,
+  });
+}
+
+class _MoreTileWidget extends StatelessWidget {
+  final _MoreTile tile;
+  const _MoreTileWidget(this.tile);
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor =
+        tile.isLogout ? IceColors.danger : IceColors.navyDeep;
+    final bgColor =
+        tile.isLogout ? IceColors.danger.withAlpha(20) : IceColors.surface2;
+
+    return Material(
+      color: IceColors.surface,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => context.go(tile.path),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: IceColors.border, width: 1.5),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(tile.icon, color: iconColor, size: 28),
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  tile.label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: tile.isLogout ? IceColors.danger : IceColors.text,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
