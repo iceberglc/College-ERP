@@ -44,41 +44,44 @@ class StaffHomeScreen extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                   child: Column(children: [
-                    Row(children: [
-                      Expanded(child: _StatCard(
-                        value: fmtNum(d['total_students']),
-                        label: 'Students',
-                        icon: Icons.people_rounded,
-                        color: IceColors.navyDeep,
-                        delay: 0,
-                      )),
-                      const SizedBox(width: 10),
-                      Expanded(child: _StatCard(
-                        value: fmtNum(d['total_groups']),
-                        label: 'My Groups',
-                        icon: Icons.group_rounded,
-                        color: IceColors.info,
-                        delay: 80,
-                      )),
-                    ]),
-                    const SizedBox(height: 10),
-                    Row(children: [
-                      Expanded(child: _StatCard(
-                        value: fmtNum(d['sessions_today']),
-                        label: 'Sessions Today',
-                        icon: Icons.today_rounded,
-                        color: IceColors.cyan,
-                        delay: 160,
-                      )),
-                      const SizedBox(width: 10),
-                      Expanded(child: _StatCard(
-                        value: fmtPercent(d['avg_attendance']),
-                        label: 'Avg Attendance',
-                        icon: Icons.bar_chart_rounded,
-                        color: IceColors.success,
-                        delay: 240,
-                      )),
-                    ]),
+                    // 2 columns on phones, 4 across on tablets/desktop.
+                    LayoutBuilder(builder: (context, c) {
+                      final cards = <Widget>[
+                        _StatCard(
+                          value: fmtNum(d['total_students']),
+                          label: 'Students',
+                          icon: Icons.people_rounded,
+                          color: IceColors.navyDeep,
+                          delay: 0,
+                        ),
+                        _StatCard(
+                          value: fmtNum(d['total_groups']),
+                          label: 'My Groups',
+                          icon: Icons.group_rounded,
+                          color: IceColors.info,
+                          delay: 80,
+                        ),
+                        _StatCard(
+                          value: fmtNum(d['sessions_today']),
+                          label: 'Sessions Today',
+                          icon: Icons.today_rounded,
+                          color: IceColors.cyan,
+                          delay: 160,
+                        ),
+                        _StatCard(
+                          value: fmtPercent(d['avg_attendance']),
+                          label: 'Avg Attendance',
+                          icon: Icons.bar_chart_rounded,
+                          color: IceColors.success,
+                          delay: 240,
+                        ),
+                      ];
+                      final cols = c.maxWidth >= 600 ? 4 : 2;
+                      final w = (c.maxWidth - (cols - 1) * 10) / cols;
+                      return Wrap(spacing: 10, runSpacing: 10, children: [
+                        for (final card in cards) SizedBox(width: w, child: card),
+                      ]);
+                    }),
                     const SizedBox(height: 16),
                     _StaffAttendanceChart(data: d),
                   ]),

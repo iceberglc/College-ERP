@@ -37,8 +37,13 @@ if (!window._flutter) {
 _flutter.buildConfig = {"engineRevision":"109150893958777c8f2215f6cfd3e89e984e8dea","builds":[{"compileTarget":"dart2js","renderer":"canvaskit","mainJsPath":"main.dart.js"}]};
 
 
+// Serve CanvasKit from our own host instead of gstatic CDN, so the app is
+// fully self-contained (works offline / behind strict firewalls).
 _flutter.loader.load({
   serviceWorkerSettings: {
-    serviceWorkerVersion: "4093021224"
+    serviceWorkerVersion: "581479447"
+  },
+  config: {
+    canvasKitBaseUrl: "canvaskit/"
   }
 });

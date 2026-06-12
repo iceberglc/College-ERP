@@ -49,41 +49,44 @@ class SuperadminHomeScreen extends ConsumerWidget {
                   child: Column(children: [
                     _globalBanner(d, branches.valueOrNull?.length),
                     const SizedBox(height: 16),
-                    Row(children: [
-                      Expanded(child: _StatTile(
-                        label: 'Students',
-                        value: '${d['student_count'] ?? d['total_students'] ?? 0}',
-                        icon: Icons.people_rounded,
-                        color: IceColors.navyDeep,
-                        delay: 0,
-                      )),
-                      const SizedBox(width: 10),
-                      Expanded(child: _StatTile(
-                        label: 'Staff',
-                        value: '${d['staff_count'] ?? d['total_staff'] ?? 0}',
-                        icon: Icons.badge_rounded,
-                        color: IceColors.info,
-                        delay: 60,
-                      )),
-                    ]),
-                    const SizedBox(height: 10),
-                    Row(children: [
-                      Expanded(child: _StatTile(
-                        label: 'Groups',
-                        value: '${d['group_count'] ?? d['total_groups'] ?? 0}',
-                        icon: Icons.group_work_rounded,
-                        color: IceColors.warning,
-                        delay: 120,
-                      )),
-                      const SizedBox(width: 10),
-                      Expanded(child: _StatTile(
-                        label: 'Courses',
-                        value: '${d['course_count'] ?? d['total_courses'] ?? 0}',
-                        icon: Icons.menu_book_rounded,
-                        color: IceColors.success,
-                        delay: 180,
-                      )),
-                    ]),
+                    // 2 columns on phones, 4 across on tablets/desktop.
+                    LayoutBuilder(builder: (context, c) {
+                      final tiles = <Widget>[
+                        _StatTile(
+                          label: 'Students',
+                          value: '${d['student_count'] ?? d['total_students'] ?? 0}',
+                          icon: Icons.people_rounded,
+                          color: IceColors.navyDeep,
+                          delay: 0,
+                        ),
+                        _StatTile(
+                          label: 'Staff',
+                          value: '${d['staff_count'] ?? d['total_staff'] ?? 0}',
+                          icon: Icons.badge_rounded,
+                          color: IceColors.info,
+                          delay: 60,
+                        ),
+                        _StatTile(
+                          label: 'Groups',
+                          value: '${d['group_count'] ?? d['total_groups'] ?? 0}',
+                          icon: Icons.group_work_rounded,
+                          color: IceColors.warning,
+                          delay: 120,
+                        ),
+                        _StatTile(
+                          label: 'Courses',
+                          value: '${d['course_count'] ?? d['total_courses'] ?? 0}',
+                          icon: Icons.menu_book_rounded,
+                          color: IceColors.success,
+                          delay: 180,
+                        ),
+                      ];
+                      final cols = c.maxWidth >= 600 ? 4 : 2;
+                      final w = (c.maxWidth - (cols - 1) * 10) / cols;
+                      return Wrap(spacing: 10, runSpacing: 10, children: [
+                        for (final t in tiles) SizedBox(width: w, child: t),
+                      ]);
+                    }),
                   ]),
                 ),
               ),

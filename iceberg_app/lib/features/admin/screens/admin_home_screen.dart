@@ -35,66 +35,71 @@ class AdminHomeScreen extends ConsumerWidget {
                           style: const TextStyle(color: IceColors.danger)))),
               data: (d) {
                 final stats = d['stats'] ?? d;
+                final cards = <_StatCard>[
+                  _StatCard(
+                    value: fmtNum(stats['total_students']),
+                    label: 'Students',
+                    icon: Icons.people_rounded,
+                    color: IceColors.navyDeep,
+                    delay: 0,
+                    onTap: () => context.go('/admin/students'),
+                  ),
+                  _StatCard(
+                    value: fmtNum(stats['total_staff']),
+                    label: 'Staff',
+                    icon: Icons.badge_rounded,
+                    color: IceColors.info,
+                    delay: 80,
+                    onTap: () => context.go('/admin/staff'),
+                  ),
+                  _StatCard(
+                    value: fmtNum(stats['total_groups']),
+                    label: 'Groups',
+                    icon: Icons.group_rounded,
+                    color: IceColors.cyan,
+                    delay: 160,
+                  ),
+                  _StatCard(
+                    value: fmtPercent(stats['avg_attendance']),
+                    label: 'Avg Attendance',
+                    icon: Icons.bar_chart_rounded,
+                    color: IceColors.success,
+                    delay: 240,
+                  ),
+                  _StatCard(
+                    value: fmtNum(stats['new_leads'] ?? stats['total_leads']),
+                    label: 'New Leads',
+                    icon: Icons.contacts_rounded,
+                    color: IceColors.warning,
+                    delay: 320,
+                    onTap: () => context.go('/admin/leads'),
+                  ),
+                  _StatCard(
+                    value: fmtNum(stats['total_branches']),
+                    label: 'Branches',
+                    icon: Icons.location_city_rounded,
+                    color: IceColors.muted,
+                    delay: 400,
+                  ),
+                ];
                 return SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
                     child: Column(children: [
-                      Row(children: [
-                        Expanded(child: _StatCard(
-                          value: fmtNum(stats['total_students']),
-                          label: 'Students',
-                          icon: Icons.people_rounded,
-                          color: IceColors.navyDeep,
-                          delay: 0,
-                          onTap: () => context.go('/admin/students'),
-                        )),
-                        const SizedBox(width: 10),
-                        Expanded(child: _StatCard(
-                          value: fmtNum(stats['total_staff']),
-                          label: 'Staff',
-                          icon: Icons.badge_rounded,
-                          color: IceColors.info,
-                          delay: 80,
-                          onTap: () => context.go('/admin/staff'),
-                        )),
-                      ]),
-                      const SizedBox(height: 10),
-                      Row(children: [
-                        Expanded(child: _StatCard(
-                          value: fmtNum(stats['total_groups']),
-                          label: 'Groups',
-                          icon: Icons.group_rounded,
-                          color: IceColors.cyan,
-                          delay: 160,
-                        )),
-                        const SizedBox(width: 10),
-                        Expanded(child: _StatCard(
-                          value: fmtPercent(stats['avg_attendance']),
-                          label: 'Avg Attendance',
-                          icon: Icons.bar_chart_rounded,
-                          color: IceColors.success,
-                          delay: 240,
-                        )),
-                      ]),
-                      const SizedBox(height: 10),
-                      Row(children: [
-                        Expanded(child: _StatCard(
-                          value: fmtNum(stats['new_leads'] ?? stats['total_leads']),
-                          label: 'New Leads',
-                          icon: Icons.contacts_rounded,
-                          color: IceColors.warning,
-                          delay: 320,
-                          onTap: () => context.go('/admin/leads'),
-                        )),
-                        const SizedBox(width: 10),
-                        Expanded(child: _StatCard(
-                          value: fmtNum(stats['total_branches']),
-                          label: 'Branches',
-                          icon: Icons.location_city_rounded,
-                          color: IceColors.muted,
-                          delay: 400,
-                        )),
-                      ]),
+                      // 2 columns on phones, 3 on tablets/desktop.
+                      LayoutBuilder(builder: (context, c) {
+                        final cols = c.maxWidth >= 600 ? 3 : 2;
+                        final w =
+                            (c.maxWidth - (cols - 1) * 10) / cols;
+                        return Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            for (final card in cards)
+                              SizedBox(width: w, child: card),
+                          ],
+                        );
+                      }),
                       const SizedBox(height: 16),
                       _AttendanceTrendChart(stats: stats),
                     ]),
@@ -109,12 +114,18 @@ class AdminHomeScreen extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context, IceUser? user) {
+    // Phones: hero bleeds to the screen edges (mobile pattern).
+    // Tablets/desktop: floating rounded card with margins.
+    final wide = MediaQuery.sizeOf(context).width >= 768;
     return Container(
+      margin: wide ? const EdgeInsets.fromLTRB(16, 16, 16, 0) : EdgeInsets.zero,
       padding: EdgeInsets.fromLTRB(
-          20, MediaQuery.paddingOf(context).top + 20, 20, 28),
-      decoration: const BoxDecoration(
+          20, wide ? 24 : MediaQuery.paddingOf(context).top + 20, 20, 28),
+      decoration: BoxDecoration(
         gradient: kHeroGradient,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+        borderRadius: wide
+            ? BorderRadius.circular(28)
+            : const BorderRadius.vertical(bottom: Radius.circular(32)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

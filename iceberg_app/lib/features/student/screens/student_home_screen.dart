@@ -125,12 +125,6 @@ class StudentHomeScreen extends ConsumerWidget {
         // ── Stories ──────────────────────────────────────────────────────
         if (stories.isNotEmpty) _StoriesRow(stories: stories),
 
-        // ── "Kelayotgan darslar" section header ──────────────────────────
-        const _SectionHeader(title: 'Kelayotgan darslar', actionLabel: 'Barchasi'),
-
-        // (Placeholder — real schedule cards would go here)
-        const SizedBox(height: 8),
-
         // ── Statistika section header ─────────────────────────────────────
         const _SectionHeader(title: 'Statistika', actionLabel: ''),
 
