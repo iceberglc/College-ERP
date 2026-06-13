@@ -150,29 +150,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // ── Student shell (4 branches) ────────────────────────────────────────
+      // ── Student shell (6 branches) ────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             StudentShell(navigationShell: navigationShell),
         branches: [
+          // Branch 0: Home
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/student/home',
               builder: (_, __) => const StudentHomeScreen(),
             ),
           ]),
+          // Branch 1: Learn (vocabulary)
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/student/vocabulary',
               builder: (_, __) => const StudentVocabularyScreen(),
             ),
           ]),
+          // Branch 2: Progress
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/student/progress',
               builder: (_, __) => const StudentProgressScreen(),
             ),
           ]),
+          // Branch 3: Attendance
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/student/attendance',
+              builder: (_, __) => const StudentAttendanceScreen(),
+            ),
+          ]),
+          // Branch 4: Payments
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/student/payments',
+              builder: (_, __) => const StudentPaymentsScreen(),
+            ),
+          ]),
+          // Branch 5: More
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/student/more',
@@ -187,17 +205,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __, child) =>
             DesktopPageShell(sections: studentSidebarSections, child: child),
         routes: [
-        // ── Student standalone routes ─────────────────────────────────────────
-        GoRoute(path: '/student/attendance',
-            builder: (_, __) => const StudentAttendanceScreen()),
         GoRoute(path: '/student/results',
             builder: (_, __) => const StudentResultsScreen()),
         GoRoute(path: '/student/assignments',
             builder: (_, __) => const StudentAssignmentsScreen()),
         GoRoute(path: '/student/leaderboard',
             builder: (_, __) => const StudentLeaderboardScreen()),
-        GoRoute(path: '/student/payments',
-            builder: (_, __) => const StudentPaymentsScreen()),
         GoRoute(path: '/student/leave',
             builder: (_, __) => const StudentLeaveScreen()),
         GoRoute(path: '/student/feedback',
@@ -227,29 +240,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // ── Staff shell (4 branches) ──────────────────────────────────────────
+      // ── Staff shell (6 branches) ──────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             StaffShell(navigationShell: navigationShell),
         branches: [
+          // Branch 0: Dashboard
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/staff/home',
               builder: (_, __) => const StaffHomeScreen(),
             ),
           ]),
+          // Branch 1: Classes
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/staff/classes',
               builder: (_, __) => const StaffClassesScreen(),
             ),
           ]),
+          // Branch 2: Attendance
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/staff/attendance',
               builder: (_, __) => const StaffAttendanceScreen(),
             ),
           ]),
+          // Branch 3: Results
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/staff/results',
+              builder: (_, __) => const StaffResultsScreen(),
+            ),
+          ]),
+          // Branch 4: Assignments
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/staff/assignments',
+              builder: (_, __) => const StaffAssignmentsScreen(),
+            ),
+          ]),
+          // Branch 5: More
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/staff/more',
@@ -264,13 +295,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __, child) =>
             DesktopPageShell(sections: staffSidebarSections, child: child),
         routes: [
-        // ── Staff standalone routes ───────────────────────────────────────────
-        GoRoute(path: '/staff/results',
-            builder: (_, __) => const StaffResultsScreen()),
         GoRoute(path: '/staff/vocabulary',
             builder: (_, __) => const StaffVocabularyScreen()),
-        GoRoute(path: '/staff/assignments',
-            builder: (_, __) => const StaffAssignmentsScreen()),
         GoRoute(path: '/staff/leave',
             builder: (_, __) => const StaffLeaveScreen()),
         GoRoute(path: '/staff/feedback',
@@ -293,17 +319,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // ── Admin shell (4 branches) ──────────────────────────────────────────
+      // ── Admin shell (6 branches) ──────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AdminShell(navigationShell: navigationShell),
         branches: [
+          // Branch 0: Dashboard
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/admin/home',
               builder: (_, __) => const AdminHomeScreen(),
             ),
           ]),
+          // Branch 1: Students
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/admin/students',
@@ -321,12 +349,44 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ],
             ),
           ]),
+          // Branch 2: Groups
           StatefulShellBranch(routes: [
             GoRoute(
-              path: '/admin/manage',
-              builder: (_, __) => const AdminManageHubScreen(),
+              path: '/admin/groups',
+              builder: (_, __) => const AdminGroupsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'add',
+                  builder: (_, __) => const AdminAddEditGroupScreen(),
+                ),
+                GoRoute(
+                  path: ':id',
+                  builder: (_, state) => AdminGroupDetailScreen(
+                      groupId: state.pathParameters['id']!),
+                ),
+                GoRoute(
+                  path: ':id/edit',
+                  builder: (_, state) => AdminAddEditGroupScreen(
+                      groupId: state.pathParameters['id']!),
+                ),
+              ],
             ),
           ]),
+          // Branch 3: Payments
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/admin/payments',
+              builder: (_, __) => const AdminPaymentsScreen(),
+            ),
+          ]),
+          // Branch 4: Leads
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/admin/leads',
+              builder: (_, __) => const AdminLeadsScreen(),
+            ),
+          ]),
+          // Branch 5: More
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/admin/more',
@@ -341,7 +401,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __, child) =>
             DesktopPageShell(sections: adminSidebarSections, child: child),
         routes: [
-        // ── Admin standalone routes ───────────────────────────────────────────
         GoRoute(path: '/admin/staff',
             builder: (_, __) => const AdminStaffScreen(),
             routes: [
@@ -353,25 +412,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     staffId: state.pathParameters['id']!),
               ),
             ]),
-        GoRoute(
-            path: '/admin/groups',
-            builder: (_, __) => const AdminGroupsScreen(),
-            routes: [
-              GoRoute(
-                path: 'add',
-                builder: (_, __) => const AdminAddEditGroupScreen(),
-              ),
-              GoRoute(
-                path: ':id',
-                builder: (_, state) => AdminGroupDetailScreen(
-                    groupId: state.pathParameters['id']!),
-              ),
-              GoRoute(
-                path: ':id/edit',
-                builder: (_, state) => AdminAddEditGroupScreen(
-                    groupId: state.pathParameters['id']!),
-              ),
-            ]),
         GoRoute(path: '/admin/courses',
             builder: (_, __) => const AdminCoursesScreen()),
         GoRoute(path: '/admin/branches',
@@ -380,10 +420,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const AdminSessionsScreen()),
         GoRoute(path: '/admin/subjects',
             builder: (_, __) => const AdminSubjectsScreen()),
-        GoRoute(path: '/admin/payments',
-            builder: (_, __) => const AdminPaymentsScreen()),
-        GoRoute(path: '/admin/leads',
-            builder: (_, __) => const AdminLeadsScreen()),
         GoRoute(path: '/admin/enroll',
             builder: (_, __) => const AdminEnrollmentScreen()),
         GoRoute(path: '/admin/admins',

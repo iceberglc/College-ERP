@@ -8,6 +8,7 @@ import '../../../core/api/api_providers.dart';
 import '../../../core/auth/auth_state.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../shared/widgets/ice_page_header.dart';
 
 class AdminHomeScreen extends ConsumerWidget {
   const AdminHomeScreen({super.key});
@@ -35,6 +36,8 @@ class AdminHomeScreen extends ConsumerWidget {
                           style: const TextStyle(color: IceColors.danger)))),
               data: (d) {
                 final stats = d['stats'] ?? d;
+                final recentLeads = (d['recent_leads'] as List?) ?? [];
+                final recentEnrollments = (d['recent_enrollments'] as List?) ?? [];
                 final cards = <_StatCard>[
                   _StatCard(
                     value: fmtNum(stats['total_students']),
@@ -58,6 +61,7 @@ class AdminHomeScreen extends ConsumerWidget {
                     icon: Icons.group_rounded,
                     color: IceColors.cyan,
                     delay: 160,
+                    onTap: () => context.go('/admin/groups'),
                   ),
                   _StatCard(
                     value: fmtPercent(stats['avg_attendance']),
@@ -65,6 +69,7 @@ class AdminHomeScreen extends ConsumerWidget {
                     icon: Icons.bar_chart_rounded,
                     color: IceColors.success,
                     delay: 240,
+                    onTap: () => context.go('/admin/attendance'),
                   ),
                   _StatCard(
                     value: fmtNum(stats['new_leads'] ?? stats['total_leads']),
@@ -80,17 +85,17 @@ class AdminHomeScreen extends ConsumerWidget {
                     icon: Icons.location_city_rounded,
                     color: IceColors.muted,
                     delay: 400,
+                    onTap: () => context.go('/admin/branches'),
                   ),
                 ];
                 return SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
                     child: Column(children: [
                       // 2 columns on phones, 3 on tablets/desktop.
                       LayoutBuilder(builder: (context, c) {
                         final cols = c.maxWidth >= 600 ? 3 : 2;
-                        final w =
-                            (c.maxWidth - (cols - 1) * 10) / cols;
+                        final w = (c.maxWidth - (cols - 1) * 10) / cols;
                         return Wrap(
                           spacing: 10,
                           runSpacing: 10,
@@ -102,6 +107,41 @@ class AdminHomeScreen extends ConsumerWidget {
                       }),
                       const SizedBox(height: 16),
                       _AttendanceTrendChart(stats: stats),
+                      const SizedBox(height: 16),
+                      _QuickActionsGrid(),
+                      if (recentLeads.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _ActivityFeed(
+                          title: 'Recent Leads',
+                          icon: Icons.contacts_rounded,
+                          color: IceColors.warning,
+                          items: recentLeads.map((l) => _ActivityItem(
+                            title: l['name']?.toString() ?? '—',
+                            subtitle: l['course']?.toString() ?? l['phone']?.toString() ?? '',
+                            trailing: l['date']?.toString() ?? '',
+                            icon: Icons.person_add_rounded,
+                            color: IceColors.warning,
+                          )).toList(),
+                          onTapAll: () => context.go('/admin/leads'),
+                        ),
+                      ],
+                      if (recentEnrollments.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _ActivityFeed(
+                          title: 'Recent Enrollments',
+                          icon: Icons.how_to_reg_rounded,
+                          color: IceColors.success,
+                          items: recentEnrollments.map((e) => _ActivityItem(
+                            title: e['student']?.toString() ?? '—',
+                            subtitle: e['group']?.toString() ?? '',
+                            trailing: '',
+                            icon: Icons.school_rounded,
+                            color: IceColors.success,
+                          )).toList(),
+                          onTapAll: () => context.go('/admin/students'),
+                        ),
+                      ],
+                      const SizedBox(height: 100),
                     ]),
                   ),
                 );
@@ -314,6 +354,204 @@ class _Skeleton extends StatelessWidget {
       );
 }
 
+
+// ─── Quick Actions Grid ───────────────────────────────────────────────────────
+class _QuickActionsGrid extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final actions = [
+      _Action(Icons.person_add_rounded,     'Add Student',   '/admin/students/add', IceColors.navyDeep),
+      _Action(Icons.badge_rounded,           'Add Staff',     '/admin/staff/add',    IceColors.info),
+      _Action(Icons.group_add_rounded,       'Add Group',     '/admin/groups/add',   IceColors.cyan),
+      _Action(Icons.receipt_long_rounded,    'Payments',      '/admin/payments',     IceColors.success),
+      _Action(Icons.fact_check_rounded,      'Attendance',    '/admin/attendance',   IceColors.warning),
+      _Action(Icons.notifications_rounded,   'Notify',        '/admin/notify',       IceColors.danger),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: IceColors.border),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Quick Actions',
+            style: TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w700, color: IceColors.text)),
+        const SizedBox(height: 14),
+        LayoutBuilder(builder: (ctx, c) {
+          final cols = c.maxWidth >= 480 ? 6 : 3;
+          final w = (c.maxWidth - (cols - 1) * 8) / cols;
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: actions
+                .asMap()
+                .entries
+                .map((e) => SizedBox(
+                      width: w,
+                      child: _ActionBtn(a: e.value, delay: e.key * 50),
+                    ))
+                .toList(),
+          );
+        }),
+      ]),
+    ).animate(delay: 500.ms).fadeIn(duration: 400.ms).slideY(begin: 0.08, duration: 400.ms);
+  }
+}
+
+class _Action {
+  final IconData icon;
+  final String label, path;
+  final Color color;
+  const _Action(this.icon, this.label, this.path, this.color);
+}
+
+class _ActionBtn extends StatelessWidget {
+  final _Action a;
+  final int delay;
+  const _ActionBtn({required this.a, required this.delay});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: () => context.go(a.path),
+        child: Column(children: [
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: a.color.withAlpha(18),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: a.color.withAlpha(40)),
+            ),
+            child: Center(child: Icon(a.icon, color: a.color, size: 22)),
+          ),
+          const SizedBox(height: 5),
+          Text(a.label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.w600, color: IceColors.muted),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis),
+        ]),
+      )
+          .animate(delay: Duration(milliseconds: delay))
+          .scale(begin: const Offset(0.9, 0.9), duration: 250.ms, curve: Curves.easeOut)
+          .fadeIn(duration: 200.ms);
+}
+
+// ─── Activity Feed ────────────────────────────────────────────────────────────
+class _ActivityItem {
+  final String title, subtitle, trailing;
+  final IconData icon;
+  final Color color;
+  const _ActivityItem({
+    required this.title,
+    required this.subtitle,
+    required this.trailing,
+    required this.icon,
+    required this.color,
+  });
+}
+
+class _ActivityFeed extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final List<_ActivityItem> items;
+  final VoidCallback onTapAll;
+
+  const _ActivityFeed({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.items,
+    required this.onTapAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: IceColors.border),
+      ),
+      child: Column(children: [
+        Row(children: [
+          Container(
+            width: 32, height: 32,
+            decoration: BoxDecoration(
+                color: color.withAlpha(20), borderRadius: BorderRadius.circular(9)),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(title,
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w700, color: IceColors.text)),
+          ),
+          GestureDetector(
+            onTap: onTapAll,
+            child: Text('See all',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color)),
+          ),
+        ]),
+        const SizedBox(height: 12),
+        ...items.asMap().entries.map((e) => _ActivityRow(item: e.value, idx: e.key, isLast: e.key == items.length - 1)),
+      ]),
+    ).animate(delay: 600.ms).fadeIn(duration: 400.ms).slideY(begin: 0.08, duration: 400.ms);
+  }
+}
+
+class _ActivityRow extends StatelessWidget {
+  final _ActivityItem item;
+  final int idx;
+  final bool isLast;
+  const _ActivityRow({required this.item, required this.idx, required this.isLast});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(children: [
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+                color: item.color.withAlpha(18),
+                borderRadius: BorderRadius.circular(10)),
+            child: Icon(item.icon, color: item.color, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(item.title,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 13, color: IceColors.text),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+              if (item.subtitle.isNotEmpty)
+                Text(item.subtitle,
+                    style: const TextStyle(fontSize: 11, color: IceColors.muted),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+            ]),
+          ),
+          if (item.trailing.isNotEmpty)
+            Text(item.trailing,
+                style: const TextStyle(fontSize: 11, color: IceColors.muted)),
+        ]),
+      ),
+      if (!isLast)
+        const Divider(height: 1, color: IceColors.border),
+    ]);
+  }
+}
 
 class _AttendanceTrendChart extends StatelessWidget {
   final Map stats;

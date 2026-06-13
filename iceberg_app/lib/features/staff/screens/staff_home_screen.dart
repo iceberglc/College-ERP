@@ -21,7 +21,7 @@ class StaffHomeScreen extends ConsumerWidget {
     final greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: IceColors.bg,
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
@@ -147,41 +147,83 @@ class StaffHomeScreen extends ConsumerWidget {
         : 'T';
     final top = MediaQuery.paddingOf(context).top;
     return Container(
-      color: Colors.white,
-      padding: EdgeInsets.fromLTRB(20, top + 16, 20, 20),
-      child: Row(children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(greeting,
-                style: const TextStyle(
-                    color: IceColors.muted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500))
-                .animate().fadeIn(duration: 300.ms),
-            const SizedBox(height: 2),
-            Text(name,
-                style: const TextStyle(
-                    color: IceColors.text,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900))
-                .animate(delay: 60.ms)
-                .slideX(begin: -0.08, duration: 350.ms, curve: Curves.easeOut)
-                .fadeIn(duration: 300.ms),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: EdgeInsets.fromLTRB(20, top > 16 ? 20 : 20, 20, 24),
+      decoration: BoxDecoration(
+        gradient: kHeroGradient,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(greeting,
+                    style: TextStyle(
+                        color: Colors.white.withAlpha(160),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500))
+                    .animate().fadeIn(duration: 400.ms),
+                const SizedBox(height: 4),
+                Text(name,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900))
+                    .animate(delay: 80.ms)
+                    .slideX(begin: -0.1, duration: 400.ms, curve: Curves.easeOut)
+                    .fadeIn(duration: 300.ms),
+              ]),
+            ),
+            Container(
+              width: 46, height: 46,
+              decoration: const BoxDecoration(
+                color: IceColors.lime,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(initials,
+                  style: const TextStyle(
+                      color: IceColors.navy,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900)),
+            ).animate(delay: 200.ms).scale(duration: 400.ms, curve: Curves.elasticOut),
           ]),
-        ),
-        Container(
-          width: 46, height: 46,
-          decoration: const BoxDecoration(
-            color: IceColors.lime,
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: Text(initials,
-              style: const TextStyle(
-                  color: IceColors.navy,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900)),
-        ).animate(delay: 150.ms).scale(duration: 350.ms, curve: Curves.elasticOut),
+          const SizedBox(height: 16),
+          Row(children: [
+            _QuickChip(icon: Icons.group_rounded, label: 'My Groups'),
+            const SizedBox(width: 8),
+            _QuickChip(icon: Icons.bar_chart_rounded, label: 'Attendance'),
+            const SizedBox(width: 8),
+            _QuickChip(icon: Icons.grade_rounded, label: 'Results'),
+          ]).animate(delay: 280.ms).slideY(begin: 0.15, duration: 350.ms).fadeIn(duration: 300.ms),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _QuickChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(25),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withAlpha(50), width: 1),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: Colors.white, size: 14),
+        const SizedBox(width: 5),
+        Text(label,
+            style: const TextStyle(
+                color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
       ]),
     );
   }

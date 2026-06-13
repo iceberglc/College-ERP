@@ -159,3 +159,18 @@ final adminStaffListProvider = FutureProvider<List<dynamic>>(
 final adminAdminsProvider = FutureProvider<List<dynamic>>(
   (_) => apiGetList('/admin/admins/'),
 );
+
+// Staff payments (invoices for teacher's groups)
+final staffPaymentsProvider = FutureProvider<List<dynamic>>(
+  (_) => apiGetList('/staff/payments/'),
+);
+
+// Admin branches with full detail (for superadmin analytics)
+final adminBranchesDetailProvider = FutureProvider<List<dynamic>>(
+  (_) => apiGetList('/admin/branches-manage/'),
+);
+
+// Admin attendance report (all groups)
+final adminAttendanceReportProvider = FutureProvider<List<dynamic>>(
+  (_) => apiGetList('/admin/attendance-report/'),
+);

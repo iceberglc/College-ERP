@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -25,29 +26,45 @@ class AdminMoreScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final crossAxisCount = width >= 600 ? 3 : 2;
+    final top = MediaQuery.paddingOf(context).top;
+    final cols = MediaQuery.of(context).size.width >= 600 ? 3 : 2;
 
     return Scaffold(
       backgroundColor: IceColors.bg,
-      appBar: AppBar(
-        title: const Text('More'),
-        backgroundColor: IceColors.bg,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.05,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.fromLTRB(20, top + 20, 20, 28),
+            decoration: const BoxDecoration(
+              gradient: kHeroGradient,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('More',
+                  style: TextStyle(
+                      color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900))
+                  .animate().slideX(begin: -0.1, duration: 400.ms).fadeIn(duration: 300.ms),
+              const SizedBox(height: 4),
+              Text('All admin tools and settings',
+                  style: TextStyle(color: Colors.white.withAlpha(160), fontSize: 13))
+                  .animate(delay: 80.ms).fadeIn(),
+            ]),
           ),
-          itemCount: _tiles.length,
-          itemBuilder: (context, i) => _MoreTileWidget(_tiles[i]),
-        ),
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: cols,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.05,
+              ),
+              itemCount: _tiles.length,
+              itemBuilder: (context, i) => _MoreTileWidget(_tiles[i], i),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -68,7 +85,8 @@ class _MoreTile {
 
 class _MoreTileWidget extends StatelessWidget {
   final _MoreTile tile;
-  const _MoreTileWidget(this.tile);
+  final int index;
+  const _MoreTileWidget(this.tile, this.index);
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +137,9 @@ class _MoreTileWidget extends StatelessWidget {
           ),
         ),
       ),
-    );
+    )
+        .animate(delay: Duration(milliseconds: 40 * index))
+        .fadeIn(duration: 220.ms)
+        .scale(begin: const Offset(0.92, 0.92), duration: 220.ms, curve: Curves.easeOut);
   }
 }

@@ -884,6 +884,7 @@ class AdminDashboardView(APIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):
+        import datetime
         user = request.user
         students = branching.filter_students_for_user(user, Student.objects.all())
         staff    = branching.filter_staff_for_user(user, Staff.objects.all())
@@ -902,17 +903,60 @@ class AdminDashboardView(APIView):
         ).count()
         avg_att = round(present_reports / total_reports * 100, 1) if total_reports else None
 
-        leads          = RegistrationLead.objects.all()
+        # 7-day attendance spark
+        today = datetime.date.today()
+        spark = []
+        for i in range(6, -1, -1):
+            day = today - datetime.timedelta(days=i)
+            d_total = AttendanceReport.objects.filter(
+                attendance__group_id__in=group_ids,
+                attendance__date=day,
+            ).count()
+            d_present = AttendanceReport.objects.filter(
+                attendance__group_id__in=group_ids,
+                attendance__date=day,
+                status=AttendanceReport.PRESENT,
+            ).count()
+            spark.append(round(d_present / d_total * 100) if d_total else 0)
+
+        leads = RegistrationLead.objects.all()
         total_branches = Branch.objects.count()
 
+        # Recent leads (last 5)
+        recent_leads = []
+        for l in leads.order_by('-created_at')[:5]:
+            recent_leads.append({
+                'name':   l.name,
+                'phone':  l.phone,
+                'course': getattr(l, 'interested_course', '') or '',
+                'date':   l.created_at.strftime('%b %d') if getattr(l, 'created_at', None) else '',
+            })
+
+        # Recent enrollments (last 5 in scope)
+        recent_enrollments = []
+        for e in Enrollment.objects.filter(group_id__in=group_ids).select_related(
+            'student__admin_user', 'group'
+        ).order_by('-id')[:5]:
+            try:
+                student_name = e.student.admin_user.get_full_name() or str(e.student)
+            except Exception:
+                student_name = str(e.student)
+            recent_enrollments.append({
+                'student': student_name,
+                'group':   e.group.name if e.group else '',
+            })
+
         return Response({
-            "total_students":  students.count(),
-            "total_staff":     staff.count(),
-            "total_groups":    groups.count(),
-            "avg_attendance":  avg_att,
-            "new_leads":       leads.count(),
-            "total_leads":     leads.count(),
-            "total_branches":  total_branches,
+            "total_students":     students.count(),
+            "total_staff":        staff.count(),
+            "total_groups":       groups.count(),
+            "avg_attendance":     avg_att,
+            "new_leads":          leads.count(),
+            "total_leads":        leads.count(),
+            "total_branches":     total_branches,
+            "attendance_spark":   spark,
+            "recent_leads":       recent_leads,
+            "recent_enrollments": recent_enrollments,
         })
 
 

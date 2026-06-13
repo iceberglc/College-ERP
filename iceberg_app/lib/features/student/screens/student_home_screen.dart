@@ -52,60 +52,64 @@ class StudentHomeScreen extends ConsumerWidget {
   Widget _buildHeader(
       BuildContext context, IceUser? user, String initials) {
     final top = MediaQuery.paddingOf(context).top;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, top + 20, 20, 20),
-      child: Row(
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: EdgeInsets.fromLTRB(20, top > 16 ? 20 : 20, 20, 24),
+      decoration: BoxDecoration(
+        gradient: kHeroGradient,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Xayrli kun',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: IceColors.muted,
-                  ),
-                ).animate().fadeIn(duration: 400.ms),
+          Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(greeting,
+                    style: TextStyle(
+                        color: Colors.white.withAlpha(160),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500))
+                    .animate().fadeIn(duration: 400.ms),
                 const SizedBox(height: 4),
                 Text(
-                  user?.firstName.isNotEmpty == true
-                      ? user!.firstName
-                      : 'Talaba',
+                  user?.firstName.isNotEmpty == true ? user!.firstName : 'Student',
                   style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: IceColors.navy,
-                  ),
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900),
                 )
                     .animate(delay: 80.ms)
-                    .slideX(begin: -0.1, duration: 400.ms,
-                        curve: Curves.easeOut)
+                    .slideX(begin: -0.1, duration: 400.ms, curve: Curves.easeOut)
                     .fadeIn(duration: 300.ms),
-              ],
+              ]),
             ),
-          ),
-          // Lime avatar circle
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: IceColors.lime,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initials,
-              style: const TextStyle(
-                color: IceColors.navy,
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
+            Container(
+              width: 46, height: 46,
+              decoration: const BoxDecoration(
+                color: IceColors.lime,
+                shape: BoxShape.circle,
               ),
-            ),
-          )
-              .animate(delay: 200.ms)
-              .scale(duration: 400.ms, curve: Curves.elasticOut),
+              alignment: Alignment.center,
+              child: Text(initials,
+                  style: const TextStyle(
+                      color: IceColors.navy,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900)),
+            ).animate(delay: 200.ms).scale(duration: 400.ms, curve: Curves.elasticOut),
+          ]),
+          const SizedBox(height: 16),
+          // Quick chips
+          Row(children: [
+            _QuickChip(icon: Icons.bar_chart_rounded, label: 'Attendance'),
+            const SizedBox(width: 8),
+            _QuickChip(icon: Icons.grade_rounded, label: 'Results'),
+            const SizedBox(width: 8),
+            _QuickChip(icon: Icons.emoji_events_rounded, label: 'Leaderboard'),
+          ]).animate(delay: 280.ms).slideY(begin: 0.15, duration: 350.ms).fadeIn(duration: 300.ms),
         ],
       ),
     );
@@ -207,6 +211,34 @@ class StudentHomeScreen extends ConsumerWidget {
         : d >= 60
             ? IceColors.warning
             : IceColors.danger;
+  }
+}
+
+// ── Quick chip ─────────────────────────────────────────────────────────────────
+class _QuickChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _QuickChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(25),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withAlpha(50), width: 1),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: Colors.white, size: 14),
+        const SizedBox(width: 5),
+        Text(label,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600)),
+      ]),
+    );
   }
 }
 

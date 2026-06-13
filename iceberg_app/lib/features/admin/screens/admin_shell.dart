@@ -8,26 +8,12 @@ class AdminShell extends StatelessWidget {
   const AdminShell({super.key, required this.navigationShell});
 
   static const _items = [
-    IceNavItem(
-      icon: Icons.dashboard_rounded,
-      label: 'Dashboard',
-      path: '/admin/home',
-    ),
-    IceNavItem(
-      icon: Icons.people_rounded,
-      label: 'People',
-      path: '/admin/students',
-    ),
-    IceNavItem(
-      icon: Icons.manage_accounts_rounded,
-      label: 'Manage',
-      path: '/admin/manage',
-    ),
-    IceNavItem(
-      icon: Icons.grid_view_rounded,
-      label: 'More',
-      path: '/admin/more',
-    ),
+    IceNavItem(icon: Icons.dashboard_rounded,  label: 'Dashboard', path: '/admin/home'),
+    IceNavItem(icon: Icons.people_rounded,      label: 'Students',  path: '/admin/students'),
+    IceNavItem(icon: Icons.group_work_rounded,  label: 'Groups',    path: '/admin/groups'),
+    IceNavItem(icon: Icons.payment_rounded,     label: 'Payments',  path: '/admin/payments'),
+    IceNavItem(icon: Icons.contacts_rounded,    label: 'Leads',     path: '/admin/leads'),
+    IceNavItem(icon: Icons.grid_view_rounded,   label: 'More',      path: '/admin/more'),
   ];
 
   @override

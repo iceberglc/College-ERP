@@ -19,9 +19,10 @@ class IceNavItem {
 }
 
 // ─── AdaptiveLayout shell ────────────────────────────────────────────────────
-/// Renders differently based on screen width:
-/// - Mobile  (< 768px): Scaffold + pill-shaped glassmorphic bottom nav
-/// - Desktop (>= 768px): persistent 256px Django-style sidebar + content
+/// Three-tier responsive layout:
+/// - Phone  (<  600px): floating pill bottom nav (compact, icons-only when 6+)
+/// - Tablet (600-1199px): floating pill bottom nav (all items with labels)
+/// - Desktop (≥ 1200px): persistent 256px sidebar + content column
 class AdaptiveLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
   final List<IceNavItem> items;
@@ -37,27 +38,31 @@ class AdaptiveLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    if (width >= 768) {
+    if (width >= 1200) {
       return _DesktopLayout(
         navigationShell: navigationShell,
         sections: sections,
       );
     }
+    // Both phone and tablet use bottom nav; tablet shows all items.
     return _MobileLayout(
       navigationShell: navigationShell,
       items: items,
+      isTablet: width >= 600,
     );
   }
 }
 
-// ─── Mobile layout ───────────────────────────────────────────────────────────
+// ─── Mobile/Tablet layout ────────────────────────────────────────────────────
 class _MobileLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
   final List<IceNavItem> items;
+  final bool isTablet;
 
   const _MobileLayout({
     required this.navigationShell,
     required this.items,
+    required this.isTablet,
   });
 
   @override
@@ -67,6 +72,7 @@ class _MobileLayout extends StatelessWidget {
       bottomNavigationBar: _FloatingBottomNav(
         selectedIndex: navigationShell.currentIndex,
         items: items,
+        isTablet: isTablet,
         onTap: (i) => navigationShell.goBranch(
           i,
           initialLocation: i == navigationShell.currentIndex,
@@ -79,24 +85,32 @@ class _MobileLayout extends StatelessWidget {
 class _FloatingBottomNav extends StatelessWidget {
   final int selectedIndex;
   final List<IceNavItem> items;
+  final bool isTablet;
   final ValueChanged<int> onTap;
 
   const _FloatingBottomNav({
     required this.selectedIndex,
     required this.items,
+    required this.isTablet,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    // On phones with 6 items, hide labels to keep items compact.
+    final hideLabels = !isTablet && items.length >= 6;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-      ),
+      decoration: const BoxDecoration(color: Colors.transparent),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+          padding: EdgeInsets.fromLTRB(
+            isTablet ? 24 : 16,
+            6,
+            isTablet ? 24 : 16,
+            10,
+          ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(32),
             child: BackdropFilter(
@@ -118,18 +132,23 @@ class _FloatingBottomNav extends StatelessWidget {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 10, horizontal: 8),
+                  padding: EdgeInsets.symmetric(
+                    vertical: hideLabels ? 10 : 10,
+                    horizontal: isTablet ? 12 : 8,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: List.generate(items.length, (i) {
-                      return _MobileNavItem(
-                        item: items[i],
-                        selected: i == selectedIndex,
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          onTap(i);
-                        },
+                      return Expanded(
+                        child: _NavItem(
+                          item: items[i],
+                          selected: i == selectedIndex,
+                          hideLabel: hideLabels,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            onTap(i);
+                          },
+                        ),
                       );
                     }),
                   ),
@@ -143,14 +162,16 @@ class _FloatingBottomNav extends StatelessWidget {
   }
 }
 
-class _MobileNavItem extends StatelessWidget {
+class _NavItem extends StatelessWidget {
   final IceNavItem item;
   final bool selected;
+  final bool hideLabel;
   final VoidCallback onTap;
 
-  const _MobileNavItem({
+  const _NavItem({
     required this.item,
     required this.selected,
+    required this.hideLabel,
     required this.onTap,
   });
 
@@ -161,18 +182,17 @@ class _MobileNavItem extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: hideLabel ? 6 : 10,
+          vertical: 8,
+        ),
         decoration: BoxDecoration(
-          color: selected
-              ? IceColors.lime.withAlpha(30)
-              : Colors.transparent,
+          color: selected ? IceColors.lime.withAlpha(30) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Icon with lime glow when active
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               decoration: selected
@@ -188,26 +208,31 @@ class _MobileNavItem extends StatelessWidget {
                   : null,
               child: Icon(
                 item.icon,
-                size: 22,
-                color: selected ? IceColors.lime : Colors.white.withAlpha(160),
+                size: hideLabel ? 22 : 22,
+                color: selected
+                    ? IceColors.lime
+                    : Colors.white.withAlpha(160),
               ),
             ),
-            const SizedBox(height: 3),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight:
-                    selected ? FontWeight.w700 : FontWeight.w500,
-                color:
-                    selected ? IceColors.lime : Colors.white.withAlpha(120),
+            if (!hideLabel) ...[
+              const SizedBox(height: 3),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight:
+                      selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected
+                      ? IceColors.lime
+                      : Colors.white.withAlpha(120),
+                ),
+                child: Text(
+                  item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              child: Text(
-                item.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+            ],
           ],
         ),
       ),
@@ -216,8 +241,6 @@ class _MobileNavItem extends StatelessWidget {
 }
 
 // ─── Desktop layout ──────────────────────────────────────────────────────────
-/// Mirrors the deployed Django web layout: white 256px sidebar
-/// (`IceSidebar`) + centered content column.
 class _DesktopLayout extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
   final List<SidebarSection> sections;

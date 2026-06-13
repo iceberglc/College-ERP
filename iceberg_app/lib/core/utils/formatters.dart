@@ -20,3 +20,10 @@ String fmtNum(dynamic value) {
   if (value == null) return '—';
   return value.toString();
 }
+
+String fmtCurrency(dynamic value) {
+  if (value == null) return '—';
+  final d = (value is num) ? value.toDouble() : double.tryParse(value.toString());
+  if (d == null) return '—';
+  return NumberFormat('#,##0', 'en_US').format(d);
+}
