@@ -396,3 +396,96 @@ class StaffMoreScreen2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const SizedBox.shrink();
 }
+
+// ─── Placeholder screens for features in development ─────────────────────────
+Widget _buildPlaceholder(BuildContext context, String title, IconData icon) {
+  return Scaffold(
+    backgroundColor: IceColors.bg,
+    body: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 64, color: IceColors.muted),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: IceColors.navy,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Coming soon',
+            style: TextStyle(fontSize: 14, color: IceColors.muted),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class StaffClassesScreen extends StatelessWidget {
+  const StaffClassesScreen({super.key});
+  @override
+  Widget build(BuildContext context) =>
+      _buildPlaceholder(context, 'Classes', Icons.class_rounded);
+}
+
+class StaffAttendanceScreen extends StatelessWidget {
+  const StaffAttendanceScreen({super.key});
+  @override
+  Widget build(BuildContext context) =>
+      _buildPlaceholder(context, 'Attendance', Icons.event_available_rounded);
+}
+
+class StaffAssignmentsScreen extends StatelessWidget {
+  const StaffAssignmentsScreen({super.key});
+  @override
+  Widget build(BuildContext context) =>
+      _buildPlaceholder(context, 'Assignments', Icons.assignment_outlined);
+}
+
+class StaffResultsScreen extends StatelessWidget {
+  const StaffResultsScreen({super.key});
+  @override
+  Widget build(BuildContext context) =>
+      _buildPlaceholder(context, 'Results', Icons.grade_rounded);
+}
+
+class StaffVocabularyScreen extends StatelessWidget {
+  const StaffVocabularyScreen({super.key});
+  @override
+  Widget build(BuildContext context) =>
+      _buildPlaceholder(context, 'Vocabulary', Icons.menu_book_rounded);
+}
+
+class StaffVocabularyDetailScreen extends StatelessWidget {
+  final String vocabId;
+  const StaffVocabularyDetailScreen({super.key, required this.vocabId});
+  @override
+  Widget build(BuildContext context) =>
+      _buildPlaceholder(context, 'Vocabulary Detail', Icons.menu_book_rounded);
+}
+
+class StaffLeaveScreen extends StatelessWidget {
+  const StaffLeaveScreen({super.key});
+  @override
+  Widget build(BuildContext context) =>
+      _buildPlaceholder(context, 'Leave', Icons.beach_access_rounded);
+}
+
+class StaffFeedbackScreen extends StatelessWidget {
+  const StaffFeedbackScreen({super.key});
+  @override
+  Widget build(BuildContext context) =>
+      _buildPlaceholder(context, 'Feedback', Icons.rate_review_rounded);
+}
+
+class StaffUpdateAttendanceScreen extends StatelessWidget {
+  const StaffUpdateAttendanceScreen({super.key});
+  @override
+  Widget build(BuildContext context) =>
+      _buildPlaceholder(context, 'Update Attendance', Icons.edit_calendar_rounded);
+}

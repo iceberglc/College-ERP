@@ -163,17 +163,53 @@ final adminAdminsProvider = FutureProvider<List<dynamic>>(
   (_) => apiGetList('/admin/admins/'),
 );
 
+// ── Student mobile app (ICEBERG redesign) ───────────────────────────────────
+
+// Attendance Hub: calendar month + streak + 12-week trend.
+// Family key: 'YYYY-MM|groupId' ('' parts allowed).
+final attendanceSummaryProvider =
+    FutureProvider.family<Map<String, dynamic>, String>((_, key) {
+      final parts = key.split('|');
+      final qs = <String>[
+        if (parts.isNotEmpty && parts[0].isNotEmpty) 'month=${parts[0]}',
+        if (parts.length > 1 && parts[1].isNotEmpty) 'group_id=${parts[1]}',
+      ].join('&');
+      return apiGet('/student/attendance/summary/${qs.isEmpty ? '' : '?$qs'}');
+    });
+
+// Downloadable result files
+final resultFilesProvider = FutureProvider<Map<String, dynamic>>(
+  (_) => apiGet('/result-files/'),
+);
+
+// Vocabulary day detail (words, completion, progress)
+final vocabDayProvider = FutureProvider.family<Map<String, dynamic>, int>(
+  (_, pk) => apiGet('/vocabulary/$pk/'),
+);
+
+// Assignment detail (incl. my_submission)
+final assignmentDetailProvider =
+    FutureProvider.family<Map<String, dynamic>, int>(
+      (_, pk) => apiGet('/assignments/$pk/'),
+    );
+
+// Leaderboard with scope tabs (overall | group | branch)
+final leaderboardScopedProvider =
+    FutureProvider.family<Map<String, dynamic>, String>(
+      (_, scope) => apiGet('/leaderboard/?scope=$scope'),
+    );
+
+// Group chat threads
+final messageThreadsProvider = FutureProvider<Map<String, dynamic>>(
+  (_) => apiGet('/messages/'),
+);
+
+// Library books
+final booksProvider = FutureProvider<Map<String, dynamic>>(
+  (_) => apiGet('/books/'),
+);
+
 // Staff payments (invoices for teacher's groups)
 final staffPaymentsProvider = FutureProvider<List<dynamic>>(
   (_) => apiGetList('/staff/payments/'),
-);
-
-// Admin branches with full detail (for superadmin analytics)
-final adminBranchesDetailProvider = FutureProvider<List<dynamic>>(
-  (_) => apiGetList('/admin/branches-manage/'),
-);
-
-// Admin attendance report (all groups)
-final adminAttendanceReportProvider = FutureProvider<List<dynamic>>(
-  (_) => apiGetList('/admin/attendance-report/'),
 );
