@@ -1,9 +1,13 @@
 import os
 import mimetypes
+from pathlib import Path
 from django.http import FileResponse, Http404, HttpResponse
 from django.conf import settings
 
-FLUTTER_DIR = os.path.join(settings.BASE_DIR, 'flutter_web')
+FLUTTER_DIR = os.environ.get(
+    'FLUTTER_WEB_DIR',
+    str(Path(settings.BASE_DIR).parent / 'web' / 'flutter_web')
+)
 
 
 def flutter_app(request, path='/'):
