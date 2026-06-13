@@ -1,272 +1,300 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import '../../../core/api/api_client.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/ice_page_header.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class StudentBooksScreen extends StatefulWidget {
+import '../../../core/api/api_providers.dart';
+import '../../../core/theme/ice_tokens.dart';
+import '../../../shared/widgets/ice_kit.dart';
+import '../../../shared/widgets/ice_shell.dart';
+
+/// Library — searchable, category-filtered book catalogue with availability.
+class StudentBooksScreen extends ConsumerStatefulWidget {
   const StudentBooksScreen({super.key});
 
   @override
-  State<StudentBooksScreen> createState() => _State();
+  ConsumerState<StudentBooksScreen> createState() => _StudentBooksScreenState();
 }
 
-class _State extends State<StudentBooksScreen> {
-  bool _loading = true;
-  List<dynamic> _books = [];
-  bool _notAvailable = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetch();
-  }
-
-  Future<void> _fetch() async {
-    setState(() {
-      _loading = true;
-      _notAvailable = false;
-    });
-    try {
-      final res = await ApiClient.instance.dio.get('/books/');
-      final data = res.data;
-      List<dynamic> list = [];
-      if (data is List) {
-        list = data;
-      } else if (data is Map) {
-        list = (data['results'] as List?) ?? (data['books'] as List?) ?? [];
-      }
-      setState(() {
-        _books = list;
-        _loading = false;
-      });
-    } catch (e) {
-      final msg = e.toString().toLowerCase();
-      if (msg.contains('404') || msg.contains('not found')) {
-        setState(() {
-          _notAvailable = true;
-          _loading = false;
-        });
-      } else {
-        setState(() {
-          _notAvailable = false;
-          _loading = false;
-        });
-      }
-    }
-  }
+class _StudentBooksScreenState extends ConsumerState<StudentBooksScreen> {
+  String _query = '';
+  String? _category;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: IceColors.bg,
-      body: RefreshIndicator(
-        onRefresh: _fetch,
-        color: IceColors.navyDeep,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: IcePageHeader(
-                title: 'Library',
-                subtitle: 'Browse available books',
-              ),
-            ),
+    final books = ref.watch(booksProvider);
 
-            if (_loading)
-              const SliverToBoxAdapter(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator(color: IceColors.navyDeep),
+    return books.when(
+      loading: () => const PageSkeleton(),
+      error: (e, _) =>
+          ErrorState(error: e, onRetry: () => ref.invalidate(booksProvider)),
+      data: (data) => _buildBody(context, data),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, Map<String, dynamic> data) {
+    final t = context.ice;
+    final all = ((data['books'] as List?) ?? []).cast<Map<String, dynamic>>();
+
+    final categories = <String>{
+      for (final b in all)
+        if ((b['category'] as String?)?.isNotEmpty == true) b['category'],
+    }.toList()..sort();
+
+    final visible = all.where((b) {
+      final matchesCat = _category == null || b['category'] == _category;
+      final matchesQuery =
+          _query.isEmpty ||
+          (b['title'] ?? '').toString().toLowerCase().contains(_query) ||
+          (b['author'] ?? '').toString().toLowerCase().contains(_query);
+      return matchesCat && matchesQuery;
+    }).toList();
+
+    return IcePage(
+      title: 'Library',
+      subtitle: 'Explore books and resources',
+      backButton: true,
+      onRefresh: () async => ref.refresh(booksProvider.future),
+      children: [
+        TextField(
+          onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+          style: TextStyle(color: t.textHi, fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            hintText: 'Search books, author or subject…',
+            prefixIcon: Icon(Icons.search_rounded, color: t.textMid, size: 20),
+          ),
+        ),
+        const SizedBox(height: 14),
+        if (categories.isNotEmpty) ...[
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            child: Row(
+              children: [
+                _CategoryChip(
+                  label: 'All',
+                  selected: _category == null,
+                  onTap: () => setState(() => _category = null),
+                ),
+                ...categories.map(
+                  (c) => Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: _CategoryChip(
+                      label: c,
+                      selected: _category == c,
+                      onTap: () => setState(() => _category = c),
+                    ),
                   ),
                 ),
-              )
-            else if (_notAvailable)
-              const SliverToBoxAdapter(child: _UnavailableState())
-            else if (_books.isEmpty)
-              const SliverToBoxAdapter(child: _EmptyState())
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) => _BookCard(book: _books[i] as Map, index: i),
-                  childCount: _books.length,
-                ),
-              ),
-            const SliverToBoxAdapter(child: SizedBox(height: 100)),
-          ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (all.isEmpty)
+          const IceCard(
+            child: EmptyState(
+              icon: Icons.local_library_outlined,
+              title: 'Library is empty',
+              message: 'No books in the catalogue yet.',
+            ),
+          )
+        else if (visible.isEmpty)
+          const IceCard(
+            child: EmptyState(
+              icon: Icons.search_off_rounded,
+              title: 'No matches',
+              message: 'Try a different search or category.',
+            ),
+          )
+        else
+          ...visible.map(
+            (b) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _BookCard(book: b),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _CategoryChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.ice;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected ? t.accent : t.inset,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: selected ? t.onAccent : t.textMid,
+          ),
         ),
       ),
     );
   }
 }
 
-// ─── Book Card ────────────────────────────────────────────────────────────────
-
 class _BookCard extends StatelessWidget {
-  final Map book;
-  final int index;
-  const _BookCard({required this.book, required this.index});
+  final Map<String, dynamic> book;
+  const _BookCard({required this.book});
 
   @override
   Widget build(BuildContext context) {
-    final title = book['title']?.toString() ?? 'Untitled';
-    final author = book['author']?.toString() ?? '';
-    final isAvailable =
-        book['is_available'] == true ||
-        book['status']?.toString().toLowerCase() == 'available';
-    final coverUrl = book['cover_url']?.toString() ?? '';
+    final t = context.ice;
+    final available = book['is_available'] == true;
 
-    return Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: IceColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: IceColors.border),
+    return IceCard(
+      padding: const EdgeInsets.all(14),
+      onTap: () => _showDetail(context),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: t.heroGradient,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.menu_book_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
           ),
-          child: Row(
-            children: [
-              // Cover
-              Container(
-                width: 56,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: IceColors.navyDeep.withAlpha(12),
-                  borderRadius: BorderRadius.circular(8),
-                  image: coverUrl.isNotEmpty
-                      ? DecorationImage(
-                          image: NetworkImage(coverUrl),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  book['title'] ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: t.textHi,
+                  ),
                 ),
-                child: coverUrl.isEmpty
-                    ? const Icon(
-                        Icons.menu_book_rounded,
-                        size: 28,
-                        color: IceColors.navyDeep,
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 2),
+                Text(
+                  book['author'] ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12.5, color: t.textMid),
+                ),
+                const SizedBox(height: 8),
+                Row(
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: IceColors.text,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (author.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        author,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: IceColors.muted,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isAvailable
-                            ? IceColors.success.withAlpha(15)
-                            : IceColors.warning.withAlpha(15),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        isAvailable ? 'Available' : 'Issued',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: isAvailable
-                              ? IceColors.success
-                              : IceColors.warning,
-                        ),
-                      ),
+                    if ((book['category'] as String?)?.isNotEmpty == true)
+                      StatusBadge(book['category'], tone: BadgeTone.neutral),
+                    const SizedBox(width: 8),
+                    StatusBadge(
+                      available ? 'Available' : 'On loan',
+                      tone: available ? BadgeTone.accent : BadgeTone.amber,
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        )
-        .animate(delay: Duration(milliseconds: 40 * index))
-        .fadeIn(duration: 250.ms)
-        .slideX(begin: 0.05, duration: 250.ms);
+        ],
+      ),
+    );
   }
-}
 
-// ─── States ───────────────────────────────────────────────────────────────────
-
-class _UnavailableState extends StatelessWidget {
-  const _UnavailableState();
-
-  @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.all(40),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.local_library_outlined, size: 56, color: IceColors.muted),
-        SizedBox(height: 16),
-        Text(
-          'Library unavailable',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: IceColors.text,
-          ),
+  void _showDetail(BuildContext context) {
+    final t = context.ice;
+    final available = book['is_available'] == true;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: t.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 74,
+                  decoration: BoxDecoration(
+                    gradient: t.heroGradient,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.menu_book_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        book['title'] ?? '',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: t.textHi,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        book['author'] ?? '',
+                        style: TextStyle(fontSize: 13.5, color: t.textMid),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                if ((book['category'] as String?)?.isNotEmpty == true)
+                  StatusBadge(book['category'], tone: BadgeTone.sky),
+                const SizedBox(width: 8),
+                StatusBadge(
+                  available ? 'Available' : 'On loan',
+                  tone: available ? BadgeTone.accent : BadgeTone.amber,
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Text(
+              available
+                  ? 'Visit the library desk with your student ID to borrow this book.'
+                  : 'This book is currently on loan. Ask the library desk about a reservation.',
+              style: TextStyle(fontSize: 13.5, color: t.textMid, height: 1.5),
+            ),
+          ],
         ),
-        SizedBox(height: 8),
-        Text(
-          'The library endpoint is not available for this account.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: IceColors.muted),
-        ),
-      ],
-    ),
-  );
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.all(40),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.menu_book_outlined, size: 48, color: IceColors.muted),
-        SizedBox(height: 16),
-        Text(
-          'No books available',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: IceColors.muted,
-          ),
-        ),
-        SizedBox(height: 8),
-        Text(
-          'No books have been added to the library yet.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: IceColors.muted),
-        ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, admin_views
+from . import views, admin_views, student_views
 
 urlpatterns = [
     # ── Auth ─────────────────────────────────────────────────────────────────
@@ -85,6 +85,28 @@ urlpatterns = [
 
     # ── Student Progress ──────────────────────────────────────────────────────
     path("student/progress/", views.StudentProgressView.as_view(), name="api_student_progress"),
+
+    # ── Student: attendance hub, result files, app settings ──────────────────
+    path(
+        "student/attendance/summary/",
+        student_views.StudentAttendanceSummaryView.as_view(),
+        name="api_student_attendance_summary",
+    ),
+    path(
+        "result-files/",
+        student_views.StudentResultFileListView.as_view(),
+        name="api_student_result_files",
+    ),
+    path(
+        "result-files/<int:pk>/download/",
+        student_views.StudentResultFileDownloadView.as_view(),
+        name="api_student_result_file_download",
+    ),
+    path(
+        "student/settings/",
+        student_views.StudentSettingsView.as_view(),
+        name="api_student_settings",
+    ),
 
     # ── Stories ───────────────────────────────────────────────────────────────
     path("stories/", views.StoryListView.as_view(), name="api_stories"),

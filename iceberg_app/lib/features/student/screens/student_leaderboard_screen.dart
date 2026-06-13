@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shimmer/shimmer.dart';
-import '../../../core/api/api_providers.dart';
-import '../../../core/auth/auth_state.dart';
-import '../../../core/theme/app_theme.dart';
 
+import '../../../core/api/api_providers.dart';
+import '../../../core/theme/ice_tokens.dart';
+import '../../../shared/widgets/ice_kit.dart';
+import '../../../shared/widgets/ice_shell.dart';
+
+/// Leaderboard — scope tabs (Overall / Group / Branch), top-3 podium and the
+/// full ranking list with the current student highlighted.
 class StudentLeaderboardScreen extends ConsumerStatefulWidget {
   const StudentLeaderboardScreen({super.key});
 
@@ -16,527 +18,330 @@ class StudentLeaderboardScreen extends ConsumerStatefulWidget {
 
 class _StudentLeaderboardScreenState
     extends ConsumerState<StudentLeaderboardScreen> {
-  int _scopeIndex = 0; // 0=Filialim, 1=Guruhim, 2=Hammasi
-  int _timeIndex = 0; // 0=Kunlik, 1=7 kun, 2=30 kun, 3=Barchasi
-
-  static const _scopeLabels = ['Filialim', 'Guruhim', 'Hammasi'];
-  static const _timeLabels = ['Kunlik', '7 kun', '30 kun', 'Barchasi'];
+  int _tab = 0;
+  static const _scopes = ['overall', 'group', 'branch'];
 
   @override
   Widget build(BuildContext context) {
-    final async = ref.watch(leaderboardProvider);
-    final me = ref.watch(authProvider).user;
+    final scope = _scopes[_tab];
+    final board = ref.watch(leaderboardScopedProvider(scope));
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: RefreshIndicator(
-        onRefresh: () => ref.refresh(leaderboardProvider.future),
-        color: IceColors.navyDeep,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // ── Dark teal gradient header ─────────────────────────────────
-            SliverToBoxAdapter(
-              child: async.when(
-                loading: () => _buildHeader(context, 'Mavsim', [], me),
-                error: (_, __) => _buildHeader(context, 'Mavsim', [], me),
-                data: (season) {
-                  final entries = (season['entries'] as List?) ?? [];
-                  final name = season['name']?.toString() ?? 'Mavsim';
-                  return _buildHeader(context, name, entries, me);
-                },
-              ),
+    return board.when(
+      loading: () => _scaffold(context, const PageSkeleton()),
+      error: (e, _) {
+        // 404 = no active season; show a friendly empty state instead of error.
+        final notFound = e.toString().contains('404');
+        return _scaffold(
+          context,
+          notFound
+              ? const EmptyState(
+                  icon: Icons.emoji_events_outlined,
+                  title: 'No active season',
+                  message: 'The leaderboard opens when a new season starts.',
+                )
+              : ErrorState(
+                  error: e,
+                  onRetry: () =>
+                      ref.invalidate(leaderboardScopedProvider(scope)),
+                ),
+        );
+      },
+      data: (d) => _buildBody(context, d),
+    );
+  }
+
+  Widget _scaffold(BuildContext context, Widget body) => IcePage(
+    title: 'Leaderboard',
+    subtitle: 'Season standings',
+    children: [
+      IceChipTabs(
+        tabs: const ['Overall', 'Group', 'Branch'],
+        index: _tab,
+        onChanged: (i) => setState(() => _tab = i),
+      ),
+      const SizedBox(height: 16),
+      SizedBox(height: 360, child: body),
+    ],
+  );
+
+  Widget _buildBody(BuildContext context, Map<String, dynamic> d) {
+    final t = context.ice;
+    final scope = _scopes[_tab];
+    final entries = ((d['entries'] as List?) ?? [])
+        .cast<Map<String, dynamic>>();
+    final myRank = (d['my_rank'] as num?)?.toInt();
+    final top3 = entries.take(3).toList();
+    final rest = entries.length > 3
+        ? entries.sublist(3)
+        : <Map<String, dynamic>>[];
+
+    return IcePage(
+      title: 'Leaderboard',
+      subtitle: (d['name'] as String?) ?? 'Season standings',
+      onRefresh: () async =>
+          ref.refresh(leaderboardScopedProvider(scope).future),
+      children: [
+        IceChipTabs(
+          tabs: const ['Overall', 'Group', 'Branch'],
+          index: _tab,
+          onChanged: (i) => setState(() => _tab = i),
+        ),
+        const SizedBox(height: 18),
+
+        if (entries.isEmpty)
+          const IceCard(
+            child: EmptyState(
+              icon: Icons.emoji_events_outlined,
+              title: 'No ranking yet',
+              message: 'Rankings appear once scores are captured this season.',
             ),
-
-            // ── Filter pills ──────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: Column(
-                  children: [
-                    _PillToggle(
-                      labels: _scopeLabels,
-                      selected: _scopeIndex,
-                      onChanged: (i) => setState(() => _scopeIndex = i),
-                    ),
-                    const SizedBox(height: 10),
-                    _PillToggle(
-                      labels: _timeLabels,
-                      selected: _timeIndex,
-                      onChanged: (i) => setState(() => _timeIndex = i),
-                      small: true,
-                    ),
-                  ],
+          )
+        else ...[
+          if (top3.isNotEmpty) _Podium(top3: top3),
+          const SizedBox(height: 18),
+          ...rest.map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _RankRow(entry: e),
+            ),
+          ),
+          if (myRank != null && myRank > 3) ...[
+            const SizedBox(height: 10),
+            Center(
+              child: Text(
+                'Your rank: #$myRank',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: t.accent,
                 ),
               ),
             ),
+          ],
+        ],
+      ],
+    );
+  }
+}
 
-            // ── Ranked list ───────────────────────────────────────────────
-            async.when(
-              loading: () => const SliverToBoxAdapter(child: _Skeleton()),
-              error: (e, _) {
-                final msg = e.toString();
-                if (msg.contains('404') || msg.contains('No active')) {
-                  return const SliverToBoxAdapter(child: _Empty());
-                }
-                return SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      'Xatolik: $e',
-                      style: const TextStyle(color: IceColors.danger),
-                    ),
-                  ),
-                );
-              },
-              data: (season) {
-                final entries = (season['entries'] as List?) ?? [];
-                if (entries.isEmpty) {
-                  return const SliverToBoxAdapter(child: _Empty());
-                }
-                return SliverList(
-                  delegate: SliverChildListDelegate([
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Text(
-                        'Reyting jadvali',
+class _Podium extends StatelessWidget {
+  final List<Map<String, dynamic>> top3;
+  const _Podium({required this.top3});
+
+  @override
+  Widget build(BuildContext context) {
+    // Order: 2nd · 1st · 3rd
+    final ordered = <Map<String, dynamic>?>[
+      top3.length > 1 ? top3[1] : null,
+      top3.isNotEmpty ? top3[0] : null,
+      top3.length > 2 ? top3[2] : null,
+    ];
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: ordered
+          .map((e) => Expanded(child: _PodiumColumn(entry: e)))
+          .toList(),
+    );
+  }
+}
+
+class _PodiumColumn extends StatelessWidget {
+  final Map<String, dynamic>? entry;
+  const _PodiumColumn({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.ice;
+    if (entry == null) return const SizedBox.shrink();
+    final rank = (entry!['rank'] as num?)?.toInt() ?? 0;
+    final isFirst = rank == 1;
+    final me = entry!['is_me'] == true;
+    final medal = switch (rank) {
+      1 => t.accent,
+      2 => const Color(0xFFB8C4C9),
+      _ => const Color(0xFFCC8B5C),
+    };
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: medal, width: 2.5),
+              ),
+              child: CircleAvatar(
+                radius: isFirst ? 32 : 26,
+                backgroundColor: t.inset,
+                backgroundImage:
+                    (entry!['avatar_url'] as String?)?.isNotEmpty == true
+                    ? NetworkImage(entry!['avatar_url'])
+                    : null,
+                child: (entry!['avatar_url'] as String?)?.isNotEmpty == true
+                    ? null
+                    : Text(
+                        _initial(entry!['student_name']),
                         style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: IceColors.muted,
+                          fontSize: isFirst ? 24 : 20,
+                          fontWeight: FontWeight.w800,
+                          color: t.textMid,
                         ),
                       ),
+              ),
+            ),
+            Positioned(
+              bottom: -10,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(color: medal, shape: BoxShape.circle),
+                child: Center(
+                  child: Text(
+                    '$rank',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87,
                     ),
-                    ...entries.asMap().entries.map((e) {
-                      final entry = e.value as Map;
-                      final myName =
-                          '${me?.firstName ?? ''} ${me?.lastName ?? ''}'.trim();
-                      final isMe = entry['student_name'] == myName;
-                      return _RankRow(entry: entry, index: e.key, isMe: isMe);
-                    }),
-                    const SizedBox(height: 100),
-                  ]),
-                );
-              },
+                  ),
+                ),
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(
-    BuildContext context,
-    String seasonName,
-    List entries,
-    IceUser? me,
-  ) {
-    final top = MediaQuery.paddingOf(context).top;
-    final top3 = entries.take(3).toList();
-    final hasTop3 = top3.length >= 3;
-
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [IceColors.navy, IceColors.navyDeep],
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-      ),
-      padding: EdgeInsets.fromLTRB(20, top + 20, 20, 32),
-      child: Column(
-        children: [
-          // Title row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Reyting',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: IceColors.lime,
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Text(
-                  seasonName,
-                  style: const TextStyle(
-                    color: IceColors.navy,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Podium
-          if (hasTop3) ...[const SizedBox(height: 28), _Podium(entries: top3)],
-        ],
-      ),
-    );
-  }
-}
-
-// ── Pill toggle ────────────────────────────────────────────────────────────────
-class _PillToggle extends StatelessWidget {
-  final List<String> labels;
-  final int selected;
-  final ValueChanged<int> onChanged;
-  final bool small;
-
-  const _PillToggle({
-    required this.labels,
-    required this.selected,
-    required this.onChanged,
-    this.small = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4F4F4),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Row(
-        children: labels.asMap().entries.map((e) {
-          final active = e.key == selected;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onChanged(e.key),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: EdgeInsets.symmetric(vertical: small ? 8 : 10),
-                decoration: BoxDecoration(
-                  color: active ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: active
-                      ? [
-                          const BoxShadow(
-                            color: Color(0x14000000),
-                            blurRadius: 6,
-                            offset: Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  e.value,
-                  style: TextStyle(
-                    fontSize: small ? 12 : 13,
-                    fontWeight: FontWeight.w700,
-                    color: active ? IceColors.navy : IceColors.muted,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-// ── Podium ─────────────────────────────────────────────────────────────────────
-class _Podium extends StatelessWidget {
-  final List entries;
-  const _Podium({required this.entries});
-
-  @override
-  Widget build(BuildContext context) {
-    // Order: 2nd left, 1st center (elevated), 3rd right
-    final order = entries.length >= 3
-        ? [entries[1], entries[0], entries[2]]
-        : entries;
-    final ranks = [2, 1, 3];
-    final borderColors = [
-      Colors.grey[400]!, // silver
-      const Color(0xFFFFD700), // gold
-      const Color(0xFFCD7F32), // bronze
-    ];
-    final sizes = [52.0, 64.0, 52.0];
-    final offsets = [8.0, 0.0, 8.0];
-
-    return Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(order.length, (i) {
-            final entry = order[i] as Map;
-            final name = entry['student_name']?.toString() ?? '';
-            final score = (entry['score'] as num?)?.toStringAsFixed(1) ?? '0';
-            final inits = _initials(name);
-
-            return Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(bottom: offsets[i]),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: sizes[i],
-                          height: sizes[i],
-                          decoration: BoxDecoration(
-                            color: IceColors.lime,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: borderColors[i],
-                              width: 3,
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            inits,
-                            style: TextStyle(
-                              color: IceColors.navy,
-                              fontSize: sizes[i] * 0.28,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          name.split(' ').first,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$score%',
-                          style: TextStyle(
-                            color: borderColors[i],
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '#${ranks[i]}',
-                          style: TextStyle(
-                            color: borderColors[i],
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        )
-        .animate()
-        .slideY(begin: 0.15, duration: 500.ms, curve: Curves.easeOut)
-        .fadeIn(duration: 400.ms);
-  }
-
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '?';
-    final f = parts[0].isNotEmpty ? parts[0][0].toUpperCase() : '';
-    final l = parts.length > 1 && parts[1].isNotEmpty
-        ? parts[1][0].toUpperCase()
-        : '';
-    return '$f$l'.isNotEmpty ? '$f$l' : '?';
-  }
-}
-
-// ── Rank row ───────────────────────────────────────────────────────────────────
-class _RankRow extends StatelessWidget {
-  final Map entry;
-  final int index;
-  final bool isMe;
-  const _RankRow({
-    required this.entry,
-    required this.index,
-    required this.isMe,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final rank = entry['rank'] ?? (index + 1);
-    final name = entry['student_name']?.toString() ?? '';
-    final score = (entry['score'] as num?)?.toStringAsFixed(1) ?? '0';
-    final inits = _initials(name);
-
-    return Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: isMe ? IceColors.lime.withAlpha(60) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isMe ? IceColors.lime : const Color(0xFFEEEEEE),
-              width: isMe ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 32,
-                child: Text(
-                  '$rank',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                    color: rank <= 3 ? IceColors.warning : IceColors.muted,
-                  ),
-                ),
-              ),
-              // Lime avatar
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  color: IceColors.lime,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  inits,
-                  style: const TextStyle(
-                    color: IceColors.navy,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  name,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: isMe ? IceColors.navy : IceColors.text,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (isMe) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: IceColors.navy,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: const Text(
-                    'Siz',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                '$score%',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: IceColors.navy,
-                ),
-              ),
-            ],
-          ),
-        )
-        .animate(delay: Duration(milliseconds: 30 * index))
-        .fadeIn(duration: 250.ms)
-        .slideX(begin: 0.05, duration: 260.ms);
-  }
-
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '?';
-    final f = parts[0].isNotEmpty ? parts[0][0].toUpperCase() : '';
-    final l = parts.length > 1 && parts[1].isNotEmpty
-        ? parts[1][0].toUpperCase()
-        : '';
-    return '$f$l'.isNotEmpty ? '$f$l' : '?';
-  }
-}
-
-// ── Skeleton ───────────────────────────────────────────────────────────────────
-class _Skeleton extends StatelessWidget {
-  const _Skeleton();
-
-  @override
-  Widget build(BuildContext context) => Shimmer.fromColors(
-    baseColor: Colors.grey[200]!,
-    highlightColor: Colors.grey[50]!,
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          for (int i = 0; i < 7; i++) ...[
-            Container(
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ],
-      ),
-    ),
-  );
-}
-
-// ── Empty ──────────────────────────────────────────────────────────────────────
-class _Empty extends StatelessWidget {
-  const _Empty();
-
-  @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.all(40),
-    child: Column(
-      children: [
-        Icon(Icons.emoji_events_outlined, size: 56, color: IceColors.muted),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         Text(
-          'Hozircha reyting yo\'q',
+          _firstName(entry!['student_name']),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: IceColors.muted,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: me ? t.accent : t.textHi,
           ),
         ),
-        SizedBox(height: 8),
         Text(
-          'Faol mavsum boshlanganda reyting ko\'rinadi.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: IceColors.muted),
+          ((entry!['score'] as num?) ?? 0).toStringAsFixed(0),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: t.textMid,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: isFirst ? 70 : 48,
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                medal.withValues(alpha: 0.4),
+                medal.withValues(alpha: 0.08),
+              ],
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+          ),
         ),
       ],
-    ),
-  );
+    );
+  }
+
+  String _initial(dynamic name) {
+    final s = (name ?? '').toString().trim();
+    return s.isEmpty ? '?' : s[0].toUpperCase();
+  }
+
+  String _firstName(dynamic name) {
+    final s = (name ?? '').toString().trim();
+    return s.isEmpty ? 'Student' : s.split(' ').first;
+  }
+}
+
+class _RankRow extends StatelessWidget {
+  final Map<String, dynamic> entry;
+  const _RankRow({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.ice;
+    final me = entry['is_me'] == true;
+    final rank = (entry['rank'] as num?)?.toInt() ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: me ? t.accent : t.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: me ? t.accent : t.stroke),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 26,
+            child: Text(
+              '$rank',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: me ? t.onAccent : t.textMid,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: me ? t.onAccent.withValues(alpha: 0.15) : t.inset,
+            backgroundImage:
+                (entry['avatar_url'] as String?)?.isNotEmpty == true
+                ? NetworkImage(entry['avatar_url'])
+                : null,
+            child: (entry['avatar_url'] as String?)?.isNotEmpty == true
+                ? null
+                : Text(
+                    _initial(entry['student_name']),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: me ? t.onAccent : t.textMid,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              me ? 'You' : (entry['student_name'] ?? 'Student'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w700,
+                color: me ? t.onAccent : t.textHi,
+              ),
+            ),
+          ),
+          Text(
+            ((entry['score'] as num?) ?? 0).toStringAsFixed(0),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: me ? t.onAccent : t.accent,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _initial(dynamic name) {
+    final s = (name ?? '').toString().trim();
+    return s.isEmpty ? '?' : s[0].toUpperCase();
+  }
 }
