@@ -1,328 +1,69 @@
 <div align="center">
 
-# 🎓 College ERP System
+# Iceberg College ERP
 
-### Enterprise Resource Planning Solution for Educational Institutions
+**Enterprise Resource Planning for Language Learning Centers**
 
-[![Stars](https://img.shields.io/github/stars/Ansarimajid/College-ERP?style=for-the-badge&logo=github)](https://github.com/Ansarimajid/College-ERP)
-[![Python](https://img.shields.io/badge/Python-3.x-blue?style=for-the-badge&logo=python)](https://www.python.org/)
-[![Django](https://img.shields.io/badge/Django-Framework-green?style=for-the-badge&logo=django)](https://www.djangoproject.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-5.x-green?style=flat-square&logo=django)](https://www.djangoproject.com/)
+[![Flutter](https://img.shields.io/badge/Flutter-mobile%20%2B%20web-02569B?style=flat-square&logo=flutter)](https://flutter.dev/)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
-[Live Demo](https://syncx.pythonanywhere.com) • [Report Bug](https://github.com/Ansarimajid/College-ERP/issues) • [Request Feature](https://github.com/Ansarimajid/College-ERP/issues)
+[Live Demo](https://app.iceberglc.com) · [Report Bug](https://github.com/iceberglc/College-ERP/issues) · [Request Feature](https://github.com/iceberglc/College-ERP/issues)
 
 </div>
 
 ---
 
-## 📋 Table of Contents
+A full-featured ERP system for educational institutions: manage students, staff, attendance, results, assignments, invoices, and notifications — all from a unified Django backend with Flutter mobile and web clients.
 
-- [About](#-about)
-- [Features](#-features)
-- [Demo Credentials](#-demo-credentials)
-- [Technology Stack](#-technology-stack)
-- [Installation](#-installation)
-- [Screenshots](#-screenshots)
-- [Roadmap](#-roadmap)
-- [Contributing](#-contributing)
-- [Support](#-support)
+## Repository layout
 
----
+| Directory | Contents |
+|---|---|
+| `backend/` | Django ERP backend — REST API, web admin, templates |
+| `mobile/` | Flutter mobile app (`iceberg_app`) — Android & iOS |
+| `web/` | Flutter web build artifacts served by Django at `/app/` |
+| `infra/` | Deployment infra: nginx config, setup script, TWA, PWA assets |
+| `docs/` | Contributing guide, security policy, deployment docs, screenshots |
+| `.do/` | DigitalOcean App Platform spec (`app.yaml`) |
+| `.github/` | GitHub Actions workflows and issue templates |
 
-## 🎯 About
-
-**College ERP** is a comprehensive Enterprise Resource Planning system designed specifically for educational institutions. Built with Python and Django, this full-stack web application streamlines administrative tasks, student management, and staff operations in one unified platform.
-
-### ✨ Why Choose This ERP?
-
-- 🚀 **Modern Tech Stack** - Built with Django for robust performance
-- 📊 **Data-Driven Insights** - Visual dashboards for performance tracking
-- 👥 **Multi-Role Support** - Separate interfaces for Admin, Staff, and Students
-- 🔒 **Secure** - Role-based access control and authentication
-- 📱 **Responsive Design** - Works seamlessly on all devices
-
----
-
-## 🚀 Features
-
-### 👨‍💼 Admin Dashboard
-
-<details>
-<summary>Click to expand Admin features</summary>
-
-- 📈 **Analytics Dashboard** - Overview charts for student/staff performance, courses, and subjects
-- 👥 **Staff Management** - Complete CRUD operations for staff members
-- 🎓 **Student Management** - Add, update, and delete student records
-- 📚 **Course Management** - Organize and manage academic courses
-- 📖 **Subject Management** - Handle subject assignments and details
-- 📅 **Session Management** - Control academic sessions and terms
-- ✅ **Attendance Monitoring** - View and track student attendance
-- 💬 **Feedback System** - Review and respond to feedback from students/staff
-- 🏖️ **Leave Management** - Approve or reject leave applications
-
-</details>
-
-### 👨‍🏫 Staff Portal
-
-<details>
-<summary>Click to expand Staff features</summary>
-
-- 📊 **Performance Dashboard** - Track student progress and subject analytics
-- ✏️ **Attendance Management** - Mark and update student attendance
-- 📝 **Result Entry** - Add and modify student examination results
-- 🏖️ **Leave Applications** - Apply for personal leave
-- 💭 **Feedback Channel** - Send feedback to administration
-
-</details>
-
-### 🎓 Student Portal
-
-<details>
-<summary>Click to expand Student features</summary>
-
-- 📊 **Personal Dashboard** - View attendance, results, and leave status
-- 📅 **Attendance Tracking** - Monitor class attendance records
-- 🎯 **Result Portal** - Access examination results and grades
-- 🏖️ **Leave Requests** - Submit leave applications
-- 💬 **Feedback System** - Provide feedback to HOD
-
-</details>
-
----
-
-## 🔑 Demo Credentials
-
-### 🌐 Live Demo
-Visit: **[https://syncx.pythonanywhere.com](https://syncx.pythonanywhere.com)** (v2.0.0)
-
-### Login Details
-
-| Role | Email | Password |
-|------|-------|----------|
-| 👨‍💼 **Admin (Local Test)** | `admin@test.com` | `admin123` |
-| 👨‍🎓 **Student** | `studentone@student.com` | `studentone` |
-| 👨‍🏫 **Staff** | `staffone@staff.com` | `staffone` |
-
----
-
-## 🛠️ Technology Stack
-
-| Category | Technologies |
-|----------|-------------|
-| **Backend** | Python, Django Framework |
-| **Frontend** | HTML5, CSS3, JavaScript, Bootstrap |
-| **Database** | SQLite (Development), PostgreSQL (Production Ready) |
-| **Authentication** | Django Auth |
-| **Deployment** | PythonAnywhere |
-
----
-
-## 📥 Installation
-
-### Prerequisites
-
-Ensure you have the following installed:
-
-- ✅ [Git](https://git-scm.com/) - Version control
-- ✅ [Python 3.x](https://www.python.org/downloads/) - Programming language
-- ✅ [pip](https://pip.pypa.io/en/stable/installing/) - Package manager
-
-### Step-by-Step Setup
-
-#### 1️⃣ Clone the Repository
+## Quick start
 
 ```bash
-git clone https://github.com/Ansarimajid/College-ERP.git
+# 1. Clone and configure
+git clone https://github.com/iceberglc/College-ERP.git
 cd College-ERP
-```
+cp .env.example .env          # edit DJANGO_SECRET_KEY, DATABASE_URL
 
-#### 2️⃣ Create Virtual Environment
+# 2. Install backend dependencies
+python3.11 -m venv venv && source venv/bin/activate
+pip install -r backend/requirements.txt
 
-**Using venv**
-
-<details>
-<summary>Windows</summary>
-
-```bash
-python -m venv venv
-source venv/scripts/activate
-```
-</details>
-
-<details>
-<summary>macOS</summary>
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-</details>
-
-<details>
-<summary>Linux</summary>
-
-```bash
-virtualenv .
-source bin/activate
-```
-</details>
-
-#### 3️⃣ Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-#### 4️⃣ Configure Settings
-
-Open `settings.py` and update:
-
-```python
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-```
-
-> ⚠️ **Security Note:** Never use `ALLOWED_HOSTS = ['*']` in production!
-
-#### 4.1️⃣ Configure reCAPTCHA
-
-This project now reads the reCAPTCHA keys from environment variables:
-
-```bash
-CAPTCHA_SITE_KEY=your-google-recaptcha-site-key
-CAPTCHA_SECRET_KEY=your-google-recaptcha-secret-key
-```
-
-You can start from [`.env.example`](.env.example) and set the values for your environment. The app automatically loads a local [`.env`](.env) file at startup, so you do not need to export variables manually if you create that file in the project root.
-
-Example `.env` file:
-
-```bash
-CAPTCHA_SITE_KEY=your-google-recaptcha-site-key
-CAPTCHA_SECRET_KEY=your-google-recaptcha-secret-key
-```
-
-If you prefer the shell, you can still export them before running the server.
-
-For the Google error `Invalid domain for site key`, make sure the site key in `CAPTCHA_SITE_KEY` was created in Google reCAPTCHA for the exact hostname you are using, such as `localhost`, `127.0.0.1`, `127.0.0.1:8000`, or your deployed domain.
-
-If you are switching between local and production, use a different key pair for each environment and register both hostnames in the Google reCAPTCHA admin console if you want one key to work in both places.
-
-#### 5️⃣ Database Setup
-
-```bash
+# 3. Set up the database and start
+cd backend
 python manage.py migrate
-python manage.py createsuperuser
-```
-
-Follow the prompts to create an admin account.
-
-#### 6️⃣ Run Development Server
-
-```bash
-# Windows
 python manage.py runserver
-
-# macOS/Linux
-python3 manage.py runserver
 ```
 
-🎉 **Success!** Visit `http://127.0.0.1:8000` in your browser
+Visit http://127.0.0.1:8000/ (web ERP) or http://127.0.0.1:8000/api/v1/ (REST API).
 
----
+## Documentation
 
-## 📸 Screenshots
+| Document | Description |
+|---|---|
+| [backend/README.md](backend/README.md) | Backend setup, API overview, linting |
+| [mobile/README.md](mobile/README.md) | Flutter app setup, build instructions |
+| [web/README.md](web/README.md) | Flutter web artifacts and rebuild steps |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Full deployment guide (DO, VPS, local) |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | How to contribute |
+| [docs/SECURITY.md](docs/SECURITY.md) | Security policy |
 
-![Demo Screenshot](Showcase/Screenshot_04.png)
-![Demo Screenshot](Showcase/Screenshot_03.png)
-![Demo Screenshot](Showcase/Screenshot_01.png)
-![Demo Screenshot](Showcase/Screenshot_02.png)
+## Tech stack
 
-
----
-
-## 🗺️ Roadmap
-
-### ✅ Completed Features
-
-- [x] Multi-role authentication system
-- [x] Complete CRUD operations for all entities
-- [x] Attendance management system
-- [x] Result management with CBVs
-- [x] Leave application workflow
-- [x] Feedback system
-- [x] Email notifications
-- [x] Email/password authentication flow
-- [x] Profile management for all roles
-- [x] Dynamic dashboard analytics
-- [x] Responsive design
-- [x] Password reset functionality
-
-### 🔜 Upcoming Features
-
-
-- [ ] SMS notifications
-- [ ] Advanced reporting and analytics
-- [ ] Online examination module
-- [ ] Library management system
-- [ ] Fee management integration
-- [ ] Timetable generator
-- [ ] Parent portal
-
----
-
-## 🤝 Contributing
-
-Contributions make the open-source community an amazing place to learn and create. Any contributions you make are **greatly appreciated**!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 💖 Support the Project
-
-If you find this project helpful, please consider:
-
-- ⭐ **Star this repository** on GitHub
-- 🐛 **Report bugs** to help improve the project
-- 💡 **Suggest new features** via issues
-- 📢 **Share** with fellow developers
-- 👨‍💻 **Contribute** to the codebase
-
-### Connect with the Developer
-
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=for-the-badge&logo=github)](https://github.com/Ansarimajid)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/ansmajidali)
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📞 Contact & Support
-
-Having issues? Need help?
-
-- 📧 **Email:** [ansmajidali@gmail.com](mailto:ansmajidali@gmail.com)
-- 🐛 **Issues:** [GitHub Issues](https://github.com/Ansarimajid/College-ERP/issues)
-- 💬 **Discussions:** [GitHub Discussions](https://github.com/Ansarimajid/College-ERP/discussions)
-
----
-
-<div align="center">
-
-### ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Ansarimajid/College-ERP&type=Date)](https://star-history.com/#Ansarimajid/College-ERP&Date)
-
-**Made with ❤️ by [Ansari Majid](https://github.com/Ansarimajid)**
-
-*If this project helped you, consider giving it a star! ⭐*
-
-</div>
+- **Backend**: Python 3.11, Django 5, Django REST Framework, SimpleJWT, Gunicorn
+- **Database**: PostgreSQL (production), SQLite (dev)
+- **Mobile/Web client**: Flutter (Dart)
+- **Hosting**: DigitalOcean App Platform / VPS with nginx
+- **CI**: GitHub Actions (Django tests, Flutter APK build)
