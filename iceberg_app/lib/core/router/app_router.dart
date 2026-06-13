@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_state.dart';
 import 'role_nav.dart';
 import '../../shared/widgets/ice_sidebar.dart';
-import '../theme/app_theme.dart';
+import '../theme/ice_tokens.dart';
 import '../../features/auth/screens/login_screen.dart';
 
 // Student
@@ -25,7 +25,11 @@ import '../../features/student/screens/student_result_files_screen.dart';
 import '../../features/student/screens/student_books_screen.dart';
 import '../../features/student/screens/student_leaderboard_screen.dart';
 import '../../features/student/screens/student_progress_screen.dart';
-import '../../features/student/screens/student_more_screen.dart';
+import '../../features/student/screens/student_profile_screen.dart';
+import '../../features/student/screens/student_settings_screen.dart';
+import '../../features/student/screens/student_messages_screen.dart';
+import '../../features/student/screens/student_assignment_detail_screen.dart';
+import '../../features/student/screens/student_learn_screen.dart';
 
 // Staff
 import '../../features/staff/screens/staff_shell.dart';
@@ -172,125 +176,165 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // ── Student shell (4 branches) ────────────────────────────────────────
+      // ── Student shell (5 branches: Dashboard·Progress·Vocab·Ranks·Profile) ─
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             StudentShell(navigationShell: navigationShell),
         branches: [
+          // 0 · Dashboard + its drill-downs
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/student/home',
                 builder: (_, __) => const StudentHomeScreen(),
               ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
               GoRoute(
-                path: '/student/vocabulary',
-                builder: (_, __) => const StudentVocabularyScreen(),
+                path: '/student/notifications',
+                builder: (_, __) => const StudentNotificationsScreen(),
+              ),
+              GoRoute(
+                path: '/student/messages',
+                builder: (_, __) => const StudentMessagesScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':groupId',
+                    builder: (_, state) => StudentChatScreen(
+                      groupId:
+                          int.tryParse(state.pathParameters['groupId']!) ?? 0,
+                      groupName: state.uri.queryParameters['name'] ?? 'Chat',
+                    ),
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: '/student/assignments',
+                builder: (_, __) => const StudentAssignmentsScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (_, state) => StudentAssignmentDetailScreen(
+                      assignmentId:
+                          int.tryParse(state.pathParameters['id']!) ?? 0,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+          // 1 · Progress + Attendance Hub
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/student/progress',
                 builder: (_, __) => const StudentProgressScreen(),
               ),
+              GoRoute(
+                path: '/student/attendance',
+                builder: (_, __) => const StudentAttendanceScreen(),
+              ),
             ],
           ),
+          // 2 · Vocabulary
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/student/more',
-                builder: (_, __) => const StudentMoreScreen(),
+                path: '/student/vocabulary',
+                builder: (_, __) => const StudentVocabularyScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (_, state) => StudentVocabularyDetailScreen(
+                      vocabId: state.pathParameters['id']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'flashcards',
+                        builder: (_, state) => StudentFlashcardScreen(
+                          vocabId: state.pathParameters['id']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'learn',
+                        builder: (_, state) => StudentLearnScreen(
+                          vocabId: state.pathParameters['id']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'quiz',
+                        builder: (_, state) => StudentVocabularyQuizScreen(
+                          dayId:
+                              int.tryParse(state.pathParameters['id'] ?? '') ??
+                              0,
+                          dayTitle:
+                              state.uri.queryParameters['title'] ??
+                              'Vocabulary Quiz',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-
-      // ── Student standalone routes (sidebar persists on desktop) ──
-      ShellRoute(
-        builder: (_, __, child) =>
-            DesktopPageShell(sections: studentSidebarSections, child: child),
-        routes: [
-          // ── Student standalone routes ─────────────────────────────────────────
-          GoRoute(
-            path: '/student/attendance',
-            builder: (_, __) => const StudentAttendanceScreen(),
-          ),
-          GoRoute(
-            path: '/student/results',
-            builder: (_, __) => const StudentResultsScreen(),
-          ),
-          GoRoute(
-            path: '/student/assignments',
-            builder: (_, __) => const StudentAssignmentsScreen(),
-          ),
-          GoRoute(
-            path: '/student/leaderboard',
-            builder: (_, __) => const StudentLeaderboardScreen(),
-          ),
-          GoRoute(
-            path: '/student/payments',
-            builder: (_, __) => const StudentPaymentsScreen(),
-          ),
-          GoRoute(
-            path: '/student/leave',
-            builder: (_, __) => const StudentLeaveScreen(),
-          ),
-          GoRoute(
-            path: '/student/feedback',
-            builder: (_, __) => const StudentFeedbackScreen(),
-          ),
-          GoRoute(
-            path: '/student/notifications',
-            builder: (_, __) => const StudentNotificationsScreen(),
-          ),
-          GoRoute(
-            path: '/student/books',
-            builder: (_, __) => const StudentBooksScreen(),
-          ),
-          GoRoute(
-            path: '/student/library',
-            builder: (_, __) => const StudentBooksScreen(),
-          ),
-          GoRoute(
-            path: '/student/result-files',
-            builder: (_, __) => const StudentResultFilesScreen(),
-          ),
-          GoRoute(
-            path: '/student/vocabulary/:id',
-            builder: (_, state) => StudentVocabularyDetailScreen(
-              vocabId: state.pathParameters['id']!,
-            ),
+          // 3 · Leaderboard
+          StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'flashcards',
-                builder: (_, state) => StudentFlashcardScreen(
-                  vocabId: state.pathParameters['id']!,
-                ),
-              ),
-              GoRoute(
-                path: 'quiz',
-                builder: (_, state) => StudentVocabularyQuizScreen(
-                  dayId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-                  dayTitle:
-                      state.uri.queryParameters['title'] ?? 'Vocabulary Quiz',
-                ),
+                path: '/student/leaderboard',
+                builder: (_, __) => const StudentLeaderboardScreen(),
               ),
             ],
           ),
-          GoRoute(
-            path: '/student/profile',
-            builder: (_, __) => const ProfileHubScreen(),
-          ),
-          GoRoute(
-            path: '/student/messages',
-            builder: (_, __) => const MessagesScreen(),
+          // 4 · Profile + student services
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/student/profile',
+                builder: (_, __) => const StudentProfileScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (_, __) => const StudentEditProfileScreen(),
+                  ),
+                  GoRoute(
+                    path: 'avatar',
+                    builder: (_, __) => const StudentAvatarScreen(),
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: '/student/settings',
+                builder: (_, __) => const StudentSettingsScreen(),
+              ),
+              GoRoute(
+                path: '/student/results',
+                builder: (_, __) => const StudentResultsScreen(),
+              ),
+              GoRoute(
+                path: '/student/result-files',
+                builder: (_, __) => const StudentResultFilesScreen(),
+              ),
+              GoRoute(
+                path: '/student/library',
+                builder: (_, __) => const StudentBooksScreen(),
+              ),
+              GoRoute(
+                path: '/student/books',
+                builder: (_, __) => const StudentBooksScreen(),
+              ),
+              GoRoute(
+                path: '/student/payments',
+                builder: (_, __) => const StudentPaymentsScreen(),
+              ),
+              GoRoute(
+                path: '/student/leave',
+                builder: (_, __) => const StudentLeaveScreen(),
+              ),
+              GoRoute(
+                path: '/student/feedback',
+                builder: (_, __) => const StudentFeedbackScreen(),
+              ),
+            ],
           ),
         ],
       ),
@@ -572,25 +616,56 @@ class _AuthListenable extends ChangeNotifier {
 class _SplashScreen extends StatelessWidget {
   const _SplashScreen();
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: IceColors.navy,
-    body: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Image.asset(
-            'assets/images/logo.png',
-            width: 80,
-            height: 80,
-            errorBuilder: (_, __, ___) =>
-                const Icon(Icons.school_rounded, size: 64, color: Colors.white),
+  Widget build(BuildContext context) {
+    final t = IceTokens.dark();
+    return Scaffold(
+      backgroundColor: t.bg,
+      body: Container(
+        decoration: BoxDecoration(gradient: t.heroGradient),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: t.accent.withValues(alpha: 0.4)),
+                ),
+                alignment: Alignment.center,
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 58,
+                  height: 58,
+                  errorBuilder: (_, __, ___) =>
+                      Icon(Icons.school_rounded, size: 52, color: t.accent),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'ICEBERG',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 6,
+                  color: t.mint,
+                ),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.6,
+                  valueColor: AlwaysStoppedAnimation(t.accent),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation(Colors.white),
-          ),
-        ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

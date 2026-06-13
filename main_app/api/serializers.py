@@ -92,10 +92,24 @@ class StaffRoleSerializer(serializers.ModelSerializer):
 class StudentRoleSerializer(serializers.ModelSerializer):
     course_id = serializers.IntegerField(source="course.id", read_only=True, allow_null=True)
     course_name = serializers.CharField(source="course.name", read_only=True, allow_null=True)
+    branch_name = serializers.SerializerMethodField()
+    group_names = serializers.SerializerMethodField()
 
     class Meta:
         model = Student
-        fields = ["phone", "status", "course_id", "course_name"]
+        fields = [
+            "phone", "status", "course_id", "course_name",
+            "branch_name", "level", "group_names",
+        ]
+
+    def get_branch_name(self, obj):
+        branch = obj.effective_branch
+        return branch.name if branch else None
+
+    def get_group_names(self, obj):
+        return list(
+            obj.enrollment_set.filter(is_active=True).values_list("group__name", flat=True)
+        )
 
 
 class MeSerializer(serializers.ModelSerializer):
@@ -114,6 +128,7 @@ class MeSerializer(serializers.ModelSerializer):
             "gender",
             "date_of_birth",
             "profile_pic_url",
+            "avatar",
             "address",
             "role_profile",
         ]
@@ -344,7 +359,9 @@ class StudentResultSerializer(serializers.ModelSerializer):
 
 class AssignmentSerializer(serializers.ModelSerializer):
     group_name = serializers.CharField(source="group.name", read_only=True, allow_null=True)
+    subject_name = serializers.CharField(source="subject.name", read_only=True, allow_null=True)
     created_by_name = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Assignment
@@ -354,15 +371,44 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "description",
             "group",
             "group_name",
+            "subject_name",
             "due_date",
             "created_by_name",
             "created_at",
+            "status",
         ]
-        read_only_fields = ["group_name", "created_by_name", "created_at"]
+        read_only_fields = ["group_name", "subject_name", "created_by_name", "created_at", "status"]
 
     def get_created_by_name(self, obj):
         u = obj.created_by.admin
         return f"{u.first_name} {u.last_name}".strip()
+
+    def get_status(self, obj):
+        """Student-facing status: submitted | graded | overdue | todo.
+
+        The list view passes a ``submission_map`` (assignment_id → Submission)
+        in context to avoid N+1 queries.
+        """
+        from django.utils import timezone as tz
+
+        request = self.context.get("request")
+        if not request or str(getattr(request.user, "user_type", "")) != "3":
+            return None
+        sub_map = self.context.get("submission_map")
+        if sub_map is not None:
+            sub = sub_map.get(obj.id)
+        else:
+            try:
+                sub = Submission.objects.filter(
+                    assignment=obj, student=request.user.student
+                ).first()
+            except Exception:
+                sub = None
+        if sub is not None:
+            return "graded" if sub.grade is not None else "submitted"
+        if obj.due_date and obj.due_date < tz.localdate():
+            return "overdue"
+        return "todo"
 
 
 class SubmissionSerializer(serializers.ModelSerializer):

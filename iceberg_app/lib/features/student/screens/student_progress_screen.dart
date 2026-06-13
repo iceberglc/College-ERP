@@ -1,525 +1,430 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shimmer/shimmer.dart';
-import '../../../core/api/api_providers.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/ice_page_header.dart';
+import 'package:go_router/go_router.dart';
 
-class StudentProgressScreen extends ConsumerWidget {
+import '../../../core/api/api_providers.dart';
+import '../../../core/theme/ice_tokens.dart';
+import '../../../shared/widgets/ice_kit.dart';
+import '../../../shared/widgets/ice_shell.dart';
+
+/// My Progress — vocabulary completion, quiz score trend, exam scores and
+/// attendance, with a time filter.
+class StudentProgressScreen extends ConsumerStatefulWidget {
   const StudentProgressScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(studentProgressProvider);
-    return Scaffold(
-      backgroundColor: IceColors.bg,
-      body: RefreshIndicator(
-        onRefresh: () => ref.refresh(studentProgressProvider.future),
-        color: IceColors.navyDeep,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: IcePageHeader(
-                title: 'My Progress',
-                subtitle: 'Charts & learning analytics',
+  ConsumerState<StudentProgressScreen> createState() =>
+      _StudentProgressScreenState();
+}
+
+class _StudentProgressScreenState extends ConsumerState<StudentProgressScreen> {
+  int _range = 1; // 0 = 7d, 1 = 30d, 2 = all time
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = ref.watch(studentProgressProvider);
+
+    return progress.when(
+      loading: () => const PageSkeleton(),
+      error: (e, _) => ErrorState(
+        error: e,
+        onRetry: () => ref.invalidate(studentProgressProvider),
+      ),
+      data: (d) => _buildBody(context, d),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, Map<String, dynamic> d) {
+    final t = context.ice;
+
+    final activity = ((d['activity_30d'] as List?) ?? []).cast<num>();
+    final labels = ((d['date_labels_30d'] as List?) ?? []).cast<String>();
+    final quizScores = (d['quiz_scores'] as List?) ?? [];
+    final examResults = (d['exam_results'] as List?) ?? [];
+    final attendancePct = (d['attendance_pct'] as num?)?.toDouble() ?? 0;
+    final completedDays = (d['completed_days'] as num?)?.toInt() ?? 0;
+    final avgQuiz = (d['avg_quiz_score'] as num?)?.toDouble() ?? 0;
+
+    // Time filter slices the 30-day series client-side.
+    final window = switch (_range) {
+      0 => 7,
+      1 => 30,
+      _ => activity.length,
+    };
+    final actSlice = activity.length > window
+        ? activity.sublist(activity.length - window)
+        : activity;
+    final labSlice = labels.length > window
+        ? labels.sublist(labels.length - window)
+        : labels;
+    final quizSlice = _range == 2
+        ? quizScores
+        : quizScores.length > (window ~/ 2)
+        ? quizScores.sublist(quizScores.length - (window ~/ 2))
+        : quizScores;
+
+    return IcePage(
+      title: 'My Progress',
+      subtitle: 'Overview of your learning',
+      onRefresh: () async => ref.refresh(studentProgressProvider.future),
+      action: IceChipTabs(
+        tabs: const ['7d', '30d', 'All'],
+        index: _range,
+        onChanged: (i) => setState(() => _range = i),
+      ),
+      children: [
+        // ── Summary tiles ────────────────────────────────────────────────
+        Row(
+          children: [
+            Expanded(
+              child: StatCard(
+                icon: Icons.menu_book_rounded,
+                value: '$completedDays',
+                label: 'Vocab days done',
               ),
             ),
-            async.when(
-              loading: () =>
-                  const SliverToBoxAdapter(child: _ProgressSkeleton()),
-              error: (e, _) => SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    'Error: $e',
-                    style: const TextStyle(color: IceColors.danger),
-                  ),
-                ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: StatCard(
+                icon: Icons.quiz_outlined,
+                iconColor: t.sky,
+                value: '${avgQuiz.toStringAsFixed(avgQuiz % 1 == 0 ? 0 : 1)}%',
+                label: 'Avg quiz score',
               ),
-              data: (d) => SliverToBoxAdapter(child: _ProgressContent(data: d)),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 14),
+
+        // ── Vocabulary days completed ────────────────────────────────────
+        _ChartCard(
+          title: 'Vocabulary Days Completed',
+          subtitle: '${actSlice.fold<num>(0, (a, b) => a + b)} in this period',
+          child: actSlice.every((v) => v == 0)
+              ? _NoData(text: 'Complete vocabulary days to see your activity.')
+              : LineChart(
+                  LineChartData(
+                    minY: 0,
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      getDrawingHorizontalLine: (_) =>
+                          FlLine(color: t.stroke, strokeWidth: 1),
+                    ),
+                    titlesData: FlTitlesData(
+                      leftTitles: const AxisTitles(),
+                      topTitles: const AxisTitles(),
+                      rightTitles: const AxisTitles(),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 24,
+                          interval: (actSlice.length / 4)
+                              .clamp(1, 30)
+                              .toDouble(),
+                          getTitlesWidget: (v, _) {
+                            final i = v.toInt();
+                            if (i < 0 || i >= labSlice.length) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                labSlice[i],
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  color: t.textLow,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    lineTouchData: const LineTouchData(enabled: false),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: [
+                          for (var i = 0; i < actSlice.length; i++)
+                            FlSpot(i.toDouble(), actSlice[i].toDouble()),
+                        ],
+                        isCurved: true,
+                        preventCurveOverShooting: true,
+                        barWidth: 2.5,
+                        color: t.accent,
+                        dotData: const FlDotData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              t.accent.withValues(alpha: 0.25),
+                              t.accent.withValues(alpha: 0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+        const SizedBox(height: 14),
+
+        // ── Quiz scores ──────────────────────────────────────────────────
+        _ChartCard(
+          title: 'Average Quiz Score',
+          subtitle: quizSlice.isEmpty
+              ? 'No quizzes yet'
+              : 'Last ${quizSlice.length} quizzes',
+          child: quizSlice.isEmpty
+              ? _NoData(
+                  text: 'Take a vocabulary quiz to start tracking scores.',
+                )
+              : LineChart(
+                  LineChartData(
+                    minY: 0,
+                    maxY: 100,
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: 25,
+                      getDrawingHorizontalLine: (_) =>
+                          FlLine(color: t.stroke, strokeWidth: 1),
+                    ),
+                    titlesData: const FlTitlesData(show: false),
+                    borderData: FlBorderData(show: false),
+                    lineTouchData: LineTouchData(
+                      touchTooltipData: LineTouchTooltipData(
+                        getTooltipColor: (_) => t.cardHi,
+                        getTooltipItems: (spots) => spots
+                            .map(
+                              (s) => LineTooltipItem(
+                                '${quizSlice[s.x.toInt()]['day_title'] ?? ''}\n${s.y.toStringAsFixed(0)}%',
+                                TextStyle(
+                                  color: t.textHi,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: [
+                          for (var i = 0; i < quizSlice.length; i++)
+                            FlSpot(
+                              i.toDouble(),
+                              (quizSlice[i]['score'] as num?)?.toDouble() ?? 0,
+                            ),
+                        ],
+                        isCurved: true,
+                        preventCurveOverShooting: true,
+                        barWidth: 2.5,
+                        color: t.sky,
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (_, __, ___, ____) =>
+                              FlDotCirclePainter(
+                                radius: 3,
+                                color: t.card,
+                                strokeWidth: 2,
+                                strokeColor: t.sky,
+                              ),
+                        ),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              t.sky.withValues(alpha: 0.2),
+                              t.sky.withValues(alpha: 0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+        const SizedBox(height: 14),
+
+        // ── Exam scores ──────────────────────────────────────────────────
+        _ChartCard(
+          title: 'Exam Scores (Average)',
+          subtitle: examResults.isEmpty
+              ? 'No results yet'
+              : '${examResults.length} subject${examResults.length == 1 ? '' : 's'}',
+          child: examResults.isEmpty
+              ? _NoData(text: 'Exam results will appear here once published.')
+              : BarChart(
+                  BarChartData(
+                    minY: 0,
+                    maxY: 100,
+                    gridData: const FlGridData(show: false),
+                    borderData: FlBorderData(show: false),
+                    barTouchData: BarTouchData(enabled: false),
+                    titlesData: FlTitlesData(
+                      leftTitles: const AxisTitles(),
+                      topTitles: const AxisTitles(),
+                      rightTitles: const AxisTitles(),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          getTitlesWidget: (v, _) {
+                            final i = v.toInt();
+                            if (i < 0 || i >= examResults.length) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                (examResults[i]['group_name'] ?? '').toString(),
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  color: t.textLow,
+                                ),
+                                maxLines: 2,
+                                textAlign: TextAlign.center,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    barGroups: [
+                      for (var i = 0; i < examResults.length; i++)
+                        BarChartGroupData(
+                          x: i,
+                          barRods: [
+                            BarChartRodData(
+                              toY:
+                                  (examResults[i]['total'] as num?)
+                                      ?.toDouble() ??
+                                  0,
+                              width: 26,
+                              borderRadius: BorderRadius.circular(6),
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [
+                                  t.accent.withValues(alpha: 0.6),
+                                  t.accent,
+                                ],
+                              ),
+                              backDrawRodData: BackgroundBarChartRodData(
+                                show: true,
+                                toY: 100,
+                                color: t.inset.withValues(alpha: 0.4),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+        ),
+        const SizedBox(height: 14),
+
+        // ── Attendance progress ──────────────────────────────────────────
+        IceCard(
+          onTap: () => context.go('/student/attendance'),
+          child: Row(
+            children: [
+              ProgressRing(
+                value: attendancePct / 100,
+                size: 74,
+                strokeWidth: 7,
+                center: Text(
+                  '${attendancePct.toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: t.textHi,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Attendance Progress',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: t.textHi,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Open the Attendance Hub for the full calendar.',
+                      style: TextStyle(fontSize: 12.5, color: t.textMid),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: t.textLow),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _ProgressContent extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const _ProgressContent({required this.data});
+class _ChartCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Widget child;
+  const _ChartCard({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final activity = (data['activity_30d'] as List?)?.cast<num>() ?? [];
-    final quizScores = (data['quiz_scores'] as List?)?.cast<num>() ?? [];
-    final examResults = (data['exam_results'] as List?) ?? [];
-    final attPct = data['attendance_pct'];
-    final completedDays = data['completed_days'] ?? 0;
-    final avgQuiz = data['avg_quiz_score'];
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+    final t = context.ice;
+    return IceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Summary KPI row
-          Row(
-            children: [
-              Expanded(
-                child: _KpiTile(
-                  label: 'Attendance',
-                  value: attPct != null ? '${(attPct as num).round()}%' : '—',
-                  color: IceColors.navyDeep,
-                  icon: Icons.bar_chart_rounded,
-                  delay: 0,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _KpiTile(
-                  label: 'Vocab Days',
-                  value: '$completedDays',
-                  color: IceColors.success,
-                  icon: Icons.menu_book_rounded,
-                  delay: 60,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _KpiTile(
-                  label: 'Avg Quiz',
-                  value: avgQuiz != null ? '${(avgQuiz as num).round()}%' : '—',
-                  color: IceColors.warning,
-                  icon: Icons.quiz_rounded,
-                  delay: 120,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // 30-day activity chart
-          if (activity.isNotEmpty) ...[
-            _sectionLabel('30-Day Activity'),
-            const SizedBox(height: 12),
-            _ActivityBarChart(data: activity),
-            const SizedBox(height: 24),
-          ],
-
-          // Quiz score trend
-          if (quizScores.isNotEmpty) ...[
-            _sectionLabel('Quiz Score Trend'),
-            const SizedBox(height: 12),
-            _LineChartCard(
-              spots: quizScores
-                  .asMap()
-                  .entries
-                  .map((e) => FlSpot(e.key.toDouble(), e.value.toDouble()))
-                  .toList(),
-              color: IceColors.warning,
-              maxY: 100,
-              label: 'Score %',
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16.5,
+              fontWeight: FontWeight.w800,
+              color: t.textHi,
             ),
-            const SizedBox(height: 24),
-          ],
-
-          // Exam results per group
-          if (examResults.isNotEmpty) ...[
-            _sectionLabel('Exam Results'),
-            const SizedBox(height: 12),
-            ...examResults.asMap().entries.map((e) {
-              final group = e.value as Map;
-              final scores = (group['scores'] as List?)?.cast<num>() ?? [];
-              return _ExamGroupCard(
-                groupName: group['group_name']?.toString() ?? 'Group',
-                scores: scores,
-                index: e.key,
-              );
-            }),
-          ],
+          ),
+          const SizedBox(height: 2),
+          Text(subtitle, style: TextStyle(fontSize: 12.5, color: t.textMid)),
+          const SizedBox(height: 18),
+          SizedBox(height: 150, child: child),
         ],
       ),
     );
   }
 }
 
-class _KpiTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  final IconData icon;
-  final int delay;
-  const _KpiTile({
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.icon,
-    required this.delay,
-  });
+class _NoData extends StatelessWidget {
+  final String text;
+  const _NoData({required this.text});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: IceColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: color.withAlpha(20),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 16),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: color,
-                ),
-              ),
-              Text(
-                label,
-                style: const TextStyle(fontSize: 10, color: IceColors.muted),
-              ),
-            ],
-          ),
-        )
-        .animate(delay: Duration(milliseconds: delay))
-        .fadeIn(duration: 280.ms)
-        .scale(begin: const Offset(0.94, 0.94), duration: 280.ms);
-  }
-}
-
-Widget _sectionLabel(String text) => Text(
-  text,
-  style: const TextStyle(
-    fontSize: 15,
-    fontWeight: FontWeight.w800,
-    color: IceColors.text,
-  ),
-);
-
-class _ActivityBarChart extends StatelessWidget {
-  final List<num> data;
-  const _ActivityBarChart({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    final maxVal = data.fold<double>(
-      1,
-      (m, v) => v.toDouble() > m ? v.toDouble() : m,
-    );
-    return Container(
-      height: 120,
-      padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IceColors.border),
-      ),
-      child: BarChart(
-        BarChartData(
-          maxY: maxVal + 1,
-          barTouchData: BarTouchData(enabled: false),
-          titlesData: FlTitlesData(
-            show: true,
-            leftTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (v, _) {
-                  final i = v.toInt();
-                  if (i == 0 || i == data.length - 1 || i == data.length ~/ 2) {
-                    return Text(
-                      i == 0
-                          ? '30d'
-                          : i == data.length - 1
-                          ? 'Today'
-                          : '',
-                      style: const TextStyle(
-                        fontSize: 9,
-                        color: IceColors.muted,
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-                reservedSize: 16,
-              ),
-            ),
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (_) =>
-                FlLine(color: IceColors.border.withAlpha(80), strokeWidth: 0.5),
-          ),
-          borderData: FlBorderData(show: false),
-          barGroups: data.asMap().entries.map((e) {
-            final val = e.value.toDouble();
-            return BarChartGroupData(
-              x: e.key,
-              barRods: [
-                BarChartRodData(
-                  toY: val,
-                  color: val > 0
-                      ? IceColors.navyDeep.withAlpha(180)
-                      : IceColors.border,
-                  width: 6,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, duration: 400.ms);
-  }
-}
-
-class _LineChartCard extends StatelessWidget {
-  final List<FlSpot> spots;
-  final Color color;
-  final double maxY;
-  final String label;
-  const _LineChartCard({
-    required this.spots,
-    required this.color,
-    required this.maxY,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 160,
-      padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IceColors.border),
-      ),
-      child: LineChart(
-        LineChartData(
-          minY: 0,
-          maxY: maxY,
-          clipData: const FlClipData.all(),
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipItems: (spots) => spots
-                  .map(
-                    (s) => LineTooltipItem(
-                      '${s.y.round()}%',
-                      const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                getTitlesWidget: (v, _) => Text(
-                  '${v.round()}',
-                  style: const TextStyle(fontSize: 9, color: IceColors.muted),
-                ),
-              ),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            bottomTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (_) =>
-                FlLine(color: IceColors.border.withAlpha(80), strokeWidth: 0.5),
-          ),
-          borderData: FlBorderData(show: false),
-          lineBarsData: [
-            LineChartBarData(
-              spots: spots,
-              isCurved: true,
-              curveSmoothness: 0.3,
-              color: color,
-              barWidth: 2.5,
-              dotData: FlDotData(
-                show: spots.length <= 10,
-                getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
-                  radius: 3,
-                  color: color,
-                  strokeWidth: 1.5,
-                  strokeColor: Colors.white,
-                ),
-              ),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  colors: [color.withAlpha(40), color.withAlpha(5)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, duration: 400.ms);
-  }
-}
-
-class _ExamGroupCard extends StatelessWidget {
-  final String groupName;
-  final List<num> scores;
-  final int index;
-  const _ExamGroupCard({
-    required this.groupName,
-    required this.scores,
-    required this.index,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final avg = scores.isEmpty
-        ? 0.0
-        : scores.fold<double>(0, (s, v) => s + v.toDouble()) / scores.length;
-
-    return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: IceColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      groupName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: IceColors.text,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: IceColors.info.withAlpha(20),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      'Avg ${avg.round()}%',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: IceColors.info,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (scores.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 80,
-                  child: _LineChartCard(
-                    spots: scores
-                        .asMap()
-                        .entries
-                        .map(
-                          (e) => FlSpot(e.key.toDouble(), e.value.toDouble()),
-                        )
-                        .toList(),
-                    color: IceColors.navyDeep,
-                    maxY: 100,
-                    label: '',
-                  ),
-                ),
-              ],
-            ],
-          ),
-        )
-        .animate(delay: Duration(milliseconds: 100 * index))
-        .fadeIn(duration: 300.ms)
-        .slideY(begin: 0.08, duration: 300.ms);
-  }
-}
-
-class _ProgressSkeleton extends StatelessWidget {
-  const _ProgressSkeleton();
-  @override
-  Widget build(BuildContext context) => Shimmer.fromColors(
-    baseColor: Colors.grey[200]!,
-    highlightColor: Colors.grey[50]!,
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(child: _box(80)),
-              const SizedBox(width: 10),
-              Expanded(child: _box(80)),
-              const SizedBox(width: 10),
-              Expanded(child: _box(80)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _box(120),
-          const SizedBox(height: 16),
-          _box(160),
-        ],
-      ),
-    ),
-  );
-  Widget _box(double h) => Container(
-    height: h,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+  Widget build(BuildContext context) => Center(
+    child: Text(
+      text,
+      textAlign: TextAlign.center,
+      style: TextStyle(color: context.ice.textLow, fontSize: 13),
     ),
   );
 }

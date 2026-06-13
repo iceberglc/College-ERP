@@ -1,10 +1,17 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_providers.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/ice_tokens.dart';
+import '../../../shared/widgets/ice_kit.dart';
+import '../../../shared/widgets/ice_shell.dart';
 
+/// Quiz mode + result page. Questions come pre-shuffled from the server;
+/// the attempt is saved on finish and the day auto-completes at ≥60%.
 class StudentVocabularyQuizScreen extends ConsumerStatefulWidget {
   final int dayId;
   final String dayTitle;
@@ -21,530 +28,466 @@ class StudentVocabularyQuizScreen extends ConsumerStatefulWidget {
 
 class _StudentVocabularyQuizScreenState
     extends ConsumerState<StudentVocabularyQuizScreen> {
-  int _currentIndex = 0;
-  int _score = 0;
-  String? _selectedAnswer;
-  bool _answered = false;
-  bool _quizDone = false;
-  bool _submitting = false;
-  List<dynamic> _questions = [];
+  List<Map<String, dynamic>> _questions = [];
+  int _index = 0;
+  int _correct = 0;
+  int? _selectedId;
+  bool _revealed = false;
+  bool _loading = true;
+  Object? _loadError;
+  bool _finished = false;
+  bool _saving = false;
+  double? _bestScore;
+  DateTime? _completedAt;
+  final List<Map<String, dynamic>> _wrong = [];
 
-  void _selectAnswer(String choice) {
-    if (_answered) return;
-    final correct = _questions[_currentIndex]['correct_answer'] as String;
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
     setState(() {
-      _selectedAnswer = choice;
-      _answered = true;
-      if (choice == correct) _score++;
+      _loading = true;
+      _loadError = null;
+    });
+    try {
+      final res = await ApiClient.instance.dio.get(
+        '/vocabulary/${widget.dayId}/quiz/',
+      );
+      final data = res.data as Map<String, dynamic>;
+      setState(() {
+        _questions = ((data['questions'] as List?) ?? [])
+            .cast<Map<String, dynamic>>();
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loadError = e;
+        _loading = false;
+      });
+    }
+  }
+
+  void _choose(int id) {
+    if (_revealed) return;
+    setState(() {
+      _selectedId = id;
+      _revealed = true;
+      final q = _questions[_index];
+      if (id == q['correct_id']) {
+        _correct++;
+      } else {
+        _wrong.add(q);
+      }
     });
   }
 
   Future<void> _next() async {
-    if (_currentIndex + 1 < _questions.length) {
+    if (_index < _questions.length - 1) {
       setState(() {
-        _currentIndex++;
-        _selectedAnswer = null;
-        _answered = false;
+        _index++;
+        _selectedId = null;
+        _revealed = false;
       });
     } else {
-      await _submitResult();
-    }
-  }
-
-  Future<void> _submitResult() async {
-    if (_submitting) return;
-    setState(() => _submitting = true);
-    final total = _questions.length;
-    final pct = total > 0 ? (_score / total * 100).round() : 0;
-    try {
-      await ApiClient.instance.dio.post(
-        '/vocabulary/${widget.dayId}/quiz-result/',
-        data: {
-          'score': pct,
-          'total_questions': total,
-          'correct_answers': _score,
-        },
-      );
-    } catch (_) {}
-    ref.invalidate(vocabularyProvider);
-    if (mounted) {
       setState(() {
-        _quizDone = true;
-        _submitting = false;
+        _finished = true;
+        _saving = true;
+        _completedAt = DateTime.now();
       });
+      try {
+        final res = await ApiClient.instance.dio.post(
+          '/vocabulary/${widget.dayId}/quiz-result/',
+          data: {'correct': _correct, 'total': _questions.length},
+        );
+        final d = res.data as Map<String, dynamic>;
+        setState(() => _bestScore = (d['best_score'] as num?)?.toDouble());
+        ref.invalidate(vocabularyProvider);
+        ref.invalidate(vocabDayProvider(widget.dayId));
+        ref.invalidate(studentProgressProvider);
+      } on DioException {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Score could not be saved — check your connection.',
+              ),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _saving = false);
+      }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final async = ref.watch(vocabQuizProvider(widget.dayId));
-
-    return Scaffold(
-      backgroundColor: IceColors.bg,
-      appBar: AppBar(
-        backgroundColor: IceColors.navyDeep,
-        foregroundColor: Colors.white,
-        title: Text(
-          widget.dayTitle,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-        ),
-        elevation: 0,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-        ),
-      ),
-      body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text(
-            'Error: $e',
-            style: const TextStyle(color: IceColors.danger),
-          ),
-        ),
-        data: (questions) {
-          if (_questions.isEmpty && questions.isNotEmpty) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              setState(() => _questions = questions);
-            });
-          }
-          if (questions.isEmpty) {
-            return _NoQuestionsView(title: widget.dayTitle);
-          }
-          if (_questions.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (_quizDone) {
-            return _ResultView(
-              score: _score,
-              total: _questions.length,
-              onRetry: () => setState(() {
-                _currentIndex = 0;
-                _score = 0;
-                _selectedAnswer = null;
-                _answered = false;
-                _quizDone = false;
-              }),
-              onBack: () => Navigator.of(context).pop(),
-            );
-          }
-          return _QuizBody(
-            questions: _questions,
-            currentIndex: _currentIndex,
-            selectedAnswer: _selectedAnswer,
-            answered: _answered,
-            submitting: _submitting,
-            onSelect: _selectAnswer,
-            onNext: _next,
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _QuizBody extends StatelessWidget {
-  final List<dynamic> questions;
-  final int currentIndex;
-  final String? selectedAnswer;
-  final bool answered;
-  final bool submitting;
-  final void Function(String) onSelect;
-  final VoidCallback onNext;
-
-  const _QuizBody({
-    required this.questions,
-    required this.currentIndex,
-    required this.selectedAnswer,
-    required this.answered,
-    required this.submitting,
-    required this.onSelect,
-    required this.onNext,
+  void _retry() => setState(() {
+    _index = 0;
+    _correct = 0;
+    _selectedId = null;
+    _revealed = false;
+    _finished = false;
+    _bestScore = null;
+    _wrong.clear();
+    _fetch();
   });
 
   @override
   Widget build(BuildContext context) {
-    final q = questions[currentIndex] as Map;
-    final choices = (q['choices'] as List?)?.cast<String>() ?? [];
-    final correct = q['correct_answer'] as String? ?? '';
-    final meaning = q['meaning']?.toString() ?? '';
-    final example = q['example_sentence']?.toString() ?? '';
+    if (_loading) return const PageSkeleton();
+    if (_loadError != null) {
+      return ErrorState(error: _loadError, onRetry: _fetch);
+    }
+    if (_questions.isEmpty) {
+      return const EmptyState(
+        icon: Icons.quiz_outlined,
+        title: 'Quiz unavailable',
+        message: 'This day needs at least 2 words for a quiz.',
+      );
+    }
+    return _finished ? _buildResult(context) : _buildQuiz(context);
+  }
 
-    return Column(
+  // ── Quiz ───────────────────────────────────────────────────────────────
+  Widget _buildQuiz(BuildContext context) {
+    final t = context.ice;
+    final q = _questions[_index];
+    final choices = ((q['choices'] as List?) ?? [])
+        .cast<Map<String, dynamic>>();
+    final letters = ['A', 'B', 'C', 'D', 'E'];
+
+    return IcePage(
+      title: widget.dayTitle,
+      subtitle: 'Quiz · Question ${_index + 1} / ${_questions.length}',
+      backButton: true,
       children: [
-        // Progress bar
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: LinearProgressIndicator(
+            value: (_index + (_revealed ? 1 : 0)) / _questions.length,
+            minHeight: 6,
+            backgroundColor: t.inset,
+            valueColor: AlwaysStoppedAnimation(t.accent),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Choose the correct word for the meaning below:',
+          style: TextStyle(fontSize: 13, color: t.textMid),
+        ),
+        const SizedBox(height: 10),
+        IceCard(
+          hero: true,
+          padding: const EdgeInsets.all(20),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Question ${currentIndex + 1} of ${questions.length}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: IceColors.muted,
-                    ),
-                  ),
-                  Text(
-                    '${((currentIndex / questions.length) * 100).round()}%',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: IceColors.navyDeep,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: currentIndex / questions.length,
-                  backgroundColor: IceColors.border,
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    IceColors.navyDeep,
-                  ),
-                  minHeight: 6,
+              Text(
+                q['meaning'] ?? '',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1.35,
                 ),
               ),
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        ...List.generate(choices.length, (i) {
+          final c = choices[i];
+          final id = c['id'] as int;
+          final isCorrect = id == q['correct_id'];
+          final isSelected = id == _selectedId;
 
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Color border = t.stroke;
+          Color bg = t.card;
+          Widget? trailing;
+          if (_revealed) {
+            if (isCorrect) {
+              border = t.accent;
+              bg = t.accent.withValues(alpha: 0.1);
+              trailing = Icon(
+                Icons.check_circle_rounded,
+                size: 20,
+                color: t.accent,
+              );
+            } else if (isSelected) {
+              border = t.coral;
+              bg = t.coral.withValues(alpha: 0.1);
+              trailing = Icon(Icons.cancel_rounded, size: 20, color: t.coral);
+            }
+          } else if (isSelected) {
+            border = t.accent;
+          }
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: GestureDetector(
+              onTap: () => _choose(id),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: border, width: 1.4),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      '${letters[i % letters.length]}.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: t.textMid,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        c['word'] ?? '',
+                        style: TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w700,
+                          color: t.textHi,
+                        ),
+                      ),
+                    ),
+                    if (trailing != null) trailing,
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 10),
+        IceButton(
+          _index == _questions.length - 1 ? 'Finish Quiz' : 'Next Question',
+          onPressed: _revealed ? _next : null,
+        ),
+      ],
+    );
+  }
+
+  // ── Result ─────────────────────────────────────────────────────────────
+  Widget _buildResult(BuildContext context) {
+    final t = context.ice;
+    final total = _questions.length;
+    final score = total == 0 ? 0.0 : _correct / total * 100;
+    final passed = score >= 60;
+
+    return IcePage(
+      title: 'Quiz Result',
+      subtitle: widget.dayTitle,
+      backButton: true,
+      children: [
+        const SizedBox(height: 8),
+        Center(
+          child: ProgressRing(
+            value: score / 100,
+            size: 160,
+            strokeWidth: 13,
+            color: passed ? t.accent : t.coral,
+            center: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Question card
-                Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [IceColors.navy, IceColors.navyDeep],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'What word means:',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            meaning,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          if (example.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              '"$example"',
-                              style: const TextStyle(
-                                color: Colors.white60,
-                                fontSize: 13,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 300.ms)
-                    .slideY(begin: 0.1, duration: 300.ms),
-
-                const SizedBox(height: 20),
-
-                // Choices
-                ...choices.asMap().entries.map((e) {
-                  final choice = e.value;
-                  final isSelected = selectedAnswer == choice;
-                  final isCorrect = choice == correct;
-                  Color borderColor = IceColors.border;
-                  Color bgColor = Colors.white;
-                  Color textColor = IceColors.text;
-                  IconData? trailingIcon;
-
-                  if (answered) {
-                    if (isCorrect) {
-                      borderColor = IceColors.success;
-                      bgColor = IceColors.success.withAlpha(15);
-                      textColor = IceColors.success;
-                      trailingIcon = Icons.check_circle_rounded;
-                    } else if (isSelected && !isCorrect) {
-                      borderColor = IceColors.danger;
-                      bgColor = IceColors.danger.withAlpha(15);
-                      textColor = IceColors.danger;
-                      trailingIcon = Icons.cancel_rounded;
-                    }
-                  } else if (isSelected) {
-                    borderColor = IceColors.navyDeep;
-                    bgColor = IceColors.navyDeep.withAlpha(12);
-                  }
-
-                  return GestureDetector(
-                        onTap: () => onSelect(choice),
-                        child: AnimatedContainer(
-                          duration: 250.ms,
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: bgColor,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: borderColor, width: 1.5),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: borderColor.withAlpha(20),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  ['A', 'B', 'C', 'D'][e.key % 4],
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: borderColor,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  choice,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: textColor,
-                                  ),
-                                ),
-                              ),
-                              if (trailingIcon != null)
-                                Icon(trailingIcon, color: textColor, size: 20),
-                            ],
-                          ),
-                        ),
-                      )
-                      .animate(delay: Duration(milliseconds: 50 * e.key))
-                      .fadeIn(duration: 250.ms)
-                      .slideX(begin: 0.05, duration: 250.ms);
-                }),
+                Text(
+                  '${score.toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.w800,
+                    color: t.textHi,
+                  ),
+                ),
+                Text(
+                  passed ? 'Great Job! 🎉' : 'Keep Going!',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: t.textMid,
+                  ),
+                ),
               ],
             ),
           ),
         ),
+        const SizedBox(height: 22),
+        Row(
+          children: [
+            Expanded(
+              child: _ResultStat(
+                label: 'Correct',
+                value: '$_correct',
+                color: t.accent,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _ResultStat(
+                label: 'Incorrect',
+                value: '${total - _correct}',
+                color: t.coral,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _ResultStat(
+                label: 'Total',
+                value: '$total',
+                color: t.textHi,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        IceCard(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    MicroLabel('Best score'),
+                    const SizedBox(height: 4),
+                    Text(
+                      _saving
+                          ? 'Saving…'
+                          : _bestScore != null
+                          ? '${_bestScore!.toStringAsFixed(0)}%'
+                          : '${score.toStringAsFixed(0)}%',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: t.accent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  MicroLabel('Completed'),
+                  const SizedBox(height: 4),
+                  Text(
+                    _completedAt != null
+                        ? DateFormat('MMM d, yyyy').format(_completedAt!)
+                        : '—',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: t.textHi,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: Text(
+            passed
+                ? 'Day marked as completed — score saved automatically.'
+                : 'Score saved. Reach 60% or higher to complete the day.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: t.textLow),
+          ),
+        ),
+        const SizedBox(height: 18),
 
-        // Bottom button
-        if (answered)
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child:
-                  SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: submitting ? null : onNext,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: IceColors.navyDeep,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: submitting
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Text(
-                                  currentIndex + 1 < questions.length
-                                      ? 'Next Question'
-                                      : 'See Results',
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                        ),
-                      )
-                      .animate()
-                      .slideY(
-                        begin: 0.3,
-                        duration: 300.ms,
-                        curve: Curves.easeOut,
-                      )
-                      .fadeIn(duration: 250.ms),
+        if (_wrong.isNotEmpty) ...[
+          const SectionHeader('Review wrong answers'),
+          ..._wrong.map(
+            (q) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: IceCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      q['meaning'] ?? '',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        color: t.textMid,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '✓ ${(((q['choices'] as List?) ?? []).cast<Map<String, dynamic>>().firstWhere((c) => c['id'] == q['correct_id'], orElse: () => {'word': ''}))['word']}',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: t.accent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
+          const SizedBox(height: 8),
+        ],
+
+        IceButton('Retry Quiz', icon: Icons.replay_rounded, onPressed: _retry),
+        const SizedBox(height: 10),
+        IceButton(
+          'Back to Vocabulary',
+          secondary: true,
+          onPressed: () => context.go('/student/vocabulary'),
+        ),
       ],
     );
   }
 }
 
-class _ResultView extends StatelessWidget {
-  final int score;
-  final int total;
-  final VoidCallback onRetry;
-  final VoidCallback onBack;
-  const _ResultView({
-    required this.score,
-    required this.total,
-    required this.onRetry,
-    required this.onBack,
+class _ResultStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _ResultStat({
+    required this.label,
+    required this.value,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final pct = total > 0 ? (score / total * 100).round() : 0;
-    final passed = pct >= 60;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: passed
-                    ? IceColors.success.withAlpha(20)
-                    : IceColors.warning.withAlpha(20),
-                border: Border.all(
-                  color: passed ? IceColors.success : IceColors.warning,
-                  width: 3,
-                ),
-              ),
-              child: Icon(
-                passed ? Icons.emoji_events_rounded : Icons.school_rounded,
-                size: 48,
-                color: passed ? IceColors.success : IceColors.warning,
-              ),
-            ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
-            const SizedBox(height: 24),
-            Text(
-              '$pct%',
-              style: TextStyle(
-                fontSize: 56,
-                fontWeight: FontWeight.w900,
-                color: passed ? IceColors.success : IceColors.warning,
-              ),
-            ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
-            const SizedBox(height: 8),
-            Text(
-              '$score of $total correct',
-              style: const TextStyle(fontSize: 16, color: IceColors.muted),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              passed
-                  ? 'Excellent! Day marked as completed.'
-                  : 'Keep practicing! You need 60% to complete.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: passed ? IceColors.success : IceColors.text,
-              ),
-            ),
-            const SizedBox(height: 36),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: onBack,
-                style: FilledButton.styleFrom(
-                  backgroundColor: IceColors.navyDeep,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: const Text(
-                  'Back to Vocabulary',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (!passed)
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: onRetry,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: IceColors.navyDeep,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: IceColors.navyDeep),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: const Text(
-                    'Retry Quiz',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NoQuestionsView extends StatelessWidget {
-  final String title;
-  const _NoQuestionsView({required this.title});
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(40),
+    final t = context.ice;
+    return IceCard(
+      radius: 16,
+      padding: const EdgeInsets.symmetric(vertical: 14),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.quiz_outlined, size: 56, color: IceColors.muted),
-          const SizedBox(height: 16),
-          const Text(
-            'No quiz available',
+          Text(
+            value,
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: IceColors.muted,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: color,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 2),
           Text(
-            'This vocabulary day has no quiz questions yet.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: IceColors.muted),
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: t.textMid,
+            ),
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
 }

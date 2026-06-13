@@ -177,6 +177,14 @@ class MeView(APIView):
         )
         if serializer.is_valid():
             serializer.save()
+            # Phone lives on the role profile, not CustomUser.
+            if "phone" in request.data and str(user.user_type) == "3":
+                try:
+                    student = user.student
+                    student.phone = str(request.data["phone"])[:20]
+                    student.save(update_fields=["phone"])
+                except Student.DoesNotExist:
+                    pass
             return Response(MeSerializer(user, context={"request": request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -466,11 +474,24 @@ class AssignmentListView(APIView):
         return qs.none()
 
     def get(self, request):
-        qs = self._queryset(request.user).order_by("-created_at")
+        qs = self._queryset(request.user).select_related("subject").order_by("-created_at")
+
+        # Build a submission map for students so the serializer can report
+        # per-assignment status without an N+1 query.
+        context = {"request": request}
+        if str(request.user.user_type) == "3":
+            try:
+                subs = Submission.objects.filter(
+                    student=request.user.student, assignment__in=qs
+                )
+                context["submission_map"] = {s.assignment_id: s for s in subs}
+            except Student.DoesNotExist:
+                context["submission_map"] = {}
+
         paginator = PageNumberPagination()
-        paginator.page_size = 20
+        paginator.page_size = 50
         page = paginator.paginate_queryset(qs, request)
-        serializer = AssignmentSerializer(page, many=True, context={"request": request})
+        serializer = AssignmentSerializer(page, many=True, context=context)
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
@@ -867,8 +888,108 @@ class StudentDashboardView(APIView):
                     "id": s.id,
                     "title": s.title,
                     "content": s.body,
+                    "story_type": s.story_type,
+                    "emoji": s.emoji,
+                    "image_url": (
+                        request.build_absolute_uri(s.safe_image_url) if s.safe_image_url else None
+                    ),
+                    "created_at": s.created_at.isoformat(),
                     "author_name": s.created_by.get_full_name() if s.created_by else "",
                 })
+
+        # ── Rank & tier (active leaderboard season) ──────────────────────
+        rank = rank_total = None
+        tier = badge = ""
+        season = LeaderboardSeason.objects.filter(is_active=True).order_by("-start_date").first()
+        if season:
+            rank_total = season.snapshots.count()
+            snap = season.snapshots.filter(student=student).first()
+            if snap:
+                rank = snap.rank
+                badge = snap.badge
+                tier = snap.badge or (
+                    "Gold Tier" if snap.score >= 90
+                    else "Silver Tier" if snap.score >= 75
+                    else "Bronze Tier" if snap.score >= 60
+                    else "Rising Star"
+                )
+
+        # ── Attendance streak (absence breaks it; multiple groups on one
+        # date collapse to that date's worst status) ─────────────────────
+        import datetime as _dt
+        report_rows = list(reports.values_list("attendance__date", "status"))
+        by_date = {}
+        for d, s in report_rows:
+            if d not in by_date or s == AttendanceReport.ABSENT:
+                by_date[d] = s
+        streak = 0
+        for d in sorted(by_date.keys(), reverse=True):
+            if by_date[d] == AttendanceReport.ABSENT:
+                break
+            streak += 1
+
+        # ── Pending assignments + preview ────────────────────────────────
+        my_submissions = set(
+            Submission.objects.filter(student=student).values_list("assignment_id", flat=True)
+        )
+        open_assignments = (
+            Assignment.objects.filter(group_id__in=enrolled_group_ids)
+            .exclude(id__in=my_submissions)
+            .select_related("group", "subject")
+            .order_by("due_date")
+        )
+        today = tz.localdate()
+        assignments_preview = [
+            {
+                "id": a.id,
+                "title": a.title,
+                "group_name": a.group.name if a.group else None,
+                "subject_name": a.subject.name if a.subject else None,
+                "due_date": a.due_date.isoformat(),
+                "is_overdue": a.due_date < today,
+            }
+            for a in open_assignments[:3]
+        ]
+        pending_assignments = open_assignments.count()
+
+        # ── Unread notifications ─────────────────────────────────────────
+        unread_notifications = Notification.objects.filter(recipient=user, is_read=False).count()
+
+        # ── New vocabulary words (released days not yet completed) ───────
+        completed_day_ids = set(
+            VocabularyDayCompletion.objects.filter(student=student).values_list("day_id", flat=True)
+        )
+        new_vocab_days = (
+            VocabularyDay.objects.filter(group_id__in=enrolled_group_ids, release_at__lte=now)
+            .exclude(id__in=completed_day_ids)
+            .prefetch_related("words")
+        )
+        new_vocab_words = sum(d.words.count() for d in new_vocab_days)
+
+        # ── 8-week performance trend (attendance % per ISO week) ─────────
+        week_start = today - _dt.timedelta(days=today.weekday())
+        trend = []
+        for i in range(7, -1, -1):
+            ws = week_start - _dt.timedelta(weeks=i)
+            we = ws + _dt.timedelta(days=6)
+            wk = [s for d, s in report_rows if ws <= d <= we]
+            pct = (
+                round(sum(1 for s in wk if s != AttendanceReport.ABSENT) / len(wk) * 100, 1)
+                if wk else None
+            )
+            trend.append({"label": f"W{8 - i}", "start": ws.isoformat(), "attendance_pct": pct})
+
+        # ── Outstanding balance ──────────────────────────────────────────
+        open_invoices = Invoice.objects.filter(
+            student=student, status__in=[Invoice.STATUS_DUE, Invoice.STATUS_PARTIAL]
+        ).prefetch_related("payments")
+        balance_due = 0
+        next_due_date = None
+        for inv in open_invoices:
+            paid = sum(p.amount for p in inv.payments.all())
+            balance_due += max(0, inv.amount - inv.discount - paid)
+            if inv.due_date and (next_due_date is None or inv.due_date < next_due_date):
+                next_due_date = inv.due_date
 
         return Response({
             "attendance_percentage": att_pct,
@@ -877,6 +998,18 @@ class StudentDashboardView(APIView):
             "enrolled_groups": enrolled_count,
             "notices": notices,
             "stories": stories_out,
+            "rank": rank,
+            "rank_total": rank_total,
+            "tier": tier,
+            "badge": badge,
+            "streak_days": streak,
+            "pending_assignments": pending_assignments,
+            "assignments_preview": assignments_preview,
+            "unread_notifications": unread_notifications,
+            "new_vocab_words": new_vocab_words,
+            "performance_trend": trend,
+            "balance_due": int(balance_due),
+            "balance_due_date": next_due_date.isoformat() if next_due_date else None,
         })
 
 
@@ -1782,11 +1915,16 @@ class VocabularyDayCompleteView(APIView):
 
 
 class LeaderboardView(APIView):
-    """Return the active season leaderboard (or a specified season by ?season_id=)."""
+    """Return the active season leaderboard (or a specified season by ?season_id=).
+
+    ``?scope=overall|group|branch`` narrows the board for students:
+    *group* keeps classmates from the student's active groups, *branch*
+    keeps students of the same branch. Rows are re-ranked within the scope.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        from .serializers import LeaderboardSeasonSerializer
+        from .serializers import LeaderboardEntrySerializer
         season_id = request.query_params.get("season_id")
         if season_id:
             try:
@@ -1797,8 +1935,58 @@ class LeaderboardView(APIView):
             season = LeaderboardSeason.objects.filter(is_active=True).order_by("-start_date").first()
             if not season:
                 return Response({"detail": "No active leaderboard season."}, status=status.HTTP_404_NOT_FOUND)
-        data = LeaderboardSeasonSerializer(season, context={"request": request}).data
-        return Response(data)
+
+        snapshots = season.snapshots.select_related("student__admin").order_by("rank")
+
+        me_student = None
+        if str(request.user.user_type) == "3":
+            try:
+                me_student = request.user.student
+            except Student.DoesNotExist:
+                me_student = None
+
+        scope = request.query_params.get("scope", "overall")
+        if me_student and scope == "group":
+            classmate_ids = Enrollment.objects.filter(
+                group__in=Group.objects.filter(
+                    enrollment__student=me_student, enrollment__is_active=True
+                ),
+                is_active=True,
+            ).values_list("student_id", flat=True)
+            snapshots = snapshots.filter(student_id__in=classmate_ids)
+        elif me_student and scope == "branch":
+            branch = me_student.effective_branch
+            if branch:
+                snapshots = snapshots.filter(
+                    models.Q(student__branch=branch)
+                    | models.Q(
+                        student__branch__isnull=True,
+                        student__enrollment__group__branch=branch,
+                        student__enrollment__is_active=True,
+                    )
+                ).distinct()
+
+        entries = []
+        my_rank = None
+        for i, snap in enumerate(snapshots, start=1):
+            row = LeaderboardEntrySerializer(snap, context={"request": request}).data
+            row["rank"] = i  # re-rank within the scope
+            row["is_me"] = me_student is not None and snap.student_id == me_student.id
+            if row["is_me"]:
+                my_rank = i
+            entries.append(row)
+
+        return Response({
+            "id": season.id,
+            "name": season.name,
+            "period": season.period,
+            "start_date": season.start_date,
+            "end_date": season.end_date,
+            "is_active": season.is_active,
+            "scope": scope if scope in ("overall", "group", "branch") else "overall",
+            "my_rank": my_rank,
+            "entries": entries,
+        })
 
 
 # ---------------------------------------------------------------------------
@@ -2317,6 +2505,11 @@ class MessageThreadDetailView(APIView):
                 "sender_name": m.sender.get_full_name() or m.sender.email,
                 "is_mine": m.sender_id == request.user.id,
                 "created_at": m.created_at.isoformat(),
+                "attachment_url": (
+                    request.build_absolute_uri(m.attachment.url) if m.attachment else None
+                ),
+                "attachment_name": m.attachment_display_name,
+                "attachment_is_image": m.attachment_is_image,
             }
             for m in thread.messages.select_related("sender").order_by("created_at")[:500]
         ]
@@ -2333,9 +2526,21 @@ class MessageThreadDetailView(APIView):
         if err:
             return err
         body = str(request.data.get("message") or request.data.get("body") or "").strip()
-        if not body:
+        attachment = request.FILES.get("attachment")
+        if not body and not attachment:
             return Response({"detail": "Message is required."}, status=status.HTTP_400_BAD_REQUEST)
-        msg = ChatMessage.objects.create(thread=thread, sender=request.user, body=body[:4000])
+        if attachment and attachment.size > 10 * 1024 * 1024:
+            return Response(
+                {"detail": "Attachment too large (max 10 MB)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        msg = ChatMessage.objects.create(
+            thread=thread,
+            sender=request.user,
+            body=body[:4000],
+            attachment=attachment,
+            attachment_name=(attachment.name if attachment else ""),
+        )
         return Response(
             {
                 "id": msg.id,
@@ -2343,6 +2548,11 @@ class MessageThreadDetailView(APIView):
                 "sender_name": request.user.get_full_name() or request.user.email,
                 "is_mine": True,
                 "created_at": msg.created_at.isoformat(),
+                "attachment_url": (
+                    request.build_absolute_uri(msg.attachment.url) if msg.attachment else None
+                ),
+                "attachment_name": msg.attachment_display_name,
+                "attachment_is_image": msg.attachment_is_image,
             },
             status=status.HTTP_201_CREATED,
         )

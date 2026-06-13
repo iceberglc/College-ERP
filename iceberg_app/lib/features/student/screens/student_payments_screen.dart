@@ -1,97 +1,219 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shimmer/shimmer.dart';
-import '../../../core/api/api_providers.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/ice_page_header.dart';
+import 'package:intl/intl.dart';
 
-class StudentPaymentsScreen extends ConsumerWidget {
+import '../../../core/api/api_providers.dart';
+import '../../../core/theme/ice_tokens.dart';
+import '../../../shared/widgets/ice_kit.dart';
+import '../../../shared/widgets/ice_shell.dart';
+
+String _uzs(num v) =>
+    '${NumberFormat('#,###').format(v).replaceAll(',', ' ')} soʻm';
+
+/// Payments — balance summary + invoice history (amounts in UZS soʻm).
+class StudentPaymentsScreen extends ConsumerStatefulWidget {
   const StudentPaymentsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(invoicesProvider);
-    return Scaffold(
-      backgroundColor: IceColors.bg,
-      body: RefreshIndicator(
-        onRefresh: () => ref.refresh(invoicesProvider.future),
-        color: IceColors.navyDeep,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: IcePageHeader(
-                title: 'Payments',
-                subtitle: 'Your tuition invoices and payment history',
+  ConsumerState<StudentPaymentsScreen> createState() =>
+      _StudentPaymentsScreenState();
+}
+
+class _StudentPaymentsScreenState extends ConsumerState<StudentPaymentsScreen> {
+  int _tab = 0; // 0 invoices · 1 payment history
+
+  @override
+  Widget build(BuildContext context) {
+    final invoices = ref.watch(invoicesProvider);
+
+    return invoices.when(
+      loading: () => const PageSkeleton(),
+      error: (e, _) =>
+          ErrorState(error: e, onRetry: () => ref.invalidate(invoicesProvider)),
+      data: (list) => _buildBody(context, list.cast<Map<String, dynamic>>()),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, List<Map<String, dynamic>> invoices) {
+    final t = context.ice;
+
+    num totalPaid = 0;
+    num outstanding = 0;
+    DateTime? nextDue;
+    final payments = <Map<String, dynamic>>[];
+    for (final inv in invoices) {
+      totalPaid += (inv['amount_paid'] as num?) ?? 0;
+      final due = (inv['amount_due'] as num?) ?? 0;
+      outstanding += due;
+      if (due > 0) {
+        final d = DateTime.tryParse(inv['due_date'] ?? '');
+        if (d != null && (nextDue == null || d.isBefore(nextDue))) nextDue = d;
+      }
+      for (final p in (inv['payments'] as List? ?? [])) {
+        payments.add({...p as Map<String, dynamic>, 'invoice_id': inv['id']});
+      }
+    }
+    payments.sort(
+      (a, b) => (b['paid_on'] ?? '').toString().compareTo(
+        (a['paid_on'] ?? '').toString(),
+      ),
+    );
+
+    return IcePage(
+      title: 'Payments',
+      onRefresh: () async => ref.refresh(invoicesProvider.future),
+      children: [
+        // ── Balance hero ─────────────────────────────────────────────────
+        IceCard(
+          hero: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              MicroLabel('Outstanding Balance', color: t.mint),
+              const SizedBox(height: 8),
+              Text(
+                outstanding > 0 ? _uzs(outstanding) : 'All paid 🎉',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              if (outstanding > 0 && nextDue != null) ...[
+                const SizedBox(height: 10),
+                StatusBadge(
+                  'Due ${DateFormat('MMM d, yyyy').format(nextDue)}',
+                  tone: nextDue.isBefore(DateTime.now())
+                      ? BadgeTone.coral
+                      : BadgeTone.amber,
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 140,
+                  height: 44,
+                  child: FilledButton(
+                    onPressed: () => _payInfo(context),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: t.accent,
+                      foregroundColor: t.onAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text(
+                      'Pay Now',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        Row(
+          children: [
+            Expanded(
+              child: StatCard(
+                icon: Icons.check_circle_outline_rounded,
+                value: _uzs(totalPaid).replaceAll(' soʻm', ''),
+                label: 'Total Paid (soʻm)',
               ),
             ),
-            async.when(
-              loading: () => const SliverToBoxAdapter(child: _Skeleton()),
-              error: (e, _) => SliverToBoxAdapter(child: _ErrorCard('$e')),
-              data: (list) {
-                if (list.isEmpty) return SliverToBoxAdapter(child: _Empty());
-                final unpaid = list
-                    .where((x) => (x as Map)['is_paid'] != true)
-                    .toList();
-                final paid = list
-                    .where((x) => (x as Map)['is_paid'] == true)
-                    .toList();
-                final totalDue = unpaid.fold<double>(
-                  0,
-                  (s, x) =>
-                      s + (((x as Map)['amount'] as num?)?.toDouble() ?? 0),
-                );
-                return SliverList(
-                  delegate: SliverChildListDelegate([
-                    // Summary banner
-                    if (unpaid.isNotEmpty)
-                      _SummaryBanner(
-                        unpaidCount: unpaid.length,
-                        totalDue: totalDue,
-                      ),
-                    if (unpaid.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-                        child: Text(
-                          'Outstanding',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: IceColors.muted,
-                          ),
-                        ),
-                      ),
-                      ...unpaid.asMap().entries.map(
-                        (e) => _InvoiceCard(
-                          item: e.value as Map<String, dynamic>,
-                          index: e.key,
-                        ),
-                      ),
-                    ],
-                    if (paid.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        child: Text(
-                          'Paid',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: IceColors.muted,
-                          ),
-                        ),
-                      ),
-                      ...paid.asMap().entries.map(
-                        (e) => _InvoiceCard(
-                          item: e.value as Map<String, dynamic>,
-                          index: e.key + unpaid.length,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 100),
-                  ]),
-                );
-              },
+            const SizedBox(width: 14),
+            Expanded(
+              child: StatCard(
+                icon: Icons.receipt_long_outlined,
+                iconColor: t.sky,
+                value: '${invoices.length}',
+                label: 'Total Invoices',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+
+        IceChipTabs(
+          tabs: const ['Invoices', 'History'],
+          index: _tab,
+          onChanged: (i) => setState(() => _tab = i),
+        ),
+        const SizedBox(height: 16),
+
+        if (_tab == 0)
+          if (invoices.isEmpty)
+            const IceCard(
+              child: EmptyState(
+                icon: Icons.receipt_long_outlined,
+                title: 'No invoices yet',
+                message: 'Your tuition invoices will appear here.',
+              ),
+            )
+          else
+            ...invoices.map(
+              (inv) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _InvoiceCard(inv: inv),
+              ),
+            )
+        else if (payments.isEmpty)
+          const IceCard(
+            child: EmptyState(
+              icon: Icons.payments_outlined,
+              title: 'No payments recorded',
+              message: 'Recorded payments will show up here.',
+            ),
+          )
+        else
+          ...payments.map(
+            (p) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _PaymentRow(payment: p),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _payInfo(BuildContext context) {
+    final t = context.ice;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: t.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 34),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 34,
+              color: t.accent,
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Pay at the front desk',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: t.textHi,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Online payment (Payme · Click · Uzum) is coming soon. For now, '
+              'please pay at the ICEBERG front desk and the office will mark your '
+              'invoice as paid.',
+              style: TextStyle(fontSize: 14, color: t.textMid, height: 1.5),
             ),
           ],
         ),
@@ -100,285 +222,216 @@ class StudentPaymentsScreen extends ConsumerWidget {
   }
 }
 
-class _SummaryBanner extends StatelessWidget {
-  final int unpaidCount;
-  final double totalDue;
-  const _SummaryBanner({required this.unpaidCount, required this.totalDue});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [IceColors.navy, IceColors.navyMid, IceColors.navyDeep],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Amount Due',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '\$${totalDue.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$unpaidCount invoice${unpaidCount != 1 ? 's' : ''} outstanding',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(20),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.receipt_long_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-            ],
-          ),
-        )
-        .animate()
-        .slideY(begin: 0.2, duration: 400.ms, curve: Curves.easeOut)
-        .fadeIn(duration: 350.ms);
-  }
-}
-
 class _InvoiceCard extends StatelessWidget {
-  final Map<String, dynamic> item;
-  final int index;
-  const _InvoiceCard({required this.item, required this.index});
+  final Map<String, dynamic> inv;
+  const _InvoiceCard({required this.inv});
+
+  (String, BadgeTone) get _badge => switch (inv['status']) {
+    'paid' => ('Paid', BadgeTone.accent),
+    'partial' => ('Partial', BadgeTone.amber),
+    'cancelled' => ('Cancelled', BadgeTone.neutral),
+    _ => ('Due', BadgeTone.coral),
+  };
 
   @override
   Widget build(BuildContext context) {
-    final isPaid = item['is_paid'] == true;
-    final amount = (item['amount'] as num?)?.toDouble() ?? 0;
-    final desc = item['description']?.toString() ?? 'Invoice';
-    final due = item['due_date']?.toString() ?? '';
-    final isOverdue =
-        !isPaid &&
-        due.isNotEmpty &&
-        DateTime.tryParse(due) != null &&
-        DateTime.parse(due).isBefore(DateTime.now());
+    final t = context.ice;
+    final period = DateTime.tryParse(inv['period'] ?? '');
+    final due = DateTime.tryParse(inv['due_date'] ?? '');
+    final (badge, tone) = _badge;
+    final amount = (inv['amount'] as num?) ?? 0;
+    final amountDue = (inv['amount_due'] as num?) ?? 0;
 
-    final statusColor = isPaid
-        ? IceColors.success
-        : isOverdue
-        ? IceColors.danger
-        : IceColors.warning;
-    final statusLabel = isPaid
-        ? 'Paid'
-        : isOverdue
-        ? 'Overdue'
-        : 'Pending';
-
-    return Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: IceColors.border),
-            boxShadow: [
-              BoxShadow(
-                color: IceColors.navyDeep.withAlpha(6),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: statusColor.withAlpha(18),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  isPaid
-                      ? Icons.check_circle_outline_rounded
-                      : Icons.receipt_outlined,
-                  color: statusColor,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      desc,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: IceColors.text,
-                      ),
-                    ),
-                    if (due.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 3),
-                        child: Text(
-                          '${isOverdue ? "Was due" : "Due"} $due',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isOverdue
-                                ? IceColors.danger
-                                : IceColors.muted,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '\$${amount.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: isPaid ? IceColors.success : IceColors.text,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withAlpha(18),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      statusLabel,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: statusColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        )
-        .animate(delay: Duration(milliseconds: 60 + index * 50))
-        .slideX(begin: 0.1, duration: 320.ms, curve: Curves.easeOut)
-        .fadeIn(duration: 280.ms);
-  }
-}
-
-class _Skeleton extends StatelessWidget {
-  const _Skeleton();
-  @override
-  Widget build(BuildContext context) => Shimmer.fromColors(
-    baseColor: Colors.grey[200]!,
-    highlightColor: Colors.grey[50]!,
-    child: Padding(
+    return IceCard(
       padding: const EdgeInsets.all(16),
+      onTap: () => _showDetail(context),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 110,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-          const SizedBox(height: 16),
-          for (int i = 0; i < 4; i++) ...[
-            Container(
-              height: 72,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  period != null
+                      ? DateFormat('MMMM yyyy').format(period)
+                      : 'Invoice #${inv['id']}',
+                  style: TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                    color: t.textHi,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-          ],
+              StatusBadge(badge, tone: tone),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                _uzs(amount),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: t.textMid,
+                ),
+              ),
+              const Spacer(),
+              if (amountDue > 0)
+                Text(
+                  '${_uzs(amountDue)} due',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: t.coral,
+                  ),
+                )
+              else
+                Text(
+                  due != null ? 'Due ${DateFormat('MMM d').format(due)}' : '',
+                  style: TextStyle(fontSize: 12, color: t.textLow),
+                ),
+            ],
+          ),
         ],
       ),
-    ),
-  );
-}
+    );
+  }
 
-class _Empty extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(40),
-    child: Column(
-      children: [
-        Icon(
-          Icons.receipt_long_outlined,
-          size: 56,
-          color: IceColors.muted.withAlpha(100),
+  void _showDetail(BuildContext context) {
+    final t = context.ice;
+    final payments = (inv['payments'] as List? ?? [])
+        .cast<Map<String, dynamic>>();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: t.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Invoice #${inv['id']}',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+                color: t.textHi,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _row(context, 'Amount', _uzs((inv['amount'] as num?) ?? 0)),
+            if (((inv['discount'] as num?) ?? 0) > 0)
+              _row(context, 'Discount', '- ${_uzs(inv['discount'])}'),
+            _row(context, 'Paid', _uzs((inv['amount_paid'] as num?) ?? 0)),
+            _row(
+              context,
+              'Outstanding',
+              _uzs((inv['amount_due'] as num?) ?? 0),
+              accent: true,
+            ),
+            if ((inv['note'] as String?)?.isNotEmpty == true) ...[
+              const SizedBox(height: 10),
+              Text(
+                inv['note'],
+                style: TextStyle(color: t.textMid, fontSize: 13),
+              ),
+            ],
+            if (payments.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              MicroLabel('Payments'),
+              const SizedBox(height: 8),
+              ...payments.map((p) => _PaymentRow(payment: p)),
+            ],
+          ],
         ),
-        const SizedBox(height: 16),
-        const Text(
-          'No invoices',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: IceColors.muted,
+      ),
+    );
+  }
+
+  Widget _row(
+    BuildContext context,
+    String label,
+    String value, {
+    bool accent = false,
+  }) {
+    final t = context.ice;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 14, color: t.textMid)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w800,
+              color: accent ? t.accent : t.textHi,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Your payment records will appear here.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: IceColors.muted),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
-class _ErrorCard extends StatelessWidget {
-  final String message;
-  const _ErrorCard(this.message);
+class _PaymentRow extends StatelessWidget {
+  final Map<String, dynamic> payment;
+  const _PaymentRow({required this.payment});
+
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(24),
-    child: Text(
-      'Error: $message',
-      style: const TextStyle(color: IceColors.danger),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final t = context.ice;
+    final paidOn = DateTime.tryParse(payment['paid_on'] ?? '');
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: t.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: t.stroke),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: t.accentSoft,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.check_rounded, size: 16, color: t.accent),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _uzs((payment['amount'] as num?) ?? 0),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: t.textHi,
+                  ),
+                ),
+                Text(
+                  [
+                    if (paidOn != null)
+                      DateFormat('MMM d, yyyy').format(paidOn),
+                    (payment['method'] ?? '').toString(),
+                  ].where((s) => s.isNotEmpty).join(' · '),
+                  style: TextStyle(fontSize: 11.5, color: t.textMid),
+                ),
+              ],
+            ),
+          ),
+          StatusBadge('Paid', tone: BadgeTone.accent),
+        ],
+      ),
+    );
+  }
 }

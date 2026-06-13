@@ -188,6 +188,11 @@ class Student(models.Model):
     phone = models.CharField(max_length=20, blank=True, default="")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     theme = models.CharField(max_length=10, choices=THEME_CHOICES, default=THEME_SYSTEM)
+    app_settings = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Mobile app preferences (accent colour, font size, language, notification toggles).",
+    )
     level = models.PositiveSmallIntegerField(
         choices=LEVEL_CHOICES,
         null=True,
