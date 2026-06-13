@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_providers.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/ice_tokens.dart';
 import '../../../shared/widgets/ice_kit.dart';
 import '../../../shared/widgets/ice_shell.dart';
@@ -39,6 +40,7 @@ class _StudentResultFilesScreenState
   }
 
   Widget _buildBody(BuildContext context, Map<String, dynamic> data) {
+    final s = ref.watch(stringsProvider);
     final files = ((data['files'] as List?) ?? []).cast<Map<String, dynamic>>();
 
     // Build group-name filter tabs from the data.
@@ -54,7 +56,7 @@ class _StudentResultFilesScreenState
         : files.where((f) => f['group_name'] == selectedGroup).toList();
 
     return IcePage(
-      title: 'Result Files',
+      title: s('Result Files'),
       subtitle: 'Download your result documents',
       backButton: true,
       onRefresh: () async => ref.refresh(resultFilesProvider.future),

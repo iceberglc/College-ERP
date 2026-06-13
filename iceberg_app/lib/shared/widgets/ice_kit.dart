@@ -117,7 +117,7 @@ class SectionHeader extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: t.accent,
+                  color: t.accentInk,
                 ),
               ),
             ),
@@ -150,7 +150,7 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.ice;
-    final c = iconColor ?? t.accent;
+    final c = iconColor ?? t.accentInk;
     return IceCard(
       onTap: onTap,
       padding: const EdgeInsets.all(16),
@@ -233,7 +233,7 @@ class ProgressRing extends StatelessWidget {
               strokeWidth: strokeWidth,
               strokeCap: StrokeCap.round,
               backgroundColor: t.inset,
-              valueColor: AlwaysStoppedAnimation(color ?? t.accent),
+              valueColor: AlwaysStoppedAnimation(color ?? t.accentInk),
             ),
           ),
           if (center != null) Center(child: center),
@@ -255,7 +255,7 @@ class StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.ice;
     final (bg, fg) = switch (tone) {
-      BadgeTone.accent => (t.accentSoft, t.accent),
+      BadgeTone.accent => (t.accentSoft, t.accentInk),
       BadgeTone.coral => (t.coralSoft, t.coral),
       BadgeTone.sky => (t.skySoft, t.sky),
       BadgeTone.amber => (t.amberSoft, t.amber),
@@ -356,7 +356,7 @@ class ActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.ice;
-    final c = iconColor ?? t.accent;
+    final c = iconColor ?? t.accentInk;
     return IceCard(
       onTap: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

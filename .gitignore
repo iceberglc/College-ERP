@@ -49,3 +49,7 @@ twa/app-*.apk
 twa/app-*.aab
 twa/output-metadata.json
 twa/android/
+
+# Delivered build artifact (rebuild with: flutter build apk --release)
+iceberg-student.apk
+*.apk

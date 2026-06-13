@@ -25,19 +25,19 @@ class StudentSettingsScreen extends ConsumerWidget {
 
     return IcePage(
       title: s('Settings'),
-      subtitle: 'Customize your experience',
+      subtitle: s('Appearance'),
       backButton: true,
       children: [
         // ── Theme ────────────────────────────────────────────────────────
-        section('Theme'),
+        section(s('Theme')),
         IceCard(
           padding: const EdgeInsets.all(8),
           child: Column(
             children: [
               for (final (mode, icon, label) in [
-                (ThemeMode.system, Icons.contrast_rounded, 'System Default'),
-                (ThemeMode.light, Icons.light_mode_outlined, 'Light Mode'),
-                (ThemeMode.dark, Icons.dark_mode_outlined, 'Dark Mode'),
+                (ThemeMode.system, Icons.contrast_rounded, s('System')),
+                (ThemeMode.light, Icons.light_mode_outlined, s('Light')),
+                (ThemeMode.dark, Icons.dark_mode_outlined, s('Dark')),
               ])
                 _OptionRow(
                   icon: icon,
@@ -50,7 +50,7 @@ class StudentSettingsScreen extends ConsumerWidget {
         ),
 
         // ── Accent colour ────────────────────────────────────────────────
-        section('Accent Color'),
+        section(s('Accent Color')),
         IceCard(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -92,9 +92,9 @@ class StudentSettingsScreen extends ConsumerWidget {
         ),
 
         // ── Font size ────────────────────────────────────────────────────
-        section('Font Size'),
+        section(s('Font Size')),
         IceChipTabs(
-          tabs: const ['Small', 'Medium', 'Large'],
+          tabs: [s('Small'), s('Medium'), s('Large')],
           index: switch (settings.fontSize) {
             'small' => 0,
             'large' => 2,
@@ -105,7 +105,7 @@ class StudentSettingsScreen extends ConsumerWidget {
         ),
 
         // ── Language ─────────────────────────────────────────────────────
-        section('Language'),
+        section(s('Language')),
         IceCard(
           padding: const EdgeInsets.all(8),
           child: Column(
@@ -126,7 +126,7 @@ class StudentSettingsScreen extends ConsumerWidget {
         ),
 
         // ── Notifications ────────────────────────────────────────────────
-        section('Notifications'),
+        section(s('Notifications')),
         IceCard(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Column(
@@ -177,7 +177,7 @@ class StudentSettingsScreen extends ConsumerWidget {
         ),
 
         // ── Security ─────────────────────────────────────────────────────
-        section('Security'),
+        section(s('Security')),
         ActionTile(
           icon: Icons.lock_outline_rounded,
           title: s('Change Password'),

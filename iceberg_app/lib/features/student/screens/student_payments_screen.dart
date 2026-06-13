@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/api/api_providers.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/ice_tokens.dart';
 import '../../../shared/widgets/ice_kit.dart';
 import '../../../shared/widgets/ice_shell.dart';
@@ -36,6 +37,7 @@ class _StudentPaymentsScreenState extends ConsumerState<StudentPaymentsScreen> {
 
   Widget _buildBody(BuildContext context, List<Map<String, dynamic>> invoices) {
     final t = context.ice;
+    final s = ref.watch(stringsProvider);
 
     num totalPaid = 0;
     num outstanding = 0;
@@ -60,7 +62,7 @@ class _StudentPaymentsScreenState extends ConsumerState<StudentPaymentsScreen> {
     );
 
     return IcePage(
-      title: 'Payments',
+      title: s('Payments'),
       onRefresh: () async => ref.refresh(invoicesProvider.future),
       children: [
         // ── Balance hero ─────────────────────────────────────────────────
@@ -69,10 +71,10 @@ class _StudentPaymentsScreenState extends ConsumerState<StudentPaymentsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              MicroLabel('Outstanding Balance', color: t.mint),
+              MicroLabel(s('Outstanding Balance'), color: t.mint),
               const SizedBox(height: 8),
               Text(
-                outstanding > 0 ? _uzs(outstanding) : 'All paid 🎉',
+                outstanding > 0 ? _uzs(outstanding) : s('All paid 🎉'),
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
@@ -101,9 +103,9 @@ class _StudentPaymentsScreenState extends ConsumerState<StudentPaymentsScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: const Text(
-                      'Pay Now',
-                      style: TextStyle(
+                    child: Text(
+                      s('Pay Now'),
+                      style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
                       ),
@@ -122,7 +124,7 @@ class _StudentPaymentsScreenState extends ConsumerState<StudentPaymentsScreen> {
               child: StatCard(
                 icon: Icons.check_circle_outline_rounded,
                 value: _uzs(totalPaid).replaceAll(' soʻm', ''),
-                label: 'Total Paid (soʻm)',
+                label: s('Total Paid (soʻm)'),
               ),
             ),
             const SizedBox(width: 14),
@@ -131,7 +133,7 @@ class _StudentPaymentsScreenState extends ConsumerState<StudentPaymentsScreen> {
                 icon: Icons.receipt_long_outlined,
                 iconColor: t.sky,
                 value: '${invoices.length}',
-                label: 'Total Invoices',
+                label: s('Total Invoices'),
               ),
             ),
           ],
@@ -139,7 +141,7 @@ class _StudentPaymentsScreenState extends ConsumerState<StudentPaymentsScreen> {
         const SizedBox(height: 18),
 
         IceChipTabs(
-          tabs: const ['Invoices', 'History'],
+          tabs: [s('Invoices'), s('History')],
           index: _tab,
           onChanged: (i) => setState(() => _tab = i),
         ),
@@ -147,11 +149,11 @@ class _StudentPaymentsScreenState extends ConsumerState<StudentPaymentsScreen> {
 
         if (_tab == 0)
           if (invoices.isEmpty)
-            const IceCard(
+            IceCard(
               child: EmptyState(
                 icon: Icons.receipt_long_outlined,
-                title: 'No invoices yet',
-                message: 'Your tuition invoices will appear here.',
+                title: s('No invoices yet'),
+                message: s('Your tuition invoices will appear here.'),
               ),
             )
           else
@@ -162,11 +164,11 @@ class _StudentPaymentsScreenState extends ConsumerState<StudentPaymentsScreen> {
               ),
             )
         else if (payments.isEmpty)
-          const IceCard(
+          IceCard(
             child: EmptyState(
               icon: Icons.payments_outlined,
-              title: 'No payments recorded',
-              message: 'Recorded payments will show up here.',
+              title: s('No payments recorded'),
+              message: s('Recorded payments will show up here.'),
             ),
           )
         else

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/api/api_providers.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/ice_tokens.dart';
 import '../../../shared/widgets/ice_kit.dart';
 import '../../../shared/widgets/ice_shell.dart';
@@ -38,6 +39,7 @@ class _StudentAssignmentsScreenState
 
   Widget _buildBody(BuildContext context, List list) {
     final t = context.ice;
+    final s = ref.watch(stringsProvider);
 
     bool matchesTab(Map a) => switch (_tab) {
       1 => a['status'] == 'todo' || a['status'] == 'overdue',
@@ -55,7 +57,7 @@ class _StudentAssignmentsScreenState
         .toList();
 
     return IcePage(
-      title: 'Assignments',
+      title: s('Assignments'),
       onRefresh: () async => ref.refresh(assignmentsProvider.future),
       children: [
         // ── Search ───────────────────────────────────────────────────────

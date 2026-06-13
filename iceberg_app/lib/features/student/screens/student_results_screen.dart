@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_providers.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/ice_tokens.dart';
 import '../../../shared/widgets/ice_kit.dart';
 import '../../../shared/widgets/ice_shell.dart';
@@ -30,18 +31,19 @@ class StudentResultsScreen extends ConsumerWidget {
     WidgetRef ref,
     Map<String, dynamic> data,
   ) {
+    final s = ref.watch(stringsProvider);
     final rows = ((data['results'] as List?) ?? [])
         .cast<Map<String, dynamic>>();
 
     if (rows.isEmpty) {
       return IcePage(
-        title: 'Results',
+        title: s('Results'),
         onRefresh: () async => ref.refresh(studentResultsProvider.future),
-        children: const [
+        children: [
           IceCard(
             child: EmptyState(
               icon: Icons.workspace_premium_outlined,
-              title: 'No results yet',
+              title: s('No results yet.'),
               message: 'Your subject results will appear here once published.',
             ),
           ),
@@ -59,7 +61,7 @@ class StudentResultsScreen extends ConsumerWidget {
     final totalMarks = totals.reduce((a, b) => a + b);
 
     return IcePage(
-      title: 'Results',
+      title: s('Results'),
       onRefresh: () async => ref.refresh(studentResultsProvider.future),
       children: [
         // ── Summary grid ─────────────────────────────────────────────────

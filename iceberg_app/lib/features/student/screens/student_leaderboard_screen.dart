@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_providers.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/ice_tokens.dart';
 import '../../../shared/widgets/ice_kit.dart';
 import '../../../shared/widgets/ice_shell.dart';
@@ -50,22 +51,26 @@ class _StudentLeaderboardScreenState
     );
   }
 
-  Widget _scaffold(BuildContext context, Widget body) => IcePage(
-    title: 'Leaderboard',
-    subtitle: 'Season standings',
-    children: [
-      IceChipTabs(
-        tabs: const ['Overall', 'Group', 'Branch'],
-        index: _tab,
-        onChanged: (i) => setState(() => _tab = i),
-      ),
-      const SizedBox(height: 16),
-      SizedBox(height: 360, child: body),
-    ],
-  );
+  Widget _scaffold(BuildContext context, Widget body) {
+    final s = ref.watch(stringsProvider);
+    return IcePage(
+      title: s('Leaderboard'),
+      subtitle: 'Season standings',
+      children: [
+        IceChipTabs(
+          tabs: [s('Overall'), s('Group'), s('Branch')],
+          index: _tab,
+          onChanged: (i) => setState(() => _tab = i),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(height: 360, child: body),
+      ],
+    );
+  }
 
   Widget _buildBody(BuildContext context, Map<String, dynamic> d) {
     final t = context.ice;
+    final s = ref.watch(stringsProvider);
     final scope = _scopes[_tab];
     final entries = ((d['entries'] as List?) ?? [])
         .cast<Map<String, dynamic>>();
@@ -76,13 +81,13 @@ class _StudentLeaderboardScreenState
         : <Map<String, dynamic>>[];
 
     return IcePage(
-      title: 'Leaderboard',
+      title: s('Leaderboard'),
       subtitle: (d['name'] as String?) ?? 'Season standings',
       onRefresh: () async =>
           ref.refresh(leaderboardScopedProvider(scope).future),
       children: [
         IceChipTabs(
-          tabs: const ['Overall', 'Group', 'Branch'],
+          tabs: [s('Overall'), s('My Group'), s('Branch')],
           index: _tab,
           onChanged: (i) => setState(() => _tab = i),
         ),

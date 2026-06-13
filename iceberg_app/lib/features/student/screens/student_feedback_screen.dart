@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_providers.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/ice_tokens.dart';
 import '../../../shared/widgets/ice_kit.dart';
 import '../../../shared/widgets/ice_shell.dart';
@@ -73,9 +74,10 @@ class _StudentFeedbackScreenState extends ConsumerState<StudentFeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     final t = context.ice;
+    final s = ref.watch(stringsProvider);
 
     return IcePage(
-      title: 'Feedback',
+      title: s('Feedback'),
       backButton: true,
       children: [
         IceChipTabs(

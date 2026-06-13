@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_providers.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/ice_tokens.dart';
 import '../../../shared/widgets/ice_kit.dart';
 import '../../../shared/widgets/ice_shell.dart';
@@ -39,6 +40,7 @@ class _StudentNotificationsScreenState
   }
 
   Widget _buildBody(BuildContext context, List list) {
+    final s = ref.watch(stringsProvider);
     final visible = switch (_tab) {
       1 => list.where((n) => n['is_read'] != true).toList(),
       2 => list.where((n) => n['category'] == 'announcement').toList(),
@@ -47,7 +49,7 @@ class _StudentNotificationsScreenState
     final hasUnread = list.any((n) => n['is_read'] != true);
 
     return IcePage(
-      title: 'Notifications',
+      title: s('Notifications'),
       onRefresh: () async => ref.refresh(notificationsProvider.future),
       action: hasUnread
           ? GestureDetector(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'ice_tokens.dart';
 
 // ─── ICEBERG Design Tokens ──────────────────────────────────────────────────
 class IceColors {
@@ -48,6 +49,7 @@ class IceTheme {
       onSurface: IceColors.text,
     ),
     scaffoldBackgroundColor: IceColors.bg,
+    pageTransitionsTheme: icePageTransitionsTheme,
     fontFamily: 'Inter',
     textTheme: const TextTheme(
       headlineLarge: TextStyle(

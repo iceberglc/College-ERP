@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_providers.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/ice_tokens.dart';
 import '../../../shared/widgets/ice_kit.dart';
 import '../../../shared/widgets/ice_shell.dart';
@@ -32,6 +33,7 @@ class _StudentBooksScreenState extends ConsumerState<StudentBooksScreen> {
 
   Widget _buildBody(BuildContext context, Map<String, dynamic> data) {
     final t = context.ice;
+    final s = ref.watch(stringsProvider);
     final all = ((data['books'] as List?) ?? []).cast<Map<String, dynamic>>();
 
     final categories = <String>{
@@ -49,7 +51,7 @@ class _StudentBooksScreenState extends ConsumerState<StudentBooksScreen> {
     }).toList();
 
     return IcePage(
-      title: 'Library',
+      title: s('Library'),
       subtitle: 'Explore books and resources',
       backButton: true,
       onRefresh: () async => ref.refresh(booksProvider.future),

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api/api_providers.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/ice_tokens.dart';
 import '../../../shared/widgets/ice_kit.dart';
 import '../../../shared/widgets/ice_shell.dart';
@@ -43,6 +44,7 @@ class _StudentAttendanceScreenState
 
   Widget _buildHub(BuildContext context, Map<String, dynamic> d) {
     final t = context.ice;
+    final s = ref.watch(stringsProvider);
     final overall = (d['overall_rate'] as num?)?.toDouble();
     final streak = (d['streak_days'] as num?)?.toInt() ?? 0;
     final missed = (d['absent_count'] as num?)?.toInt() ?? 0;
@@ -60,7 +62,7 @@ class _StudentAttendanceScreenState
               '');
 
     return IcePage(
-      title: 'Attendance Hub',
+      title: s('Attendance'),
       subtitle: groupName,
       backButton: true,
       onRefresh: () async =>

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/api/api_providers.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/ice_tokens.dart';
 import '../../../shared/widgets/ice_kit.dart';
 import '../../../shared/widgets/ice_shell.dart';
@@ -37,6 +38,7 @@ class _StudentVocabularyScreenState
 
   Widget _buildBody(BuildContext context, List days) {
     final t = context.ice;
+    final s = ref.watch(stringsProvider);
     final completed = days.where((d) => d['is_completed'] == true).length;
     final totalWords = days.fold<int>(
       0,
@@ -51,7 +53,7 @@ class _StudentVocabularyScreenState
     };
 
     return IcePage(
-      title: 'Vocabulary Days',
+      title: s('Vocabulary'),
       subtitle: 'Track and practice new words',
       onRefresh: () async => ref.refresh(vocabularyProvider.future),
       children: [

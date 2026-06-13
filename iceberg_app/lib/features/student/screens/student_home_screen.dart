@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/api/api_providers.dart';
+import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/ice_tokens.dart';
 import '../../../shared/widgets/ice_kit.dart';
 
@@ -36,6 +37,7 @@ class _Dashboard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.ice;
+    final s = ref.watch(stringsProvider);
 
     final rank = (d['rank'] as num?)?.toInt();
     final tier = (d['tier'] as String?) ?? '';
@@ -66,14 +68,16 @@ class _Dashboard extends ConsumerWidget {
                     Icon(Icons.star_rounded, size: 18, color: t.accent),
                     const SizedBox(width: 6),
                     MicroLabel(
-                      tier.isEmpty ? 'My standing' : tier,
+                      tier.isEmpty ? s('My standing') : tier,
                       color: t.accent,
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  rank != null ? 'Rank #$rank Overall' : 'Not ranked yet',
+                  rank != null
+                      ? '${s('Rank')} #$rank ${s('Overall')}'
+                      : s('Not ranked yet'),
                   style: const TextStyle(
                     fontSize: 27,
                     fontWeight: FontWeight.w800,
@@ -113,7 +117,7 @@ class _Dashboard extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Current Momentum',
+                            s('Current Momentum'),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -123,8 +127,8 @@ class _Dashboard extends ConsumerWidget {
                           const SizedBox(height: 2),
                           Text(
                             streak > 0
-                                ? '$streak-Day Hero Streak'
-                                : 'Start your streak today',
+                                ? '$streak-${s('Day Streak')}'
+                                : s('Start your streak today'),
                             style: const TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w800,
@@ -146,9 +150,9 @@ class _Dashboard extends ConsumerWidget {
             onTap: () => context.go('/student/attendance'),
             child: Column(
               children: [
-                const Align(
+                Align(
                   alignment: Alignment.centerLeft,
-                  child: MicroLabel('Attendance'),
+                  child: MicroLabel(s('Attendance')),
                 ),
                 const SizedBox(height: 16),
                 ProgressRing(
@@ -168,16 +172,16 @@ class _Dashboard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Present',
+                  s('Present'),
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: t.accent,
+                    color: t.accentInk,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Target: 90%',
+                  s('Target: 90%'),
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
@@ -197,7 +201,7 @@ class _Dashboard extends ConsumerWidget {
                   icon: Icons.assignment_late_outlined,
                   iconColor: t.coral,
                   value: '$pending',
-                  label: 'Pending Tasks',
+                  label: s('Pending Tasks'),
                   onTap: () => context.go('/student/assignments'),
                 ),
               ),
@@ -207,7 +211,7 @@ class _Dashboard extends ConsumerWidget {
                   icon: Icons.mark_email_unread_outlined,
                   iconColor: t.sky,
                   value: '$unread',
-                  label: 'Unread Notifs',
+                  label: s('Unread Notifs'),
                   onTap: () => context.go('/student/notifications'),
                 ),
               ),
@@ -238,7 +242,7 @@ class _Dashboard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '$newWords New',
+                        '$newWords ${s('New')}',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
@@ -246,7 +250,7 @@ class _Dashboard extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'Vocab Words Ready',
+                        s('Vocab Words Ready'),
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
@@ -284,7 +288,7 @@ class _Dashboard extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Performance Trend',
+                        s('Performance Trend'),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -292,12 +296,12 @@ class _Dashboard extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const StatusBadge('Attendance', tone: BadgeTone.neutral),
+                    StatusBadge(s('Attendance'), tone: BadgeTone.neutral),
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '8-Week History',
+                  s('8-Week History'),
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
@@ -313,7 +317,7 @@ class _Dashboard extends ConsumerWidget {
 
           // ── Campus Pulse ───────────────────────────────────────────────
           if (stories.isNotEmpty) ...[
-            const SectionHeader('Campus Pulse'),
+            SectionHeader(s('Campus Pulse')),
             SizedBox(
               height: 150,
               child: ListView.separated(
@@ -330,16 +334,16 @@ class _Dashboard extends ConsumerWidget {
 
           // ── Assignments preview ────────────────────────────────────────
           SectionHeader(
-            'Assignments',
-            actionLabel: 'View All',
+            s('Assignments'),
+            actionLabel: s('View All'),
             onAction: () => context.go('/student/assignments'),
           ),
           if (assignments.isEmpty)
-            const IceCard(
+            IceCard(
               child: EmptyState(
                 icon: Icons.task_alt_rounded,
-                title: 'All caught up!',
-                message: 'No pending assignments right now.',
+                title: s('All caught up!'),
+                message: s('No pending assignments right now.'),
               ),
             )
           else
