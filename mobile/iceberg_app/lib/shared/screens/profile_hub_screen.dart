@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_state.dart';
@@ -199,6 +200,31 @@ class _State extends ConsumerState<ProfileHubScreen> {
               ),
               child: Column(
                 children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: () {
+                        final nav = Navigator.of(context);
+                        if (nav.canPop()) {
+                          nav.maybePop();
+                        } else {
+                          context.go('/staff/home');
+                        }
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.arrow_back_rounded,
+                              color: Colors.white, size: 22),
+                          SizedBox(width: 6),
+                          Text('Back',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600)),
+                        ]),
+                      ),
+                    ),
+                  ),
                   // Avatar
                   GestureDetector(
                     onTap: _pickProfileImage,

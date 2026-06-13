@@ -35,6 +35,7 @@ import '../../features/staff/screens/staff_shell.dart';
 import '../../features/staff/screens/staff_home_screen.dart';
 import '../../features/staff/screens/staff_more_screen.dart';
 import '../../features/staff/screens/staff_placeholder_screens.dart';
+import '../../features/staff/screens/staff_feature_screens.dart';
 
 // Shared
 import '../../shared/screens/profile_hub_screen.dart';
@@ -137,41 +138,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(routes: [
             GoRoute(path: '/staff/assignments', builder: (_, __) => const StaffAssignmentsScreen()),
           ]),
-          // 4 · More + staff services
+          // 4 · More menu (links push the screens below onto the root stack)
           StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/staff/more',
-              builder: (_, __) => const StaffMoreScreen(),
-              routes: [
-                GoRoute(path: 'results', builder: (_, __) => const StaffResultsScreen()),
-                GoRoute(
-                  path: 'vocabulary',
-                  builder: (_, __) => const StaffVocabularyScreen(),
-                  routes: [
-                    GoRoute(
-                      path: ':id',
-                      builder: (_, state) => StaffVocabularyDetailScreen(
-                          vocabId: state.pathParameters['id']!),
-                    ),
-                  ],
-                ),
-                GoRoute(path: 'leave', builder: (_, __) => const StaffLeaveScreen()),
-                GoRoute(path: 'feedback', builder: (_, __) => const StaffFeedbackScreen()),
-                GoRoute(path: 'payments', builder: (_, __) => const StaffPaymentsScreen()),
-              ],
-            ),
+            GoRoute(path: '/staff/more', builder: (_, __) => const StaffMoreScreen()),
           ]),
         ],
       ),
-      // Staff routes referenced directly by the More screen (kept at the same
-      // path the StaffMoreScreen tiles point at, nested under /staff/more).
+      // Staff feature screens reached from the More menu (pushed full-screen;
+      // each shows its own back affordance).
       GoRoute(path: '/staff/results',       builder: (_, __) => const StaffResultsScreen()),
       GoRoute(path: '/staff/vocabulary',    builder: (_, __) => const StaffVocabularyScreen()),
+      GoRoute(
+        path: '/staff/vocabulary/:id',
+        builder: (_, state) => StaffVocabularyDetailScreen(
+            vocabId: state.pathParameters['id']!),
+      ),
       GoRoute(path: '/staff/leave',         builder: (_, __) => const StaffLeaveScreen()),
       GoRoute(path: '/staff/feedback',      builder: (_, __) => const StaffFeedbackScreen()),
       GoRoute(path: '/staff/payments',      builder: (_, __) => const StaffPaymentsScreen()),
       GoRoute(path: '/staff/notifications', builder: (_, __) => const StaffNotificationsScreen()),
       GoRoute(path: '/staff/profile',       builder: (_, __) => const ProfileHubScreen()),
+      GoRoute(path: '/staff/settings',      builder: (_, __) => const ProfileHubScreen()),
       GoRoute(path: '/staff/messages',      builder: (_, __) => const MessagesScreen()),
 
       // ── Student shell (5 bottom-nav branches) ────────────────────────────

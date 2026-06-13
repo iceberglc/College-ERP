@@ -1,10 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../core/api/api_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
+
+/// Back control for the staff Payments / Notifications headers. Works whether
+/// the screen was pushed (pops) or reached via `go` (falls back to home).
+class _HeaderBack extends StatelessWidget {
+  const _HeaderBack();
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: GestureDetector(
+        onTap: () {
+          final nav = Navigator.of(context);
+          if (nav.canPop()) {
+            nav.maybePop();
+          } else {
+            context.go('/staff/home');
+          }
+        },
+        child: const Row(children: [
+          Icon(Icons.arrow_back_rounded, color: Colors.white, size: 22),
+          SizedBox(width: 6),
+          Text('Back',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        ]),
+      ),
+    );
+  }
+}
 
 // ─── Staff Payments Screen ────────────────────────────────────────────────────
 class StaffPaymentsScreen extends ConsumerWidget {
@@ -70,6 +100,7 @@ class _PaymentsHeader extends StatelessWidget {
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const _HeaderBack(),
         const Text('Payments',
             style: TextStyle(
                 color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900))
@@ -265,6 +296,7 @@ class _NotifHeader extends StatelessWidget {
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const _HeaderBack(),
         const Text('Notifications',
             style: TextStyle(
                 color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900))
@@ -395,97 +427,4 @@ class StaffMoreScreen2 extends StatelessWidget {
   const StaffMoreScreen2({super.key});
   @override
   Widget build(BuildContext context) => const SizedBox.shrink();
-}
-
-// ─── Placeholder screens for features in development ─────────────────────────
-Widget _buildPlaceholder(BuildContext context, String title, IconData icon) {
-  return Scaffold(
-    backgroundColor: IceColors.bg,
-    body: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 64, color: IceColors.muted),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: IceColors.navy,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Coming soon',
-            style: TextStyle(fontSize: 14, color: IceColors.muted),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class StaffClassesScreen extends StatelessWidget {
-  const StaffClassesScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      _buildPlaceholder(context, 'Classes', Icons.class_rounded);
-}
-
-class StaffAttendanceScreen extends StatelessWidget {
-  const StaffAttendanceScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      _buildPlaceholder(context, 'Attendance', Icons.event_available_rounded);
-}
-
-class StaffAssignmentsScreen extends StatelessWidget {
-  const StaffAssignmentsScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      _buildPlaceholder(context, 'Assignments', Icons.assignment_outlined);
-}
-
-class StaffResultsScreen extends StatelessWidget {
-  const StaffResultsScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      _buildPlaceholder(context, 'Results', Icons.grade_rounded);
-}
-
-class StaffVocabularyScreen extends StatelessWidget {
-  const StaffVocabularyScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      _buildPlaceholder(context, 'Vocabulary', Icons.menu_book_rounded);
-}
-
-class StaffVocabularyDetailScreen extends StatelessWidget {
-  final String vocabId;
-  const StaffVocabularyDetailScreen({super.key, required this.vocabId});
-  @override
-  Widget build(BuildContext context) =>
-      _buildPlaceholder(context, 'Vocabulary Detail', Icons.menu_book_rounded);
-}
-
-class StaffLeaveScreen extends StatelessWidget {
-  const StaffLeaveScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      _buildPlaceholder(context, 'Leave', Icons.beach_access_rounded);
-}
-
-class StaffFeedbackScreen extends StatelessWidget {
-  const StaffFeedbackScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      _buildPlaceholder(context, 'Feedback', Icons.rate_review_rounded);
-}
-
-class StaffUpdateAttendanceScreen extends StatelessWidget {
-  const StaffUpdateAttendanceScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      _buildPlaceholder(context, 'Update Attendance', Icons.edit_calendar_rounded);
 }
