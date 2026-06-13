@@ -41,7 +41,7 @@ _flutter.buildConfig = {"engineRevision":"cafcda5721a78a7884db92f13c5e89f7643d52
 // fully self-contained (works offline / behind strict firewalls).
 _flutter.loader.load({
   serviceWorkerSettings: {
-    serviceWorkerVersion: "786046090"
+    serviceWorkerVersion: "1932317755"
   },
   config: {
     canvasKitBaseUrl: "canvaskit/"
