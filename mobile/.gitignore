@@ -1,0 +1,10 @@
+# Flutter/Dart
+iceberg_app/.dart_tool/
+iceberg_app/build/
+iceberg_app/.flutter-plugins
+iceberg_app/.flutter-plugins-dependencies
+iceberg_app/android/.gradle/
+iceberg_app/android/local.properties
+iceberg_app/android/app/google-services.json
+iceberg_app/ios/Pods/
+iceberg_app/ios/.symlinks/
