@@ -92,15 +92,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _init() async {
     // Prime the in-memory token cache so the very first authenticated request
-    // is reliably signed (web secure-storage reads can be flaky).
-    await _api.loadTokens();
-    final cached = await _storage.read(key: 'user_json');
-    final token = await _api.accessToken;
-    if (cached != null && token != null) {
-      try {
+    // is reliably signed (web secure-storage reads can be flaky). Everything is
+    // guarded with try/catch + a timeout so a hung or failing secure-storage
+    // read on web can never leave the app stuck on the splash screen.
+    try {
+      await _api.loadTokens().timeout(const Duration(seconds: 4));
+      final cached = await _storage
+          .read(key: 'user_json')
+          .timeout(const Duration(seconds: 4));
+      final token = await _api.accessToken;
+      if (cached != null && token != null) {
         state = AuthState.auth(IceUser.fromJson(jsonDecode(cached)));
         return;
-      } catch (_) {}
+      }
+    } catch (_) {
+      // Fall through to unauthenticated — the user can simply log in again.
     }
     state = AuthState.unauth();
   }
