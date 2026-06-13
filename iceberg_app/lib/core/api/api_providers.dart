@@ -11,7 +11,9 @@ Future<List<dynamic>> apiGetList(String path) async {
   final res = await ApiClient.instance.dio.get(path);
   final data = res.data;
   if (data is List) return data;
-  if (data is Map && data.containsKey('results')) return data['results'] as List;
+  if (data is Map && data.containsKey('results')) {
+    return data['results'] as List;
+  }
   return [];
 }
 
@@ -136,9 +138,10 @@ final staffVocabularyProvider = FutureProvider<List<dynamic>>(
 );
 
 // Staff vocabulary day detail
-final staffVocabDetailProvider = FutureProvider.family<Map<String, dynamic>, int>(
-  (_, pk) => apiGet('/staff/vocabulary/$pk/'),
-);
+final staffVocabDetailProvider =
+    FutureProvider.family<Map<String, dynamic>, int>(
+      (_, pk) => apiGet('/staff/vocabulary/$pk/'),
+    );
 
 // Admin groups list
 final adminGroupsProvider = FutureProvider<List<dynamic>>(

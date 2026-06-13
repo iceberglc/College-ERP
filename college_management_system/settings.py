@@ -59,6 +59,23 @@ elif DEBUG or _ALLOW_INSECURE_CONFIG_DEFAULTS:
 else:
     raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set when DJANGO_DEBUG is False.")
 
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS.extend(
+        [
+            "http://localhost",
+            "http://127.0.0.1",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "https://*.app.github.dev",
+        ]
+    )
+USE_X_FORWARDED_HOST = True
+
 # ---------------------------------------------------------------------------
 # Application definition
 # ---------------------------------------------------------------------------
@@ -327,6 +344,16 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.environ.get(
     "DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "noreply@iceberg-erp.local"
 )
+
+# Optional Google reCAPTCHA. Disabled unless explicitly enabled so missing or
+# hostname-mismatched keys cannot lock users out in production.
+CAPTCHA_ENABLED = os.environ.get("CAPTCHA_ENABLED", "False").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+CAPTCHA_SITE_KEY = os.environ.get("CAPTCHA_SITE_KEY", "")
+CAPTCHA_SECRET_KEY = os.environ.get("CAPTCHA_SECRET_KEY", "")
 
 # Token expected by the public lead receiver. The external website should send:
 # Authorization: Bearer <REGISTRATION_LEADS_API_TOKEN>

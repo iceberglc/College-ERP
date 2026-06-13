@@ -1,300 +1,333 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_providers.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/formatters.dart';
-import '../../../shared/widgets/ice_list_tile.dart';
-import '../../../shared/widgets/ice_page_header.dart';
+import '../../../core/settings/app_settings.dart';
+import '../../../core/theme/ice_tokens.dart';
+import '../../../shared/widgets/ice_kit.dart';
+import '../../../shared/widgets/ice_shell.dart';
 
-class StudentLeaveScreen extends ConsumerWidget {
+/// Leave Requests — New Request form + History.
+///
+/// The backend `LeaveReportStudent` stores a single `date` + `message`, so the
+/// richer fields (type + date range) are encoded into the message and the
+/// from-date is sent as `date`. Status: 0 pending · 1 approved · -1 rejected.
+class StudentLeaveScreen extends ConsumerStatefulWidget {
   const StudentLeaveScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(leaveProvider);
-
-    return Scaffold(
-      backgroundColor: IceColors.bg,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          HapticFeedback.mediumImpact();
-          _showApplySheet(context, ref);
-        },
-        backgroundColor: IceColors.navyDeep,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('Apply Leave',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () => ref.refresh(leaveProvider.future),
-        color: IceColors.navyDeep,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: IcePageHeader(
-                title: 'Leave Requests',
-                subtitle: 'Apply and track your leaves',
-              ),
-            ),
-            data.when(
-              loading: () => const SliverToBoxAdapter(
-                  child: Center(
-                      child: Padding(
-                          padding: EdgeInsets.all(40),
-                          child: CircularProgressIndicator(
-                              color: IceColors.navyDeep)))),
-              error: (e, _) => SliverToBoxAdapter(
-                  child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text('Error: $e',
-                          style: const TextStyle(color: IceColors.danger)))),
-              data: (list) {
-                if (list.isEmpty) {
-                  return SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 40, 16, 40),
-                      child: Column(children: [
-                        Container(
-                          width: 72, height: 72,
-                          decoration: BoxDecoration(
-                            color: IceColors.navyDeep.withAlpha(12),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(Icons.event_note_outlined,
-                              size: 32, color: IceColors.navyDeep),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text('No leave requests yet.',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                                color: IceColors.text)),
-                        const SizedBox(height: 6),
-                        const Text('Tap the button below to apply.',
-                            style: TextStyle(color: IceColors.muted, fontSize: 13)),
-                      ]),
-                    ),
-                  );
-                }
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) {
-                      if (i == 0) return const SizedBox(height: 16);
-                      if (i == list.length + 1) return const SizedBox(height: 100);
-                      final item   = list[i - 1];
-                      final status = item['status']?.toString() ?? 'pending';
-                      final badge  = status == 'approved'
-                          ? IceBadge.approved
-                          : status == 'rejected'
-                              ? IceBadge.rejected
-                              : IceBadge.pending;
-                      return _LeaveCard(
-                        date: item['date']?.toString() ?? fmtDate(item['created_at']),
-                        message: item['message']?.toString() ?? '',
-                        badge: badge,
-                        index: i - 1,
-                      );
-                    },
-                    childCount: list.length + 2,
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showApplySheet(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _ApplyLeaveSheet(onSubmit: () {
-        ref.invalidate(leaveProvider);
-        Navigator.pop(ctx);
-      }),
-    );
-  }
+  ConsumerState<StudentLeaveScreen> createState() => _StudentLeaveScreenState();
 }
 
-class _LeaveCard extends StatelessWidget {
-  final String date;
-  final String message;
-  final IceBadge badge;
-  final int index;
-  const _LeaveCard({
-    required this.date,
-    required this.message,
-    required this.badge,
-    required this.index,
-  });
+class _StudentLeaveScreenState extends ConsumerState<StudentLeaveScreen> {
+  int _tab = 0;
+
+  static const _types = ['Medical leave', 'Family reason', 'Travel', 'Other'];
+  String _type = _types.first;
+  DateTime? _from;
+  DateTime? _to;
+  final _reason = TextEditingController();
+  bool _busy = false;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: IceColors.border),
-      ),
-      child: Row(children: [
-        Container(
-          width: 42, height: 42,
-          decoration: BoxDecoration(
-            color: IceColors.navyDeep.withAlpha(12),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.calendar_today_rounded,
-              size: 18, color: IceColors.navyDeep),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(date,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-            if (message.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text(message,
-                  style: const TextStyle(fontSize: 12, color: IceColors.muted),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-            ],
-          ]),
-        ),
-        badge,
-      ]),
-    )
-        .animate(delay: Duration(milliseconds: 300 + index * 60))
-        .slideX(begin: 0.08, duration: 350.ms, curve: Curves.easeOut)
-        .fadeIn(duration: 300.ms);
-  }
-}
-
-class _ApplyLeaveSheet extends StatefulWidget {
-  final VoidCallback onSubmit;
-  const _ApplyLeaveSheet({required this.onSubmit});
-
-  @override
-  State<_ApplyLeaveSheet> createState() => _ApplyLeaveSheetState();
-}
-
-class _ApplyLeaveSheetState extends State<_ApplyLeaveSheet> {
-  final _msgCtrl = TextEditingController();
-  DateTime? _date;
-  bool _loading = false;
-  String? _error;
-
-  @override
-  void dispose() { _msgCtrl.dispose(); super.dispose(); }
-
-  Future<void> _pick() async {
-    final d = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 60)),
-    );
-    if (d != null) setState(() => _date = d);
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
   }
 
   Future<void> _submit() async {
-    if (_date == null) { setState(() => _error = 'Pick a date'); return; }
-    setState(() { _loading = true; _error = null; });
+    if (_from == null || _reason.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pick a start date and add a reason.')),
+      );
+      return;
+    }
+    setState(() => _busy = true);
+    final df = DateFormat('yyyy-MM-dd');
+    final range = _to != null
+        ? '${df.format(_from!)} → ${df.format(_to!)}'
+        : df.format(_from!);
+    final message = '[$_type] $range\n${_reason.text.trim()}';
     try {
-      await ApiClient.instance.dio.post('/leave/', data: {
-        'date': _date!.toIso8601String().substring(0, 10),
-        'message': _msgCtrl.text.trim(),
-      });
-      widget.onSubmit();
-    } catch (e) {
-      setState(() { _loading = false; _error = e.toString(); });
+      await ApiClient.instance.dio.post(
+        '/leave/',
+        data: {'date': df.format(_from!), 'message': message},
+      );
+      ref.invalidate(leaveProvider);
+      if (mounted) {
+        setState(() {
+          _reason.clear();
+          _from = null;
+          _to = null;
+          _tab = 1;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Leave request submitted.')),
+        );
+      }
+    } on DioException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not submit. Try again.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: EdgeInsets.fromLTRB(
-          20, 20, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(
-                color: IceColors.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text('Apply for Leave',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 16),
-          GestureDetector(
-            onTap: _pick,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: IceColors.surface2,
-                border: Border.all(
-                    color: _date != null ? IceColors.navyDeep : IceColors.border,
-                    width: 1.5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(children: [
-                Icon(Icons.calendar_today_outlined,
-                    size: 18,
-                    color: _date != null ? IceColors.navyDeep : IceColors.muted),
-                const SizedBox(width: 10),
-                Text(
-                  _date == null ? 'Select date' : fmtDate(_date!.toIso8601String()),
-                  style: TextStyle(
-                      color: _date == null ? IceColors.muted : IceColors.text,
-                      fontWeight: FontWeight.w500),
+    final t = context.ice;
+    final s = ref.watch(stringsProvider);
+
+    return IcePage(
+      title: s('Leave Requests'),
+      backButton: true,
+      children: [
+        IceChipTabs(
+          tabs: const ['New Request', 'History'],
+          index: _tab,
+          onChanged: (i) => setState(() => _tab = i),
+        ),
+        const SizedBox(height: 18),
+        if (_tab == 0) ...[
+          MicroLabel('Leave Type'),
+          const SizedBox(height: 8),
+          IceCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _type,
+                isExpanded: true,
+                dropdownColor: t.card,
+                icon: Icon(Icons.expand_more_rounded, color: t.textMid),
+                style: TextStyle(
+                  color: t.textHi,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
                 ),
-              ]),
+                items: _types
+                    .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                    .toList(),
+                onChanged: (v) => setState(() => _type = v!),
+              ),
             ),
           ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _msgCtrl,
-            minLines: 2,
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _DateField(
+                  label: 'From Date',
+                  value: _from,
+                  onPick: (d) => setState(() => _from = d),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _DateField(
+                  label: 'To Date',
+                  value: _to,
+                  firstDate: _from,
+                  onPick: (d) => setState(() => _to = d),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          MicroLabel('Reason'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _reason,
             maxLines: 4,
+            maxLength: 300,
+            style: TextStyle(color: t.textHi, fontWeight: FontWeight.w500),
             decoration: const InputDecoration(
-                labelText: 'Reason (optional)',
-                alignLabelWithHint: true),
-          ),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(_error!,
-                  style: const TextStyle(color: IceColors.danger, fontSize: 12)),
+              hintText: 'Briefly explain your reason…',
             ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loading ? null : _submit,
-            child: _loading
-                ? const SizedBox(width: 20, height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                : const Text('Submit Request'),
           ),
+          const SizedBox(height: 8),
+          IceButton('Submit Request', busy: _busy, onPressed: _submit),
+        ] else
+          _History(),
+      ],
+    );
+  }
+}
+
+class _History extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final leaves = ref.watch(leaveProvider);
+    return leaves.when(
+      loading: () => const Column(
+        children: [
+          SkeletonBox(height: 90),
+          SizedBox(height: 10),
+          SkeletonBox(height: 90),
         ],
       ),
+      error: (e, _) =>
+          ErrorState(error: e, onRetry: () => ref.invalidate(leaveProvider)),
+      data: (list) {
+        if (list.isEmpty) {
+          return const IceCard(
+            child: EmptyState(
+              icon: Icons.event_busy_outlined,
+              title: 'No requests yet',
+              message: 'Your leave history will appear here.',
+            ),
+          );
+        }
+        return Column(
+          children: list
+              .map(
+                (l) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _LeaveCard(leave: l as Map<String, dynamic>),
+                ),
+              )
+              .toList(),
+        );
+      },
+    );
+  }
+}
+
+class _LeaveCard extends StatelessWidget {
+  final Map<String, dynamic> leave;
+  const _LeaveCard({required this.leave});
+
+  (String, BadgeTone) get _badge => switch (leave['status']) {
+    1 => ('Approved', BadgeTone.accent),
+    -1 => ('Rejected', BadgeTone.coral),
+    _ => ('Pending', BadgeTone.amber),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.ice;
+    final (badge, tone) = _badge;
+    final created = DateTime.tryParse(leave['created_at'] ?? '');
+    final message = (leave['message'] ?? '').toString();
+    // First line carries [type] + range, the rest is the reason.
+    final lines = message.split('\n');
+    final header = lines.first;
+    final body = lines.length > 1 ? lines.sublist(1).join('\n') : '';
+
+    return IceCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  header,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: t.textHi,
+                  ),
+                ),
+              ),
+              StatusBadge(badge, tone: tone),
+            ],
+          ),
+          if (body.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              body,
+              style: TextStyle(fontSize: 13, color: t.textMid, height: 1.4),
+            ),
+          ],
+          if (created != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Requested ${DateFormat('MMM d, yyyy').format(created)}',
+              style: TextStyle(fontSize: 11.5, color: t.textLow),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DateField extends StatelessWidget {
+  final String label;
+  final DateTime? value;
+  final DateTime? firstDate;
+  final ValueChanged<DateTime> onPick;
+
+  const _DateField({
+    required this.label,
+    required this.value,
+    this.firstDate,
+    required this.onPick,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.ice;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        MicroLabel(label),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () async {
+            final now = DateTime.now();
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: value ?? firstDate ?? now,
+              firstDate: firstDate ?? now.subtract(const Duration(days: 30)),
+              lastDate: now.add(const Duration(days: 365)),
+              builder: (ctx, child) => Theme(
+                data: Theme.of(ctx).copyWith(
+                  colorScheme: ColorScheme.dark(
+                    primary: t.accent,
+                    onPrimary: t.onAccent,
+                    surface: t.card,
+                    onSurface: t.textHi,
+                  ),
+                ),
+                child: child!,
+              ),
+            );
+            if (picked != null) onPick(picked);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              color: t.inset,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: t.stroke),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today_rounded, size: 16, color: t.textMid),
+                const SizedBox(width: 8),
+                Text(
+                  value != null
+                      ? DateFormat('MMM d, yyyy').format(value!)
+                      : 'Select',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: value != null ? t.textHi : t.textLow,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

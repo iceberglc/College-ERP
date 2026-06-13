@@ -24,7 +24,9 @@ class IceActionButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: (color ?? IceColors.cyan).withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: (color ?? IceColors.cyan).withValues(alpha: 0.4)),
+          border: Border.all(
+            color: (color ?? IceColors.cyan).withValues(alpha: 0.4),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

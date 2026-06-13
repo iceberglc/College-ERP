@@ -234,6 +234,13 @@
     }
     .pw-btn:hover { color: #94A3B8; }
 
+    .captcha-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 2px 0 14px;
+      overflow: hidden;
+    }
+
     /* ─────────────────────────────────────────────
        BUTTON
     ───────────────────────────────────────────── */
@@ -705,6 +712,12 @@
         {% endif %}{% endfor %}
       </div>
 
+      {% if captcha_enabled %}
+      <div class="captcha-wrap">
+        <div class="g-recaptcha" data-sitekey="{{ captcha_site_key }}"></div>
+      </div>
+      {% endif %}
+
       <div class="btn-wrap">
         <button type="submit" class="btn-signin">Sign In</button>
       </div>
@@ -715,6 +728,10 @@
   </div>
 
   <p class="footer">&copy; {% now "Y" %} Iceberg Study Center</p>
+
+  {% if captcha_enabled %}
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  {% endif %}
 
   <script>
   /* ── Password visibility toggle ── */

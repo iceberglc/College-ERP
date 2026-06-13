@@ -3,6 +3,8 @@ import logging
 import os
 from urllib.parse import urlencode
 
+import requests
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
@@ -14,6 +16,8 @@ from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.urls import reverse_lazy
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .apps import create_recovery_admin_access
 from .forms import AdminForm, StaffProfileForm, StudentProfileForm
@@ -67,12 +71,60 @@ def _redirect_authenticated_user(user):
     return None  # Unknown type — fall through to show login page
 
 
+@never_cache
+@ensure_csrf_cookie
 def login_page(request):
     if request.user.is_authenticated:
         destination = _redirect_authenticated_user(request.user)
         if destination:
             return destination
-    return render(request, "main_app/login.html")
+    return render(
+        request,
+        "main_app/login.html",
+        {
+            "captcha_site_key": settings.CAPTCHA_SITE_KEY,
+            "captcha_enabled": bool(settings.CAPTCHA_ENABLED and settings.CAPTCHA_SITE_KEY),
+        },
+    )
+
+
+def _verify_captcha(request):
+    if not settings.CAPTCHA_ENABLED:
+        return True
+    if not settings.CAPTCHA_SITE_KEY or not settings.CAPTCHA_SECRET_KEY:
+        logger.error("CAPTCHA_ENABLED=True but CAPTCHA_SITE_KEY/CAPTCHA_SECRET_KEY are missing.")
+        messages.error(request, "Login verification is not configured. Contact the administrator.")
+        return False
+
+    captcha_token = request.POST.get("g-recaptcha-response")
+    if not captcha_token:
+        messages.error(request, "Please complete the captcha challenge.")
+        return False
+
+    try:
+        response = requests.post(
+            "https://www.google.com/recaptcha/api/siteverify",
+            data={
+                "secret": settings.CAPTCHA_SECRET_KEY,
+                "response": captcha_token,
+            },
+            timeout=8,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except requests.RequestException:
+        logger.exception("reCAPTCHA request failed.")
+        messages.error(request, "Captcha could not be verified. Try again.")
+        return False
+    except ValueError:
+        logger.exception("reCAPTCHA returned non-JSON response.")
+        messages.error(request, "Captcha could not be verified. Try again.")
+        return False
+
+    if not payload.get("success"):
+        messages.error(request, "Invalid captcha. Try again.")
+        return False
+    return True
 
 
 def doLogin(request, **kwargs):
@@ -88,6 +140,9 @@ def doLogin(request, **kwargs):
 
     if not identifier or not password:
         messages.error(request, "Please enter both your ID/email and password.")
+        return redirect(reverse("login_page"))
+
+    if not _verify_captcha(request):
         return redirect(reverse("login_page"))
 
     try:

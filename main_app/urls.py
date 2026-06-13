@@ -14,6 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from main_app.EditResultView import EditResultView
@@ -21,6 +22,7 @@ from main_app.EditResultView import EditResultView
 from . import (
     hod_views,
     messaging_views,
+    password_recovery,
     payments_views,
     public_views,
     staff_views,
@@ -32,6 +34,42 @@ urlpatterns = [
     path("health/", views.health, name="health"),
     path("", views.login_page, name="entry_page"),
     path("login/", views.login_page, name="login_page"),
+    path(
+        "accounts/password_reset/",
+        views.SafePasswordResetView.as_view(),
+        name="password_reset",
+    ),
+    path(
+        "accounts/password_reset/done/",
+        auth_views.PasswordResetDoneView.as_view(
+            template_name="registration/password_reset_done.html"
+        ),
+        name="password_reset_done",
+    ),
+    path(
+        "accounts/reset/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name="registration/password_reset_confirm.html",
+            success_url="/accounts/reset/done/",
+        ),
+        name="password_reset_confirm",
+    ),
+    path(
+        "accounts/reset/done/",
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name="registration/password_reset_complete.html"
+        ),
+        name="password_reset_complete",
+    ),
+    path("forgot-password/", password_recovery.forgot_password, name="forgot_password"),
+    path("verify-reset-code/", password_recovery.verify_reset_code, name="verify_reset_code"),
+    path("reset-password/", password_recovery.reset_password, name="reset_password"),
+    path(
+        "password-reset-success/",
+        password_recovery.password_reset_success,
+        name="password_reset_success",
+    ),
+    path("resend-reset-code/", password_recovery.resend_code, name="resend_reset_code"),
     path(
         "public/registration-leads",
         public_views.registration_leads_receiver,

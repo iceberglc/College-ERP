@@ -47,72 +47,78 @@ class IcePageHeader extends StatelessWidget {
   }
 
   Widget _content(Color titleColor, Color subtitleColor) {
-    return Builder(builder: (context) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
+    return Builder(
+      builder: (context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
                         color: titleColor,
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: -0.3),
-                  ).animate().fadeIn(duration: 300.ms),
-                  if (subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
+                        letterSpacing: -0.3,
+                      ),
+                    ).animate().fadeIn(duration: 300.ms),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
                           color: subtitleColor,
                           fontSize: 13,
-                          fontWeight: FontWeight.w500),
-                    ).animate(delay: 60.ms).fadeIn(duration: 300.ms),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ).animate(delay: 60.ms).fadeIn(duration: 300.ms),
+                    ],
                   ],
-                ],
-              ),
-            ),
-            // The app theme gives ElevatedButton an infinite min-width (for
-            // full-width form buttons); inside the header row that would
-            // squeeze the title to zero, so cap it here for all actions.
-            if (actions != null)
-              ElevatedButtonTheme(
-                data: ElevatedButtonThemeData(
-                  style: Theme.of(context)
-                      .elevatedButtonTheme
-                      .style
-                      ?.copyWith(
-                        minimumSize:
-                            const WidgetStatePropertyAll(Size(0, 42)),
-                        padding: const WidgetStatePropertyAll(
-                            EdgeInsets.symmetric(horizontal: 16)),
-                      ),
                 ),
-                child:
-                    Row(mainAxisSize: MainAxisSize.min, children: actions!),
               ),
-            if (avatar != null) ...[
-              if (actions != null) const SizedBox(width: 8),
-              avatar!
-                  .animate(delay: 100.ms)
-                  .scale(duration: 350.ms, curve: Curves.elasticOut),
+              // The app theme gives ElevatedButton an infinite min-width (for
+              // full-width form buttons); inside the header row that would
+              // squeeze the title to zero, so cap it here for all actions.
+              if (actions != null)
+                ElevatedButtonTheme(
+                  data: ElevatedButtonThemeData(
+                    style: Theme.of(context).elevatedButtonTheme.style
+                        ?.copyWith(
+                          minimumSize: const WidgetStatePropertyAll(
+                            Size(0, 42),
+                          ),
+                          padding: const WidgetStatePropertyAll(
+                            EdgeInsets.symmetric(horizontal: 16),
+                          ),
+                        ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: actions!,
+                  ),
+                ),
+              if (avatar != null) ...[
+                if (actions != null) const SizedBox(width: 8),
+                avatar!
+                    .animate(delay: 100.ms)
+                    .scale(duration: 350.ms, curve: Curves.elasticOut),
+              ],
             ],
+          ),
+          if (chips.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Wrap(spacing: 8, children: chips)
+                .animate(delay: 180.ms)
+                .slideY(begin: 0.2, duration: 350.ms, curve: Curves.easeOut)
+                .fadeIn(duration: 300.ms),
           ],
-        ),
-        if (chips.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          Wrap(spacing: 8, children: chips)
-              .animate(delay: 180.ms)
-              .slideY(begin: 0.2, duration: 350.ms, curve: Curves.easeOut)
-              .fadeIn(duration: 300.ms),
         ],
-      ],
-    ));
+      ),
+    );
   }
 }
 
@@ -138,22 +144,33 @@ class IceHeaderChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: dark ? Colors.white.withAlpha(18) : IceColors.navyDeep.withAlpha(12),
+          color: dark
+              ? Colors.white.withAlpha(18)
+              : IceColors.navyDeep.withAlpha(12),
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
             color: dark ? Colors.white.withAlpha(30) : IceColors.border,
           ),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 13,
-              color: dark ? IceColors.lime : IceColors.navyDeep),
-          const SizedBox(width: 5),
-          Text(label,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 13,
+              color: dark ? IceColors.lime : IceColors.navyDeep,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
               style: TextStyle(
-                  color: dark ? Colors.white : IceColors.navyDeep,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
-        ]),
+                color: dark ? Colors.white : IceColors.navyDeep,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -178,18 +195,16 @@ class IceAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: IceColors.lime,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: IceColors.lime, shape: BoxShape.circle),
       alignment: Alignment.center,
       child: Text(
         _initials,
         style: TextStyle(
-            color: IceColors.navy,
-            fontSize: size * 0.34,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.5),
+          color: IceColors.navy,
+          fontSize: size * 0.34,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -0.5,
+        ),
       ),
     );
   }
@@ -215,20 +230,26 @@ class IceSectionHeader extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(title,
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: IceColors.text)),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: IceColors.text,
+              ),
+            ),
           ),
           if (actionLabel != null)
             GestureDetector(
               onTap: onAction,
-              child: Text(actionLabel!,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: IceColors.navyDeep)),
+              child: Text(
+                actionLabel!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: IceColors.navyDeep,
+                ),
+              ),
             ),
         ],
       ),

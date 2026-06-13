@@ -85,7 +85,7 @@ def _reminder_message(invoice):
     if invoice.is_overdue:
         days = (timezone.localdate() - invoice.due_date).days
         return (
-            f"Payment overdue by {days} day{'s' if days != 1 else ''}: {balance} "
+            f"Payment reminder: overdue by {days} day{'s' if days != 1 else ''}: {balance} "
             f"for {invoice.period_label}{group}. Please pay at the front desk or contact your branch."
         )
     return (

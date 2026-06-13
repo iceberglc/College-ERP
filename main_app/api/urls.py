@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, admin_views
+from . import views, admin_views, student_views
 
 urlpatterns = [
     # ── Auth ─────────────────────────────────────────────────────────────────
@@ -86,6 +86,28 @@ urlpatterns = [
     # ── Student Progress ──────────────────────────────────────────────────────
     path("student/progress/", views.StudentProgressView.as_view(), name="api_student_progress"),
 
+    # ── Student: attendance hub, result files, app settings ──────────────────
+    path(
+        "student/attendance/summary/",
+        student_views.StudentAttendanceSummaryView.as_view(),
+        name="api_student_attendance_summary",
+    ),
+    path(
+        "result-files/",
+        student_views.StudentResultFileListView.as_view(),
+        name="api_student_result_files",
+    ),
+    path(
+        "result-files/<int:pk>/download/",
+        student_views.StudentResultFileDownloadView.as_view(),
+        name="api_student_result_file_download",
+    ),
+    path(
+        "student/settings/",
+        student_views.StudentSettingsView.as_view(),
+        name="api_student_settings",
+    ),
+
     # ── Stories ───────────────────────────────────────────────────────────────
     path("stories/", views.StoryListView.as_view(), name="api_stories"),
     path("stories/create/", views.StoryCreateView.as_view(), name="api_story_create"),
@@ -97,6 +119,7 @@ urlpatterns = [
     path("staff/vocabulary/<int:pk>/", views.StaffVocabularyDetailView.as_view(), name="api_staff_vocabulary_detail"),
     path("staff/vocabulary/<int:pk>/words/", views.StaffVocabularyWordView.as_view(), name="api_staff_vocabulary_words"),
     path("staff/vocabulary/<int:pk>/words/<int:word_pk>/", views.StaffVocabularyWordView.as_view(), name="api_staff_vocabulary_word_delete"),
+    path("staff/payments/", views.StaffPaymentBoardView.as_view(), name="api_staff_payments"),
 
     # ── Leaderboard ───────────────────────────────────────────────────────────
     path("leaderboard/", views.LeaderboardView.as_view(), name="api_leaderboard"),

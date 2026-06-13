@@ -538,8 +538,6 @@ def add_book(request):
             "page_title": "Add Book",
         },
     )
-
-
 # ── Lending (issue / return) ───────────────────────────────────────────────────
 
 

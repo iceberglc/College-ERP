@@ -179,6 +179,14 @@ class MeView(APIView):
         )
         if serializer.is_valid():
             serializer.save()
+            # Phone lives on the role profile, not CustomUser.
+            if "phone" in request.data and str(user.user_type) == "3":
+                try:
+                    student = user.student
+                    student.phone = str(request.data["phone"])[:20]
+                    student.save(update_fields=["phone"])
+                except Student.DoesNotExist:
+                    pass
             return Response(MeSerializer(user, context={"request": request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -468,11 +476,24 @@ class AssignmentListView(APIView):
         return qs.none()
 
     def get(self, request):
-        qs = self._queryset(request.user).order_by("-created_at")
+        qs = self._queryset(request.user).select_related("subject").order_by("-created_at")
+
+        # Build a submission map for students so the serializer can report
+        # per-assignment status without an N+1 query.
+        context = {"request": request}
+        if str(request.user.user_type) == "3":
+            try:
+                subs = Submission.objects.filter(
+                    student=request.user.student, assignment__in=qs
+                )
+                context["submission_map"] = {s.assignment_id: s for s in subs}
+            except Student.DoesNotExist:
+                context["submission_map"] = {}
+
         paginator = PageNumberPagination()
-        paginator.page_size = 20
+        paginator.page_size = 50
         page = paginator.paginate_queryset(qs, request)
-        serializer = AssignmentSerializer(page, many=True, context={"request": request})
+        serializer = AssignmentSerializer(page, many=True, context=context)
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
@@ -879,6 +900,12 @@ class StudentDashboardView(APIView):
                     "id": s.id,
                     "title": s.title,
                     "content": s.body,
+                    "story_type": s.story_type,
+                    "emoji": s.emoji,
+                    "image_url": (
+                        request.build_absolute_uri(s.safe_image_url) if s.safe_image_url else None
+                    ),
+                    "created_at": s.created_at.isoformat(),
                     "author_name": s.created_by.get_full_name() if s.created_by else "",
                 })
 
@@ -1341,6 +1368,115 @@ class InvoiceDetailView(generics.RetrieveAPIView):
         return qs.none()
 
 
+class StaffPaymentBoardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if str(request.user.user_type) != "2":
+            return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            staff = request.user.staff
+        except Staff.DoesNotExist:
+            return Response(
+                {"detail": "Staff profile not found."}, status=status.HTTP_403_FORBIDDEN
+            )
+
+        from datetime import date
+        from django.utils import timezone as tz
+
+        month = request.query_params.get("month", "")
+        today = tz.localdate()
+        try:
+            year, month_no = [int(part) for part in month.split("-", 1)]
+            period = date(year, month_no, 1)
+        except (TypeError, ValueError):
+            period = date(today.year, today.month, 1)
+
+        groups = Group.objects.filter(teacher=staff, is_archived=False).order_by("name")
+        boards = []
+        summary = {"paid": 0, "overdue": 0, "due": 0, "none": 0}
+
+        for group in groups:
+            enrollments = (
+                Enrollment.objects.filter(group=group, is_active=True)
+                .select_related("student__admin")
+                .order_by("student__admin__last_name", "student__admin__first_name")
+            )
+            invoices = {
+                inv.student_id: inv
+                for inv in Invoice.objects.filter(group=group, period=period).prefetch_related(
+                    "payments"
+                )
+            }
+            rows = []
+            for enrollment in enrollments:
+                student = enrollment.student
+                user = student.admin
+                invoice = invoices.get(student.id)
+                if invoice is None or invoice.status == Invoice.STATUS_CANCELLED:
+                    state = "none"
+                    invoice_data = None
+                elif invoice.status == Invoice.STATUS_PAID:
+                    state = "paid"
+                    invoice_data = _staff_invoice_payload(invoice)
+                elif invoice.is_overdue:
+                    state = "overdue"
+                    invoice_data = _staff_invoice_payload(invoice)
+                else:
+                    state = "due"
+                    invoice_data = _staff_invoice_payload(invoice)
+
+                summary[state] += 1
+                rows.append(
+                    {
+                        "student": {
+                            "id": student.id,
+                            "name": f"{user.first_name} {user.last_name}".strip() or str(student),
+                            "email": user.email,
+                            "login_id": user.login_id,
+                        },
+                        "state": state,
+                        "invoice": invoice_data,
+                    }
+                )
+
+            boards.append(
+                {
+                    "group": {
+                        "id": group.id,
+                        "name": group.name,
+                        "schedule": group.schedule,
+                        "room": group.room,
+                    },
+                    "rows": rows,
+                }
+            )
+
+        return Response(
+            {
+                "period": period.isoformat(),
+                "month": period.strftime("%Y-%m"),
+                "summary": summary,
+                "boards": boards,
+            }
+        )
+
+
+def _staff_invoice_payload(invoice):
+    return {
+        "id": invoice.id,
+        "status": invoice.status,
+        "status_display": invoice.get_status_display(),
+        "due_date": invoice.due_date.isoformat(),
+        "amount": str(invoice.amount),
+        "discount": str(invoice.discount),
+        "amount_paid": str(invoice.paid_amount),
+        "amount_due": str(invoice.balance),
+        "is_overdue": invoice.is_overdue,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Admin: Registration leads
 # ---------------------------------------------------------------------------
@@ -1756,11 +1892,16 @@ class VocabularyDayCompleteView(APIView):
 
 
 class LeaderboardView(APIView):
-    """Return the active season leaderboard (or a specified season by ?season_id=)."""
+    """Return the active season leaderboard (or a specified season by ?season_id=).
+
+    ``?scope=overall|group|branch`` narrows the board for students:
+    *group* keeps classmates from the student's active groups, *branch*
+    keeps students of the same branch. Rows are re-ranked within the scope.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        from .serializers import LeaderboardSeasonSerializer
+        from .serializers import LeaderboardEntrySerializer
         season_id = request.query_params.get("season_id")
         if season_id:
             try:
@@ -1771,8 +1912,58 @@ class LeaderboardView(APIView):
             season = LeaderboardSeason.objects.filter(is_active=True).order_by("-start_date").first()
             if not season:
                 return Response({"detail": "No active leaderboard season."}, status=status.HTTP_404_NOT_FOUND)
-        data = LeaderboardSeasonSerializer(season, context={"request": request}).data
-        return Response(data)
+
+        snapshots = season.snapshots.select_related("student__admin").order_by("rank")
+
+        me_student = None
+        if str(request.user.user_type) == "3":
+            try:
+                me_student = request.user.student
+            except Student.DoesNotExist:
+                me_student = None
+
+        scope = request.query_params.get("scope", "overall")
+        if me_student and scope == "group":
+            classmate_ids = Enrollment.objects.filter(
+                group__in=Group.objects.filter(
+                    enrollment__student=me_student, enrollment__is_active=True
+                ),
+                is_active=True,
+            ).values_list("student_id", flat=True)
+            snapshots = snapshots.filter(student_id__in=classmate_ids)
+        elif me_student and scope == "branch":
+            branch = me_student.effective_branch
+            if branch:
+                snapshots = snapshots.filter(
+                    models.Q(student__branch=branch)
+                    | models.Q(
+                        student__branch__isnull=True,
+                        student__enrollment__group__branch=branch,
+                        student__enrollment__is_active=True,
+                    )
+                ).distinct()
+
+        entries = []
+        my_rank = None
+        for i, snap in enumerate(snapshots, start=1):
+            row = LeaderboardEntrySerializer(snap, context={"request": request}).data
+            row["rank"] = i  # re-rank within the scope
+            row["is_me"] = me_student is not None and snap.student_id == me_student.id
+            if row["is_me"]:
+                my_rank = i
+            entries.append(row)
+
+        return Response({
+            "id": season.id,
+            "name": season.name,
+            "period": season.period,
+            "start_date": season.start_date,
+            "end_date": season.end_date,
+            "is_active": season.is_active,
+            "scope": scope if scope in ("overall", "group", "branch") else "overall",
+            "my_rank": my_rank,
+            "entries": entries,
+        })
 
 
 # ---------------------------------------------------------------------------
@@ -2291,6 +2482,11 @@ class MessageThreadDetailView(APIView):
                 "sender_name": m.sender.get_full_name() or m.sender.email,
                 "is_mine": m.sender_id == request.user.id,
                 "created_at": m.created_at.isoformat(),
+                "attachment_url": (
+                    request.build_absolute_uri(m.attachment.url) if m.attachment else None
+                ),
+                "attachment_name": m.attachment_display_name,
+                "attachment_is_image": m.attachment_is_image,
             }
             for m in thread.messages.select_related("sender").order_by("created_at")[:500]
         ]
@@ -2307,9 +2503,21 @@ class MessageThreadDetailView(APIView):
         if err:
             return err
         body = str(request.data.get("message") or request.data.get("body") or "").strip()
-        if not body:
+        attachment = request.FILES.get("attachment")
+        if not body and not attachment:
             return Response({"detail": "Message is required."}, status=status.HTTP_400_BAD_REQUEST)
-        msg = ChatMessage.objects.create(thread=thread, sender=request.user, body=body[:4000])
+        if attachment and attachment.size > 10 * 1024 * 1024:
+            return Response(
+                {"detail": "Attachment too large (max 10 MB)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        msg = ChatMessage.objects.create(
+            thread=thread,
+            sender=request.user,
+            body=body[:4000],
+            attachment=attachment,
+            attachment_name=(attachment.name if attachment else ""),
+        )
         return Response(
             {
                 "id": msg.id,
@@ -2317,6 +2525,11 @@ class MessageThreadDetailView(APIView):
                 "sender_name": request.user.get_full_name() or request.user.email,
                 "is_mine": True,
                 "created_at": msg.created_at.isoformat(),
+                "attachment_url": (
+                    request.build_absolute_uri(msg.attachment.url) if msg.attachment else None
+                ),
+                "attachment_name": msg.attachment_display_name,
+                "attachment_is_image": msg.attachment_is_image,
             },
             status=status.HTTP_201_CREATED,
         )

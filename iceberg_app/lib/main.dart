@@ -6,7 +6,9 @@ import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
-final sharedPrefsProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
+final sharedPrefsProvider = Provider<SharedPreferences>(
+  (ref) => throw UnimplementedError(),
+);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,8 +23,8 @@ void main() async {
   final savedTheme = prefs.getString('theme_mode') ?? 'system';
   final initialTheme = switch (savedTheme) {
     'light' => ThemeMode.light,
-    'dark'  => ThemeMode.dark,
-    _       => ThemeMode.system,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
   };
 
   runApp(
@@ -42,13 +44,13 @@ class IcebergApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-    final router   = ref.watch(appRouterProvider);
+    final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
       title: 'Iceberg Study Center',
-      theme:      IceTheme.light(),
-      darkTheme:  IceTheme.dark(),
-      themeMode:  themeMode,
+      theme: IceTheme.light(),
+      darkTheme: IceTheme.dark(),
+      themeMode: themeMode,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

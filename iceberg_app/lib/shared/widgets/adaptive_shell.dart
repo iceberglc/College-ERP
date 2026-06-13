@@ -32,7 +32,9 @@ class AdaptiveShell extends StatelessWidget {
         selectedIndex: navigationShell.currentIndex,
         items: items,
         onTap: (i) => navigationShell.goBranch(
-            i, initialLocation: i == navigationShell.currentIndex),
+          i,
+          initialLocation: i == navigationShell.currentIndex,
+        ),
       ),
     );
   }
@@ -57,19 +59,27 @@ class _SidebarLayout extends StatelessWidget {
           NavigationRail(
             selectedIndex: navigationShell.currentIndex,
             onDestinationSelected: (i) => navigationShell.goBranch(
-                i, initialLocation: i == navigationShell.currentIndex),
+              i,
+              initialLocation: i == navigationShell.currentIndex,
+            ),
             backgroundColor: IceColors.navy,
-            selectedIconTheme:
-                const IconThemeData(color: IceColors.lime, size: 24),
-            unselectedIconTheme:
-                IconThemeData(color: Colors.white.withAlpha(120), size: 22),
+            selectedIconTheme: const IconThemeData(
+              color: IceColors.lime,
+              size: 24,
+            ),
+            unselectedIconTheme: IconThemeData(
+              color: Colors.white.withAlpha(120),
+              size: 22,
+            ),
             selectedLabelTextStyle: const TextStyle(
-                color: IceColors.lime,
-                fontSize: 11,
-                fontWeight: FontWeight.w700),
+              color: IceColors.lime,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
             unselectedLabelTextStyle: TextStyle(
-                color: Colors.white.withAlpha(100),
-                fontSize: 10),
+              color: Colors.white.withAlpha(100),
+              fontSize: 10,
+            ),
             labelType: NavigationRailLabelType.all,
             indicatorColor: Colors.white.withAlpha(15),
             leading: Padding(
@@ -85,14 +95,21 @@ class _SidebarLayout extends StatelessWidget {
                 ),
               ),
             ),
-            destinations: items.map((item) => NavigationRailDestination(
-                  icon: Icon(item.icon),
-                  selectedIcon: Icon(item.activeIcon),
-                  label: Text(item.label),
-                )).toList(),
+            destinations: items
+                .map(
+                  (item) => NavigationRailDestination(
+                    icon: Icon(item.icon),
+                    selectedIcon: Icon(item.activeIcon),
+                    label: Text(item.label),
+                  ),
+                )
+                .toList(),
           ),
           const VerticalDivider(
-              width: 1, thickness: 1, color: Color(0xFF073B42)),
+            width: 1,
+            thickness: 1,
+            color: Color(0xFF073B42),
+          ),
           Expanded(child: navigationShell),
         ],
       ),

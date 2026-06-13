@@ -4,7 +4,7 @@ region: nyc
 services:
   - name: web
     github:
-      repo: Jahongir359/College-ERP
+      repo: iceberglc/College-ERP
       branch: main
       deploy_on_push: true
     build_command: pip install -r requirements.txt && python manage.py collectstatic --noinput
@@ -64,7 +64,7 @@ jobs:
   - name: db-migrate
     kind: PRE_DEPLOY
     github:
-      repo: Jahongir359/College-ERP
+      repo: iceberglc/College-ERP
       branch: main
     run_command: python manage.py migrate --noinput
     environment_slug: python

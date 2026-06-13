@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_state.dart';
-import 'role_nav.dart';
-import '../../shared/widgets/ice_sidebar.dart';
-import '../theme/app_theme.dart';
+import '../theme/ice_tokens.dart';
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/coming_soon_screen.dart';
 
 // Student
 import '../../features/student/screens/student_shell.dart';
@@ -20,56 +19,20 @@ import '../../features/student/screens/student_notifications_screen.dart';
 import '../../features/student/screens/student_vocabulary_screen.dart';
 import '../../features/student/screens/student_vocabulary_detail_screen.dart';
 import '../../features/student/screens/student_flashcard_screen.dart';
+import '../../features/student/screens/student_vocabulary_quiz_screen.dart';
 import '../../features/student/screens/student_result_files_screen.dart';
 import '../../features/student/screens/student_books_screen.dart';
 import '../../features/student/screens/student_leaderboard_screen.dart';
 import '../../features/student/screens/student_progress_screen.dart';
-import '../../features/student/screens/student_more_screen.dart';
+import '../../features/student/screens/student_profile_screen.dart';
+import '../../features/student/screens/student_settings_screen.dart';
+import '../../features/student/screens/student_messages_screen.dart';
+import '../../features/student/screens/student_assignment_detail_screen.dart';
+import '../../features/student/screens/student_learn_screen.dart';
 
-// Staff
-import '../../features/staff/screens/staff_shell.dart';
-import '../../features/staff/screens/staff_home_screen.dart';
-import '../../features/staff/screens/staff_attendance_screen.dart';
-import '../../features/staff/screens/staff_results_screen.dart';
-import '../../features/staff/screens/staff_leave_screen.dart';
-import '../../features/staff/screens/staff_feedback_screen.dart';
-import '../../features/staff/screens/staff_assignments_screen.dart';
-import '../../features/staff/screens/staff_classes_screen.dart';
-import '../../features/staff/screens/staff_vocabulary_screen.dart';
-import '../../features/staff/screens/staff_vocabulary_detail_screen.dart';
-import '../../features/staff/screens/staff_update_attendance_screen.dart';
-import '../../features/staff/screens/staff_more_screen.dart';
-import '../../features/staff/screens/staff_placeholder_screens.dart';
-
-// Admin
-import '../../features/admin/screens/admin_shell.dart';
-import '../../features/admin/screens/admin_home_screen.dart';
-import '../../features/admin/screens/admin_students_screen.dart';
-import '../../features/admin/screens/admin_staff_screen.dart';
-import '../../features/admin/screens/admin_leads_screen.dart';
-import '../../features/admin/screens/admin_groups_screen.dart';
-import '../../features/admin/screens/admin_group_detail_screen.dart';
-import '../../features/admin/screens/admin_add_edit_group_screen.dart';
-import '../../features/admin/screens/admin_enrollment_screen.dart';
-import '../../features/admin/screens/admin_manage_admins_screen.dart';
-import '../../features/admin/screens/admin_add_student_screen.dart';
-import '../../features/admin/screens/admin_edit_student_screen.dart';
-import '../../features/admin/screens/admin_add_staff_screen.dart';
-import '../../features/admin/screens/admin_edit_staff_screen.dart';
-import '../../features/admin/screens/admin_more_screen.dart';
-import '../../features/admin/screens/admin_placeholder_screens.dart';
-
-// Superadmin
-import '../../features/superadmin/screens/superadmin_shell.dart';
-import '../../features/superadmin/screens/superadmin_home_screen.dart';
-import '../../features/superadmin/screens/superadmin_placeholder_screens.dart';
-
-// Shared
-import '../../shared/screens/profile_screen.dart';
-import '../../shared/screens/profile_hub_screen.dart';
-import '../../shared/screens/messages_screen.dart';
-import '../../shared/screens/notifications_screen.dart';
-
+/// The mobile/web app ships the **student experience only**. Staff, admin and
+/// super-admin accounts authenticate successfully but are sent to a
+/// "coming soon" wall — their dashboards live on the Django web portal.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authListenable = _AuthListenable(ref);
 
@@ -85,11 +48,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return path == '/login' ? null : '/login';
       }
 
-      if (path == '/login' || path == '/splash') {
-        final user = auth.user!;
-        if (user.isSuperAdmin) return '/superadmin/home';
-        if (user.isAdmin)      return '/admin/home';
-        if (user.isStaff)      return '/staff/home';
+      // Authenticated.
+      final user = auth.user!;
+
+      // Non-students never reach the student app — hold them at the wall.
+      if (!user.isStudent) {
+        return path == '/coming-soon' ? null : '/coming-soon';
+      }
+
+      // Students land on their dashboard from auth/transitional routes.
+      if (path == '/login' || path == '/splash' || path == '/coming-soon') {
         return '/student/home';
       }
 
@@ -97,38 +65,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/splash', builder: (_, __) => const _SplashScreen()),
-      GoRoute(path: '/login',  builder: (_, __) => const LoginScreen()),
-
-      // ── Superadmin shell (4 branches) ────────────────────────────────────
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            SuperadminShell(navigationShell: navigationShell),
-        branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/superadmin/home',
-              builder: (_, __) => const SuperadminHomeScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/superadmin/branches',
-              builder: (_, __) => const AdminGroupsScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/superadmin/analytics',
-              builder: (_, __) => const SuperadminAnalyticsScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/superadmin/more',
-              builder: (_, __) => const SuperadminMoreScreen(),
-            ),
-          ]),
-        ],
+      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(
+        path: '/coming-soon',
+        builder: (_, __) => const ComingSoonScreen(),
       ),
 
       // ── Superadmin standalone routes (sidebar persists on desktop) ──
@@ -438,12 +378,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const MessagesScreen()),
         ],
       ),
-
-      // ── Shared routes ─────────────────────────────────────────────────────
-      GoRoute(path: '/messages',
-          builder: (_, __) => const MessagesScreen()),
-      GoRoute(path: '/profile',
-          builder: (_, __) => const ProfileHubScreen()),
     ],
   );
 });
@@ -457,27 +391,56 @@ class _AuthListenable extends ChangeNotifier {
 class _SplashScreen extends StatelessWidget {
   const _SplashScreen();
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: IceColors.navy,
-        body: Center(
+  Widget build(BuildContext context) {
+    final t = IceTokens.dark();
+    return Scaffold(
+      backgroundColor: t.bg,
+      body: Container(
+        decoration: BoxDecoration(gradient: t.heroGradient),
+        child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset(
-                'assets/images/logo.png',
-                width: 80,
-                height: 80,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.school_rounded,
-                  size: 64,
-                  color: Colors.white,
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: t.accent.withValues(alpha: 0.4)),
+                ),
+                alignment: Alignment.center,
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 58,
+                  height: 58,
+                  errorBuilder: (_, __, ___) =>
+                      Icon(Icons.school_rounded, size: 52, color: t.accent),
                 ),
               ),
-              const SizedBox(height: 24),
-              const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Colors.white)),
+              const SizedBox(height: 20),
+              Text(
+                'ICEBERG',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 6,
+                  color: t.mint,
+                ),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.6,
+                  valueColor: AlwaysStoppedAnimation(t.accent),
+                ),
+              ),
             ],
           ),
         ),
-      );
+      ),
+    );
+  }
 }

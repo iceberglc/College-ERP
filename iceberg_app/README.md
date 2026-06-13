@@ -1,16 +1,40 @@
-# iceberg_app
+# ICEBERG Flutter Web App
 
-A new Flutter project.
+Flutter web client for the College ERP Django API. It covers the student, staff,
+admin, and superadmin frontend surfaces that are mapped in
+`../FLUTTER_WEB_FRONTEND_PARITY_PLAN.md`.
 
-## Getting Started
+## API Target
 
-This project is a starting point for a Flutter application.
+The app reads `API_BASE_URL` at build time:
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
+flutter build web --release --dart-define=API_BASE_URL=https://app.iceberglc.com/api/v1
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+If `API_BASE_URL` is not provided, the app defaults to
+`https://app.iceberglc.com/api/v1`.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Local Checks
+
+```bash
+flutter pub get
+dart format lib
+flutter analyze
+flutter build web --release --dart-define=API_BASE_URL=https://app.iceberglc.com/api/v1
+```
+
+## Django Serving
+
+Django serves the built Flutter bundle from `../flutter_web/` at `/app/`.
+After building Flutter, copy or sync `build/web/` into that directory before
+deploying the Django app.
+
+## Current Parity Notes
+
+- Staff attendance and results use the DRF contracts in `main_app/api/views.py`.
+- Staff payments use `/api/v1/staff/payments/`, a read-only board matching the
+  Django staff payment page.
+- Notifications, messages, profile editing, and profile image upload are
+  API-backed shared screens.
