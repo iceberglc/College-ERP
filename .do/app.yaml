@@ -4,10 +4,14 @@ region: nyc
 services:
   - name: web
     github:
-      repo: iceberglc/College-ERP
+      repo: Jahongir359/College-ERP
       branch: main
       deploy_on_push: true
-    source_dir: /backend
+    # Build runs from the repo root. Root-level symlinks (manage.py,
+    # requirements.txt, runtime.txt, college_management_system/, main_app/)
+    # point into backend/, so these commands resolve the Django project there
+    # without a source_dir override — meaning the live app spec does not need
+    # to be re-applied after the mono-repo restructure.
     build_command: pip install -r requirements.txt && python manage.py collectstatic --noinput
     run_command: gunicorn college_management_system.wsgi --workers 3 --timeout 120 --bind 0.0.0.0:${PORT}
     environment_slug: python
@@ -65,9 +69,8 @@ jobs:
   - name: db-migrate
     kind: PRE_DEPLOY
     github:
-      repo: iceberglc/College-ERP
+      repo: Jahongir359/College-ERP
       branch: main
-    source_dir: /backend
     run_command: python manage.py migrate --noinput
     environment_slug: python
     instance_size_slug: basic-xxs
