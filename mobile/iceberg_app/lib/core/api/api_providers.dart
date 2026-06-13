@@ -213,3 +213,21 @@ final booksProvider = FutureProvider<Map<String, dynamic>>(
 final staffPaymentsProvider = FutureProvider<List<dynamic>>(
   (_) => apiGetList('/staff/payments/'),
 );
+
+// ── Teacher portal ───────────────────────────────────────────────────────────
+// Group detail incl. enrolled students (for attendance & results rosters).
+final groupDetailProvider =
+    FutureProvider.family<Map<String, dynamic>, int>(
+  (_, id) => apiGet('/groups/$id/'),
+);
+
+// Existing results for a group (teacher view).
+final groupResultsProvider =
+    FutureProvider.family<List<dynamic>, int>(
+  (_, groupId) => apiGetList('/results/?group_id=$groupId'),
+);
+
+// Teacher's own assignments.
+final staffAssignmentsProvider = FutureProvider<List<dynamic>>(
+  (_) => apiGetList('/assignments/'),
+);

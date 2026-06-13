@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/auth/auth_state.dart';
 import '../../../core/theme/app_theme.dart';
 
-class StaffMoreScreen extends StatelessWidget {
+class StaffMoreScreen extends ConsumerWidget {
   const StaffMoreScreen({super.key});
 
   static const _tiles = [
@@ -19,7 +21,7 @@ class StaffMoreScreen extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final top = MediaQuery.paddingOf(context).top;
     final cols = MediaQuery.of(context).size.width >= 600 ? 3 : 2;
 
@@ -55,7 +57,19 @@ class StaffMoreScreen extends StatelessWidget {
                 childAspectRatio: 1.05,
               ),
               itemCount: _tiles.length,
-              itemBuilder: (context, i) => _MoreTileWidget(_tiles[i], i),
+              itemBuilder: (context, i) => _MoreTileWidget(
+                _tiles[i],
+                i,
+                onTap: () {
+                  final tile = _tiles[i];
+                  if (tile.isLogout) {
+                    ref.read(authProvider.notifier).logout();
+                  } else {
+                    // Push (not go) so the feature page can return to More.
+                    context.push(tile.path);
+                  }
+                },
+              ),
             ),
           ),
         ],
@@ -80,7 +94,8 @@ class _MoreTile {
 class _MoreTileWidget extends StatelessWidget {
   final _MoreTile tile;
   final int index;
-  const _MoreTileWidget(this.tile, this.index);
+  final VoidCallback onTap;
+  const _MoreTileWidget(this.tile, this.index, {required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +107,7 @@ class _MoreTileWidget extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap: () => context.go(tile.path),
+        onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(color: IceColors.border, width: 1.5),
