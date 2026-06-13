@@ -1,21 +1,27 @@
 import random as _random
 
-from django.conf import settings
-from django.core.cache import cache
 from django.db import models
 from django.db.models import Avg, Count, Q
-from django.db.models.functions import TruncDate
-from rest_framework import generics, status
-from rest_framework.pagination import PageNumberPagination
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ... import branching
 from ...models import (
-    AttendanceReport, DashboardStory, Enrollment, Group,
-    LeaderboardSeason, Staff, Student, StudentResult,
-    VocabularyDay, VocabularyDayCompletion, VocabularyDayWord, VocabularyQuizResult,
+    DashboardStory,
+    Enrollment,
+    Group,
+    LeaderboardSeason,
+    LeaderboardSnapshot,
+    Staff,
+    Student,
+    StudentResult,
+    AttendanceReport,
+    VocabularyDay,
+    VocabularyDayCompletion,
+    VocabularyDayWord,
+    VocabularyQuizResult,
 )
 from ..permissions import IsAdminOrTeacher, IsStudent, IsTeacher
 from ..serializers import (
@@ -31,30 +37,28 @@ from ..serializers import (
 # ---------------------------------------------------------------------------
 
 
-class VocabularyDayListView(generics.ListAPIView):
+class VocabularyDayListView(APIView):
     """Student: list released vocabulary days for their enrolled groups."""
     permission_classes = [IsAuthenticated]
-    serializer_class = None
 
-    def get_serializer_class(self):
-        from ..serializers import VocabularyDaySerializer
-        return VocabularyDaySerializer
-
-    def get_queryset(self):
+    def get(self, request):
         from django.utils import timezone as tz
-        user = self.request.user
+        from ..serializers import VocabularyDaySerializer
+        user = request.user
         try:
             student = user.student
         except Exception:
-            return VocabularyDay.objects.none()
+            return Response([], status=status.HTTP_200_OK)
         enrolled_groups = Group.objects.filter(enrollment__student=student, enrollment__is_active=True)
-        return (
+        qs = (
             VocabularyDay.objects
             .filter(group__in=enrolled_groups, release_at__lte=tz.now())
             .prefetch_related("words")
             .select_related("group")
             .order_by("group", "day_number")
         )
+        from ..serializers import VocabularyDaySerializer
+        return Response(VocabularyDaySerializer(qs, many=True, context={"request": request}).data)
 
 
 class VocabularyDayDetailView(APIView):
@@ -99,6 +103,11 @@ class VocabularyDayCompleteView(APIView):
         return Response({"status": "completed"})
 
 
+# ---------------------------------------------------------------------------
+# Vocabulary Quiz
+# ---------------------------------------------------------------------------
+
+
 class VocabularyQuizView(APIView):
     """Student: generate shuffled MCQ quiz for a vocabulary day."""
     permission_classes = [IsStudent]
@@ -130,7 +139,9 @@ class VocabularyQuizView(APIView):
             distractors = _random.sample(
                 [x for x in all_words if x.id != w.id], min(3, len(all_words) - 1)
             )
-            choices = [{"id": w.id, "word": w.word}] + [{"id": d.id, "word": d.word} for d in distractors]
+            choices = [{"id": w.id, "word": w.word}] + [
+                {"id": d.id, "word": d.word} for d in distractors
+            ]
             _random.shuffle(choices)
             questions.append({
                 "id": w.id,
@@ -141,7 +152,11 @@ class VocabularyQuizView(APIView):
             })
         _random.shuffle(questions)
 
-        data = {"day_number": day.day_number, "title": day.title, "questions": questions}
+        data = {
+            "day_number": day.day_number,
+            "title": day.title,
+            "questions": questions,
+        }
         serializer = VocabularyQuizSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data)
@@ -174,13 +189,21 @@ class VocabularyQuizResultView(APIView):
             return Response({"detail": "correct and total must be integers."}, status=status.HTTP_400_BAD_REQUEST)
 
         score = round((correct / total) * 100, 1) if total else 0.0
-        VocabularyQuizResult.objects.create(student=student, day=day, score=score, correct=correct, total=total)
+
+        VocabularyQuizResult.objects.create(
+            student=student,
+            day=day,
+            score=score,
+            correct=correct,
+            total=total,
+        )
 
         if score >= 60:
             VocabularyDayCompletion.objects.get_or_create(student=student, day=day)
 
         best_result = VocabularyQuizResult.objects.filter(student=student, day=day).order_by("-score").first()
         best_score = best_result.score if best_result else score
+
         return Response({"status": "ok", "score": score, "best_score": best_score})
 
 
@@ -195,6 +218,7 @@ class StudentProgressView(APIView):
 
     def get(self, request):
         import datetime
+        from django.db.models.functions import TruncDate
         from django.utils import timezone as tz
 
         try:
@@ -209,6 +233,7 @@ class StudentProgressView(APIView):
         days_30 = [(today - datetime.timedelta(days=i)) for i in range(29, -1, -1)]
         date_labels_30d = [d.strftime("%b %d") for d in days_30]
 
+        # Vocab days completed per day (last 30 days)
         completions_qs = dict(
             VocabularyDayCompletion.objects.filter(student=student)
             .annotate(d=TruncDate("completed_at"))
@@ -218,6 +243,7 @@ class StudentProgressView(APIView):
         )
         activity_30d = [completions_qs.get(d, 0) for d in days_30]
 
+        # Last 20 quiz results ordered by taken_at
         quiz_results_qs = VocabularyQuizResult.objects.filter(student=student).order_by("taken_at")[:20]
         quiz_scores = [
             {
@@ -228,13 +254,14 @@ class StudentProgressView(APIView):
             for qr in quiz_results_qs
         ]
 
+        # Exam results per enrolled group
         results_qs = StudentResult.objects.filter(
             student=student, group_id__in=enrolled_group_ids
         ).select_related("group")
         exam_results = []
         for r in results_qs:
             total = int(r.test) + int(r.exam)
-            score_pct = round(total / 2, 1)
+            score_pct = round(total / 2, 1)  # out of 100 total (50+50)
             exam_results.append({
                 "group_name": r.group.name if r.group else "General",
                 "test_score": r.test,
@@ -243,11 +270,13 @@ class StudentProgressView(APIView):
                 "score_pct": score_pct,
             })
 
+        # Attendance percentage
         reports = AttendanceReport.objects.filter(student=student)
         total_att = reports.count()
         present_att = reports.filter(status=AttendanceReport.PRESENT).count()
         attendance_pct = round(present_att / total_att * 100, 1) if total_att else 0.0
 
+        # Summary stats
         completed_days = VocabularyDayCompletion.objects.filter(student=student).count()
         quiz_count = VocabularyQuizResult.objects.filter(student=student).count()
         avg_quiz_agg = VocabularyQuizResult.objects.filter(student=student).aggregate(avg=Avg("score"))
@@ -266,18 +295,99 @@ class StudentProgressView(APIView):
 
 
 # ---------------------------------------------------------------------------
+# Leaderboard
+# ---------------------------------------------------------------------------
+
+
+class LeaderboardView(APIView):
+    """Return the active season leaderboard (or a specified season by ?season_id=).
+
+    ``?scope=overall|group|branch`` narrows the board for students:
+    *group* keeps classmates from the student\'s active groups, *branch*
+    keeps students of the same branch. Rows are re-ranked within the scope.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from ..serializers import LeaderboardEntrySerializer
+        season_id = request.query_params.get("season_id")
+        if season_id:
+            try:
+                season = LeaderboardSeason.objects.get(pk=season_id)
+            except LeaderboardSeason.DoesNotExist:
+                return Response({"detail": "Season not found."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            season = LeaderboardSeason.objects.filter(is_active=True).order_by("-start_date").first()
+            if not season:
+                return Response({"detail": "No active leaderboard season."}, status=status.HTTP_404_NOT_FOUND)
+
+        snapshots = season.snapshots.select_related("student__admin").order_by("rank")
+
+        me_student = None
+        if str(request.user.user_type) == "3":
+            try:
+                me_student = request.user.student
+            except Student.DoesNotExist:
+                me_student = None
+
+        scope = request.query_params.get("scope", "overall")
+        if me_student and scope == "group":
+            classmate_ids = Enrollment.objects.filter(
+                group__in=Group.objects.filter(
+                    enrollment__student=me_student, enrollment__is_active=True
+                ),
+                is_active=True,
+            ).values_list("student_id", flat=True)
+            snapshots = snapshots.filter(student_id__in=classmate_ids)
+        elif me_student and scope == "branch":
+            branch = me_student.effective_branch
+            if branch:
+                snapshots = snapshots.filter(
+                    models.Q(student__branch=branch)
+                    | models.Q(
+                        student__branch__isnull=True,
+                        student__enrollment__group__branch=branch,
+                        student__enrollment__is_active=True,
+                    )
+                ).distinct()
+
+        entries = []
+        my_rank = None
+        for i, snap in enumerate(snapshots, start=1):
+            row = LeaderboardEntrySerializer(snap, context={"request": request}).data
+            row["rank"] = i  # re-rank within the scope
+            row["is_me"] = me_student is not None and snap.student_id == me_student.id
+            if row["is_me"]:
+                my_rank = i
+            entries.append(row)
+
+        return Response({
+            "id": season.id,
+            "name": season.name,
+            "period": season.period,
+            "start_date": season.start_date,
+            "end_date": season.end_date,
+            "is_active": season.is_active,
+            "scope": scope if scope in ("overall", "group", "branch") else "overall",
+            "my_rank": my_rank,
+            "entries": entries,
+        })
+
+
+# ---------------------------------------------------------------------------
 # Stories
 # ---------------------------------------------------------------------------
 
 
 class StoryListView(APIView):
-    """GET: all authenticated users."""
+    """GET: all authenticated users. Filters by enrolled groups for students."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         from django.utils import timezone as tz
         user = request.user
         user_type = str(user.user_type)
+
         now = tz.now()
         qs = DashboardStory.objects.filter(is_active=True).filter(
             Q(expires_at__isnull=True) | Q(expires_at__gt=now)
@@ -291,6 +401,7 @@ class StoryListView(APIView):
             enrolled_group_ids = list(
                 Enrollment.objects.filter(student=student, is_active=True).values_list("group_id", flat=True)
             )
+            # Show stories targeted to enrolled groups OR stories with no target groups (all)
             qs = qs.filter(
                 Q(target_groups__isnull=True) | Q(target_groups__in=enrolled_group_ids)
             ).distinct()
@@ -314,14 +425,25 @@ class StoryCreateView(APIView):
 
         body = request.data.get("body", "")
         story_type = request.data.get("story_type", DashboardStory.TYPE_ANNOUNCEMENT)
-        emoji = request.data.get("emoji", "📢")
+        emoji = request.data.get("emoji", "\U0001f4e2")
         bg_color = request.data.get("bg_color", "#0C1F45")
         expires_at = request.data.get("expires_at", None)
         target_group_ids = request.data.get("target_group_ids", [])
 
+        # Resolve created_by: for staff, store the CustomUser (admin field of Staff)
+        if user_type == "2":
+            created_by = user  # DashboardStory.created_by is a FK to CustomUser
+        else:
+            created_by = user
+
         story = DashboardStory.objects.create(
-            title=title, body=body, story_type=story_type, emoji=emoji,
-            bg_color=bg_color, created_by=user, expires_at=expires_at or None,
+            title=title,
+            body=body,
+            story_type=story_type,
+            emoji=emoji,
+            bg_color=bg_color,
+            created_by=created_by,
+            expires_at=expires_at or None,
         )
 
         if target_group_ids:
@@ -342,8 +464,11 @@ class StoryDetailView(APIView):
         except DashboardStory.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        user_type = str(request.user.user_type)
-        if user_type != "1" and story.created_by_id != request.user.id:
+        user = request.user
+        user_type = str(user.user_type)
+
+        # Admin can delete any; staff can only delete their own
+        if user_type != "1" and story.created_by_id != user.id:
             return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
 
         story.delete()
@@ -389,6 +514,7 @@ class StaffVocabularyCreateView(APIView):
         except Group.DoesNotExist:
             return Response({"detail": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        # Staff can only create vocab for groups assigned to them
         if group.teacher_id != staff.id:
             return Response(
                 {"detail": "You can only create vocabulary for groups assigned to you."},
@@ -426,7 +552,8 @@ class StaffVocabularyDetailView(APIView):
         day, err = self._get_day(request, pk)
         if err:
             return err
-        return Response(StaffVocabularyDaySerializer(day, context={"request": request}).data)
+        serializer = StaffVocabularyDaySerializer(day, context={"request": request})
+        return Response(serializer.data)
 
     def patch(self, request, pk):
         day, err = self._get_day(request, pk)
@@ -471,7 +598,10 @@ class StaffVocabularyWordView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         word = serializer.save(day=day)
-        return Response(VocabularyWordWriteSerializer(word).data, status=status.HTTP_201_CREATED)
+        return Response(
+            VocabularyWordWriteSerializer(word).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     def delete(self, request, pk, word_pk):
         day, err = self._get_day(request, pk)
@@ -486,7 +616,7 @@ class StaffVocabularyWordView(APIView):
 
 
 # ---------------------------------------------------------------------------
-# Group chat
+# Group chat (mirrors web messaging_views; scoping via messaging helpers)
 # ---------------------------------------------------------------------------
 
 
@@ -520,7 +650,7 @@ class MessageThreadListView(APIView):
 
 
 class MessageThreadDetailView(APIView):
-    """Read or post messages in a group's chat thread."""
+    """Read or post messages in a group\'s chat thread."""
     permission_classes = [IsAuthenticated]
 
     def _get_thread(self, request, group_id):
@@ -577,8 +707,10 @@ class MessageThreadDetailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         msg = ChatMessage.objects.create(
-            thread=thread, sender=request.user,
-            body=body[:4000], attachment=attachment,
+            thread=thread,
+            sender=request.user,
+            body=body[:4000],
+            attachment=attachment,
             attachment_name=(attachment.name if attachment else ""),
         )
         return Response(
@@ -599,7 +731,7 @@ class MessageThreadDetailView(APIView):
 
 
 # ---------------------------------------------------------------------------
-# Library
+# Library books (read-only catalogue; loans are managed by staff on the web)
 # ---------------------------------------------------------------------------
 
 
@@ -625,78 +757,3 @@ class BookListView(APIView):
             for b in Book.objects.all().order_by("name")
         ]
         return Response({"books": books})
-
-
-# ---------------------------------------------------------------------------
-# Leaderboard
-# ---------------------------------------------------------------------------
-
-
-class LeaderboardView(APIView):
-    """Return the active season leaderboard (or a specified season by ?season_id=)."""
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        from ..serializers import LeaderboardEntrySerializer
-        season_id = request.query_params.get("season_id")
-        if season_id:
-            try:
-                season = LeaderboardSeason.objects.get(pk=season_id)
-            except LeaderboardSeason.DoesNotExist:
-                return Response({"detail": "Season not found."}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            season = LeaderboardSeason.objects.filter(is_active=True).order_by("-start_date").first()
-            if not season:
-                return Response({"detail": "No active leaderboard season."}, status=status.HTTP_404_NOT_FOUND)
-
-        snapshots = season.snapshots.select_related("student__admin").order_by("rank")
-
-        me_student = None
-        if str(request.user.user_type) == "3":
-            try:
-                me_student = request.user.student
-            except Student.DoesNotExist:
-                me_student = None
-
-        scope = request.query_params.get("scope", "overall")
-        if me_student and scope == "group":
-            classmate_ids = Enrollment.objects.filter(
-                group__in=Group.objects.filter(
-                    enrollment__student=me_student, enrollment__is_active=True
-                ),
-                is_active=True,
-            ).values_list("student_id", flat=True)
-            snapshots = snapshots.filter(student_id__in=classmate_ids)
-        elif me_student and scope == "branch":
-            branch = me_student.effective_branch
-            if branch:
-                snapshots = snapshots.filter(
-                    models.Q(student__branch=branch)
-                    | models.Q(
-                        student__branch__isnull=True,
-                        student__enrollment__group__branch=branch,
-                        student__enrollment__is_active=True,
-                    )
-                ).distinct()
-
-        entries = []
-        my_rank = None
-        for i, snap in enumerate(snapshots, start=1):
-            row = LeaderboardEntrySerializer(snap, context={"request": request}).data
-            row["rank"] = i
-            row["is_me"] = me_student is not None and snap.student_id == me_student.id
-            if row["is_me"]:
-                my_rank = i
-            entries.append(row)
-
-        return Response({
-            "id": season.id,
-            "name": season.name,
-            "period": season.period,
-            "start_date": season.start_date,
-            "end_date": season.end_date,
-            "is_active": season.is_active,
-            "scope": scope if scope in ("overall", "group", "branch") else "overall",
-            "my_rank": my_rank,
-            "entries": entries,
-        })
