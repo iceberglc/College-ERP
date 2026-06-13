@@ -12,6 +12,7 @@ class IceUser {
   final String lastName;
   final String userType; // "1" admin, "2" staff, "3" student
   final String? profilePicUrl;
+  final String avatar; // emoji avatar ('' when unset)
   final Map<String, dynamic>? roleProfile;
 
   const IceUser({
@@ -22,6 +23,7 @@ class IceUser {
     required this.lastName,
     required this.userType,
     this.profilePicUrl,
+    this.avatar = '',
     this.roleProfile,
   });
 
@@ -41,6 +43,7 @@ class IceUser {
     lastName: j['last_name'] ?? '',
     userType: j['user_type'].toString(),
     profilePicUrl: j['profile_pic_url'],
+    avatar: j['avatar'] ?? '',
     roleProfile: j['role_profile'],
   );
 
@@ -52,6 +55,7 @@ class IceUser {
     'last_name': lastName,
     'user_type': userType,
     'profile_pic_url': profilePicUrl,
+    'avatar': avatar,
     'role_profile': roleProfile,
   };
 }

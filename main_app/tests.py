@@ -1571,3 +1571,261 @@ class ScoreValidationTests(TestCase):
         result = StudentResult.objects.get(student=self.student, group=self.group)
         self.assertEqual(result.test, 35)
         self.assertEqual(result.exam, 55)
+
+
+@override_settings(**_BASE_OVERRIDES)
+class StudentMobileApiTests(TestCase):
+    """API endpoints added for the ICEBERG mobile app (student scope)."""
+
+    maxDiff = None
+
+    def _make_user(self, email, user_type, login_id=None, dob=None):
+        UserModel = get_user_model()
+        return UserModel.objects.create_user(
+            email=email,
+            password="Pass123!",
+            first_name="T",
+            last_name="U",
+            user_type=user_type,
+            gender="M",
+            address="",
+            profile_pic="",
+            login_id=login_id,
+            date_of_birth=dob,
+        )
+
+    def setUp(self):
+        from rest_framework.test import APIClient
+
+        self.course = Course.objects.create(name="General English")
+        teacher_user = self._make_user("t-api@iceberg.internal", "2", "TC90001")
+        self.teacher = Staff.objects.get(admin=teacher_user)
+        self.group = Group.objects.create(
+            name="API Group", course=self.course, teacher=self.teacher
+        )
+        self.other_group = Group.objects.create(
+            name="Other Group", course=self.course, teacher=self.teacher
+        )
+
+        student_user = self._make_user(
+            "ic90001@iceberg.internal", "3", "IC90001", date(2005, 5, 1)
+        )
+        self.student = Student.objects.get(admin=student_user)
+        self.student.course = self.course
+        self.student.save()
+        Enrollment.objects.create(student=self.student, group=self.group, is_active=True)
+
+        other_user = self._make_user(
+            "ic90002@iceberg.internal", "3", "IC90002", date(2005, 6, 1)
+        )
+        self.other_student = Student.objects.get(admin=other_user)
+        Enrollment.objects.create(
+            student=self.other_student, group=self.other_group, is_active=True
+        )
+
+        self.api = APIClient()
+        self.api.force_authenticate(user=student_user)
+
+    # ── Settings ─────────────────────────────────────────────────────────
+
+    def test_settings_defaults_and_patch(self):
+        res = self.api.get("/api/v1/student/settings/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["accent"], "lime")
+        self.assertEqual(res.json()["theme"], "system")
+        self.assertTrue(res.json()["notifications"]["assignments"])
+
+        res = self.api.patch(
+            "/api/v1/student/settings/",
+            {"theme": "dark", "accent": "cyan", "notifications": {"payments": False}},
+            format="json",
+        )
+        self.assertEqual(res.status_code, 200)
+        body = res.json()
+        self.assertEqual(body["theme"], "dark")
+        self.assertEqual(body["accent"], "cyan")
+        self.assertFalse(body["notifications"]["payments"])
+        self.assertTrue(body["notifications"]["assignments"])
+
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.theme, Student.THEME_DARK)
+
+    def test_settings_rejects_unknown_values(self):
+        res = self.api.patch(
+            "/api/v1/student/settings/", {"accent": "magenta"}, format="json"
+        )
+        self.assertEqual(res.status_code, 400)
+
+    def test_settings_blocked_for_teacher(self):
+        from rest_framework.test import APIClient
+
+        api = APIClient()
+        api.force_authenticate(user=self.teacher.admin)
+        self.assertEqual(api.get("/api/v1/student/settings/").status_code, 403)
+
+    # ── Attendance summary ───────────────────────────────────────────────
+
+    def test_attendance_summary_counts_streak_and_calendar(self):
+        today = date.today()
+        statuses = [
+            (today - timedelta(days=4), AttendanceReport.ABSENT),
+            (today - timedelta(days=3), AttendanceReport.PRESENT),
+            (today - timedelta(days=2), AttendanceReport.LATE),
+            (today - timedelta(days=1), AttendanceReport.PRESENT),
+        ]
+        for d, s in statuses:
+            att = Attendance.objects.create(group=self.group, date=d)
+            AttendanceReport.objects.create(attendance=att, student=self.student, status=s)
+
+        res = self.api.get("/api/v1/student/attendance/summary/")
+        self.assertEqual(res.status_code, 200)
+        body = res.json()
+        self.assertEqual(body["streak_days"], 3)  # absence 4 days ago breaks it
+        self.assertEqual(body["absent_count"], 1)
+        self.assertEqual(body["late_count"], 1)
+        self.assertEqual(body["present_count"], 2)
+        self.assertEqual(len(body["weekly_trend"]), 12)
+        self.assertEqual(body["groups"][0]["name"], "API Group")
+        # Calendar contains only current-month rows
+        for row in body["days"]:
+            self.assertTrue(row["date"].startswith(body["month"]))
+
+    def test_attendance_summary_is_own_data_only(self):
+        att = Attendance.objects.create(group=self.other_group, date=date.today())
+        AttendanceReport.objects.create(
+            attendance=att, student=self.other_student, status=AttendanceReport.PRESENT
+        )
+        res = self.api.get("/api/v1/student/attendance/summary/")
+        self.assertEqual(res.json()["total_count"], 0)
+
+    # ── Result files ─────────────────────────────────────────────────────
+
+    def test_result_files_scoping_and_download(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from main_app.models import ResultFile
+
+        group_file = ResultFile.objects.create(
+            group=self.group,
+            title="Midterm Results",
+            uploaded_by=self.teacher,
+            file=SimpleUploadedFile("midterm.pdf", b"PDF-DATA"),
+        )
+        personal_other = ResultFile.objects.create(
+            group=self.other_group,
+            student=self.other_student,
+            title="Private Report",
+            uploaded_by=self.teacher,
+            file=SimpleUploadedFile("private.pdf", b"SECRET"),
+        )
+
+        res = self.api.get("/api/v1/result-files/")
+        self.assertEqual(res.status_code, 200)
+        titles = [f["title"] for f in res.json()["files"]]
+        self.assertIn("Midterm Results", titles)
+        self.assertNotIn("Private Report", titles)
+
+        dl = self.api.get(f"/api/v1/result-files/{group_file.id}/download/")
+        self.assertEqual(dl.status_code, 200)
+        self.assertEqual(b"".join(dl.streaming_content), b"PDF-DATA")
+
+        denied = self.api.get(f"/api/v1/result-files/{personal_other.id}/download/")
+        self.assertEqual(denied.status_code, 404)
+
+    # ── Leaderboard scopes ───────────────────────────────────────────────
+
+    def test_leaderboard_group_scope_reranks_and_flags_me(self):
+        from main_app.models import LeaderboardSeason, LeaderboardSnapshot
+
+        season = LeaderboardSeason.objects.create(
+            name="Test Season", start_date=date.today()
+        )
+        LeaderboardSnapshot.objects.create(
+            season=season, student=self.other_student, rank=1, score=99.0
+        )
+        LeaderboardSnapshot.objects.create(
+            season=season, student=self.student, rank=2, score=88.0
+        )
+
+        res = self.api.get("/api/v1/leaderboard/?scope=group")
+        self.assertEqual(res.status_code, 200)
+        body = res.json()
+        # Other student is in a different group → filtered out, I re-rank to #1
+        self.assertEqual(len(body["entries"]), 1)
+        self.assertEqual(body["entries"][0]["rank"], 1)
+        self.assertTrue(body["entries"][0]["is_me"])
+        self.assertEqual(body["my_rank"], 1)
+
+        res_all = self.api.get("/api/v1/leaderboard/")
+        self.assertEqual(len(res_all.json()["entries"]), 2)
+
+    # ── Dashboard enrichment ─────────────────────────────────────────────
+
+    def test_dashboard_includes_mobile_fields(self):
+        from django.utils import timezone as tz
+        from main_app.models import (
+            Invoice,
+            Notification,
+            VocabularyDay,
+            VocabularyDayWord,
+        )
+
+        Assignment.objects.create(
+            title="Essay",
+            group=self.group,
+            due_date=date.today() + timedelta(days=3),
+            created_by=self.teacher,
+        )
+        Notification.objects.create(
+            recipient=self.student.admin, message="hello", is_read=False
+        )
+        day = VocabularyDay.objects.create(
+            group=self.group,
+            day_number=1,
+            release_at=tz.now() - timedelta(hours=1),
+            created_by=self.teacher,
+        )
+        VocabularyDayWord.objects.create(day=day, word="see", meaning="ko'rmoq")
+        Invoice.objects.create(
+            student=self.student,
+            group=self.group,
+            period=date.today().replace(day=1),
+            amount=1_000_000,
+            due_date=date.today() + timedelta(days=5),
+        )
+
+        res = self.api.get("/api/v1/student/home/")
+        self.assertEqual(res.status_code, 200)
+        body = res.json()
+        self.assertEqual(body["pending_assignments"], 1)
+        self.assertEqual(len(body["assignments_preview"]), 1)
+        self.assertEqual(body["unread_notifications"], 1)
+        self.assertEqual(body["new_vocab_words"], 1)
+        self.assertEqual(len(body["performance_trend"]), 8)
+        self.assertEqual(body["balance_due"], 1_000_000)
+        self.assertIsNotNone(body["balance_due_date"])
+
+    # ── Profile: phone + emoji avatar ────────────────────────────────────
+
+    def test_me_patch_phone_and_avatar(self):
+        res = self.api.patch(
+            "/api/v1/me/", {"phone": "+998901234567", "avatar": "🧑‍🎓"}, format="json"
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["avatar"], "🧑‍🎓")
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.phone, "+998901234567")
+
+    # ── Chat attachments ─────────────────────────────────────────────────
+
+    def test_chat_post_with_attachment(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        res = self.api.post(
+            f"/api/v1/messages/{self.group.id}/",
+            {"message": "see attached", "attachment": SimpleUploadedFile("notes.pdf", b"X")},
+            format="multipart",
+        )
+        self.assertEqual(res.status_code, 201)
+        body = res.json()
+        self.assertEqual(body["attachment_name"], "notes.pdf")
+        self.assertIsNotNone(body["attachment_url"])
