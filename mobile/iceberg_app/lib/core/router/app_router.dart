@@ -29,7 +29,6 @@ import '../../features/student/screens/student_settings_screen.dart';
 import '../../features/student/screens/student_messages_screen.dart';
 import '../../features/student/screens/student_assignment_detail_screen.dart';
 import '../../features/student/screens/student_learn_screen.dart';
-import '../../features/student/screens/student_more_screen.dart';
 
 // Staff
 import '../../features/staff/screens/staff_shell.dart';
@@ -41,10 +40,13 @@ import '../../features/staff/screens/staff_placeholder_screens.dart';
 import '../../shared/screens/profile_hub_screen.dart';
 import '../../shared/screens/messages_screen.dart';
 
-/// Routes:
-///   - Students   → /student/* (full student experience)
-///   - Staff      → /staff/*   (teacher portal)
-///   - Admin      → /coming-soon (admin dashboard ships separately)
+/// Routing by role:
+///   - Student (user_type 3) → full /student/* experience
+///   - Staff   (user_type 2) → teacher portal /staff/*
+///   - Admin   (user_type 1) → /coming-soon (admin web portal handles them)
+///
+/// Each role's sub-screens are nested inside the role's StatefulShellRoute
+/// branches so the bottom navigation bar persists and back-navigation works.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authListenable = _AuthListenable(ref);
 
@@ -62,19 +64,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       final user = auth.user!;
 
-      // Admin accounts → coming soon wall (admin web portal handles them).
+      // Admin → coming-soon wall (admin dashboard ships on the web portal).
       if (user.isAdmin) {
         return path == '/coming-soon' ? null : '/coming-soon';
       }
 
-      // Staff (teachers) → staff portal.
+      // Staff (teachers) → teacher portal.
       if (user.isStaff) {
         if (path.startsWith('/staff')) return null;
         return '/staff/home';
       }
 
-      // Students → student app.
-      if (path == '/login' || path == '/splash' || path == '/coming-soon') {
+      // Students → student app; bounce off auth/transitional routes.
+      if (path == '/login' ||
+          path == '/splash' ||
+          path == '/coming-soon' ||
+          path.startsWith('/staff')) {
         return '/student/home';
       }
 
@@ -90,109 +95,246 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state, navigationShell) =>
             StaffShell(navigationShell: navigationShell),
         branches: [
+          // 0 · Home + drill-downs (notifications, messages, profile)
           StatefulShellBranch(routes: [
-            GoRoute(path: '/staff/home', builder: (_, __) => const StaffHomeScreen()),
+            GoRoute(
+              path: '/staff/home',
+              builder: (_, __) => const StaffHomeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'notifications',
+                  builder: (_, __) => const StaffNotificationsScreen(),
+                ),
+                GoRoute(
+                  path: 'messages',
+                  builder: (_, __) => const MessagesScreen(),
+                ),
+                GoRoute(
+                  path: 'profile',
+                  builder: (_, __) => const ProfileHubScreen(),
+                ),
+              ],
+            ),
           ]),
+          // 1 · Classes
           StatefulShellBranch(routes: [
             GoRoute(path: '/staff/classes', builder: (_, __) => const StaffClassesScreen()),
           ]),
+          // 2 · Attendance + update
           StatefulShellBranch(routes: [
-            GoRoute(path: '/staff/attendance', builder: (_, __) => const StaffAttendanceScreen()),
+            GoRoute(
+              path: '/staff/attendance',
+              builder: (_, __) => const StaffAttendanceScreen(),
+              routes: [
+                GoRoute(
+                  path: 'update',
+                  builder: (_, __) => const StaffUpdateAttendanceScreen(),
+                ),
+              ],
+            ),
           ]),
+          // 3 · Assignments
           StatefulShellBranch(routes: [
             GoRoute(path: '/staff/assignments', builder: (_, __) => const StaffAssignmentsScreen()),
           ]),
+          // 4 · More + staff services
           StatefulShellBranch(routes: [
-            GoRoute(path: '/staff/more', builder: (_, __) => const StaffMoreScreen()),
+            GoRoute(
+              path: '/staff/more',
+              builder: (_, __) => const StaffMoreScreen(),
+              routes: [
+                GoRoute(path: 'results', builder: (_, __) => const StaffResultsScreen()),
+                GoRoute(
+                  path: 'vocabulary',
+                  builder: (_, __) => const StaffVocabularyScreen(),
+                  routes: [
+                    GoRoute(
+                      path: ':id',
+                      builder: (_, state) => StaffVocabularyDetailScreen(
+                          vocabId: state.pathParameters['id']!),
+                    ),
+                  ],
+                ),
+                GoRoute(path: 'leave', builder: (_, __) => const StaffLeaveScreen()),
+                GoRoute(path: 'feedback', builder: (_, __) => const StaffFeedbackScreen()),
+                GoRoute(path: 'payments', builder: (_, __) => const StaffPaymentsScreen()),
+              ],
+            ),
           ]),
         ],
       ),
-
-      // ── Staff standalone routes ───────────────────────────────────────────
+      // Staff routes referenced directly by the More screen (kept at the same
+      // path the StaffMoreScreen tiles point at, nested under /staff/more).
       GoRoute(path: '/staff/results',       builder: (_, __) => const StaffResultsScreen()),
       GoRoute(path: '/staff/vocabulary',    builder: (_, __) => const StaffVocabularyScreen()),
-      GoRoute(
-        path: '/staff/vocabulary/:id',
-        builder: (_, state) => StaffVocabularyDetailScreen(
-            vocabId: state.pathParameters['id']!),
-      ),
       GoRoute(path: '/staff/leave',         builder: (_, __) => const StaffLeaveScreen()),
       GoRoute(path: '/staff/feedback',      builder: (_, __) => const StaffFeedbackScreen()),
       GoRoute(path: '/staff/payments',      builder: (_, __) => const StaffPaymentsScreen()),
       GoRoute(path: '/staff/notifications', builder: (_, __) => const StaffNotificationsScreen()),
-      GoRoute(path: '/staff/attendance/update', builder: (_, __) => const StaffUpdateAttendanceScreen()),
       GoRoute(path: '/staff/profile',       builder: (_, __) => const ProfileHubScreen()),
       GoRoute(path: '/staff/messages',      builder: (_, __) => const MessagesScreen()),
 
-      // ── Student shell (6 bottom-nav branches) ────────────────────────────
+      // ── Student shell (5 bottom-nav branches) ────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             StudentShell(navigationShell: navigationShell),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/student/home', builder: (_, __) => const StudentHomeScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/student/vocabulary',
-              builder: (_, __) => const StudentVocabularyScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/student/progress', builder: (_, __) => const StudentProgressScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/student/attendance', builder: (_, __) => const StudentAttendanceScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/student/payments', builder: (_, __) => const StudentPaymentsScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/student/more', builder: (_, __) => const StudentMoreScreen()),
-          ]),
+          // 0 · Dashboard + its drill-downs
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/student/home',
+                builder: (_, __) => const StudentHomeScreen(),
+              ),
+              GoRoute(
+                path: '/student/notifications',
+                builder: (_, __) => const StudentNotificationsScreen(),
+              ),
+              GoRoute(
+                path: '/student/messages',
+                builder: (_, __) => const StudentMessagesScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':groupId',
+                    builder: (_, state) => StudentChatScreen(
+                      groupId:
+                          int.tryParse(state.pathParameters['groupId']!) ?? 0,
+                      groupName: state.uri.queryParameters['name'] ?? 'Chat',
+                    ),
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: '/student/assignments',
+                builder: (_, __) => const StudentAssignmentsScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (_, state) => StudentAssignmentDetailScreen(
+                      assignmentId:
+                          int.tryParse(state.pathParameters['id']!) ?? 0,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // 1 · Progress + Attendance Hub
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/student/progress',
+                builder: (_, __) => const StudentProgressScreen(),
+              ),
+              GoRoute(
+                path: '/student/attendance',
+                builder: (_, __) => const StudentAttendanceScreen(),
+              ),
+            ],
+          ),
+          // 2 · Vocabulary
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/student/vocabulary',
+                builder: (_, __) => const StudentVocabularyScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (_, state) => StudentVocabularyDetailScreen(
+                      vocabId: state.pathParameters['id']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'flashcards',
+                        builder: (_, state) => StudentFlashcardScreen(
+                          vocabId: state.pathParameters['id']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'learn',
+                        builder: (_, state) => StudentLearnScreen(
+                          vocabId: state.pathParameters['id']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'quiz',
+                        builder: (_, state) => StudentVocabularyQuizScreen(
+                          dayId:
+                              int.tryParse(state.pathParameters['id'] ?? '') ??
+                              0,
+                          dayTitle:
+                              state.uri.queryParameters['title'] ??
+                              'Vocabulary Quiz',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // 3 · Leaderboard
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/student/leaderboard',
+                builder: (_, __) => const StudentLeaderboardScreen(),
+              ),
+            ],
+          ),
+          // 4 · Profile + student services
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/student/profile',
+                builder: (_, __) => const StudentProfileScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (_, __) => const StudentEditProfileScreen(),
+                  ),
+                  GoRoute(
+                    path: 'avatar',
+                    builder: (_, __) => const StudentAvatarScreen(),
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: '/student/settings',
+                builder: (_, __) => const StudentSettingsScreen(),
+              ),
+              GoRoute(
+                path: '/student/results',
+                builder: (_, __) => const StudentResultsScreen(),
+              ),
+              GoRoute(
+                path: '/student/result-files',
+                builder: (_, __) => const StudentResultFilesScreen(),
+              ),
+              GoRoute(
+                path: '/student/library',
+                builder: (_, __) => const StudentBooksScreen(),
+              ),
+              GoRoute(
+                path: '/student/books',
+                builder: (_, __) => const StudentBooksScreen(),
+              ),
+              GoRoute(
+                path: '/student/payments',
+                builder: (_, __) => const StudentPaymentsScreen(),
+              ),
+              GoRoute(
+                path: '/student/leave',
+                builder: (_, __) => const StudentLeaveScreen(),
+              ),
+              GoRoute(
+                path: '/student/feedback',
+                builder: (_, __) => const StudentFeedbackScreen(),
+              ),
+            ],
+          ),
         ],
-      ),
-
-      // ── Student standalone routes ─────────────────────────────────────────
-      GoRoute(path: '/student/results',      builder: (_, __) => const StudentResultsScreen()),
-      GoRoute(path: '/student/assignments',  builder: (_, __) => const StudentAssignmentsScreen()),
-      GoRoute(path: '/student/leaderboard',  builder: (_, __) => const StudentLeaderboardScreen()),
-      GoRoute(path: '/student/leave',        builder: (_, __) => const StudentLeaveScreen()),
-      GoRoute(path: '/student/feedback',     builder: (_, __) => const StudentFeedbackScreen()),
-      GoRoute(path: '/student/notifications',builder: (_, __) => const StudentNotificationsScreen()),
-      GoRoute(path: '/student/books',        builder: (_, __) => const StudentBooksScreen()),
-      GoRoute(path: '/student/result-files', builder: (_, __) => const StudentResultFilesScreen()),
-      GoRoute(
-        path: '/student/vocabulary/:id',
-        builder: (_, state) => StudentVocabularyDetailScreen(
-            vocabId: state.pathParameters['id']!),
-        routes: [
-          GoRoute(
-            path: 'flashcards',
-            builder: (_, state) => StudentFlashcardScreen(
-                vocabId: state.pathParameters['id']!),
-          ),
-          GoRoute(
-            path: 'learn',
-            builder: (_, state) => StudentLearnScreen(
-                vocabId: state.pathParameters['id']!),
-          ),
-          GoRoute(
-            path: 'quiz',
-            builder: (_, state) => StudentVocabularyQuizScreen(
-              dayId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
-              dayTitle: state.uri.queryParameters['title'] ?? 'Vocabulary Quiz',
-            ),
-          ),
-        ],
-      ),
-      GoRoute(path: '/student/profile',      builder: (_, __) => const ProfileHubScreen()),
-      GoRoute(path: '/student/settings',     builder: (_, __) => const StudentSettingsScreen()),
-      GoRoute(path: '/student/messages',     builder: (_, __) => const MessagesScreen()),
-      GoRoute(
-        path: '/student/assignments/:id',
-        builder: (_, state) => StudentAssignmentDetailScreen(
-            assignmentId: int.tryParse(state.pathParameters['id']!) ?? 0),
       ),
     ],
   );
