@@ -558,14 +558,68 @@ class _PulseCard extends StatelessWidget {
     return DateFormat('MMM d').format(dt);
   }
 
-  void _showDetail(BuildContext context) {
-    final t = context.ice;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: t.card,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+  Widget _buildHeader(
+      BuildContext context, IceUser? user, String initials) {
+    final top = MediaQuery.paddingOf(context).top;
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: EdgeInsets.fromLTRB(20, top > 16 ? 20 : 20, 20, 24),
+      decoration: BoxDecoration(
+        gradient: kHeroGradient,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(greeting,
+                    style: TextStyle(
+                        color: Colors.white.withAlpha(160),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500))
+                    .animate().fadeIn(duration: 400.ms),
+                const SizedBox(height: 4),
+                Text(
+                  user?.firstName.isNotEmpty == true ? user!.firstName : 'Student',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900),
+                )
+                    .animate(delay: 80.ms)
+                    .slideX(begin: -0.1, duration: 400.ms, curve: Curves.easeOut)
+                    .fadeIn(duration: 300.ms),
+              ]),
+            ),
+            Container(
+              width: 46, height: 46,
+              decoration: const BoxDecoration(
+                color: IceColors.lime,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(initials,
+                  style: const TextStyle(
+                      color: IceColors.navy,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900)),
+            ).animate(delay: 200.ms).scale(duration: 400.ms, curve: Curves.elasticOut),
+          ]),
+          const SizedBox(height: 16),
+          // Quick chips
+          Row(children: [
+            _QuickChip(icon: Icons.bar_chart_rounded, label: 'Attendance'),
+            const SizedBox(width: 8),
+            _QuickChip(icon: Icons.grade_rounded, label: 'Results'),
+            const SizedBox(width: 8),
+            _QuickChip(icon: Icons.emoji_events_rounded, label: 'Leaderboard'),
+          ]).animate(delay: 280.ms).slideY(begin: 0.15, duration: 350.ms).fadeIn(duration: 300.ms),
+        ],
       ),
       builder: (_) => Padding(
         padding: const EdgeInsets.fromLTRB(24, 18, 24, 36),
@@ -582,6 +636,119 @@ class _PulseCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StatTile(
+                  value: avg != null ? fmtPercent(avg) : '—',
+                  label: "O'rtacha ball",
+                  icon: Icons.grade_rounded,
+                  color: IceColors.warning,
+                  delay: 80,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: _StatTile(
+                  value: fmtNum(total),
+                  label: 'Fanlar',
+                  icon: Icons.book_outlined,
+                  color: IceColors.info,
+                  delay: 160,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StatTile(
+                  value: groups.toString(),
+                  label: 'Guruhlar',
+                  icon: Icons.group_outlined,
+                  color: IceColors.navyDeep,
+                  delay: 240,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // ── Bildirishnomalar ─────────────────────────────────────────────
+        if (notices.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          const _SectionHeader(title: 'Bildirishnomalar', actionLabel: ''),
+          const SizedBox(height: 8),
+          ...notices.asMap().entries.map(
+              (e) => _NoticeCard(notice: e.value, index: e.key)),
+        ],
+
+        const SizedBox(height: 100),
+      ]),
+    );
+  }
+
+  Color _attColor(dynamic att) {
+    if (att == null) return IceColors.muted;
+    final d = (att is num) ? att.toDouble() : double.tryParse('$att') ?? 0;
+    return d >= 75
+        ? IceColors.success
+        : d >= 60
+            ? IceColors.warning
+            : IceColors.danger;
+  }
+}
+
+// ── Quick chip ─────────────────────────────────────────────────────────────────
+class _QuickChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _QuickChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(25),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withAlpha(50), width: 1),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: Colors.white, size: 14),
+        const SizedBox(width: 5),
+        Text(label,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600)),
+      ]),
+    );
+  }
+}
+
+// ── Section header ─────────────────────────────────────────────────────────────
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String actionLabel;
+  const _SectionHeader({required this.title, required this.actionLabel});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: IceColors.navy,
             ),
             const SizedBox(height: 18),
             StatusBadge(_typeLabel(story['story_type']), tone: BadgeTone.sky),

@@ -9,6 +9,7 @@ import '../../core/theme/ice_tokens.dart';
 class IceCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? margin;
   final VoidCallback? onTap;
   final bool hero;
   final double radius;
@@ -18,6 +19,7 @@ class IceCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(18),
+    this.margin,
     this.onTap,
     this.hero = false,
     this.radius = 22,
@@ -29,6 +31,7 @@ class IceCard extends StatelessWidget {
     final t = context.ice;
     final body = Container(
       width: double.infinity,
+      margin: margin,
       padding: padding,
       decoration: BoxDecoration(
         color: hero ? null : (color ?? t.card),

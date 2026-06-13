@@ -45,19 +45,14 @@ class StudentShell extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
   const StudentShell({super.key, required this.navigationShell});
 
-  @override
-  ConsumerState<StudentShell> createState() => _StudentShellState();
-}
-
-class _StudentShellState extends ConsumerState<StudentShell> {
-  @override
-  void initState() {
-    super.initState();
-    // Pull server-side appearance/notification preferences once per session.
-    Future.microtask(
-      () => ref.read(appSettingsProvider.notifier).syncFromServer(),
-    );
-  }
+  static const _items = [
+    IceNavItem(icon: Icons.home_rounded,        label: 'Home',       path: '/student/home'),
+    IceNavItem(icon: Icons.menu_book_rounded,    label: 'Learn',      path: '/student/vocabulary'),
+    IceNavItem(icon: Icons.insights_rounded,     label: 'Progress',   path: '/student/progress'),
+    IceNavItem(icon: Icons.bar_chart_rounded,    label: 'Attendance', path: '/student/attendance'),
+    IceNavItem(icon: Icons.payment_rounded,      label: 'Payments',   path: '/student/payments'),
+    IceNavItem(icon: Icons.grid_view_rounded,    label: 'More',       path: '/student/more'),
+  ];
 
   @override
   Widget build(BuildContext context) {

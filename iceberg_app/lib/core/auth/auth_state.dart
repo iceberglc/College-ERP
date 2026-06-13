@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api/api_client.dart';
@@ -122,11 +123,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _storage.write(key: 'user_json', value: jsonEncode(user.toJson()));
       state = AuthState.auth(user);
       return null; // success
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      // Surface the server's own detail message when available.
+      if (data is Map) {
+        final detail = data['detail']?.toString();
+        if (detail != null && detail.isNotEmpty) return detail;
+      }
+      final code = e.response?.statusCode;
+      if (code == 401) return 'Invalid ID or password.';
+      if (code == 403) return 'Account locked or disabled.';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        return 'Connection timed out. Check your internet.';
+      }
+      if (e.type == DioExceptionType.connectionError) {
+        return 'Cannot reach server. Check your internet connection.';
+      }
+      return 'Login failed (${e.type.name}). Check your credentials.';
     } on Exception catch (e) {
-      String msg = 'Login failed. Check your credentials.';
-      if (e.toString().contains('401')) msg = 'Invalid ID or password.';
-      if (e.toString().contains('403')) msg = 'Account locked or disabled.';
-      return msg;
+      return 'Unexpected error: $e';
     }
   }
 

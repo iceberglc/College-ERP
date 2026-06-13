@@ -18,12 +18,21 @@ class IceHeader extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.ice;
-    final unread = ref
-        .watch(studentDashProvider)
-        .maybeWhen(
-          data: (d) => (d['unread_notifications'] as num?)?.toInt() ?? 0,
-          orElse: () => 0,
-        );
+    final user = ref.watch(authProvider).user;
+    final isStudent = user?.isStudent ?? true;
+
+    final unread = isStudent
+        ? ref.watch(studentDashProvider).maybeWhen(
+              data: (d) =>
+                  (d['unread_notifications'] as num?)?.toInt() ?? 0,
+              orElse: () => 0,
+            )
+        : ref.watch(notificationsProvider).maybeWhen(
+              data: (list) => list.where((n) => !(n['is_read'] as bool? ?? false)).length,
+              orElse: () => 0,
+            );
+
+    final notifPath = isStudent ? '/student/notifications' : '/staff/notifications';
 
     return AppBar(
       backgroundColor: t.bg,
@@ -50,7 +59,7 @@ class IceHeader extends ConsumerWidget implements PreferredSizeWidget {
           padding: const EdgeInsets.only(right: 6),
           child: IconButton(
             tooltip: 'Notifications',
-            onPressed: () => context.go('/student/notifications'),
+            onPressed: () => context.go(notifPath),
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -197,6 +206,7 @@ class IceDrawer extends ConsumerWidget {
     final t = context.ice;
     final s = ref.watch(stringsProvider);
     final user = ref.watch(authProvider).user;
+    final isStaff = user?.isStaff ?? false;
 
     Widget item(IconData icon, String label, String path, {Color? color}) =>
         ListTile(
@@ -215,6 +225,30 @@ class IceDrawer extends ConsumerWidget {
             context.go(path);
           },
         );
+
+    final studentItems = [
+      item(Icons.event_available_rounded, s('Attendance'), '/student/attendance'),
+      item(Icons.assignment_outlined, s('Assignments'), '/student/assignments'),
+      item(Icons.workspace_premium_outlined, s('Results'), '/student/results'),
+      item(Icons.folder_open_rounded, s('Result Files'), '/student/result-files'),
+      item(Icons.local_library_outlined, s('Library'), '/student/library'),
+      item(Icons.payments_outlined, s('Payments'), '/student/payments'),
+      item(Icons.event_busy_outlined, s('Leave Requests'), '/student/leave'),
+      item(Icons.forum_outlined, s('Feedback'), '/student/feedback'),
+      item(Icons.chat_bubble_outline_rounded, s('Messages'), '/student/messages'),
+      item(Icons.notifications_none_rounded, s('Notifications'), '/student/notifications'),
+      item(Icons.settings_outlined, s('Settings'), '/student/settings'),
+    ];
+
+    final staffItems = [
+      item(Icons.event_available_rounded, s('Attendance'), '/staff/attendance'),
+      item(Icons.grading_rounded, s('Results'), '/staff/results'),
+      item(Icons.assignment_outlined, s('Assignments'), '/staff/assignments'),
+      item(Icons.event_busy_outlined, s('Leave Requests'), '/staff/leave'),
+      item(Icons.forum_outlined, s('Feedback'), '/staff/feedback'),
+      item(Icons.notifications_none_rounded, s('Notifications'), '/staff/notifications'),
+      item(Icons.settings_outlined, s('Settings'), '/staff/settings'),
+    ];
 
     return Drawer(
       backgroundColor: t.isDark ? const Color(0xFF0A2024) : Colors.white,
@@ -277,63 +311,7 @@ class IceDrawer extends ConsumerWidget {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                children: [
-                  item(
-                    Icons.event_available_rounded,
-                    s('Attendance'),
-                    '/student/attendance',
-                  ),
-                  item(
-                    Icons.assignment_outlined,
-                    s('Assignments'),
-                    '/student/assignments',
-                  ),
-                  item(
-                    Icons.workspace_premium_outlined,
-                    s('Results'),
-                    '/student/results',
-                  ),
-                  item(
-                    Icons.folder_open_rounded,
-                    s('Result Files'),
-                    '/student/result-files',
-                  ),
-                  item(
-                    Icons.local_library_outlined,
-                    s('Library'),
-                    '/student/library',
-                  ),
-                  item(
-                    Icons.payments_outlined,
-                    s('Payments'),
-                    '/student/payments',
-                  ),
-                  item(
-                    Icons.event_busy_outlined,
-                    s('Leave Requests'),
-                    '/student/leave',
-                  ),
-                  item(
-                    Icons.forum_outlined,
-                    s('Feedback'),
-                    '/student/feedback',
-                  ),
-                  item(
-                    Icons.chat_bubble_outline_rounded,
-                    s('Messages'),
-                    '/student/messages',
-                  ),
-                  item(
-                    Icons.notifications_none_rounded,
-                    s('Notifications'),
-                    '/student/notifications',
-                  ),
-                  item(
-                    Icons.settings_outlined,
-                    s('Settings'),
-                    '/student/settings',
-                  ),
-                ],
+                children: isStaff ? staffItems : studentItems,
               ),
             ),
             Divider(color: t.stroke, height: 1),
@@ -360,10 +338,10 @@ class IceDrawer extends ConsumerWidget {
   }
 }
 
-// ─── Page scaffolding helpers used by every student screen ──────────────────
+// ─── Page scaffolding helpers used by every screen ──────────────────────────
 /// Standard page body: title row (with optional back arrow for sub-pages),
 /// then the screen's scrollable content.
-class IcePage extends StatelessWidget {
+class IcePage extends ConsumerWidget {
   final String title;
   final String? subtitle;
   final Widget? action;
@@ -382,8 +360,10 @@ class IcePage extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.ice;
+    final user = ref.watch(authProvider).user;
+    final homeRoute = user?.isStaff == true ? '/staff/home' : '/student/home';
     final list = ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
@@ -398,7 +378,7 @@ class IcePage extends StatelessWidget {
                     if (context.canPop()) {
                       context.pop();
                     } else {
-                      context.go('/student/home');
+                      context.go(homeRoute);
                     }
                   },
                   child: Container(

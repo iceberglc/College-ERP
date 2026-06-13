@@ -1,7 +1,9 @@
+from django.conf import settings
 from django.contrib.auth import authenticate
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.db import transaction, models
-from django.db.models import Q
+from django.db.models import Count, Q
 from rest_framework import generics, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -715,19 +717,24 @@ class AdminStatsView(APIView):
 
     def get(self, request):
         user = request.user
+        cache_key = f"admin_stats:{user.pk}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         students = branching.filter_students_for_user(user, Student.objects.all())
         staff = branching.filter_staff_for_user(user, Staff.objects.all())
         groups = branching.filter_groups_for_user(user, Group.objects.all())
-        return Response(
-            {
-                "student_count": students.count(),
-                "active_students": students.filter(status="active").count(),
-                "staff_count": staff.count(),
-                "group_count": groups.filter(is_archived=False).count(),
-                "archived_groups": groups.filter(is_archived=True).count(),
-                "course_count": Course.objects.filter(is_active=True).count(),
-            }
-        )
+        payload = {
+            "student_count": students.count(),
+            "active_students": students.filter(status="active").count(),
+            "staff_count": staff.count(),
+            "group_count": groups.filter(is_archived=False).count(),
+            "archived_groups": groups.filter(is_archived=True).count(),
+            "course_count": Course.objects.filter(is_active=True).count(),
+        }
+        cache.set(cache_key, payload, settings.DASHBOARD_CACHE_TTL)
+        return Response(payload)
 
 
 class AdminUserListView(generics.ListAPIView):
@@ -835,6 +842,11 @@ class StudentDashboardView(APIView):
         if str(user.user_type) != "3":
             return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
 
+        cache_key = f"student_dashboard:{user.pk}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         try:
             student = user.student
         except Student.DoesNotExist:
@@ -879,10 +891,10 @@ class StudentDashboardView(APIView):
             is_active=True
         ).filter(
             models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=now)
-        ).order_by("-created_at")[:20]
+        ).prefetch_related("target_groups").order_by("-created_at")[:20]
         stories_out = []
         for s in stories_qs:
-            target_ids = list(s.target_groups.values_list("id", flat=True))
+            target_ids = [g.id for g in s.target_groups.all()]
             if not target_ids or any(gid in target_ids for gid in enrolled_group_ids):
                 stories_out.append({
                     "id": s.id,
@@ -897,127 +909,30 @@ class StudentDashboardView(APIView):
                     "author_name": s.created_by.get_full_name() if s.created_by else "",
                 })
 
-        # ── Rank & tier (active leaderboard season) ──────────────────────
-        rank = rank_total = None
-        tier = badge = ""
-        season = LeaderboardSeason.objects.filter(is_active=True).order_by("-start_date").first()
-        if season:
-            rank_total = season.snapshots.count()
-            snap = season.snapshots.filter(student=student).first()
-            if snap:
-                rank = snap.rank
-                badge = snap.badge
-                tier = snap.badge or (
-                    "Gold Tier" if snap.score >= 90
-                    else "Silver Tier" if snap.score >= 75
-                    else "Bronze Tier" if snap.score >= 60
-                    else "Rising Star"
-                )
-
-        # ── Attendance streak (absence breaks it; multiple groups on one
-        # date collapse to that date's worst status) ─────────────────────
-        import datetime as _dt
-        report_rows = list(reports.values_list("attendance__date", "status"))
-        by_date = {}
-        for d, s in report_rows:
-            if d not in by_date or s == AttendanceReport.ABSENT:
-                by_date[d] = s
-        streak = 0
-        for d in sorted(by_date.keys(), reverse=True):
-            if by_date[d] == AttendanceReport.ABSENT:
-                break
-            streak += 1
-
-        # ── Pending assignments + preview ────────────────────────────────
-        my_submissions = set(
-            Submission.objects.filter(student=student).values_list("assignment_id", flat=True)
-        )
-        open_assignments = (
-            Assignment.objects.filter(group_id__in=enrolled_group_ids)
-            .exclude(id__in=my_submissions)
-            .select_related("group", "subject")
-            .order_by("due_date")
-        )
-        today = tz.localdate()
-        assignments_preview = [
-            {
-                "id": a.id,
-                "title": a.title,
-                "group_name": a.group.name if a.group else None,
-                "subject_name": a.subject.name if a.subject else None,
-                "due_date": a.due_date.isoformat(),
-                "is_overdue": a.due_date < today,
-            }
-            for a in open_assignments[:3]
-        ]
-        pending_assignments = open_assignments.count()
-
-        # ── Unread notifications ─────────────────────────────────────────
-        unread_notifications = Notification.objects.filter(recipient=user, is_read=False).count()
-
-        # ── New vocabulary words (released days not yet completed) ───────
-        completed_day_ids = set(
-            VocabularyDayCompletion.objects.filter(student=student).values_list("day_id", flat=True)
-        )
-        new_vocab_days = (
-            VocabularyDay.objects.filter(group_id__in=enrolled_group_ids, release_at__lte=now)
-            .exclude(id__in=completed_day_ids)
-            .prefetch_related("words")
-        )
-        new_vocab_words = sum(d.words.count() for d in new_vocab_days)
-
-        # ── 8-week performance trend (attendance % per ISO week) ─────────
-        week_start = today - _dt.timedelta(days=today.weekday())
-        trend = []
-        for i in range(7, -1, -1):
-            ws = week_start - _dt.timedelta(weeks=i)
-            we = ws + _dt.timedelta(days=6)
-            wk = [s for d, s in report_rows if ws <= d <= we]
-            pct = (
-                round(sum(1 for s in wk if s != AttendanceReport.ABSENT) / len(wk) * 100, 1)
-                if wk else None
-            )
-            trend.append({"label": f"W{8 - i}", "start": ws.isoformat(), "attendance_pct": pct})
-
-        # ── Outstanding balance ──────────────────────────────────────────
-        open_invoices = Invoice.objects.filter(
-            student=student, status__in=[Invoice.STATUS_DUE, Invoice.STATUS_PARTIAL]
-        ).prefetch_related("payments")
-        balance_due = 0
-        next_due_date = None
-        for inv in open_invoices:
-            paid = sum(p.amount for p in inv.payments.all())
-            balance_due += max(0, inv.amount - inv.discount - paid)
-            if inv.due_date and (next_due_date is None or inv.due_date < next_due_date):
-                next_due_date = inv.due_date
-
-        return Response({
+        payload = {
             "attendance_percentage": att_pct,
             "total_subjects": total_subjects,
             "average_score": avg_score,
             "enrolled_groups": enrolled_count,
             "notices": notices,
             "stories": stories_out,
-            "rank": rank,
-            "rank_total": rank_total,
-            "tier": tier,
-            "badge": badge,
-            "streak_days": streak,
-            "pending_assignments": pending_assignments,
-            "assignments_preview": assignments_preview,
-            "unread_notifications": unread_notifications,
-            "new_vocab_words": new_vocab_words,
-            "performance_trend": trend,
-            "balance_due": int(balance_due),
-            "balance_due_date": next_due_date.isoformat() if next_due_date else None,
-        })
+        }
+        cache.set(cache_key, payload, settings.DASHBOARD_CACHE_TTL)
+        return Response(payload)
 
 
 class AdminDashboardView(APIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):
+        import datetime
         user = request.user
+
+        cache_key = f"admin_dashboard:{user.pk}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         students = branching.filter_students_for_user(user, Student.objects.all())
         staff    = branching.filter_staff_for_user(user, Staff.objects.all())
         groups   = branching.filter_groups_for_user(
@@ -1025,28 +940,81 @@ class AdminDashboardView(APIView):
         )
         group_ids = list(groups.values_list("id", flat=True))
 
-        # Avg attendance across all scoped groups
-        total_reports   = AttendanceReport.objects.filter(
-            attendance__group_id__in=group_ids
-        ).count()
-        present_reports = AttendanceReport.objects.filter(
-            attendance__group_id__in=group_ids,
-            status=AttendanceReport.PRESENT,
-        ).count()
-        avg_att = round(present_reports / total_reports * 100, 1) if total_reports else None
+        # Avg attendance + 7-day spark in a single grouped query instead of
+        # 2 + 14 separate COUNT()s. Bucket per-day totals/presents in Python.
+        today = datetime.date.today()
+        window_start = today - datetime.timedelta(days=6)
+        per_day = (
+            AttendanceReport.objects.filter(attendance__group_id__in=group_ids)
+            .values("attendance__date")
+            .filter(attendance__date__gte=window_start, attendance__date__lte=today)
+            .annotate(
+                total=Count("id"),
+                present=Count("id", filter=Q(status=AttendanceReport.PRESENT)),
+            )
+        )
+        by_day = {row["attendance__date"]: row for row in per_day}
+        spark = []
+        for i in range(6, -1, -1):
+            row = by_day.get(today - datetime.timedelta(days=i))
+            if row and row["total"]:
+                spark.append(round(row["present"] / row["total"] * 100))
+            else:
+                spark.append(0)
 
-        leads          = RegistrationLead.objects.all()
+        # Overall avg attendance across all scoped groups (all time), one query.
+        totals = AttendanceReport.objects.filter(
+            attendance__group_id__in=group_ids
+        ).aggregate(
+            total=Count("id"),
+            present=Count("id", filter=Q(status=AttendanceReport.PRESENT)),
+        )
+        avg_att = (
+            round(totals["present"] / totals["total"] * 100, 1)
+            if totals["total"] else None
+        )
+
+        leads = RegistrationLead.objects.all()
         total_branches = Branch.objects.count()
 
-        return Response({
-            "total_students":  students.count(),
-            "total_staff":     staff.count(),
-            "total_groups":    groups.count(),
-            "avg_attendance":  avg_att,
-            "new_leads":       leads.count(),
-            "total_leads":     leads.count(),
-            "total_branches":  total_branches,
-        })
+        # Recent leads (last 5)
+        recent_leads = []
+        for l in leads.order_by('-created_at')[:5]:
+            recent_leads.append({
+                'name':   l.name,
+                'phone':  l.phone,
+                'course': getattr(l, 'interested_course', '') or '',
+                'date':   l.created_at.strftime('%b %d') if getattr(l, 'created_at', None) else '',
+            })
+
+        # Recent enrollments (last 5 in scope)
+        recent_enrollments = []
+        for e in Enrollment.objects.filter(group_id__in=group_ids).select_related(
+            'student__admin', 'group'
+        ).order_by('-id')[:5]:
+            try:
+                student_name = e.student.admin.get_full_name() or str(e.student)
+            except Exception:
+                student_name = str(e.student)
+            recent_enrollments.append({
+                'student': student_name,
+                'group':   e.group.name if e.group else '',
+            })
+
+        payload = {
+            "total_students":     students.count(),
+            "total_staff":        staff.count(),
+            "total_groups":       groups.count(),
+            "avg_attendance":     avg_att,
+            "new_leads":          leads.count(),
+            "total_leads":        leads.count(),
+            "total_branches":     total_branches,
+            "attendance_spark":   spark,
+            "recent_leads":       recent_leads,
+            "recent_enrollments": recent_enrollments,
+        }
+        cache.set(cache_key, payload, settings.DASHBOARD_CACHE_TTL)
+        return Response(payload)
 
 
 class StaffStatsView(APIView):
@@ -1057,6 +1025,11 @@ class StaffStatsView(APIView):
         user = request.user
         user_type = str(user.user_type)
         today = datetime.date.today()
+
+        cache_key = f"staff_stats:{user.pk}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
 
         if user_type == "2":
             try:
@@ -1082,12 +1055,14 @@ class StaffStatsView(APIView):
                 status=AttendanceReport.PRESENT,
             ).count()
             avg_att = round(present_reports / total_reports * 100, 1) if total_reports else None
-            return Response({
+            payload = {
                 "total_students": len(set(student_ids)),
                 "total_groups": groups.count(),
                 "sessions_today": sessions_today,
                 "avg_attendance": avg_att,
-            })
+            }
+            cache.set(cache_key, payload, settings.DASHBOARD_CACHE_TTL)
+            return Response(payload)
 
         # Admin sees branch-scoped totals
         if user_type == "1":
@@ -1107,12 +1082,14 @@ class StaffStatsView(APIView):
                 status=AttendanceReport.PRESENT,
             ).count()
             avg_att = round(present_reports / total_reports * 100, 1) if total_reports else None
-            return Response({
+            payload = {
                 "total_students": students.count(),
                 "total_groups": groups.count(),
                 "sessions_today": sessions_today,
                 "avg_attendance": avg_att,
-            })
+            }
+            cache.set(cache_key, payload, settings.DASHBOARD_CACHE_TTL)
+            return Response(payload)
 
         return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
 
