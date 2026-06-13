@@ -139,6 +139,33 @@ DATABASES["default"].update(_db_from_env)
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
 # ---------------------------------------------------------------------------
+# Cache
+# ---------------------------------------------------------------------------
+# Used to memoise expensive dashboard aggregates (see main_app/api/views.py).
+# In production set REDIS_URL (or CACHE_URL) to a redis:// URL so the cache is
+# shared across gunicorn workers; otherwise we fall back to a per-process
+# in-memory cache that needs no extra service or dependency.
+_redis_url = os.environ.get("REDIS_URL") or os.environ.get("CACHE_URL", "")
+if _redis_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _redis_url,
+            "KEY_PREFIX": "erp",
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "erp-locmem",
+        }
+    }
+
+# How long (seconds) dashboard aggregate stats are cached per user.
+DASHBOARD_CACHE_TTL = int(os.environ.get("DASHBOARD_CACHE_TTL", "60"))
+
+# ---------------------------------------------------------------------------
 # Password validation
 # ---------------------------------------------------------------------------
 

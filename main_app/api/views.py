@@ -1,7 +1,9 @@
+from django.conf import settings
 from django.contrib.auth import authenticate
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.db import transaction, models
-from django.db.models import Q
+from django.db.models import Count, Q
 from rest_framework import generics, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -694,19 +696,24 @@ class AdminStatsView(APIView):
 
     def get(self, request):
         user = request.user
+        cache_key = f"admin_stats:{user.pk}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         students = branching.filter_students_for_user(user, Student.objects.all())
         staff = branching.filter_staff_for_user(user, Staff.objects.all())
         groups = branching.filter_groups_for_user(user, Group.objects.all())
-        return Response(
-            {
-                "student_count": students.count(),
-                "active_students": students.filter(status="active").count(),
-                "staff_count": staff.count(),
-                "group_count": groups.filter(is_archived=False).count(),
-                "archived_groups": groups.filter(is_archived=True).count(),
-                "course_count": Course.objects.filter(is_active=True).count(),
-            }
-        )
+        payload = {
+            "student_count": students.count(),
+            "active_students": students.filter(status="active").count(),
+            "staff_count": staff.count(),
+            "group_count": groups.filter(is_archived=False).count(),
+            "archived_groups": groups.filter(is_archived=True).count(),
+            "course_count": Course.objects.filter(is_active=True).count(),
+        }
+        cache.set(cache_key, payload, settings.DASHBOARD_CACHE_TTL)
+        return Response(payload)
 
 
 class AdminUserListView(generics.ListAPIView):
@@ -814,6 +821,11 @@ class StudentDashboardView(APIView):
         if str(user.user_type) != "3":
             return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
 
+        cache_key = f"student_dashboard:{user.pk}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         try:
             student = user.student
         except Student.DoesNotExist:
@@ -858,10 +870,10 @@ class StudentDashboardView(APIView):
             is_active=True
         ).filter(
             models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=now)
-        ).order_by("-created_at")[:20]
+        ).prefetch_related("target_groups").order_by("-created_at")[:20]
         stories_out = []
         for s in stories_qs:
-            target_ids = list(s.target_groups.values_list("id", flat=True))
+            target_ids = [g.id for g in s.target_groups.all()]
             if not target_ids or any(gid in target_ids for gid in enrolled_group_ids):
                 stories_out.append({
                     "id": s.id,
@@ -870,14 +882,16 @@ class StudentDashboardView(APIView):
                     "author_name": s.created_by.get_full_name() if s.created_by else "",
                 })
 
-        return Response({
+        payload = {
             "attendance_percentage": att_pct,
             "total_subjects": total_subjects,
             "average_score": avg_score,
             "enrolled_groups": enrolled_count,
             "notices": notices,
             "stories": stories_out,
-        })
+        }
+        cache.set(cache_key, payload, settings.DASHBOARD_CACHE_TTL)
+        return Response(payload)
 
 
 class AdminDashboardView(APIView):
@@ -886,6 +900,12 @@ class AdminDashboardView(APIView):
     def get(self, request):
         import datetime
         user = request.user
+
+        cache_key = f"admin_dashboard:{user.pk}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         students = branching.filter_students_for_user(user, Student.objects.all())
         staff    = branching.filter_staff_for_user(user, Staff.objects.all())
         groups   = branching.filter_groups_for_user(
@@ -893,31 +913,39 @@ class AdminDashboardView(APIView):
         )
         group_ids = list(groups.values_list("id", flat=True))
 
-        # Avg attendance across all scoped groups
-        total_reports   = AttendanceReport.objects.filter(
-            attendance__group_id__in=group_ids
-        ).count()
-        present_reports = AttendanceReport.objects.filter(
-            attendance__group_id__in=group_ids,
-            status=AttendanceReport.PRESENT,
-        ).count()
-        avg_att = round(present_reports / total_reports * 100, 1) if total_reports else None
-
-        # 7-day attendance spark
+        # Avg attendance + 7-day spark in a single grouped query instead of
+        # 2 + 14 separate COUNT()s. Bucket per-day totals/presents in Python.
         today = datetime.date.today()
+        window_start = today - datetime.timedelta(days=6)
+        per_day = (
+            AttendanceReport.objects.filter(attendance__group_id__in=group_ids)
+            .values("attendance__date")
+            .filter(attendance__date__gte=window_start, attendance__date__lte=today)
+            .annotate(
+                total=Count("id"),
+                present=Count("id", filter=Q(status=AttendanceReport.PRESENT)),
+            )
+        )
+        by_day = {row["attendance__date"]: row for row in per_day}
         spark = []
         for i in range(6, -1, -1):
-            day = today - datetime.timedelta(days=i)
-            d_total = AttendanceReport.objects.filter(
-                attendance__group_id__in=group_ids,
-                attendance__date=day,
-            ).count()
-            d_present = AttendanceReport.objects.filter(
-                attendance__group_id__in=group_ids,
-                attendance__date=day,
-                status=AttendanceReport.PRESENT,
-            ).count()
-            spark.append(round(d_present / d_total * 100) if d_total else 0)
+            row = by_day.get(today - datetime.timedelta(days=i))
+            if row and row["total"]:
+                spark.append(round(row["present"] / row["total"] * 100))
+            else:
+                spark.append(0)
+
+        # Overall avg attendance across all scoped groups (all time), one query.
+        totals = AttendanceReport.objects.filter(
+            attendance__group_id__in=group_ids
+        ).aggregate(
+            total=Count("id"),
+            present=Count("id", filter=Q(status=AttendanceReport.PRESENT)),
+        )
+        avg_att = (
+            round(totals["present"] / totals["total"] * 100, 1)
+            if totals["total"] else None
+        )
 
         leads = RegistrationLead.objects.all()
         total_branches = Branch.objects.count()
@@ -935,10 +963,10 @@ class AdminDashboardView(APIView):
         # Recent enrollments (last 5 in scope)
         recent_enrollments = []
         for e in Enrollment.objects.filter(group_id__in=group_ids).select_related(
-            'student__admin_user', 'group'
+            'student__admin', 'group'
         ).order_by('-id')[:5]:
             try:
-                student_name = e.student.admin_user.get_full_name() or str(e.student)
+                student_name = e.student.admin.get_full_name() or str(e.student)
             except Exception:
                 student_name = str(e.student)
             recent_enrollments.append({
@@ -946,7 +974,7 @@ class AdminDashboardView(APIView):
                 'group':   e.group.name if e.group else '',
             })
 
-        return Response({
+        payload = {
             "total_students":     students.count(),
             "total_staff":        staff.count(),
             "total_groups":       groups.count(),
@@ -957,7 +985,9 @@ class AdminDashboardView(APIView):
             "attendance_spark":   spark,
             "recent_leads":       recent_leads,
             "recent_enrollments": recent_enrollments,
-        })
+        }
+        cache.set(cache_key, payload, settings.DASHBOARD_CACHE_TTL)
+        return Response(payload)
 
 
 class StaffStatsView(APIView):
@@ -968,6 +998,11 @@ class StaffStatsView(APIView):
         user = request.user
         user_type = str(user.user_type)
         today = datetime.date.today()
+
+        cache_key = f"staff_stats:{user.pk}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
 
         if user_type == "2":
             try:
@@ -993,12 +1028,14 @@ class StaffStatsView(APIView):
                 status=AttendanceReport.PRESENT,
             ).count()
             avg_att = round(present_reports / total_reports * 100, 1) if total_reports else None
-            return Response({
+            payload = {
                 "total_students": len(set(student_ids)),
                 "total_groups": groups.count(),
                 "sessions_today": sessions_today,
                 "avg_attendance": avg_att,
-            })
+            }
+            cache.set(cache_key, payload, settings.DASHBOARD_CACHE_TTL)
+            return Response(payload)
 
         # Admin sees branch-scoped totals
         if user_type == "1":
@@ -1018,12 +1055,14 @@ class StaffStatsView(APIView):
                 status=AttendanceReport.PRESENT,
             ).count()
             avg_att = round(present_reports / total_reports * 100, 1) if total_reports else None
-            return Response({
+            payload = {
                 "total_students": students.count(),
                 "total_groups": groups.count(),
                 "sessions_today": sessions_today,
                 "avg_attendance": avg_att,
-            })
+            }
+            cache.set(cache_key, payload, settings.DASHBOARD_CACHE_TTL)
+            return Response(payload)
 
         return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
 
