@@ -12,6 +12,18 @@ class ApiClient {
   static ApiClient get instance => _instance ??= ApiClient._();
 
   final _storage = const FlutterSecureStorage();
+
+  // In-memory copies so requests stay authenticated even if a per-request
+  // secure-storage read is slow/flaky (notably on web, where the storage
+  // backend is best-effort). Storage remains the source of truth across
+  // app launches.
+  String? _access;
+  String? _refresh;
+
+  // Invoked when a 401 cannot be refreshed (refresh token expired/blacklisted)
+  // so the app can drop to the login screen instead of looping on errors.
+  void Function()? onSessionExpired;
+
   late final Dio dio = _buildDio();
 
   Dio _buildDio() {
@@ -30,23 +42,33 @@ class ApiClient {
     d.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await _storage.read(key: 'access_token');
-          if (token != null) options.headers['Authorization'] = 'Bearer $token';
+          final token = _access ??= await _storage.read(key: 'access_token');
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
           handler.next(options);
         },
         onError: (error, handler) async {
-          // 401 → try refresh
-          if (error.response?.statusCode == 401) {
+          final path = error.requestOptions.path;
+          final isAuthCall =
+              path.contains('/auth/login') || path.contains('/auth/token/refresh');
+
+          if (error.response?.statusCode == 401 && !isAuthCall) {
             final refreshed = await _tryRefresh();
             if (refreshed) {
-              // Retry original request with new token
+              // Retry the original request with the new access token.
               final opts = error.requestOptions;
-              final token = await _storage.read(key: 'access_token');
-              opts.headers['Authorization'] = 'Bearer $token';
+              opts.headers['Authorization'] = 'Bearer $_access';
               try {
                 final res = await dio.fetch(opts);
                 return handler.resolve(res);
-              } catch (_) {}
+              } catch (_) {
+                // fall through to error
+              }
+            } else {
+              // Session is dead — clear it and let the app return to login.
+              await clearTokens();
+              onSessionExpired?.call();
             }
           }
           handler.next(error);
@@ -57,31 +79,51 @@ class ApiClient {
     return d;
   }
 
-  Future<bool> _tryRefresh() async {
-    final refresh = await _storage.read(key: 'refresh_token');
-    if (refresh == null) return false;
+  // Single-flight refresh: concurrent 401s share one refresh attempt.
+  Future<bool>? _refreshing;
+  Future<bool> _tryRefresh() =>
+      _refreshing ??= _doRefresh().whenComplete(() => _refreshing = null);
+
+  Future<bool> _doRefresh() async {
+    final refresh = _refresh ??= await _storage.read(key: 'refresh_token');
+    if (refresh == null || refresh.isEmpty) return false;
     try {
-      final res = await Dio().post(
-        '$kBaseUrl/auth/token/refresh/',
+      // A bare Dio avoids the auth interceptor (no Authorization header here).
+      final res = await Dio(BaseOptions(baseUrl: kBaseUrl)).post(
+        '/auth/token/refresh/',
         data: {'refresh': refresh},
       );
-      final newAccess = res.data['access'] as String?;
+      final data = res.data as Map<String, dynamic>;
+      final newAccess = data['access'] as String?;
+      // ROTATE_REFRESH_TOKENS is on server-side: a new refresh token is issued
+      // and the old one is blacklisted. Persist it or the *next* refresh fails.
+      final newRefresh = data['refresh'] as String?;
       if (newAccess != null) {
-        await _storage.write(key: 'access_token', value: newAccess);
+        await saveTokens(newAccess, newRefresh ?? refresh);
         return true;
       }
     } catch (_) {}
     return false;
   }
 
+  /// Populate the in-memory cache from storage at app startup.
+  Future<void> loadTokens() async {
+    _access = await _storage.read(key: 'access_token');
+    _refresh = await _storage.read(key: 'refresh_token');
+  }
+
   Future<void> saveTokens(String access, String refresh) async {
+    _access = access;
+    _refresh = refresh;
     await _storage.write(key: 'access_token', value: access);
     await _storage.write(key: 'refresh_token', value: refresh);
   }
 
   Future<void> clearTokens() async {
+    _access = null;
+    _refresh = null;
     await _storage.deleteAll();
   }
 
-  Future<String?> get accessToken => _storage.read(key: 'access_token');
+  Future<String?> get accessToken async => _access ??= await _storage.read(key: 'access_token');
 }

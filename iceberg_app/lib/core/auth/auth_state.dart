@@ -80,6 +80,9 @@ class AuthState {
 // ─── Provider ────────────────────────────────────────────────────────────────
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(AuthState.loading()) {
+    // When a token refresh fails (expired/blacklisted), drop to login cleanly
+    // instead of leaving the user stuck on an error screen.
+    _api.onSessionExpired = _handleSessionExpired;
     _init();
   }
 
@@ -87,8 +90,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final _api = ApiClient.instance;
 
   Future<void> _init() async {
+    // Prime the in-memory token cache so the very first authenticated request
+    // is reliably signed (web secure-storage reads can be flaky).
+    await _api.loadTokens();
     final cached = await _storage.read(key: 'user_json');
-    final token = await _storage.read(key: 'access_token');
+    final token = await _api.accessToken;
     if (cached != null && token != null) {
       try {
         state = AuthState.auth(IceUser.fromJson(jsonDecode(cached)));
@@ -96,6 +102,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } catch (_) {}
     }
     state = AuthState.unauth();
+  }
+
+  void _handleSessionExpired() {
+    _storage.delete(key: 'user_json');
+    state = AuthState.unauth('Your session expired. Please sign in again.');
   }
 
   /// Login with email OR login_id + password.
