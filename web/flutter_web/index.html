@@ -27,22 +27,29 @@
     html, body { margin: 0; padding: 0; background: #06343A; height: 100%; }
     #boot {
       position: fixed; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 18px;
-      background: linear-gradient(160deg, #06343A 0%, #073B42 55%, #0E6873 130%);
-      transition: opacity .4s ease;
+      align-items: center; justify-content: center; gap: 16px;
+      background: radial-gradient(120% 120% at 50% 40%, #0E6873 0%, #073B42 45%, #06343A 100%);
+      transition: opacity .35s ease;
     }
     #boot .logo {
-      width: 64px; height: 64px; border-radius: 18px; background: #DFFF2F;
+      width: 76px; height: 76px; border-radius: 22px; background: #DFFF2F;
       display: flex; align-items: center; justify-content: center;
-      font: 800 26px/1 system-ui, sans-serif; color: #06343A;
-      animation: pulse 1.6s ease-in-out infinite;
+      font: 800 32px/1 system-ui, sans-serif; color: #06343A;
+      opacity: 0; transform: scale(.86);
+      animation: logoIn .45s cubic-bezier(.2, .9, .3, 1) forwards,
+                 glow 2.4s ease-in-out .5s infinite;
     }
     #boot .name {
-      color: #fff; letter-spacing: 4px; font: 700 14px/1 system-ui, sans-serif;
+      color: #fff; letter-spacing: 5px; font: 700 14px/1 system-ui, sans-serif;
+      opacity: 0; transform: translateY(6px);
+      animation: nameIn .4s ease-out .16s forwards;
     }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(223,255,47,.35); }
-      50% { transform: scale(1.06); box-shadow: 0 0 0 16px rgba(223,255,47,0); }
+    @keyframes logoIn  { to { opacity: 1; transform: scale(1); } }
+    @keyframes nameIn  { to { opacity: 1; transform: translateY(0); } }
+    /* Gentle idle glow so a slightly longer load never looks frozen. */
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(223,255,47,0); }
+      50%      { box-shadow: 0 0 26px 2px rgba(223,255,47,.30); }
     }
   </style>
 </head>
@@ -51,10 +58,48 @@
     <div class="logo">I</div>
     <div class="name">ICEBERG</div>
   </div>
+
   <script>
+    // ── Service-worker recovery ────────────────────────────────────────────
+    // Older builds registered a Flutter service worker that can serve a stale
+    // main.dart.js and hang the boot after a redeploy (common on iOS Safari).
+    // Unregister any existing worker + clear its caches once, then reload so
+    // the current assets load fresh. Guarded so it never loops.
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        if (!regs.length) return;
+        var jobs = regs.map(function (r) { return r.unregister(); });
+        if ('caches' in window) {
+          jobs.push(caches.keys().then(function (keys) {
+            return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+          }));
+        }
+        Promise.all(jobs).then(function () {
+          if (!sessionStorage.getItem('ib-sw-cleared')) {
+            sessionStorage.setItem('ib-sw-cleared', '1');
+            location.reload();
+          }
+        });
+      }).catch(function () {});
+    })();
+
+    // ── Boot safety net ────────────────────────────────────────────────────
+    // If Flutter hasn't painted its first frame within 9s, reload once to
+    // recover from a transient asset-load failure.
+    var bootTimer = setTimeout(function () {
+      if (!document.getElementById('boot')) return;      // already painted
+      if (!sessionStorage.getItem('ib-boot-reloaded')) {
+        sessionStorage.setItem('ib-boot-reloaded', '1');
+        location.reload();
+      }
+    }, 9000);
+
     window.addEventListener('flutter-first-frame', function () {
+      clearTimeout(bootTimer);
+      sessionStorage.removeItem('ib-boot-reloaded');
       var el = document.getElementById('boot');
-      if (el) { el.style.opacity = '0'; setTimeout(function(){ el.remove(); }, 450); }
+      if (el) { el.style.opacity = '0'; setTimeout(function(){ el.remove(); }, 360); }
     });
   </script>
   <script src="flutter_bootstrap.js" async></script>

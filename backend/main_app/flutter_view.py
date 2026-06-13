@@ -26,14 +26,18 @@ def flutter_app(request, path='/'):
     if os.path.isfile(file_path):
         mime, _ = mimetypes.guess_type(file_path)
         response = FileResponse(open(file_path, 'rb'), content_type=mime or 'application/octet-stream')
-        # Flutter service worker needs exact scope headers
-        if rel == 'flutter_service_worker.js' or rel.endswith('.js'):
-            response['Cache-Control'] = 'no-cache'
+        # Never cache the entry HTML, JS bundle or the (self-destruct) service
+        # worker — this guarantees a redeploy is picked up immediately and the
+        # browser can't get stuck on a stale boot.
+        if rel == 'index.html' or rel.endswith('.js') or rel.endswith('.json'):
+            response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         return response
 
     # SPA fallback: any unknown path returns index.html so Flutter's router handles it
     index = os.path.join(FLUTTER_DIR, 'index.html')
     if os.path.isfile(index):
-        return FileResponse(open(index, 'rb'), content_type='text/html')
+        response = FileResponse(open(index, 'rb'), content_type='text/html')
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return response
 
     raise Http404

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_state.dart';
-import '../theme/ice_tokens.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/coming_soon_screen.dart';
 
@@ -333,58 +332,86 @@ class _AuthListenable extends ChangeNotifier {
   }
 }
 
+/// Brief in-app splash shown only while auth is resolving. Visually continuous
+/// with the static HTML boot splash (lime "I" mark) and animated with a quick,
+/// smooth scale + fade entrance (~450ms) — no long spinner.
 class _SplashScreen extends StatelessWidget {
   const _SplashScreen();
+
+  static const _lime = Color(0xFFDFFF2F);
+  static const _navy = Color(0xFF06343A);
+
   @override
   Widget build(BuildContext context) {
-    final t = IceTokens.dark();
-    return Scaffold(
-      backgroundColor: t.bg,
-      body: Container(
-        decoration: BoxDecoration(gradient: t.heroGradient),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: t.accent.withValues(alpha: 0.4)),
-                ),
-                alignment: Alignment.center,
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 58,
-                  height: 58,
-                  errorBuilder: (_, __, ___) =>
-                      Icon(Icons.school_rounded, size: 52, color: t.accent),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'ICEBERG',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 6,
-                  color: t.mint,
-                ),
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: 26,
-                height: 26,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.6,
-                  valueColor: AlwaysStoppedAnimation(t.accent),
-                ),
-              ),
-            ],
+    return const Scaffold(
+      backgroundColor: _navy,
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.2),
+            radius: 1.1,
+            colors: [Color(0xFF0E6873), Color(0xFF073B42), _navy],
+            stops: [0.0, 0.45, 1.0],
           ),
         ),
+        child: Center(child: _SplashMark()),
+      ),
+    );
+  }
+}
+
+class _SplashMark extends StatelessWidget {
+  const _SplashMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeOutCubic,
+      builder: (context, v, child) => Opacity(
+        opacity: v.clamp(0.0, 1.0),
+        child: Transform.scale(scale: 0.86 + 0.14 * v, child: child),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(
+              color: _SplashScreen._lime,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x4DDFFF2F),
+                  blurRadius: 26,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: const Text(
+              'I',
+              style: TextStyle(
+                fontSize: 32,
+                height: 1,
+                fontWeight: FontWeight.w800,
+                color: _SplashScreen._navy,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'ICEBERG',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 5,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }
